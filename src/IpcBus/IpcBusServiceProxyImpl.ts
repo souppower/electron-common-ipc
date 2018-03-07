@@ -72,8 +72,14 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
             return new Promise<T>((resolve, reject) => {
                 this._ipcBusClient
                     .request(this._callTimeout, IpcBusUtils.getServiceCallChannel(this._serviceName), callMsg)
-                    .then((res: IpcBusInterfaces.IpcBusRequestResponse) => resolve(<T>res.payload))
-                    .catch((res: IpcBusInterfaces.IpcBusRequestResponse) => reject(res.err));
+                    .then((res: IpcBusInterfaces.IpcBusRequestResponse) => {
+                        IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] resolve call to '${name}' from service '${this._serviceName}' - res: ${JSON.stringify(res)}`);
+                        resolve(<T>res.payload);
+                    })
+                    .catch((res: IpcBusInterfaces.IpcBusRequestResponse) => {
+                        IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] reject call to '${name}' from service '${this._serviceName}' - res: ${JSON.stringify(res)}`);
+                        reject(res.err);
+                    });
             });
         } else {
             return new Promise<T>((resolve, reject) => {
