@@ -150,7 +150,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
                 // We get back to the webContents
                 // - to confirm the connection
                 // - to provide peerName and id/s
-                webContents.send(IpcBusCommand.Kind.Connect, ipcBusPeer);
+                webContents.send(IpcBusUtils.IPC_BUS_RENDERER_CONNECT, ipcBusPeer);
                 break;
             }
             case IpcBusCommand.Kind.Disconnect :
