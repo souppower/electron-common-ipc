@@ -44,7 +44,7 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
     protected _reset() {
         this._promiseConnected = null;
         if (this._ipcRenderer) {
-            this._ipcRenderer.removeAllListeners(IpcBusUtils.IPC_BUS_COMMAND_CONNECT);
+            this._ipcRenderer.removeAllListeners(IpcBusCommand.Kind.Connect);
             this._ipcRenderer.removeAllListeners(IpcBusUtils.IPC_BUS_RENDERER_EVENT);
             this._ipcRenderer = null;
         }
@@ -87,7 +87,7 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
                         }, timeoutDelay);
                     }
                     // We wait for the bridge confirmation
-                    this._ipcRenderer.once(IpcBusUtils.IPC_BUS_COMMAND_CONNECT, (eventOrPeer: any, peerOrUndefined: IpcBusInterfaces.IpcBusPeer) => {
+                    this._ipcRenderer.once(IpcBusCommand.Kind.Connect, (eventOrPeer: any, peerOrUndefined: IpcBusInterfaces.IpcBusPeer) => {
                         if (this._ipcRenderer) {
                             clearTimeout(timer);
                             this._onConnect(eventOrPeer, peerOrUndefined);
@@ -97,7 +97,7 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
                             this._reset();
                         }
                     });
-                    this.ipcPushCommand(IpcBusUtils.IPC_BUS_COMMAND_CONNECT, '', {}, [peerName]);
+                    this.ipcPushCommand(IpcBusCommand.Kind.Connect, '', {}, [peerName]);
                 });
             });
         }
@@ -105,11 +105,11 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
     }
 
     ipcClose(): void {
-        this.ipcPushCommand(IpcBusUtils.IPC_BUS_COMMAND_CLOSE, '', {});
+        this.ipcPushCommand(IpcBusCommand.Kind.Close, '', {});
         this._reset();
     }
 
-    ipcPushCommand(command: string, channel: string, ipcBusData: IpcBusData, args?: any[]): void {
+    ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusData: IpcBusData, args?: any[]): void {
         if (this._ipcRenderer) {
             this._ipcRenderer.send(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, command, channel, this.peer, ipcBusData, args);
         }

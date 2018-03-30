@@ -23,12 +23,40 @@ export class IpcBusData {
 /** @internal */
 export class IpcBusCommand {
 //    readonly type = 'IpcBusCommand';
-    name: string;
+    kind: IpcBusCommand.Kind;
     channel: string;
     peer: IpcBusInterfaces.IpcBusPeer;
     data?: IpcBusData;
     args?: any[];
 }
+
+/** @internal */
+export namespace IpcBusCommand {
+    export enum Kind {
+        Connect = 0,                // 'IpcBusCommand:connect';
+        Disconnect = 1,             // 'IpcBusCommand:disconnect';
+        Close = 2,                  // 'IpcBusCommand:close';
+        SubscribeChannel = 10,      // 'IpcBusCommand:subscribeChannel';
+        UnsubscribeChannel = 11,    // 'IpcBusCommand:unsubscribeChannel';
+        UnsubscribeAll = 12,        // 'IpcBusCommand:unsubscribeAll';
+        SendMessage = 20,           // 'IpcBusCommand:sendMessage';
+        RequestMessage = 30,        // 'IpcBusCommand:requestMessage';
+        RequestResponse = 31,       // 'IpcBusCommand:requestResponse';
+        RequestCancel = 32          // 'IpcBusCommand:requestCancel';
+    };
+
+    // export const IPC_BUS_COMMAND_CONNECT = 'IpcBusCommand:connect';
+    // export const IPC_BUS_COMMAND_DISCONNECT = 'IpcBusCommand:disconnect';
+    // export const IPC_BUS_COMMAND_CLOSE = 'IpcBusCommand:close';
+    // export const IPC_BUS_COMMAND_SUBSCRIBE_CHANNEL = 'IpcBusCommand:subscribeChannel';
+    // export const IPC_BUS_COMMAND_UNSUBSCRIBE_CHANNEL = 'IpcBusCommand:unsubscribeChannel';
+    // export const IPC_BUS_COMMAND_UNSUBSCRIBE_ALL = 'IpcBusCommand:unsubscribeAll';
+    // export const IPC_BUS_COMMAND_SENDMESSAGE = 'IpcBusCommand:sendMessage';
+    // export const IPC_BUS_COMMAND_REQUESTMESSAGE = 'IpcBusCommand:requestMessage';
+    // export const IPC_BUS_COMMAND_REQUESTRESPONSE = 'IpcBusCommand:requestResponse';
+    // export const IPC_BUS_COMMAND_REQUESTCANCEL = 'IpcBusCommand:requestCancel';
+}
+
 
 /** @internal */
 export abstract class IpcBusTransport {
@@ -49,32 +77,32 @@ export abstract class IpcBusTransport {
     }
 
     protected _onEventReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
-        switch (ipcBusCommand.name) {
-            case IpcBusUtils.IPC_BUS_COMMAND_SENDMESSAGE: {
+        switch (ipcBusCommand.kind) {
+            case IpcBusCommand.Kind.SendMessage: {
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
                 const ipcBusEvent: IpcBusInterfaces.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
                 this.eventEmitter.emit(ipcBusCommand.channel, ipcBusEvent, ...args);
                 break;
             }
-            case IpcBusUtils.IPC_BUS_COMMAND_REQUESTMESSAGE: {
+            case IpcBusCommand.Kind.RequestMessage: {
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] Emit request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.data.replyChannel}')`);
                 let ipcBusEvent: IpcBusInterfaces.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
                 ipcBusEvent.request = {
                     resolve: (payload: Object | string) => {
                         ipcBusCommand.data.resolve = true;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
-                        this.ipcPushCommand(IpcBusUtils.IPC_BUS_COMMAND_REQUESTRESPONSE, ipcBusCommand.data.replyChannel, ipcBusCommand.data, [payload]);
+                        this.ipcPushCommand(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.data.replyChannel, ipcBusCommand.data, [payload]);
                     },
                     reject: (err: string) => {
                         ipcBusCommand.data.reject = true;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
-                        this.ipcPushCommand(IpcBusUtils.IPC_BUS_COMMAND_REQUESTRESPONSE, ipcBusCommand.data.replyChannel, ipcBusCommand.data, [err]);
+                        this.ipcPushCommand(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.data.replyChannel, ipcBusCommand.data, [err]);
                     }
                 };
                 this.eventEmitter.emit(ipcBusCommand.channel, ipcBusEvent, ...args);
                 break;
             }
-            case IpcBusUtils.IPC_BUS_COMMAND_REQUESTRESPONSE: {
+            case IpcBusCommand.Kind.RequestResponse: {
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.data.replyChannel}')`);
                 const localRequestCallback = this._requestFunctions.get(ipcBusCommand.data.replyChannel);
                 if (localRequestCallback) {
@@ -101,7 +129,7 @@ export abstract class IpcBusTransport {
                 // Unregister locally
                 this._requestFunctions.delete(ipcBusCommand.data.replyChannel);
                 // Unregister remotely
-                // this.ipcPushCommand(IpcBusUtils.IPC_BUS_COMMAND_REQUESTCANCEL, IpcBusData, ipcBusEvent);
+                // this.ipcPushCommand(IpcBusCommand.Kind.RequestCancel, IpcBusData, ipcBusEvent);
                 if (ipcBusCommand.data.resolve) {
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] resolve`);
                     let response: IpcBusInterfaces.IpcBusRequestResponse = { event: ipcBusEvent, payload: args[0] };
@@ -122,7 +150,7 @@ export abstract class IpcBusTransport {
             // Register locally
             this._requestFunctions.set(ipcBusData.replyChannel, localRequestCallback);
             // Execute request
-            this.ipcPushCommand(IpcBusUtils.IPC_BUS_COMMAND_REQUESTMESSAGE, channel, ipcBusData, args);
+            this.ipcPushCommand(IpcBusCommand.Kind.RequestMessage, channel, ipcBusData, args);
 
             // Clean-up
             // Below zero = infinite
@@ -130,7 +158,7 @@ export abstract class IpcBusTransport {
                 setTimeout(() => {
                     if (this._requestFunctions.delete(ipcBusData.replyChannel)) {
                         // Unregister remotely
-                        this.ipcPushCommand(IpcBusUtils.IPC_BUS_COMMAND_REQUESTCANCEL, channel, ipcBusData);
+                        this.ipcPushCommand(IpcBusCommand.Kind.RequestCancel, channel, ipcBusData);
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] reject: timeout`);
                         let response: IpcBusInterfaces.IpcBusRequestResponse = { event: { channel: channel, sender: this._ipcBusPeer }, err: 'timeout' };
                         reject(response);
@@ -145,5 +173,5 @@ export abstract class IpcBusTransport {
 
     abstract ipcConnect(timeoutDelay: number, peerName?: string): Promise<string>;
     abstract ipcClose(): void;
-    abstract ipcPushCommand(command: string, channel: string, ipcBusData: IpcBusData, args?: any[]): void;
+    abstract ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusData: IpcBusData, args?: any[]): void;
 }

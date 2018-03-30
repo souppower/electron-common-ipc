@@ -65,7 +65,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
                         this._baseIpc.removeAllListeners('error');
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Node] connected on ${JSON.stringify(this.ipcOptions)}`);
                         clearTimeout(timer);
-                        this.ipcPushCommand(IpcBusUtils.IPC_BUS_COMMAND_CONNECT, '', {});
+                        this.ipcPushCommand(IpcBusCommand.Kind.Connect, '', {});
                         resolve('connected');
                     }
                     else {
@@ -77,7 +77,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
                     let ipcBusCommand: IpcBusCommand = args.shift();
                     // console.log(`packet`);
                     // console.log(JSON.stringify(ipcBusCommand, null, 4));
-                    if (ipcBusCommand && ipcBusCommand.name) {
+                    if (ipcBusCommand && ipcBusCommand.peer) {
                         this._onEventReceived(ipcBusCommand, args);
                     }
                     else {
@@ -106,12 +106,12 @@ export class IpcBusTransportNode extends IpcBusTransport {
     }
 
     ipcClose() {
-        this.ipcPushCommand(IpcBusUtils.IPC_BUS_COMMAND_CLOSE, '', {});
+        this.ipcPushCommand(IpcBusCommand.Kind.Close, '', {});
         this._reset();
     }
 
-    ipcPushCommand(command: string, channel: string, ipcBusData: IpcBusData, args?: any[]): void {
-        this._ipcPushCommand({ name: command, channel: channel, peer: this.peer, data: ipcBusData }, args);
+    ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusData: IpcBusData, args?: any[]): void {
+        this._ipcPushCommand({ kind: command, channel: channel, peer: this.peer, data: ipcBusData }, args);
     }
 
     protected _ipcPushCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
