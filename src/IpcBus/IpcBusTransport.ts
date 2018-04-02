@@ -33,16 +33,16 @@ export class IpcBusCommand {
 /** @internal */
 export namespace IpcBusCommand {
     export enum Kind {
-        Connect = 'CO',               // 'IpcBusCommand:connect';
-        Disconnect = 'DI',            // 'IpcBusCommand:disconnect';
-        Close = 'CL',                 // 'IpcBusCommand:close';
-        SubscribeChannel = 'SC',      // 'IpcBusCommand:subscribeChannel';
-        UnsubscribeChannel = 'UC',    // 'IpcBusCommand:unsubscribeChannel';
-        UnsubscribeAll = 'UA',        // 'IpcBusCommand:unsubscribeAll';
-        SendMessage = 'SM',           // 'IpcBusCommand:sendMessage';
-        RequestMessage = 'RM',        // 'IpcBusCommand:requestMessage';
-        RequestResponse = 'RR',       // 'IpcBusCommand:requestResponse';
-        RequestCancel = 'RC'          // 'IpcBusCommand:requestCancel';
+        Connect             = 'CO', // 'IpcBusCommand:connect';
+        Disconnect          = 'DI', // 'IpcBusCommand:disconnect';
+        Close               = 'CL', // 'IpcBusCommand:close';
+        SubscribeChannel    = 'SC', // 'IpcBusCommand:subscribeChannel';
+        UnsubscribeChannel  = 'UC', // 'IpcBusCommand:unsubscribeChannel';
+        UnsubscribeAll      = 'UA', // 'IpcBusCommand:unsubscribeAll';
+        SendMessage         = 'SM', // 'IpcBusCommand:sendMessage';
+        RequestMessage      = 'RM', // 'IpcBusCommand:requestMessage';
+        RequestResponse     = 'RR', // 'IpcBusCommand:requestResponse';
+        RequestCancel       = 'RC'  // 'IpcBusCommand:requestCancel';
     };
 
     // export const IPC_BUS_COMMAND_CONNECT = 'IpcBusCommand:connect';
