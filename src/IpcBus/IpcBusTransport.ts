@@ -27,7 +27,6 @@ export class IpcBusCommand {
     channel: string;
     peer: IpcBusInterfaces.IpcBusPeer;
     data?: IpcBusData;
-    args?: any[];
 }
 
 /** @internal */

@@ -26,9 +26,9 @@ export type IpcBusProcessType = 'browser' | 'renderer' | 'node';
 
 export interface IpcBusProcess {
     type: IpcBusProcessType;
-    pid: number;
-    rid?: number;
-    wcid?: number;
+    pid: number;    // Process Id
+    rid?: number;   // Renderer Id
+    wcid?: number;  // WebContent Id
 }
 
 export interface IpcBusPeer {
