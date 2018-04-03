@@ -8,7 +8,7 @@ import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
 import { IpcBusTransport, IpcBusCommand, IpcBusData } from './IpcBusTransport';
-import { IpcPacketBuffer, BufferedSocketWriter } from 'socket-serializer';
+import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter } from 'socket-serializer';
 
 // Implementation for Node process
 /** @internal */
@@ -16,7 +16,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
     protected _baseIpc: BaseIpc;
     protected _busConn: any;
     private _promiseConnected: Promise<string>;
-    private _socketWriter: BufferedSocketWriter;
+    private _socketWriter: Writer;
 
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
         super({ type: processType, pid: process.pid }, ipcOptions);
@@ -66,7 +66,9 @@ export class IpcBusTransportNode extends IpcBusTransport {
                         this._baseIpc.removeAllListeners('error');
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Node] connected on ${JSON.stringify(this.ipcOptions)}`);
                         clearTimeout(timer);
-                        this._socketWriter = new BufferedSocketWriter(this._busConn, 8128);
+//                        this._socketWriter = new BufferedSocketWriter(this._busConn, 8128);
+                        this._socketWriter = new SocketWriter(this._busConn);
+                        // this._socketWriter;
                         this.ipcPushCommand(IpcBusCommand.Kind.Connect, '', {});
                         resolve('connected');
                     }
@@ -129,7 +131,9 @@ export class IpcBusTransportNode extends IpcBusTransport {
             // // let bytesWritten = packet.buffer.length;
             // this._busConn.write(packet.buffer);
             // IpcPacketBuffer.serializeToSocket(args, this._busConn);
-            let packet = new IpcPacketBuffer();
+
+            let packet = new IpcPacketBufferWrap();
+            // packet.write(this._socketWriter, args);
             packet.write(this._socketWriter, args);
 
             // let bytesWritten = IpcPacketBuffer.fromToSocket(args, this._busConn);

@@ -43,7 +43,7 @@ const PerfTests = require('./PerfTests.js');
 
 // Helpers
 function spawnNodeInstance(scriptPath) {
-    const args = [path.join(__dirname, scriptPath), '--parent-pid=' + process.pid, '--bus-path=' + busPath, '--debug-brk=5858', "--inspect"];
+    const args = [path.join(__dirname, scriptPath), '--parent-pid=' + process.pid, '--bus-path=' + busPath, "--inspect"];
 
     let options = { env: {} };
     for (let key of Object.keys(process.env)) {
@@ -52,7 +52,10 @@ function spawnNodeInstance(scriptPath) {
 
     options.env['ELECTRON_RUN_AS_NODE'] = '1';
     options.stdio = ['pipe', 'pipe', 'pipe', 'ipc'];
-    return child_process.spawn(process.argv[0], args, options);
+    let childProcess = child_process.spawn(process.argv[0], args, options);
+    childProcess.stdout.addListener('data', data => { console.log(`<Node ${childProcess.pid}> ${data.toString()}`); });
+    childProcess.stderr.addListener('data', data => { console.log(`<Node ${childProcess.pid}> ${data.toString()}`); });
+    return childProcess;
 }
 
 // Window const
