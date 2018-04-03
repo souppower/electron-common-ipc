@@ -8,7 +8,7 @@ import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
 import { IpcBusTransport, IpcBusCommand, IpcBusData } from './IpcBusTransport';
-import { IpcPacketBuffer } from 'socket-serializer';
+import { IpcPacketBuffer, BufferedSocketWriter } from 'socket-serializer';
 
 // Implementation for Node process
 /** @internal */
@@ -16,6 +16,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
     protected _baseIpc: BaseIpc;
     protected _busConn: any;
     private _promiseConnected: Promise<string>;
+    private _socketWriter: BufferedSocketWriter;
 
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
         super({ type: processType, pid: process.pid }, ipcOptions);
@@ -65,6 +66,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
                         this._baseIpc.removeAllListeners('error');
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Node] connected on ${JSON.stringify(this.ipcOptions)}`);
                         clearTimeout(timer);
+                        this._socketWriter = new BufferedSocketWriter(this._busConn, 8128);
                         this.ipcPushCommand(IpcBusCommand.Kind.Connect, '', {});
                         resolve('connected');
                     }
@@ -126,7 +128,9 @@ export class IpcBusTransportNode extends IpcBusTransport {
             // packet.serializeArray(args);
             // // let bytesWritten = packet.buffer.length;
             // this._busConn.write(packet.buffer);
-            IpcPacketBuffer.serializeToSocket(args, this._busConn);
+            // IpcPacketBuffer.serializeToSocket(args, this._busConn);
+            let packet = new IpcPacketBuffer();
+            packet.write(this._socketWriter, args);
 
             // let bytesWritten = IpcPacketBuffer.fromToSocket(args, this._busConn);
             // console.log(`ipcBusCommand ${bytesWritten}`);

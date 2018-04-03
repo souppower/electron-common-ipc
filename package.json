@@ -33,7 +33,7 @@
   "browser": "./lib/electron-common-ipc-browser.js",
   "dependencies": {
     "uuid": "3.0.1",
-    "socket-serializer": "^0.14.0"
+    "socket-serializer": "^0.18.0"
   },
   "devDependencies": {
     "@types/node": "^0.0.3",
