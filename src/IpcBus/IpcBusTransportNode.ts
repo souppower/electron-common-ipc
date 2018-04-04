@@ -8,6 +8,7 @@ import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
 import { IpcBusTransport, IpcBusCommand, IpcBusData } from './IpcBusTransport';
+// import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, BufferedSocketWriter } from 'socket-serializer';
 import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter } from 'socket-serializer';
 
 // Implementation for Node process
@@ -66,9 +67,8 @@ export class IpcBusTransportNode extends IpcBusTransport {
                         this._baseIpc.removeAllListeners('error');
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Node] connected on ${JSON.stringify(this.ipcOptions)}`);
                         clearTimeout(timer);
-//                        this._socketWriter = new BufferedSocketWriter(this._busConn, 8128);
+                        // this._socketWriter = new BufferedSocketWriter(this._busConn, 8128);
                         this._socketWriter = new SocketWriter(this._busConn);
-                        // this._socketWriter;
                         this.ipcPushCommand(IpcBusCommand.Kind.Connect, '', {});
                         resolve('connected');
                     }
