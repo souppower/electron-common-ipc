@@ -51,7 +51,8 @@
                 "NODE_PRESERVE_SYMLINKS": "1",
                 "NODE_ENV": "development"
             },
-            "console": "integratedTerminal",
+            // "console": "integratedTerminal",
+            "console": "internalConsole",
             "sourceMaps": true,
             "outFiles": [
                 "${workspaceRoot}/**/*.js"

@@ -1,7 +1,7 @@
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
-import { IpcBusCommand, IpcBusData } from './IpcBusTransport';
+import { IpcBusCommand } from './IpcBusTransport';
 import { IpcBusTransportNode } from './IpcBusTransportNode';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
@@ -12,6 +12,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
     private _subscriptions: IpcBusUtils.ChannelConnectionMap<number>;
     private _requestChannels: Map<string, any>;
     private _ipcBusPeers: Map<string, IpcBusInterfaces.IpcBusPeer>;
+    private _onRendererMessageBind: Function;
 
 //    _lambdaCleanUpHandler: Function;
 
@@ -22,6 +23,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<number>('IPCBus:Bridge');
         this._requestChannels = new Map<string, any>();
         this._ipcBusPeers = new Map<string, IpcBusInterfaces.IpcBusPeer>();
+        this._onRendererMessageBind = this._onRendererMessage.bind(this);
         // this._lambdaCleanUpHandler = (webContentsId: string) => {
         //     this.rendererCleanUp(webContentsId);
         // };
@@ -66,8 +68,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
                 .then((msg) => {
                     // Guard against people calling start several times
                     if (this._ipcMain.listenerCount(IpcBusUtils.IPC_BUS_RENDERER_COMMAND) === 0) {
-                        this._ipcMain.addListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND
-                            , (event: any, command: IpcBusCommand.Kind, channel: string, ipcBusPeer: IpcBusInterfaces.IpcBusPeer, ipcBusData: IpcBusData, args?: any[]) => this._onRendererMessage(event, command, channel, ipcBusPeer, ipcBusData, args));
+                        this._ipcMain.addListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
                     }
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
                     resolve(msg);
@@ -95,7 +96,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
         return queryStateResult;
     }
 
-    private _rendererCleanUp(webContents: any, webContentsId: number, peerId: string): void {
+    private _rendererCleanUp(webContents: Electron.WebContents, webContentsId: number, peerId: string): void {
         this._subscriptions.releaseConnection(webContentsId);
         // ForEach is supposed to support deletion during the iteration !
         this._requestChannels.forEach((webContentsForRequest, channel) => {
@@ -105,8 +106,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
         });
     }
 
-    private _onConnect(event: any, peerId: string): void {
-        const webContents = event.sender;
+    private _onConnect(webContents: Electron.WebContents, peerId: string): void {
         // Have to closure the webContentsId as webContents.id is undefined when destroyed !!!
         let webContentsId = webContents.id;
         webContents.addListener('destroyed', () => {
@@ -121,12 +121,14 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
         // webContents.addListener('destroyed', this._lambdaCleanUpHandler);
     }
 
-    private _onRendererMessage(event: any, command: IpcBusCommand.Kind, channel: string, ipcBusPeer: IpcBusInterfaces.IpcBusPeer, ipcBusData: IpcBusData, args: any[]) {
+    private _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
         const webContents = event.sender;
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Peer #${ipcBusPeer.name} post ${command} on '${channel}'`);
-        switch (command) {
+        const ipcBusPeer = ipcBusCommand.peer;
+        const ipcBusData = ipcBusCommand.data;
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Peer #${ipcBusPeer.name} post ${ipcBusCommand.kind} on '${ipcBusCommand.channel}'`);
+        switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Connect : {
-                this._onConnect(event, ipcBusPeer.id);
+                this._onConnect(webContents, ipcBusPeer.id);
                 let peerName = `${ipcBusPeer.process.type}-${webContents.id}`;
                 ipcBusPeer.process.wcid = webContents.id;
                 // Hidden function, may disappear
@@ -156,25 +158,25 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
             case IpcBusCommand.Kind.Disconnect :
             case IpcBusCommand.Kind.Close : {
                 // We do not close the socket, we just disconnect a peer
-                command = IpcBusCommand.Kind.Disconnect;
+                ipcBusCommand.kind = IpcBusCommand.Kind.Disconnect;
                 this._rendererCleanUp(webContents, webContents.id, ipcBusPeer.id);
                 this._ipcBusPeers.delete(ipcBusPeer.id);
                 break;
             }
             case IpcBusCommand.Kind.SubscribeChannel : {
-                this._subscriptions.addRef(channel, webContents.id, webContents, ipcBusPeer.id);
+                this._subscriptions.addRef(ipcBusCommand.channel, webContents.id, webContents, ipcBusPeer.id);
                 break;
             }
             case IpcBusCommand.Kind.UnsubscribeChannel : {
-                if (ipcBusData.unsubscribeAll) {
-                    this._subscriptions.releaseAll(channel, webContents.id, ipcBusPeer.id);
+                if (ipcBusData && ipcBusData.unsubscribeAll) {
+                    this._subscriptions.releaseAll(ipcBusCommand.channel, webContents.id, ipcBusPeer.id);
                 }
                 else {
-                    this._subscriptions.release(channel, webContents.id, ipcBusPeer.id);
+                    this._subscriptions.release(ipcBusCommand.channel, webContents.id, ipcBusPeer.id);
                 }
                 break;
             }
-            case IpcBusCommand.Kind.UnsubscribeAll : {
+            case IpcBusCommand.Kind.UnsubscribeAllChannels : {
                 this._rendererCleanUp(webContents, webContents.id, ipcBusPeer.id);
                 break;
             }
@@ -189,7 +191,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
             default :
                 break;
         }
-        this._ipcPushCommand({kind: command, channel: channel, peer: ipcBusPeer, data: ipcBusData}, args);
+        this._ipcPushCommand(ipcBusCommand, args);
     }
 }
 

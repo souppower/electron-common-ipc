@@ -110,7 +110,7 @@ export class ChannelConnectionMap<T extends string | number> {
         return this._channelsMap.has(channel);
     }
 
-    public addRef(channel: string, connKey: T, conn: any, peerId: string, callback?: ChannelConnectionMap.MapHandler<T>) {
+    public addRef(channel: string, connKey: T, conn: any, peerId: string) { //, callback?: ChannelConnectionMap.MapHandler<T>) {
         Logger.enable && this._info(`AddRef: '${channel}', connKey = ${connKey}`);
 
         let connsMap = this._channelsMap.get(channel);
@@ -138,12 +138,12 @@ export class ChannelConnectionMap<T extends string | number> {
         }
         connData.peerIds.set(peerId, count);
         Logger.enable && this._info(`AddRef: '${channel}', connKey = ${connKey}, count = ${connData.peerIds.size}`);
-        if ((callback instanceof Function) === true) {
-            callback(channel, peerId, connData);
-        }
+        // if ((callback instanceof Function) === true) {
+        //     callback(channel, peerId, connData);
+        // }
     }
 
-    private _release(all: boolean, channel: string, connKey: T, peerId: string, callback?: ChannelConnectionMap.MapHandler<T>) {
+    private _release(all: boolean, channel: string, connKey: T, peerId: string) { // , callback?: ChannelConnectionMap.MapHandler<T>) {
         Logger.enable && this._info(`Release: '${channel}', connKey = ${connKey}`);
 
         let connsMap = this._channelsMap.get(channel);
@@ -157,17 +157,17 @@ export class ChannelConnectionMap<T extends string | number> {
             }
             else {
                 if (peerId == null) {
-                    // Test callback first to manage performance
-                    if ((callback instanceof Function) === true) {
-                        // ForEach is supposed to support deletion during the iteration !
-                        connData.peerIds.forEach((count, peerId) => {
-                            connData.peerIds.delete(peerId);
-                            callback(channel, peerId, connData);
-                        });
-                    }
-                    else {
+                    // // Test callback first to manage performance
+                    // if ((callback instanceof Function) === true) {
+                    //     // ForEach is supposed to support deletion during the iteration !
+                    //     connData.peerIds.forEach((count, peerId) => {
+                    //         connData.peerIds.delete(peerId);
+                    //         callback(channel, peerId, connData);
+                    //     });
+                    // }
+                    // else {
                         connData.peerIds.clear();
-                    }
+                    // }
                 }
                 else {
                     let count = connData.peerIds.get(peerId);
@@ -176,16 +176,16 @@ export class ChannelConnectionMap<T extends string | number> {
                     }
                     else {
                         if (all) {
-                            // Test callback first to manage performance
-                            if ((callback instanceof Function) === true) {
-                                while (count > 0) {
-                                    --count;
-                                    connData.peerIds.set(peerId, count);
-                                    if ((callback instanceof Function) === true) {
-                                        callback(channel, peerId, connData);
-                                    }
-                                }
-                            }
+                            // // Test callback first to manage performance
+                            // if ((callback instanceof Function) === true) {
+                            //     while (count > 0) {
+                            //         --count;
+                            //         connData.peerIds.set(peerId, count);
+                            //         if ((callback instanceof Function) === true) {
+                            //             callback(channel, peerId, connData);
+                            //         }
+                            //     }
+                            // }
                             connData.peerIds.delete(peerId);
                         }
                         else {
@@ -198,9 +198,9 @@ export class ChannelConnectionMap<T extends string | number> {
                                 connData.peerIds.delete(peerId);
                                 // Logger.enable && this._info(`Release: peerId #${peerId} is released`);
                             }
-                            if ((callback instanceof Function) === true) {
-                                callback(channel, peerId, connData);
-                            }
+                            // if ((callback instanceof Function) === true) {
+                            //     callback(channel, peerId, connData);
+                            // }
                         }
                     }
                 }
@@ -217,30 +217,30 @@ export class ChannelConnectionMap<T extends string | number> {
         }
     }
 
-    public release(channel: string, connKey: T, peerId: string, callback?: ChannelConnectionMap.MapHandler<T>) {
-        this._release(false, channel, connKey, peerId, callback);
+    public release(channel: string, connKey: T, peerId: string) { // , callback?: ChannelConnectionMap.MapHandler<T>) {
+        this._release(false, channel, connKey, peerId); //, callback);
     }
 
-    public releaseAll(channel: string, connKey: T, peerId: string, callback?: ChannelConnectionMap.MapHandler<T>) {
+    public releaseAll(channel: string, connKey: T, peerId: string) { //, callback?: ChannelConnectionMap.MapHandler<T>) {
         Logger.enable && this._info(`releaseAll: connKey = ${connKey}`);
-        this._release(true, channel, connKey, peerId, callback);
+        this._release(true, channel, connKey, peerId); // , callback);
     }
 
-    public releasePeerId(connKey: T, peerId: string, callback?: ChannelConnectionMap.MapHandler<T>) {
+    public releasePeerId(connKey: T, peerId: string) { // , callback?: ChannelConnectionMap.MapHandler<T>) {
         Logger.enable && this._info(`releasePeerId: peerId = ${peerId}`);
 
         // ForEach is supposed to support deletion during the iteration !
         this._channelsMap.forEach((connsMap, channel) => {
-            this._release(true, channel, connKey, peerId, callback);
+            this._release(true, channel, connKey, peerId); //, callback);
         });
     }
 
-    public releaseConnection(connKey: T, callback?: ChannelConnectionMap.MapHandler<T>) {
+    public releaseConnection(connKey: T) { //, callback?: ChannelConnectionMap.MapHandler<T>) {
         Logger.enable && this._info(`ReleaseConn: connKey = ${connKey}`);
 
         // ForEach is supposed to support deletion during the iteration !
         this._channelsMap.forEach((connsMap, channel) => {
-            this._release(false, channel, connKey, null, callback);
+            this._release(false, channel, connKey, null); // , callback);
         });
     }
 
@@ -295,10 +295,10 @@ export namespace ChannelConnectionMap {
         }
     }
 
-    /** @internal */
-    export interface MapHandler<T extends string | number> {
-        (channel: string, peerId: string, connData: ConnectionData<T>): void;
-    };
+    // /** @internal */
+    // export interface MapHandler<T extends string | number> {
+    //     (channel: string, peerId: string, connData: ConnectionData<T>): void;
+    // };
 
     /** @internal */
     export interface ForEachHandler<T extends string | number> {

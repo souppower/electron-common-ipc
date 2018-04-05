@@ -97,7 +97,7 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
                             this._reset();
                         }
                     });
-                    this.ipcPushCommand(IpcBusCommand.Kind.Connect, '', {}, [peerName]);
+                    this.ipcPushCommand(IpcBusCommand.Kind.Connect, '', undefined, [peerName]);
                 });
             });
         }
@@ -105,13 +105,13 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
     }
 
     ipcClose(): void {
-        this.ipcPushCommand(IpcBusCommand.Kind.Close, '', {});
+        this.ipcPushCommand(IpcBusCommand.Kind.Close, '');
         this._reset();
     }
 
-    ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusData: IpcBusData, args?: any[]): void {
+    ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusData?: IpcBusData, args?: any[]): void {
         if (this._ipcRenderer) {
-            this._ipcRenderer.send(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, command, channel, this.peer, ipcBusData, args);
+            this._ipcRenderer.send(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, { kind: command, channel: channel, peer: this.peer, data: ipcBusData }, args);
         }
     }
 }

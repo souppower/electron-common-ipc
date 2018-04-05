@@ -32,16 +32,16 @@ export class IpcBusCommand {
 /** @internal */
 export namespace IpcBusCommand {
     export enum Kind {
-        Connect             = 'CO', // 'IpcBusCommand:connect';
-        Disconnect          = 'DI', // 'IpcBusCommand:disconnect';
-        Close               = 'CL', // 'IpcBusCommand:close';
-        SubscribeChannel    = 'SC', // 'IpcBusCommand:subscribeChannel';
-        UnsubscribeChannel  = 'UC', // 'IpcBusCommand:unsubscribeChannel';
-        UnsubscribeAll      = 'UA', // 'IpcBusCommand:unsubscribeAll';
-        SendMessage         = 'SM', // 'IpcBusCommand:sendMessage';
-        RequestMessage      = 'RM', // 'IpcBusCommand:requestMessage';
-        RequestResponse     = 'RR', // 'IpcBusCommand:requestResponse';
-        RequestCancel       = 'RC'  // 'IpcBusCommand:requestCancel';
+        Connect                 = 'CO', // 'IpcBusCommand:connect';
+        Disconnect              = 'DI', // 'IpcBusCommand:disconnect';
+        Close                   = 'CL', // 'IpcBusCommand:close';
+        SubscribeChannel        = 'SC', // 'IpcBusCommand:subscribeChannel';
+        UnsubscribeChannel      = 'UC', // 'IpcBusCommand:unsubscribeChannel';
+        UnsubscribeAllChannels  = 'UA', // 'IpcBusCommand:unsubscribeAll';
+        SendMessage             = 'SM', // 'IpcBusCommand:sendMessage';
+        RequestMessage          = 'RM', // 'IpcBusCommand:requestMessage';
+        RequestResponse         = 'RR', // 'IpcBusCommand:requestResponse';
+        RequestCancel           = 'RC'  // 'IpcBusCommand:requestCancel';
     };
 
     // export const IPC_BUS_COMMAND_CONNECT = 'IpcBusCommand:connect';
@@ -172,5 +172,5 @@ export abstract class IpcBusTransport {
 
     abstract ipcConnect(timeoutDelay: number, peerName?: string): Promise<string>;
     abstract ipcClose(): void;
-    abstract ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusData: IpcBusData, args?: any[]): void;
+    abstract ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusData?: IpcBusData, args?: any[]): void;
 }

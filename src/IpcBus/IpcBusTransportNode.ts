@@ -69,7 +69,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
                         clearTimeout(timer);
                         // this._socketWriter = new BufferedSocketWriter(this._busConn, 8128);
                         this._socketWriter = new SocketWriter(this._busConn);
-                        this.ipcPushCommand(IpcBusCommand.Kind.Connect, '', {});
+                        this.ipcPushCommand(IpcBusCommand.Kind.Connect, '');
                         resolve('connected');
                     }
                     else {
@@ -110,11 +110,11 @@ export class IpcBusTransportNode extends IpcBusTransport {
     }
 
     ipcClose() {
-        this.ipcPushCommand(IpcBusCommand.Kind.Close, '', {});
+        this.ipcPushCommand(IpcBusCommand.Kind.Close, '');
         this._reset();
     }
 
-    ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusData: IpcBusData, args?: any[]): void {
+    ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusData?: IpcBusData, args?: any[]): void {
         this._ipcPushCommand({ kind: command, channel: channel, peer: this.peer, data: ipcBusData }, args);
     }
 
