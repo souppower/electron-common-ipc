@@ -1,6 +1,8 @@
 //import { Buffer } from 'buffer';
 
-import { IpcPacketNet as BaseIpc } from 'socket-serializer';
+import { IpcPacketNet } from 'socket-serializer';
+import { IpcPacketBuffer } from 'socket-serializer';
+
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
 // import * as util from 'util';
@@ -8,14 +10,16 @@ import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommonClient } from './IpcBusClient';
 import { IpcBusTransport, IpcBusCommand } from './IpcBusTransport';
 import { IpcBusTransportNode } from './IpcBusTransportNode';
-import { IpcPacketBuffer } from 'socket-serializer';
+
+import { IpcBusBrokerLogger } from './ipcBusBrokerLogger';
 
 /** @internal */
 export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
-    private _baseIpc: BaseIpc;
+    private _baseIpc: IpcPacketNet;
     private _ipcServer: any = null;
     private _ipcOptions: IpcBusUtils.IpcOptions;
     private _ipcBusBrokerClient: IpcBusCommonClient;
+    private _ipcBusBrokerLogger: IpcBusBrokerLogger;
 
     private _promiseStarted: Promise<string>;
 
@@ -27,6 +31,9 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
     private _serviceAvailableLambda: IpcBusInterfaces.IpcBusListener = (ipcBusEvent: IpcBusInterfaces.IpcBusEvent, serviceName: string) => this._onServiceAvailable(ipcBusEvent, serviceName);
 
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
+        if (process.env['ELECTRON_IPC_BUS_LOGPATH']) {
+            this._ipcBusBrokerLogger = new IpcBusBrokerLogger(process.env['ELECTRON_IPC_BUS_LOGPATH']);
+        }
         this._ipcOptions = ipcOptions;
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<string>('IPCBus:Broker');
@@ -70,7 +77,10 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
                         reject(msg);
                     }, timeoutDelay);
                 }
-                this._baseIpc = new BaseIpc();
+                this._baseIpc = new IpcPacketNet();
+                if (this._ipcBusBrokerLogger) {
+                    this._ipcBusBrokerLogger.start(this._baseIpc);
+                }
                 this._baseIpc.once('listening', (server: any) => {
                     this._ipcServer = server;
                     if (this._baseIpc) {
