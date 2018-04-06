@@ -1,5 +1,3 @@
-//import { Buffer } from 'buffer';
-
 import { IpcPacketNet } from 'socket-serializer';
 import { IpcPacketBuffer } from 'socket-serializer';
 
@@ -209,24 +207,25 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
                 this._socketCleanUp(socket);
                 break;
             }
-            case IpcBusCommand.Kind.SubscribeChannel: {
+            case IpcBusCommand.Kind.AddChannelListener: {
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Subscribe to channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.id} - ${ipcBusCommand.peer.name}`);
 
                 this._subscriptions.addRef(ipcBusCommand.channel, socket.remotePort, socket, ipcBusCommand.peer.id);
                 break;
             }
-            case IpcBusCommand.Kind.UnsubscribeChannel: {
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Unsubscribe from channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.id} - ${ipcBusCommand.peer.name}`);
+            case IpcBusCommand.Kind.RemoveChannelAllListeners: {
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Unsubscribe all from channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.id} - ${ipcBusCommand.peer.name}`);
 
-                if (ipcBusCommand.data && ipcBusCommand.data.unsubscribeAll) {
-                    this._subscriptions.releaseAll(ipcBusCommand.channel, socket.remotePort, ipcBusCommand.peer.id);
-                }
-                else {
-                    this._subscriptions.release(ipcBusCommand.channel, socket.remotePort, ipcBusCommand.peer.id);
-                }
+                this._subscriptions.releaseAll(ipcBusCommand.channel, socket.remotePort, ipcBusCommand.peer.id);
                 break;
             }
-            case IpcBusCommand.Kind.UnsubscribeAllChannels: {
+            case IpcBusCommand.Kind.RemoveChannelListener: {
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Unsubscribe from channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.id} - ${ipcBusCommand.peer.name}`);
+
+                this._subscriptions.release(ipcBusCommand.channel, socket.remotePort, ipcBusCommand.peer.id);
+                break;
+            }
+            case IpcBusCommand.Kind.RemoveListeners: {
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Unsubscribe all '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.id} - ${ipcBusCommand.peer.name}`);
 
                 this._subscriptions.releasePeerId(socket.remotePort, ipcBusCommand.peer.id);

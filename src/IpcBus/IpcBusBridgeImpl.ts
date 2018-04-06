@@ -163,20 +163,17 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
                 this._ipcBusPeers.delete(ipcBusPeer.id);
                 break;
             }
-            case IpcBusCommand.Kind.SubscribeChannel : {
+            case IpcBusCommand.Kind.AddChannelListener : {
                 this._subscriptions.addRef(ipcBusCommand.channel, webContents.id, webContents, ipcBusPeer.id);
                 break;
             }
-            case IpcBusCommand.Kind.UnsubscribeChannel : {
-                if (ipcBusData && ipcBusData.unsubscribeAll) {
-                    this._subscriptions.releaseAll(ipcBusCommand.channel, webContents.id, ipcBusPeer.id);
-                }
-                else {
-                    this._subscriptions.release(ipcBusCommand.channel, webContents.id, ipcBusPeer.id);
-                }
+            case IpcBusCommand.Kind.RemoveChannelAllListeners :
+                this._subscriptions.releaseAll(ipcBusCommand.channel, webContents.id, ipcBusPeer.id);
                 break;
-            }
-            case IpcBusCommand.Kind.UnsubscribeAllChannels : {
+            case IpcBusCommand.Kind.RemoveChannelListener :
+                this._subscriptions.release(ipcBusCommand.channel, webContents.id, ipcBusPeer.id);
+                break;
+            case IpcBusCommand.Kind.RemoveListeners : {
                 this._rendererCleanUp(webContents, webContents.id, ipcBusPeer.id);
                 break;
             }

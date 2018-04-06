@@ -1,4 +1,3 @@
-//import { Buffer } from 'buffer';
 
 import { IpcPacketNet } from 'socket-serializer';
 // import * as util from 'util';
@@ -67,21 +66,20 @@ export class IpcBusBrokerLogger {
                 this._logger.info(`Close`, log);
                 break;
             }
-            case IpcBusCommand.Kind.SubscribeChannel: {
-                this._logger.info(`AddListener`, log);
+            case IpcBusCommand.Kind.AddChannelListener: {
+                this._logger.info(`AddChannelListener`, log);
                 break;
             }
-            case IpcBusCommand.Kind.UnsubscribeChannel: {
-                if (ipcBusCommand.data && ipcBusCommand.data.unsubscribeAll) {
-                    this._logger.info(`RemoveAllListeners`, log);
-                }
-                else {
-                    this._logger.info(`RemoveListeners`, log);
-                }
+            case IpcBusCommand.Kind.RemoveChannelAllListeners: {
+                this._logger.info(`RemoveChannelAllListeners`, log);
                 break;
             }
-            case IpcBusCommand.Kind.UnsubscribeAllChannels: {
-                this._logger.info(`RemoveAllListeners`, log);
+            case IpcBusCommand.Kind.RemoveChannelListener: {
+                this._logger.info(`RemoveListeners`, log);
+                break;
+            }
+            case IpcBusCommand.Kind.RemoveListeners: {
+                this._logger.info(`RemoveAll`, log);
                 break;
             }
             case IpcBusCommand.Kind.SendMessage: {
