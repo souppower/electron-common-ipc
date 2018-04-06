@@ -5,7 +5,8 @@
             "name": "Launch Sandbox Test tr-apps",
             "type": "node",
             "request": "launch",
-            "protocol": "legacy",
+            // "protocol": "legacy",
+            "protocol": "inspector",
             "program": "${workspaceRoot}/Main.js",
             "stopOnEntry": false,
             "args": [],
@@ -27,8 +28,8 @@
             "name": "Launch Standard Test tr-apps",
             "type": "node",
             "request": "launch",
-            "protocol": "legacy",
-            // "protocol": "inspector",
+            // "protocol": "legacy",
+            "protocol": "inspector",
             "program": "${workspaceRoot}/Main.js",
             "stopOnEntry": false,
             "args": [],
@@ -40,7 +41,8 @@
             ],
             "env": {
                 "NODE_PRESERVE_SYMLINKS": "1",
-                "NODE_ENV": "development"
+                "NODE_ENV": "development",
+                "ELECTRON_IPC_BUS_LOGPATH": "c:\\temp\\electron-ipc-bus.log"
             },
             "console": "internalConsole",
             "sourceMaps": false,

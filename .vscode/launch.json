@@ -49,6 +49,7 @@
             ],
             "env": {
                 "NODE_PRESERVE_SYMLINKS": "1",
+                "ELECTRON_IPC_BUS_LOGPATH": "C:\\temp\\electron_ipc_bus.log",
                 "NODE_ENV": "development"
             },
             // "console": "integratedTerminal",
