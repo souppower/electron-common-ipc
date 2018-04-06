@@ -47,52 +47,57 @@ export class IpcBusBrokerLogger {
 
     private _onData(packet: IpcPacketBuffer, socket: any, server: any): void {
         let ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
+        let log: any = { packetSize: packet.packetSize, command: ipcBusCommand};
+        for (let i = 1, l = packet.parseArrayLength(); i < l; ++i) {
+            log[`arg${i - 1}`] = packet.parseArrayAt(i);
+        }
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Connect: {
-                this._logger.info(`Connect`, { command: ipcBusCommand, socket: socket.remotePort });
+                log[socket] =  socket.remotePort;
+                this._logger.info(`Connect`, log);
                 break;
             }
             case IpcBusCommand.Kind.Disconnect: {
-                this._logger.info(`Disconnect`, { command: ipcBusCommand, socket: socket.remotePort });
+                log[socket] =  socket.remotePort;
+                this._logger.info(`Disconnect`, log);
                 break;
             }
             case IpcBusCommand.Kind.Close: {
-                this._logger.info(`Close`, { command: ipcBusCommand, socket: socket.remotePort });
+                log[socket] =  socket.remotePort;
+                this._logger.info(`Close`, log);
                 break;
             }
             case IpcBusCommand.Kind.SubscribeChannel: {
-                this._logger.info(`AddListener`, { command: ipcBusCommand });
+                this._logger.info(`AddListener`, log);
                 break;
             }
             case IpcBusCommand.Kind.UnsubscribeChannel: {
                 if (ipcBusCommand.data && ipcBusCommand.data.unsubscribeAll) {
-                    this._logger.info(`RemoveAllListeners`, { command: ipcBusCommand });
+                    this._logger.info(`RemoveAllListeners`, log);
                 }
                 else {
-                    this._logger.info(`RemoveListeners`, { command: ipcBusCommand });
+                    this._logger.info(`RemoveListeners`, log);
                 }
                 break;
             }
             case IpcBusCommand.Kind.UnsubscribeAllChannels: {
-                this._logger.info(`RemoveAllListeners`, { command: ipcBusCommand });
+                this._logger.info(`RemoveAllListeners`, log);
                 break;
             }
             case IpcBusCommand.Kind.SendMessage: {
-                let arg: any = packet.parseArrayAt(1);
-                this._logger.info(`SendMessage`, { command: ipcBusCommand, arg });
+                this._logger.info(`SendMessage`, log);
                 break;
             }
             case IpcBusCommand.Kind.RequestMessage: {
-                let arg: any = packet.parseArrayAt(1);
-                this._logger.info(`RequestMessage`, { command: ipcBusCommand, arg });
+                this._logger.info(`RequestMessage`, log);
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                this._logger.info(`RequestResponse`, { command: ipcBusCommand });
+                this._logger.info(`RequestResponse`, log);
                 break;
             }
             case IpcBusCommand.Kind.RequestCancel: {
-                this._logger.info(`RequestCancel`, { command: ipcBusCommand });
+                this._logger.info(`RequestCancel`, log);
                 break;
             }
         }
