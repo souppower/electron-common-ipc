@@ -3,7 +3,7 @@
 import { IpcPacketNet } from 'socket-serializer';
 // import * as util from 'util';
 
-import { IpcBusCommand } from './IpcBusTransport';
+import { IpcBusCommand } from './IpcBusCommand';
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as winston from 'winston';

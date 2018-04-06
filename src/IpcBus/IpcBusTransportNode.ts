@@ -7,7 +7,9 @@ import { IpcPacketNet as BaseIpc } from 'socket-serializer';
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
-import { IpcBusTransport, IpcBusCommand, IpcBusData } from './IpcBusTransport';
+import { IpcBusTransport } from './IpcBusTransport';
+import { IpcBusCommand, IpcBusData } from './IpcBusCommand';
+
 // import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, BufferedSocketWriter } from 'socket-serializer';
 import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter } from 'socket-serializer';
 

@@ -8,7 +8,8 @@ import * as IpcBusUtils from './IpcBusUtils';
 // import * as util from 'util';
 
 import { IpcBusCommonClient } from './IpcBusClient';
-import { IpcBusTransport, IpcBusCommand } from './IpcBusTransport';
+import { IpcBusTransport } from './IpcBusTransport';
+import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusTransportNode } from './IpcBusTransportNode';
 
 import { IpcBusBrokerLogger } from './ipcBusBrokerLogger';

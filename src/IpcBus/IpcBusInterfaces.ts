@@ -22,7 +22,7 @@ export interface IpcBusRequestResponse {
     err?: string;
 }
 
-export type IpcBusProcessType = 'browser' | 'renderer' | 'node';
+export type IpcBusProcessType = 'browser' | 'renderer' | 'node' | 'native';
 
 export interface IpcBusProcess {
     type: IpcBusProcessType;

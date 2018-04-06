@@ -1,61 +1,17 @@
 /// <reference types='node' />
 /// <reference types='uuid' />
 
-import * as IpcBusInterfaces from './IpcBusInterfaces';
-import * as IpcBusUtils from './IpcBusUtils';
-
 import { EventEmitter } from 'events';
 import * as uuid from 'uuid';
+
+import * as IpcBusInterfaces from './IpcBusInterfaces';
+import * as IpcBusUtils from './IpcBusUtils';
+import { IpcBusCommand, IpcBusData } from './IpcBusCommand';
 
 /** @internal */
 function GenerateReplyChannel(): string {
     return '/electron-ipc-bus/request-reply/' + uuid.v1();
 }
-
-/** @internal */
-export class IpcBusData {
-    replyChannel?: string;
-    resolve?: boolean;
-    reject?: boolean;
-    unsubscribeAll?: boolean;
-}
-
-/** @internal */
-export class IpcBusCommand {
-//    readonly type = 'IpcBusCommand';
-    kind: IpcBusCommand.Kind;
-    channel: string;
-    peer: IpcBusInterfaces.IpcBusPeer;
-    data?: IpcBusData;
-}
-
-/** @internal */
-export namespace IpcBusCommand {
-    export enum Kind {
-        Connect                 = 'CO', // 'IpcBusCommand:connect';
-        Disconnect              = 'DI', // 'IpcBusCommand:disconnect';
-        Close                   = 'CL', // 'IpcBusCommand:close';
-        SubscribeChannel        = 'SC', // 'IpcBusCommand:subscribeChannel';
-        UnsubscribeChannel      = 'UC', // 'IpcBusCommand:unsubscribeChannel';
-        UnsubscribeAllChannels  = 'UA', // 'IpcBusCommand:unsubscribeAll';
-        SendMessage             = 'SM', // 'IpcBusCommand:sendMessage';
-        RequestMessage          = 'RM', // 'IpcBusCommand:requestMessage';
-        RequestResponse         = 'RR', // 'IpcBusCommand:requestResponse';
-        RequestCancel           = 'RC'  // 'IpcBusCommand:requestCancel';
-    };
-
-    // export const IPC_BUS_COMMAND_CONNECT = 'IpcBusCommand:connect';
-    // export const IPC_BUS_COMMAND_DISCONNECT = 'IpcBusCommand:disconnect';
-    // export const IPC_BUS_COMMAND_CLOSE = 'IpcBusCommand:close';
-    // export const IPC_BUS_COMMAND_SUBSCRIBE_CHANNEL = 'IpcBusCommand:subscribeChannel';
-    // export const IPC_BUS_COMMAND_UNSUBSCRIBE_CHANNEL = 'IpcBusCommand:unsubscribeChannel';
-    // export const IPC_BUS_COMMAND_UNSUBSCRIBE_ALL = 'IpcBusCommand:unsubscribeAll';
-    // export const IPC_BUS_COMMAND_SENDMESSAGE = 'IpcBusCommand:sendMessage';
-    // export const IPC_BUS_COMMAND_REQUESTMESSAGE = 'IpcBusCommand:requestMessage';
-    // export const IPC_BUS_COMMAND_REQUESTRESPONSE = 'IpcBusCommand:requestResponse';
-    // export const IPC_BUS_COMMAND_REQUESTCANCEL = 'IpcBusCommand:requestCancel';
-}
-
 
 /** @internal */
 export abstract class IpcBusTransport {

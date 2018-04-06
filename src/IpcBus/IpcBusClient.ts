@@ -1,10 +1,12 @@
 /// <reference types='node' />
 
+import { EventEmitter } from 'events';
+
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
 
-import {EventEmitter} from 'events';
-import {IpcBusTransport, IpcBusCommand} from './IpcBusTransport';
+import { IpcBusTransport } from './IpcBusTransport';
+import { IpcBusCommand } from './IpcBusCommand';
 
 
 // Implementation for a common IpcBusClient

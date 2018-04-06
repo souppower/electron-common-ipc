@@ -1,7 +1,7 @@
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
-import { IpcBusCommand } from './IpcBusTransport';
+import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusTransportNode } from './IpcBusTransportNode';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain

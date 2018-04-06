@@ -5,7 +5,9 @@ import * as assert from 'assert';
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
-import { IpcBusTransport, IpcBusData, IpcBusCommand } from './IpcBusTransport';
+import { IpcBusTransport } from './IpcBusTransport';
+import { IpcBusCommand, IpcBusData } from './IpcBusCommand';
+
 
 // Implementation for renderer process
 /** @internal */
