@@ -9,7 +9,9 @@ import { IpcBusBroker } from './IpcBusInterfaces';
 import { IpcBusBridge } from './IpcBusInterfaces';
 
 import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
+import { IpcBusBrokerLogger } from './IpcBusBrokerLogger';
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
+import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
 
 import { IpcBusTransportNode } from './IpcBusTransportNode';
 import { IpcBusTransportRenderer } from './IpcBusTransportRenderer';
@@ -30,7 +32,12 @@ export function _CreateIpcBusBroker(busPath?: string): IpcBusBroker {
         case 'browser':
         case 'node':
             if (ipcOptions.isValid()) {
-                ipcBusBroker = new IpcBusBrokerImpl(processType as IpcBusProcessType, ipcOptions);
+                if (process.env['ELECTRON_IPC_BUS_LOGPATH']) {
+                    ipcBusBroker = new IpcBusBrokerLogger(processType as IpcBusProcessType, ipcOptions);
+                }
+                else {
+                    ipcBusBroker = new IpcBusBrokerImpl(processType as IpcBusProcessType, ipcOptions);
+                }
             }
             break;
         // not supported process
@@ -51,7 +58,12 @@ export function _CreateIpcBusBridge(busPath?: string): IpcBusBridge {
     switch (processType) {
         case 'browser':
             if (ipcOptions.isValid()) {
-                ipcBusBridge = new IpcBusBridgeImpl(processType, ipcOptions);
+                if (process.env['ELECTRON_IPC_BUS_LOGPATH']) {
+                    ipcBusBridge = new IpcBusBridgeLogger(processType as IpcBusProcessType, ipcOptions);
+                }
+                else {
+                    ipcBusBridge = new IpcBusBridgeImpl(processType as IpcBusProcessType, ipcOptions);
+                }
             }
             break;
         // not supported process

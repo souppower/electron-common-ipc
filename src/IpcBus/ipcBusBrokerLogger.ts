@@ -3,19 +3,23 @@ import * as fs from 'fs';
 
 import * as winston from 'winston';
 
-import { IpcPacketNet } from 'socket-serializer';
 import { IpcPacketBuffer } from 'socket-serializer';
 
+import * as IpcBusInterfaces from './IpcBusInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
+
 import { IpcBusCommand } from './IpcBusCommand';
 
+import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
 
 /** @internal */
-export class IpcBusBrokerLogger {
-    private _baseIpc: IpcPacketNet;
+export class IpcBusBrokerLogger extends IpcBusBrokerImpl {
     private _logger: winston.LoggerInstance;
 
-    constructor(pathLog: string) {
+    constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
+        super(processType, ipcOptions);
+
+        let pathLog = process.env['ELECTRON_IPC_BUS_LOGPATH'];
         !fs.existsSync(pathLog) && fs.mkdirSync(pathLog);
 
         this._logger = new (winston.Logger)({
@@ -27,28 +31,7 @@ export class IpcBusBrokerLogger {
         });
     }
 
-    start(baseIpc: IpcPacketNet): void {
-        this._baseIpc = baseIpc;
-
-        this._baseIpc.on('connection', (socket: any, server: any) => this._onConnection(socket, server));
-        this._baseIpc.on('close', (err: any, socket: any, server: any) => this._onClose(err, socket, server));
-        this._baseIpc.on('packet', (buffer: any, socket: any, server: any) => this._onData(buffer, socket, server));
-    }
-
-    stop() {
-    }
-
-    private _onConnection(socket: any, server: any): void {
-        // this._logger.info(`Socket remotePort=${socket.remotePort} : Incoming`);
-        // socket.on('error', (err: string) => {
-        //     this._logger.error(`Socket remotePort=${socket.remotePort} : Error ${err}`);
-        // });
-    }
-
-    private _onClose(err: any, socket: any, server: any): void {
-    }
-
-    private _onData(packet: IpcPacketBuffer, socket: any, server: any): void {
+    protected _onData(packet: IpcPacketBuffer, socket: any, server: any): void {
         let ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
         let log: any = { packetSize: packet.packetSize, command: ipcBusCommand};
         for (let i = 1, l = packet.parseArrayLength(); i < l; ++i) {
@@ -102,7 +85,13 @@ export class IpcBusBrokerLogger {
                 this._logger.info(`RequestCancel`, log);
                 break;
             }
+            default: {
+                this._logger.error(`Wrong ipcBusCommand`, log);
+                break;
+            }
         }
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(log);
+
+        super._onData(packet, socket, server);
     }
 }
