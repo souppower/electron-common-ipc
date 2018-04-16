@@ -38,20 +38,19 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
     protected _onEventReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
-            case IpcBusCommand.Kind.RequestMessage: {
+            case IpcBusCommand.Kind.RequestMessage:
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.send(IpcBusUtils.IPC_BUS_RENDERER_EVENT, ipcBusCommand, args);
                 });
                 break;
-            }
-            case IpcBusCommand.Kind.RequestResponse: {
+
+            case IpcBusCommand.Kind.RequestResponse:
                 let webContents = this._requestChannels.get(ipcBusCommand.data.replyChannel);
                 if (webContents) {
                     this._requestChannels.delete(ipcBusCommand.data.replyChannel);
                     webContents.send(IpcBusUtils.IPC_BUS_RENDERER_EVENT, ipcBusCommand, args);
                 }
                 break;
-            }
         }
     }
 

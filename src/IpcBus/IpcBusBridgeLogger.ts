@@ -66,49 +66,51 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         log.webContents = { id: webContents.id, url: webContents.getURL() };
 
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.Connect : {
+            case IpcBusCommand.Kind.Connect :
                 this._logger.info(`Connect`, log);
                 break;
-            }
+
             case IpcBusCommand.Kind.Disconnect :
                 this._logger.info(`Disconnect`, log);
                 break;
+
             case IpcBusCommand.Kind.Close :
                 // We do not close the socket, we just disconnect a peer
                 this._logger.info(`Close`, log);
                 break;
-            case IpcBusCommand.Kind.AddChannelListener: {
+
+            case IpcBusCommand.Kind.AddChannelListener:
                 this._logger.info(`AddChannelListener`, log);
                 break;
-            }
-            case IpcBusCommand.Kind.RemoveChannelAllListeners: {
+
+            case IpcBusCommand.Kind.RemoveChannelAllListeners:
                 this._logger.info(`RemoveChannelAllListeners`, log);
                 break;
-            }
-            case IpcBusCommand.Kind.RemoveChannelListener: {
+
+            case IpcBusCommand.Kind.RemoveChannelListener:
                 this._logger.info(`RemoveListeners`, log);
                 break;
-            }
-            case IpcBusCommand.Kind.RemoveListeners: {
+
+            case IpcBusCommand.Kind.RemoveListeners:
                 this._logger.info(`RemoveAll`, log);
                 break;
-            }
-            case IpcBusCommand.Kind.SendMessage: {
+
+            case IpcBusCommand.Kind.SendMessage:
                 this._logger.info(`SendMessage`, log);
                 break;
-            }
-            case IpcBusCommand.Kind.RequestMessage: {
+
+            case IpcBusCommand.Kind.RequestMessage:
                 this._logger.info(`RequestMessage`, log);
                 break;
-            }
-            case IpcBusCommand.Kind.RequestResponse: {
+
+            case IpcBusCommand.Kind.RequestResponse:
                 this._logger.info(`RequestResponse`, log);
                 break;
-            }
-            case IpcBusCommand.Kind.RequestCancel: {
+
+            case IpcBusCommand.Kind.RequestCancel:
                 this._logger.info(`RequestCancel`, log);
                 break;
-            }
+
             default :
                 break;
         }
