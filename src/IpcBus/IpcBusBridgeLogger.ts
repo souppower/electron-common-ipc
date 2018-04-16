@@ -2,73 +2,65 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import * as winston from 'winston';
- 
-import { IpcPacketNet } from 'socket-serializer';
+
+import * as IpcBusUtils from './IpcBusUtils';
 
 import { IpcBusCommand } from './IpcBusCommand';
-import { IpcPacketBuffer } from 'socket-serializer';
 
-
+// This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
-export class IpcBusBrokerLogger {
-    private _baseIpc: IpcPacketNet;
+export class IpcBusBridgeLogger  {
+    private _ipcMain: any;
+    private _onRendererMessageBind: Function;
     private _logger: winston.LoggerInstance;
 
     constructor(pathLog: string) {
+        this._onRendererMessageBind = this._onRendererMessage.bind(this);
+
         !fs.existsSync(pathLog) && fs.mkdirSync(pathLog);
 
         this._logger = new (winston.Logger)({
             transports: [
                 new (winston.transports.File)({
-                    filename: path.join(pathLog, 'electron-common-ipcbus-broker.log')
+                    filename: path.join(pathLog, 'electron-common-ipcbus-bridge.log')
                 })
             ]
         });
     }
 
-    start(baseIpc: IpcPacketNet): void {
-        this._baseIpc = baseIpc;
-
-        this._baseIpc.on('connection', (socket: any, server: any) => this._onConnection(socket, server));
-        this._baseIpc.on('close', (err: any, socket: any, server: any) => this._onClose(err, socket, server));
-        this._baseIpc.on('packet', (buffer: any, socket: any, server: any) => this._onData(buffer, socket, server));
+    // IpcBusBridge API
+    start(ipcMain: any): void {
+        this._ipcMain = ipcMain;
+        this._ipcMain.addListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
     }
 
     stop() {
+        this._ipcMain.removeListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
     }
 
-    private _onConnection(socket: any, server: any): void {
-        // this._logger.info(`Socket remotePort=${socket.remotePort} : Incoming`);
-        // socket.on('error', (err: string) => {
-        //     this._logger.error(`Socket remotePort=${socket.remotePort} : Error ${err}`);
-        // });
-    }
-
-    private _onClose(err: any, socket: any, server: any): void {
-    }
-
-    private _onData(packet: IpcPacketBuffer, socket: any, server: any): void {
-        let ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
-        let log: any = { packetSize: packet.packetSize, command: ipcBusCommand};
-        for (let i = 1, l = packet.parseArrayLength(); i < l; ++i) {
-            log[`arg${i - 1}`] = packet.parseArrayAt(i);
+    private _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
+        let log: any = { command: ipcBusCommand};
+        if (args) {
+            for (let i = 0, l = args.length; i < l; ++i) {
+                log[`arg${i}`] = args[i];
+            }
         }
+
+        const webContents = event.sender;
+        log.webContents = { id: webContents.id, url: webContents.getURL() };
+
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.Connect: {
-                log[socket] =  socket.remotePort;
+            case IpcBusCommand.Kind.Connect : {
                 this._logger.info(`Connect`, log);
                 break;
             }
-            case IpcBusCommand.Kind.Disconnect: {
-                log[socket] =  socket.remotePort;
+            case IpcBusCommand.Kind.Disconnect :
                 this._logger.info(`Disconnect`, log);
                 break;
-            }
-            case IpcBusCommand.Kind.Close: {
-                log[socket] =  socket.remotePort;
+            case IpcBusCommand.Kind.Close :
+                // We do not close the socket, we just disconnect a peer
                 this._logger.info(`Close`, log);
                 break;
-            }
             case IpcBusCommand.Kind.AddChannelListener: {
                 this._logger.info(`AddChannelListener`, log);
                 break;
@@ -101,6 +93,9 @@ export class IpcBusBrokerLogger {
                 this._logger.info(`RequestCancel`, log);
                 break;
             }
+            default :
+                break;
         }
     }
 }
+

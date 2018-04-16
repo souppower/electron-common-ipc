@@ -4,6 +4,8 @@ import * as IpcBusInterfaces from './IpcBusInterfaces';
 import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusTransportNode } from './IpcBusTransportNode';
 
+import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
+
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInterfaces.IpcBusBridge {
@@ -14,10 +16,16 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
     private _ipcBusPeers: Map<string, IpcBusInterfaces.IpcBusPeer>;
     private _onRendererMessageBind: Function;
 
+    private _ipcBusBridgeLogger: IpcBusBridgeLogger;
+
 //    _lambdaCleanUpHandler: Function;
 
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
         super(processType, ipcOptions);
+        if (process.env['ELECTRON_IPC_BUS_LOGPATH']) {
+            this._ipcBusBridgeLogger = new IpcBusBridgeLogger(process.env['ELECTRON_IPC_BUS_LOGPATH']);
+        }
+
         this._ipcMain = require('electron').ipcMain;
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<number>('IPCBus:Bridge');
@@ -69,6 +77,9 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
                     // Guard against people calling start several times
                     if (this._ipcMain.listenerCount(IpcBusUtils.IPC_BUS_RENDERER_COMMAND) === 0) {
                         this._ipcMain.addListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
+                        if (this._ipcBusBridgeLogger) {
+                            this._ipcBusBridgeLogger.start(this._ipcMain);
+                        }
                     }
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
                     resolve(msg);
@@ -82,7 +93,10 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
 
     stop() {
         this.ipcClose();
-        this._ipcMain.removeAllListeners(IpcBusUtils.IPC_BUS_RENDERER_COMMAND);
+        this._ipcMain.removeListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
+        if (this._ipcBusBridgeLogger) {
+            this._ipcBusBridgeLogger.stop();
+        }
     }
 
     // Not exposed
@@ -121,6 +135,28 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
         // webContents.addListener('destroyed', this._lambdaCleanUpHandler);
     }
 
+    private _completePeerInfo(ipcBusPeer: IpcBusInterfaces.IpcBusPeer, webContents: Electron.WebContents): void {
+        let peerName = `${ipcBusPeer.process.type}-${webContents.id}`;
+        ipcBusPeer.process.wcid = webContents.id;
+        // Hidden function, may disappear
+        try {
+            ipcBusPeer.process.rid = (webContents as any).getProcessId();
+            peerName += `-r${ipcBusPeer.process.rid}`;
+        }
+        catch (err) {
+            ipcBusPeer.process.rid = -1;
+        }
+        // >= Electron 1.7.1
+        try {
+            ipcBusPeer.process.pid = webContents.getOSProcessId();
+            peerName += `_${ipcBusPeer.process.pid}`;
+        }
+        catch (err) {
+            ipcBusPeer.process.pid = webContents.id;
+        }
+        ipcBusPeer.name = peerName;
+    }
+
     private _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
         const webContents = event.sender;
         const ipcBusPeer = ipcBusCommand.peer;
@@ -129,25 +165,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Connect : {
                 this._onConnect(webContents, ipcBusPeer.id);
-                let peerName = `${ipcBusPeer.process.type}-${webContents.id}`;
-                ipcBusPeer.process.wcid = webContents.id;
-                // Hidden function, may disappear
-                try {
-                    ipcBusPeer.process.rid = webContents.getProcessId();
-                    peerName += `-r${ipcBusPeer.process.rid}`;
-                }
-                catch (err) {
-                    ipcBusPeer.process.rid = -1;
-                }
-                // >= Electron 1.7.1
-                try {
-                    ipcBusPeer.process.pid = webContents.getOSProcessId();
-                    peerName += `_${ipcBusPeer.process.pid}`;
-                }
-                catch (err) {
-                    ipcBusPeer.process.pid = webContents.id;
-                }
-                ipcBusPeer.name = args[0] || peerName;
+                this._completePeerInfo(ipcBusPeer, webContents);
+                ipcBusPeer.name = args[0] || ipcBusPeer.name;
                 this._ipcBusPeers.set(ipcBusPeer.id, ipcBusPeer);
                 // We get back to the webContents
                 // - to confirm the connection
