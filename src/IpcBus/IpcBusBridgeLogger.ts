@@ -96,6 +96,7 @@ export class IpcBusBridgeLogger  {
             default :
                 break;
         }
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(log);
     }
 }
 

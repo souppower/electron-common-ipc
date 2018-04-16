@@ -161,9 +161,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
         const webContents = event.sender;
         const ipcBusPeer = ipcBusCommand.peer;
         const ipcBusData = ipcBusCommand.data;
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Peer #${ipcBusPeer.name} post ${ipcBusCommand.kind} on '${ipcBusCommand.channel}'`);
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.Connect : {
+            case IpcBusCommand.Kind.Connect :
                 this._onConnect(webContents, ipcBusPeer.id);
                 this._completePeerInfo(ipcBusPeer, webContents);
                 ipcBusPeer.name = args[0] || ipcBusPeer.name;
@@ -173,37 +172,39 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
                 // - to provide peerName and id/s
                 webContents.send(IpcBusUtils.IPC_BUS_RENDERER_CONNECT, ipcBusPeer);
                 break;
-            }
+
             case IpcBusCommand.Kind.Disconnect :
-            case IpcBusCommand.Kind.Close : {
+            case IpcBusCommand.Kind.Close :
                 // We do not close the socket, we just disconnect a peer
                 ipcBusCommand.kind = IpcBusCommand.Kind.Disconnect;
                 this._rendererCleanUp(webContents, webContents.id, ipcBusPeer.id);
                 this._ipcBusPeers.delete(ipcBusPeer.id);
                 break;
-            }
-            case IpcBusCommand.Kind.AddChannelListener : {
+
+            case IpcBusCommand.Kind.AddChannelListener :
                 this._subscriptions.addRef(ipcBusCommand.channel, webContents.id, webContents, ipcBusPeer.id);
                 break;
-            }
+
             case IpcBusCommand.Kind.RemoveChannelAllListeners :
                 this._subscriptions.releaseAll(ipcBusCommand.channel, webContents.id, ipcBusPeer.id);
                 break;
+
             case IpcBusCommand.Kind.RemoveChannelListener :
                 this._subscriptions.release(ipcBusCommand.channel, webContents.id, ipcBusPeer.id);
                 break;
-            case IpcBusCommand.Kind.RemoveListeners : {
+
+            case IpcBusCommand.Kind.RemoveListeners :
                 this._rendererCleanUp(webContents, webContents.id, ipcBusPeer.id);
                 break;
-            }
-            case IpcBusCommand.Kind.RequestMessage : {
+
+            case IpcBusCommand.Kind.RequestMessage :
                 this._requestChannels.set(ipcBusData.replyChannel, webContents);
                 break;
-            }
-            case IpcBusCommand.Kind.RequestCancel : {
+
+            case IpcBusCommand.Kind.RequestCancel :
                 this._requestChannels.delete(ipcBusData.replyChannel);
                 break;
-            }
+
             default :
                 break;
         }

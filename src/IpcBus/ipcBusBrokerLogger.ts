@@ -2,11 +2,12 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import * as winston from 'winston';
- 
-import { IpcPacketNet } from 'socket-serializer';
 
-import { IpcBusCommand } from './IpcBusCommand';
+import { IpcPacketNet } from 'socket-serializer';
 import { IpcPacketBuffer } from 'socket-serializer';
+
+import * as IpcBusUtils from './IpcBusUtils';
+import { IpcBusCommand } from './IpcBusCommand';
 
 
 /** @internal */
@@ -55,17 +56,17 @@ export class IpcBusBrokerLogger {
         }
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Connect: {
-                log[socket] =  socket.remotePort;
+                log[socket] = socket.remotePort;
                 this._logger.info(`Connect`, log);
                 break;
             }
             case IpcBusCommand.Kind.Disconnect: {
-                log[socket] =  socket.remotePort;
+                log[socket] = socket.remotePort;
                 this._logger.info(`Disconnect`, log);
                 break;
             }
             case IpcBusCommand.Kind.Close: {
-                log[socket] =  socket.remotePort;
+                log[socket] = socket.remotePort;
                 this._logger.info(`Close`, log);
                 break;
             }
@@ -102,5 +103,6 @@ export class IpcBusBrokerLogger {
                 break;
             }
         }
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(log);
     }
 }
