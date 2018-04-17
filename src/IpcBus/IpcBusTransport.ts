@@ -108,7 +108,6 @@ export abstract class IpcBusTransport {
             this.ipcPushCommand(IpcBusCommand.Kind.RequestMessage, channel, ipcBusData, args);
 
             // Clean-up
-            // Below zero = infinite
             if (timeoutDelay >= 0) {
                 setTimeout(() => {
                     if (this._requestFunctions.delete(ipcBusData.replyChannel)) {
