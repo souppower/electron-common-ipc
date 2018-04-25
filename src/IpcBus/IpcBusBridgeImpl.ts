@@ -8,11 +8,11 @@ import { IpcBusTransportNode } from './IpcBusTransportNode';
 /** @internal */
 export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInterfaces.IpcBusBridge {
     private _ipcMain: any;
+    private _ipcBusPeers: Map<string, IpcBusInterfaces.IpcBusPeer>;
+    private _onRendererMessageBind: Function;
 
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<number>;
     protected _requestChannels: Map<string, any>;
-    private _ipcBusPeers: Map<string, IpcBusInterfaces.IpcBusPeer>;
-    private _onRendererMessageBind: Function;
 
 //    _lambdaCleanUpHandler: Function;
 
@@ -102,22 +102,23 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
         });
     }
 
-    private _onConnect(webContents: Electron.WebContents, peerId: string): void {
+    private _onConnect(webContents: Electron.WebContents, ipcBusPeer: IpcBusInterfaces.IpcBusPeer): void {
+        this._ipcBusPeers.set(ipcBusPeer.id, ipcBusPeer);
+
         // Have to closure the webContentsId as webContents.id is undefined when destroyed !!!
+        this._completePeerInfo(webContents, ipcBusPeer);
         let webContentsId = webContents.id;
         webContents.addListener('destroyed', () => {
-            this._rendererCleanUp(webContents, webContentsId, peerId);
+            this._rendererCleanUp(webContents, webContentsId, ipcBusPeer.id);
             // Simulate the close message
-            let ipcBusPeer = this._ipcBusPeers.get(peerId);
-            if (ipcBusPeer) {
+            if (this._ipcBusPeers.delete(ipcBusPeer.id)) {
                 this._ipcPushCommand({ kind: IpcBusCommand.Kind.Disconnect, channel: '', peer: ipcBusPeer });
-                this._ipcBusPeers.delete(peerId);
             }
         });
         // webContents.addListener('destroyed', this._lambdaCleanUpHandler);
     }
 
-    private _completePeerInfo(ipcBusPeer: IpcBusInterfaces.IpcBusPeer, webContents: Electron.WebContents): void {
+    private _completePeerInfo(webContents: Electron.WebContents, ipcBusPeer: IpcBusInterfaces.IpcBusPeer): void {
         let peerName = `${ipcBusPeer.process.type}-${webContents.id}`;
         ipcBusPeer.process.wcid = webContents.id;
         // Hidden function, may disappear
@@ -145,15 +146,25 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
         const ipcBusData = ipcBusCommand.data;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Connect :
-                this._onConnect(webContents, ipcBusPeer.id);
-                this._completePeerInfo(ipcBusPeer, webContents);
+                this._onConnect(webContents, ipcBusPeer);
                 ipcBusPeer.name = args[0] || ipcBusPeer.name;
-                this._ipcBusPeers.set(ipcBusPeer.id, ipcBusPeer);
                 // We get back to the webContents
                 // - to confirm the connection
                 // - to provide peerName and id/s
-                webContents.send(IpcBusUtils.IPC_BUS_RENDERER_CONNECT, ipcBusPeer);
-                break;
+
+                // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
+                if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
+                    webContents.send(IpcBusUtils.IPC_BUS_RENDERER_CONNECT, ipcBusPeer);
+                    this._ipcPushCommand(ipcBusCommand, args);
+                }
+                else {
+                    webContents.on('did-finish-load', () => {
+                        webContents.send(IpcBusUtils.IPC_BUS_RENDERER_CONNECT, ipcBusPeer);
+                        this._ipcPushCommand(ipcBusCommand, args);
+                    });
+                }
+                // WARNING, this 'return' is on purpose.
+                return;
 
             case IpcBusCommand.Kind.Disconnect :
             case IpcBusCommand.Kind.Close :

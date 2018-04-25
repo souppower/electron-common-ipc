@@ -37,7 +37,7 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
                 log[`arg${i}`] = args[i];
             }
         }
-        log.webContents = { id: webContents.id, url: webContents.getURL() };
+        log.webContents = { id: webContents.id, url: webContents.getURL(), isLoadingMainFrame: webContents.isLoadingMainFrame() };
         try {
             log.webContents.rid = (webContents as any).getProcessId();
         }
