@@ -45,7 +45,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
                 break;
 
             case IpcBusCommand.Kind.RequestResponse:
-                let webContents = this._requestChannels.get(ipcBusCommand.data.replyChannel);
+                const webContents = this._requestChannels.get(ipcBusCommand.data.replyChannel);
                 if (webContents) {
                     this._requestChannels.delete(ipcBusCommand.data.replyChannel);
                     webContents.send(IpcBusUtils.IPC_BUS_RENDERER_EVENT, ipcBusCommand, args);

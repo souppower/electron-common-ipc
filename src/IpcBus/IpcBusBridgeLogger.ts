@@ -30,40 +30,52 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         });
     }
 
-    // protected _onEventReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
-    //     switch (ipcBusCommand.kind) {
-    //         case IpcBusCommand.Kind.SendMessage:
-    //         case IpcBusCommand.Kind.RequestMessage: {
-    //             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Received ${ipcBusCommand.kind} on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
-    //             this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-    //                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Forward send message received on '${channel}' to peer #Renderer_${connData.connKey}`);
-    //                 connData.conn.send(IpcBusUtils.IPC_BUS_RENDERER_EVENT, ipcBusCommand, args);
-    //             });
-    //             break;
-    //         }
-    //         case IpcBusCommand.Kind.RequestResponse: {
-    //             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Received ${ipcBusCommand.kind} on channel '${ipcBusCommand.data.replyChannel}' from peer #${ipcBusCommand.peer.name}`);
-    //             let webContents = this._requestChannels.get(ipcBusCommand.data.replyChannel);
-    //             if (webContents) {
-    //                 this._requestChannels.delete(ipcBusCommand.data.replyChannel);
-    //                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Forward send response received on '${ipcBusCommand.data.replyChannel}' to peer #Renderer_${webContents.id}`);
-    //                 webContents.send(IpcBusUtils.IPC_BUS_RENDERER_EVENT, ipcBusCommand, args);
-    //             }
-    //             break;
-    //         }
-    //     }
-    // }
-
-    protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
-        let log: any = { command: ipcBusCommand};
+    createLog(webContents: Electron.WebContents, ipcBusCommand: IpcBusCommand, args: any[]): any {
+        let log: any = { command: ipcBusCommand };
         if (args) {
             for (let i = 0, l = args.length; i < l; ++i) {
                 log[`arg${i}`] = args[i];
             }
         }
-
-        const webContents = event.sender;
         log.webContents = { id: webContents.id, url: webContents.getURL() };
+        try {
+            log.webContents.rid = (webContents as any).getProcessId();
+        }
+        catch (err) {
+        }
+        try {
+            log.webContents.pid = webContents.getOSProcessId();
+        }
+        catch (err) {
+        }
+        return log;
+    }
+
+    protected _onEventReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
+        switch (ipcBusCommand.kind) {
+            case IpcBusCommand.Kind.SendMessage:
+            case IpcBusCommand.Kind.RequestMessage: {
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
+                    const webContents = connData.conn;
+                    let log = this.createLog(webContents, ipcBusCommand, args);
+                    this._logger.info(`Receive Message`, log);
+                });
+                break;
+            }
+            case IpcBusCommand.Kind.RequestResponse: {
+                const webContents = this._requestChannels.get(ipcBusCommand.data.replyChannel);
+                if (webContents) {
+                    let log = this.createLog(webContents, ipcBusCommand, args);
+                    this._logger.info(`Receive Request`, log);
+                }
+                break;
+            }
+        }
+        super._onEventReceived(ipcBusCommand, args);
+    }
+
+    protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
+        let log = this.createLog(event.sender, ipcBusCommand, args);
 
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Connect :
