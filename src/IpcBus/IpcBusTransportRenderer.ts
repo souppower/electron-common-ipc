@@ -16,31 +16,31 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
     private _onIpcEventReceived: Function;
     private _promiseConnected: Promise<string>;
 
-    private _ipcRendererReady: Promise<void>;
+    // private _ipcRendererReady: Promise<void>;
 
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
         assert(processType === 'renderer', `IpcBusTransportRenderer: processType must not be a process ${processType}`);
         super({ type: processType, pid: -1 }, ipcOptions);
 
 // ipcRenderer is not ready until the DOM Content is loaded (https://github.com/electron/electron/issues/7455)
-        this._ipcRendererReady = new Promise<void>((resolve, reject) => {
-            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] document readystate=${document.readyState}`);
-            if (document.readyState !== 'loading') {
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] is ready`);
-                resolve();
-            }
-            else {
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] wait for readiness`);
-                let onWaitingForIpcRendererReadiness = () => {
-                    if (document.readyState !== 'loading') {
-                        document.removeEventListener('readystatechange', onWaitingForIpcRendererReadiness);
-                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] is ready`);
-                        resolve();
-                    }
-                };
-                document.addEventListener('readystatechange', onWaitingForIpcRendererReadiness);
-            }
-        });
+    //     this._ipcRendererReady = new Promise<void>((resolve, reject) => {
+    //         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] document readystate=${document.readyState}`);
+    //         if (document.readyState !== 'loading') {
+    //             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] is ready`);
+    //             resolve();
+    //         }
+    //         else {
+    //             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] wait for readiness`);
+    //             let onWaitingForIpcRendererReadiness = () => {
+    //                 if (document.readyState !== 'loading') {
+    //                     document.removeEventListener('readystatechange', onWaitingForIpcRendererReadiness);
+    //                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] is ready`);
+    //                     resolve();
+    //                 }
+    //             };
+    //             document.addEventListener('readystatechange', onWaitingForIpcRendererReadiness);
+    //         }
+    //     });
     }
 
     protected _reset() {
@@ -76,7 +76,7 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
         let p = this._promiseConnected;
         if (!p) {
             p = this._promiseConnected = new Promise<string>((resolve, reject) => {
-                this._ipcRendererReady.then(() => {
+                // this._ipcRendererReady.then(() => {
                     this._ipcRenderer = require('electron').ipcRenderer;
                     // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
                     let timer: NodeJS.Timer;
@@ -100,7 +100,7 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
                         }
                     });
                     this.ipcPushCommand(IpcBusCommand.Kind.Connect, '', undefined, [peerName]);
-                });
+                // });
             });
         }
         return p;
