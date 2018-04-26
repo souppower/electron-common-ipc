@@ -213,7 +213,7 @@ This information can be retrieved from an IpcBusClient through the channel : /el
 
 ```js
 ipcBusBroker.isServiceAvailable('mySettings') 
-````
+```
 
 Test if a service is started.
 This information can be retrieved from an IpcBusClient through the channel : /electron-common-ipc/serviceAvailable
