@@ -70,7 +70,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
                         if ((this._socketBuffer == null) || (this._socketBuffer === 0)) {
                             this._socketWriter = new SocketWriter(this._busConn);
                         }
-                        else if (this._socketBuffer === -1) {
+                        else if (this._socketBuffer < 0) {
                             this._socketWriter = new DelayedSocketWriter(this._busConn);
                         }
                         else if (this._socketBuffer > 0) {

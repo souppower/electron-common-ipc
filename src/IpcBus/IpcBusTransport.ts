@@ -70,7 +70,7 @@ export abstract class IpcBusTransport {
     }
 
     request(channel: string, timeoutDelay: number, args: any[]): Promise<IpcBusInterfaces.IpcBusRequestResponse> {
-        if ((timeoutDelay == null) || (timeoutDelay <= 0)) {
+        if (timeoutDelay == null) {
             timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
 

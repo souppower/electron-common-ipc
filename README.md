@@ -108,6 +108,29 @@ electronApp.on('ready', function () {
 });
 ```
 
+# Common options
+```ts
+export interface IpcTimeoutOptions {
+    timeoutDelay?: number;
+}
+```
+- ***timeoutDelay*** = number (milliseconds)
+
+- **timeoutDelay** [0 | undefined | null] : use the default timeout (2000ms) 
+- **timeoutDelay** < 0 : an infinite waiting
+- **timeoutDelay** > 0 : wait for the expected time
+
+A timeoutdelay below zero leads to an infinite waiting.
+
+```ts
+export interface IpcSocketOptions {
+    socketBuffer?: number;
+}
+```
+- **socketBuffer** [0 | undefined | null] : message is serialized in small pieces written immediatly to the socket
+- **socketBuffer** < 0 : message is serialized in objects (number, string, buffer...), each object is written immediatly to the socket
+- **socketBuffer** > 0 : message is serialized in objects, objects are written only in one shot when reaching a size.
+
 # IpcBusBroker
 Dispatching of Node messages is managed by a broker. You can have only one single Broker for the whole application.
 The broker can be instanciated in a node process or in the master process (not in renderer processes).
@@ -116,7 +139,7 @@ For performance purpose, it is better to instanciate the broker in an independen
 ## Interface
 ```ts
 interface IpcBusBroker {
-    start(timeoutDelay?: number): Promise<string>;
+    start(options?: IpcBusBroker.StartOptions): Promise<string>;
     stop(): void;
     queryState(): Object;
     isServiceAvailable(serviceName: string): boolean;
@@ -155,8 +178,7 @@ const ipcBusBroker = ipcBusModule.CreateIpcBusBroker();
 
 ## Methods
 
-### start([timeoutDelay]) : Promise < string >
-- ***timeoutDelay*** : number (milliseconds)
+### start(options?: IpcBusBroker.StartOptions) : Promise < string >
 
 ```js
 ipcBusBroker.start() 
@@ -201,7 +223,7 @@ The bridge must be instanciated in the master process only. Without this bridge,
 ## Interface
 ```ts
 interface IpcBusBridge {
-    start(timeoutDelay?: number): Promise<string>;
+    start(options?: IpcBusBridge.StartOptions): Promise<string>;
     stop(): void;
 }
 ```
@@ -238,8 +260,7 @@ const ipcBusBridge = ipcBusModule.CreateIpcBusBridge();
 
 ## Methods
 
-### start([timeoutDelay]) : Promise < string >
-- ***timeoutDelay*** : number (milliseconds)
+### start(options?: IpcBusBridge.StartOptions) : Promise < string >
 
 ```js
 ipcBusBridge.start() 
@@ -270,10 +291,12 @@ Only one ***IpcBusClient*** per Process/Renderer is created. If you ask for more
 ```ts
 interface IpcBusClient extends events.EventEmitter {
     readonly peerName: string;
-    connect(timeoutDelayOrPeerName?: number | string, peerName?: string): Promise<string>;
+
+    connect(options?: IpcBusClient.ConnectOptions): Promise<string>;
     close(): void;
+
     send(channel: string, ...args: any[]): void;
-    request(timeoutDelayOrChannel: number | string, ...args: any[]): Promise<IpcBusRequestResponse>;
+    request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
 
     // EventEmitter overriden API
     addListener(channel: string, listener: IpcBusListener): this;
@@ -376,8 +399,6 @@ Electron < 1.7.1 : pid = wcid
 ## Connectivity Methods
 
 ### connect(options?: IpcBusClient.ConnectOptions) : Promise < string >
-- ***timeoutDelayOrPeerName*** = timeoutDelay: number (milliseconds) | peerName: string
-- ***peerName*** = peerName: string
 
 Basic usage
 ```js
@@ -461,8 +482,7 @@ ipcBus.send("Hello!", { name: "My age !"}, "is", 10)
 
 Sends a request message on specified ***channel***. The returned Promise is settled when a result is available.
 The parameter ***timeoutDelay*** defines how much time we're waiting for the response.
-- timeoutDelay <= 0 : reset to 2000 ms
-
+A timeoutdelay below zero leads to an infinite waiting.
 
 The Promise provides an ***IpcBusRequestResponse*** object:
 ```ts
