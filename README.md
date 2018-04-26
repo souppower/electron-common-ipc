@@ -119,7 +119,7 @@ export interface IpcTimeoutOptions {
 ```
 - ***timeoutDelay*** = number (milliseconds)
 
-- **timeoutDelay** [0 | undefined | null] : use the default timeout (2000ms) 
+- **timeoutDelay** [0 | undefined | null] : use a default timeout of 2000ms
 - **timeoutDelay** < 0 : an infinite waiting
 - **timeoutDelay** > 0 : wait for the expected time
 
