@@ -16,14 +16,15 @@ function GenerateReplyChannel(): string {
 /** @internal */
 export abstract class IpcBusTransport {
     protected _ipcBusPeer: IpcBusInterfaces.IpcBusPeer;
+    protected readonly _ipcOptions: IpcBusUtils.IpcOptions;
+
     protected _requestFunctions: Map<string, Function>;
 
-    readonly ipcOptions: IpcBusUtils.IpcOptions;
     public eventEmitter: EventEmitter;
 
     constructor(ipcBusProcess: IpcBusInterfaces.IpcBusProcess, ipcOptions: IpcBusUtils.IpcOptions) {
         this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusProcess };
-        this.ipcOptions = ipcOptions;
+        this._ipcOptions = ipcOptions;
         this._requestFunctions = new Map<string, Function>();
     }
 
@@ -68,7 +69,7 @@ export abstract class IpcBusTransport {
         }
     }
 
-    request(timeoutDelay: number, channel: string, args: any[]): Promise<IpcBusInterfaces.IpcBusRequestResponse> {
+    request(channel: string, timeoutDelay: number, args: any[]): Promise<IpcBusInterfaces.IpcBusRequestResponse> {
         if ((timeoutDelay == null) || (timeoutDelay <= 0)) {
             timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
@@ -125,7 +126,7 @@ export abstract class IpcBusTransport {
 
     protected abstract _onClose(): void;
 
-    abstract ipcConnect(timeoutDelay: number, peerName?: string): Promise<string>;
+    abstract ipcConnect(options: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<string>;
     abstract ipcClose(): void;
     abstract ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusData?: IpcBusData, args?: any[]): void;
 }

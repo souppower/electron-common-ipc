@@ -71,7 +71,7 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
     };
 
     /// IpcBusTrandport API
-    ipcConnect(timeoutDelay: number, peerName?: string): Promise<string> {
+    ipcConnect(options: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<string> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
         if (!p) {
@@ -81,12 +81,12 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
                     // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
                     let timer: NodeJS.Timer;
                     // Below zero = infinite
-                    if (timeoutDelay >= 0) {
+                    if (options.timeoutDelay >= 0) {
                         timer = setTimeout(() => {
                             timer = null;
                             this._reset();
                             reject('timeout');
-                        }, timeoutDelay);
+                        }, options.timeoutDelay);
                     }
                     // We wait for the bridge confirmation
                     this._ipcRenderer.once(IpcBusUtils.IPC_BUS_RENDERER_CONNECT, (eventOrPeer: any, peerOrUndefined: IpcBusInterfaces.IpcBusPeer) => {
@@ -99,7 +99,7 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
                             this._reset();
                         }
                     });
-                    this.ipcPushCommand(IpcBusCommand.Kind.Connect, '', undefined, [peerName]);
+                    this.ipcPushCommand(IpcBusCommand.Kind.Connect, '', undefined, [options.peerName]);
                 // });
             });
         }

@@ -27,15 +27,12 @@ export class IpcBusCommonClient extends EventEmitter
         return this._ipcBusTransport.peer;
     }
 
-    connect(timeoutDelayOrPeerName?: number | string, peerName?: string): Promise<string> {
-        let timeoutDelay: number = IpcBusUtils.IPC_BUS_TIMEOUT;
-        if ((typeof timeoutDelayOrPeerName === 'number') && (timeoutDelayOrPeerName > 0)) {
-            timeoutDelay = timeoutDelayOrPeerName;
+    connect(options?: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<string> {
+        options = options || {};
+        if (options.timeoutDelay == null) {
+            options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
-        else if (typeof timeoutDelayOrPeerName === 'string') {
-            peerName = timeoutDelayOrPeerName;
-        }
-        return this._ipcBusTransport.ipcConnect(timeoutDelay, peerName);
+        return this._ipcBusTransport.ipcConnect(options);
     }
 
     close() {
@@ -47,14 +44,8 @@ export class IpcBusCommonClient extends EventEmitter
         this._ipcBusTransport.ipcPushCommand(IpcBusCommand.Kind.SendMessage, channel, undefined, args);
     }
 
-    request(timeoutDelayOrChannel: number | string, ...args: any[]): Promise<IpcBusInterfaces.IpcBusRequestResponse> {
-        if (typeof timeoutDelayOrChannel === 'number') {
-            // Exception may be raised regarding the args (length must be > 0 and have a string at 1st arg)
-            return this._ipcBusTransport.request(timeoutDelayOrChannel, args[0], args.slice(1));
-        }
-        else {
-            return this._ipcBusTransport.request(null, timeoutDelayOrChannel, args);
-        }
+    request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusInterfaces.IpcBusRequestResponse> {
+        return this._ipcBusTransport.request(channel, timeoutDelay, args);
     }
 
     // EventEmitter API

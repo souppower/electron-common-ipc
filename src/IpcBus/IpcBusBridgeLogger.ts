@@ -14,17 +14,15 @@ import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
     private _logger: winston.LoggerInstance;
 
-    constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
+    constructor(logPath: string, processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
         super(processType, ipcOptions);
 
-        let pathLog = process.env['ELECTRON_IPC_BUS_LOGPATH'];
-
-        !fs.existsSync(pathLog) && fs.mkdirSync(pathLog);
+        !fs.existsSync(logPath) && fs.mkdirSync(logPath);
 
         this._logger = new (winston.Logger)({
             transports: [
                 new (winston.transports.File)({
-                    filename: path.join(pathLog, 'electron-common-ipcbus-bridge.log')
+                    filename: path.join(logPath, 'electron-common-ipcbus-bridge.log')
                 })
             ]
         });

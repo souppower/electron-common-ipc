@@ -54,7 +54,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
     getStatus(): Promise<IpcBusInterfaces.ServiceStatus> {
         return new Promise<IpcBusInterfaces.ServiceStatus>((resolve, reject) => {
             const statusCallMsg = { handlerName: IpcBusInterfaces.IPCBUS_SERVICE_CALL_GETSTATUS };
-            this._ipcBusClient.request(this._callTimeout, IpcBusUtils.getServiceCallChannel(this._serviceName), statusCallMsg)
+            this._ipcBusClient.request(IpcBusUtils.getServiceCallChannel(this._serviceName), this._callTimeout, statusCallMsg)
                 .then((res: IpcBusInterfaces.IpcBusRequestResponse) => {
                     const serviceStatus = <IpcBusInterfaces.ServiceStatus> res.payload;
                     IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Service '${this._serviceName}' availability = ${serviceStatus.started}`);
@@ -71,7 +71,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
         if (this._isStarted) {
             return new Promise<T>((resolve, reject) => {
                 this._ipcBusClient
-                    .request(this._callTimeout, IpcBusUtils.getServiceCallChannel(this._serviceName), callMsg)
+                    .request(IpcBusUtils.getServiceCallChannel(this._serviceName), this._callTimeout, callMsg)
                     .then((res: IpcBusInterfaces.IpcBusRequestResponse) => {
                         IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] resolve call to '${name}' from service '${this._serviceName}' - res: ${JSON.stringify(res)}`);
                         resolve(<T>res.payload);
@@ -88,7 +88,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
                 const delayedCall = () => {
                     IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Executing delayed call to '${name}' from service '${this._serviceName}' ...`);
                     this._ipcBusClient
-                        .request(this._callTimeout, IpcBusUtils.getServiceCallChannel(this._serviceName), callMsg)
+                        .request(IpcBusUtils.getServiceCallChannel(this._serviceName), this._callTimeout, callMsg)
                         .then((res: IpcBusInterfaces.IpcBusRequestResponse) => resolve(<T>res.payload))
                         .catch((res: IpcBusInterfaces.IpcBusRequestResponse) => reject(res.err));
                 };
@@ -102,21 +102,22 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
         return <T>typed_wrapper;
     }
 
-    connect<T>(timeoutDelay?: number): Promise<T> {
+    connect<T>(options?: IpcBusInterfaces.IpcBusBridge.StartOptions): Promise<T> {
+        options = options || {};
+        if (options.timeoutDelay == null) {
+            options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
+        }
         return new Promise<T>((resolve, reject) => {
             if (this._isStarted) {
                 return resolve(this.getWrapper<T>());
             }
-            if (timeoutDelay == null) {
-               timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
-            }
             let timer: NodeJS.Timer;
             // Below zero = infinite
-            if (timeoutDelay >= 0) {
+            if (options.timeoutDelay >= 0) {
                 timer = setTimeout(() => {
                     this.removeListener(IpcBusInterfaces.IPCBUS_SERVICE_EVENT_START, serviceStart);
                     reject('timeout');
-                }, timeoutDelay);
+                }, options.timeoutDelay);
             }
             let serviceStart = () => {
                 clearTimeout(timer);

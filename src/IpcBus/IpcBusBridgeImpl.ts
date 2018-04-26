@@ -36,12 +36,13 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
     }
 
     // IpcBusBridge API
-    start(timeoutDelay?: number): Promise<string> {
-        if (timeoutDelay == null) {
-            timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
+    start(options?: IpcBusInterfaces.IpcBusBridge.StartOptions): Promise<string> {
+        options = options || {};
+        if (options.timeoutDelay == null) {
+            options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
         let p = new Promise<string>((resolve, reject) => {
-            this.ipcConnect(timeoutDelay)
+            this.ipcConnect({ peerName: `IpcBusBridge`, ...options } )
                 .then((msg) => {
                     // Guard against people calling start several times
                     if (this._ipcMain.listenerCount(IpcBusUtils.IPC_BUS_RENDERER_COMMAND) === 0) {

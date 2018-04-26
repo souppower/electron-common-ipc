@@ -16,16 +16,15 @@ import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
 export class IpcBusBrokerLogger extends IpcBusBrokerImpl {
     private _logger: winston.LoggerInstance;
 
-    constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
+    constructor(logPath: string, processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
         super(processType, ipcOptions);
 
-        let pathLog = process.env['ELECTRON_IPC_BUS_LOGPATH'];
-        !fs.existsSync(pathLog) && fs.mkdirSync(pathLog);
+        !fs.existsSync(logPath) && fs.mkdirSync(logPath);
 
         this._logger = new (winston.Logger)({
             transports: [
                 new (winston.transports.File)({
-                    filename: path.join(pathLog, 'electron-common-ipcbus-broker.log')
+                    filename: path.join(logPath, 'electron-common-ipcbus-broker.log')
                 })
             ]
         });

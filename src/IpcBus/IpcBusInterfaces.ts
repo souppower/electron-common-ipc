@@ -47,14 +47,28 @@ export interface IpcBusListener {
     (event: IpcBusEvent, ...args: any[]): void;
 }
 
+export interface IpcTimeoutOptions {
+    timeoutDelay?: number;
+}
+
+export interface IpcSocketOptions {
+    socketBuffer?: number;
+}
+
+export namespace IpcBusClient {
+    export interface ConnectOptions extends IpcTimeoutOptions, IpcSocketOptions {
+        peerName?: string;
+    }
+}
+
 export interface IpcBusClient extends events.EventEmitter {
     peer: IpcBusPeer;
 
-    connect(timeoutDelayOrPeerName?: number | string, peerName?: string): Promise<string>;
+    connect(options?: IpcBusClient.ConnectOptions): Promise<string>;
     close(): void;
 
     send(channel: string, ...args: any[]): void;
-    request(timeoutDelayOrChannel: number | string, ...args: any[]): Promise<IpcBusRequestResponse>;
+    request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
 
     // EventEmitter API
     addListener(channel: string, listener: IpcBusListener): this;
@@ -68,15 +82,25 @@ export interface IpcBusClient extends events.EventEmitter {
     prependOnceListener(channel: string, listener: IpcBusListener): this;
 }
 
+export namespace IpcBusBroker {
+    export interface StartOptions extends IpcTimeoutOptions{
+    }
+}
+
 export interface IpcBusBroker {
-    start(timeoutDelay?: number): Promise<string>;
+    start(options?: IpcBusBroker.StartOptions): Promise<string>;
     stop(): void;
     queryState(): Object;
     isServiceAvailable(serviceName: string): boolean;
 }
 
+export namespace IpcBusBridge {
+    export interface StartOptions extends IpcTimeoutOptions {
+    }
+}
+
 export interface IpcBusBridge {
-    start(timeoutDelay?: number): Promise<string>;
+    start(options?: IpcBusBridge.StartOptions): Promise<string>;
     stop(): void;
 }
 
@@ -111,11 +135,16 @@ export interface IpcBusServiceEventHandler {
     (event: IpcBusServiceEvent): void;
 }
 
+export namespace IpcBusServiceProxy {
+    export interface ConnectOptions extends IpcTimeoutOptions, IpcSocketOptions {
+    }
+}
+
 export interface IpcBusServiceProxy extends events.EventEmitter {
     readonly isStarted: boolean;
 
+    connect<T>(options?: IpcBusServiceProxy.ConnectOptions): Promise<T>;
     getStatus(): Promise<ServiceStatus>;
     call<T>(handlerName: string, ...args: any[]): Promise<T>;
     getWrapper<T>(): T;
-    connect<T>(timeoutDelay?: number): Promise<T>;
 }

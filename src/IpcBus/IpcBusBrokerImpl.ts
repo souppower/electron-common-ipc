@@ -52,9 +52,10 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
     }
 
     // IpcBusBroker API
-    start(timeoutDelay?: number): Promise<string> {
-        if (timeoutDelay == null) {
-            timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
+    start(options?: IpcBusInterfaces.IpcBusBroker.StartOptions): Promise<string> {
+        options = options || {};
+        if (options.timeoutDelay == null) {
+            options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseStarted;
@@ -62,13 +63,13 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
             p = this._promiseStarted = new Promise<string>((resolve, reject) => {
                 let timer: NodeJS.Timer;
                 // Below zero = infinite
-                if (timeoutDelay >= 0) {
+                if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
                         this._reset();
-                        let msg = `[IPCBus:Broker] error = timeout (${timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
+                        let msg = `[IPCBus:Broker] error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                         reject(msg);
-                    }, timeoutDelay);
+                    }, options.timeoutDelay);
                 }
                 this._baseIpc = new IpcPacketNet();
                 this._baseIpc.once('listening', (server: any) => {
@@ -81,7 +82,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
                         this._baseIpc.on('close', (err: any, socket: any, server: any) => this._onClose(err, socket, server));
                         this._baseIpc.on('packet', (buffer: any, socket: any, server: any) => this._onData(buffer, socket, server));
 
-                        this._ipcBusBrokerClient.connect(`Broker_${process.pid}`)
+                        this._ipcBusBrokerClient.connect({ peerName: `IpcBusBrokerClient` })
                             .then(() => {
                                 this._ipcBusBrokerClient.on(IpcBusInterfaces.IPCBUS_CHANNEL_QUERY_STATE, this._queryStateLamdba);
                                 this._ipcBusBrokerClient.on(IpcBusInterfaces.IPCBUS_CHANNEL_SERVICE_AVAILABLE, this._serviceAvailableLambda);
