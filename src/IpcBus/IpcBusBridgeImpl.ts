@@ -35,25 +35,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
         this._ipcMain.removeListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
     }
 
-    protected _onEventReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
-        switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.SendMessage:
-            case IpcBusCommand.Kind.RequestMessage:
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-                    connData.conn.send(IpcBusUtils.IPC_BUS_RENDERER_EVENT, ipcBusCommand, args);
-                });
-                break;
-
-            case IpcBusCommand.Kind.RequestResponse:
-                const webContents = this._requestChannels.get(ipcBusCommand.data.replyChannel);
-                if (webContents) {
-                    this._requestChannels.delete(ipcBusCommand.data.replyChannel);
-                    webContents.send(IpcBusUtils.IPC_BUS_RENDERER_EVENT, ipcBusCommand, args);
-                }
-                break;
-        }
-    }
-
     // IpcBusBridge API
     start(timeoutDelay?: number): Promise<string> {
         if (timeoutDelay == null) {
@@ -90,6 +71,25 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
             });
         });
         return queryStateResult;
+    }
+
+    protected _onEventReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
+        switch (ipcBusCommand.kind) {
+            case IpcBusCommand.Kind.SendMessage:
+            case IpcBusCommand.Kind.RequestMessage:
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
+                    connData.conn.send(IpcBusUtils.IPC_BUS_RENDERER_EVENT, ipcBusCommand, args);
+                });
+                break;
+
+            case IpcBusCommand.Kind.RequestResponse:
+                const webContents = this._requestChannels.get(ipcBusCommand.data.replyChannel);
+                if (webContents) {
+                    this._requestChannels.delete(ipcBusCommand.data.replyChannel);
+                    webContents.send(IpcBusUtils.IPC_BUS_RENDERER_EVENT, ipcBusCommand, args);
+                }
+                break;
+        }
     }
 
     private _rendererCleanUp(webContents: Electron.WebContents, webContentsId: number, peerId: string): void {
