@@ -109,6 +109,9 @@ electronApp.on('ready', function () {
 ```
 
 # Common options
+Some interfaces are sharing the same kind of options.
+In order to be consistent in term of behavior and naming we have common interfaces for options.
+
 ```ts
 export interface IpcTimeoutOptions {
     timeoutDelay?: number;
@@ -129,7 +132,7 @@ export interface IpcSocketOptions {
 ```
 - **socketBuffer** [0 | undefined | null] : message is serialized in small pieces written immediatly to the socket
 - **socketBuffer** < 0 : message is serialized in objects (number, string, buffer...), each object is written immediatly to the socket
-- **socketBuffer** > 0 : message is serialized in objects, objects are written only in one shot when reaching a size.
+- **socketBuffer** > 0 : message is serialized in objects, objects are written only in one shot when reaching a size of **socketBuffer** in bytes.
 
 # IpcBusBroker
 Dispatching of Node messages is managed by a broker. You can have only one single Broker for the whole application.
