@@ -102,7 +102,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
         return <T>typed_wrapper;
     }
 
-    connect<T>(options?: IpcBusInterfaces.IpcBusBridge.StartOptions): Promise<T> {
+    connect<T>(options?: IpcBusInterfaces.IpcBusServiceProxy.ConnectOptions): Promise<T> {
         options = options || {};
         if (options.timeoutDelay == null) {
             options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;

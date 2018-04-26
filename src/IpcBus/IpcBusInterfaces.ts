@@ -136,7 +136,7 @@ export interface IpcBusServiceEventHandler {
 }
 
 export namespace IpcBusServiceProxy {
-    export interface ConnectOptions extends IpcTimeoutOptions, IpcSocketOptions {
+    export interface ConnectOptions extends IpcTimeoutOptions {
     }
 }
 
