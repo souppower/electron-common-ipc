@@ -57,7 +57,7 @@ electronApp.on('ready', function () {
                     // Create clients
                     const ipcBusClient1 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
                     const ipcBusClient2 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
-                    Promise.all([ipcBusClient1.connect('client1'), ipcBusClient2.connect('client2')])
+                    Promise.all([ipcBusClient1.connect({ peerName: 'client1' }), ipcBusClient2.connect({ peerName: 'client2' })])
                         .then((msg) => {
                             // Chatting on channel 'greeting'
                             ipcBusClient1.addListener('greeting', (ipcBusEvent, greetingMsg) => {
@@ -87,7 +87,7 @@ electronApp.on('ready', function () {
 
                             ipcBusClient2.send('greeting', 'hello everyone!');
 
-                            ipcBusClient2.request('greeting', 'hello partner!')
+                            ipcBusClient2.request('greeting', 0, 'hello partner!')
                                 .then((ipcBusRequestResponse) => {
                                     console.log(JSON.stringify(ipcBusRequestResponse.event.sender) + ' replied ' + ipcBusRequestResponse.payload);
                                 })
@@ -95,7 +95,7 @@ electronApp.on('ready', function () {
                                     console.log('I have no friend :-(');
                                 });
 
-                            ipcBusClient1.request(1000, 'greeting', 'hello partner, please answer within 1sec!')
+                            ipcBusClient1.request('greeting', 1000, 'hello partner, please answer within 1sec!')
                                 .then((ipcBusRequestResponse) => {
                                     console.log(JSON.stringify(ipcBusRequestResponse.event.sender) + ' replied ' + ipcBusRequestResponse.payload);
                                 })
@@ -375,7 +375,7 @@ Electron < 1.7.1 : pid = wcid
 
 ## Connectivity Methods
 
-### connect([timeoutDelayOrPeerName?: number | string[, peerName?: string]]) : Promise < string >
+### connect(options?: IpcBusClient.ConnectOptions) : Promise < string >
 - ***timeoutDelayOrPeerName*** = timeoutDelay: number (milliseconds) | peerName: string
 - ***peerName*** = peerName: string
 
@@ -386,17 +386,17 @@ ipcBus.connect().then((eventName) => console.log("Connected to Ipc bus !"))
 
 Provide a timeout
 ```js
-ipcBus.connect(2000).then((eventName) => console.log("Connected to Ipc bus !"))
+ipcBus.connect({ timeoutDelay: 2000 }).then((eventName) => console.log("Connected to Ipc bus !"))
 ```
 
 Provide a peer name
 ```js
-ipcBus.connect('client2').then((eventName) => console.log("Connected to Ipc bus !"))
+ipcBus.connect({ peerName: 'client2' }).then((eventName) => console.log("Connected to Ipc bus !"))
 ```
 
 Provide all options
 ```js
-ipcBus.connect(2000, 'client2').then((eventName) => console.log("Connected to Ipc bus !"))
+ipcBus.connect({ peerName: 'client2', timeoutDelay: 2000 }).then((eventName) => console.log("Connected to Ipc bus !"))
 ```
 
 For a bus in a renderer, it fails if the Bridge is not started else it fails if the Broker is not started.
@@ -454,18 +454,15 @@ Arguments will be serialized in JSON internally and hence no functions or protot
 ipcBus.send("Hello!", { name: "My age !"}, "is", 10)
 ```
 
-### request(timeoutDelayOrChannel: number | string, ...args: any[]): Promise < IpcBusRequestResponse >
-- ***timeoutDelayOrChannel*** = timeoutDelay: number (milliseconds) | channel: string
+### request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>
+- ***channel***: string
+- ***timeoutDelay*** = timeoutDelay: number (milliseconds)
 - ***...args***: any[]
 
 Sends a request message on specified ***channel***. The returned Promise is settled when a result is available.
+The parameter ***timeoutDelay*** defines how much time we're waiting for the response.
+- timeoutDelay <= 0 : reset to 2000 ms
 
-This function can be used in 2 ways :
-* request(timeoutDelay: number, channel: string, ...args: any[]): Promise < IpcBusRequestResponse >
-if the first parameter is a number, this parameter ***timeoutDelay*** defines how much time we're waiting for the response. The 2nd parameter must be the channel.
-
-* request(channel: string, ...args: any[]): Promise < IpcBusRequestResponse >
-The ***channel*** is the... channel, a default timeout delay is applied.
 
 The Promise provides an ***IpcBusRequestResponse*** object:
 ```ts
@@ -477,7 +474,7 @@ interface IpcBusRequestResponse {
 ```
 
 ```js
-ipcBus.request("compute", "2*PI*9")
+ipcBus.request("compute", 0, "2*PI*9")
     .then(ipcBusRequestResponse) {
         console.log("channel = " + ipcBusRequestResponse.event.channel + ", response = " + ipcBusRequestResponse.payload + ", from = " + ipcBusRequestResponse.event.sender.peerName);
      }
@@ -488,7 +485,7 @@ ipcBus.request("compute", "2*PI*9")
 
 With timeout
 ```js
-ipcBus.request(2000, "compute", "2*PI*9")
+ipcBus.request("compute", 2000, "2*PI*9")
 ...
 ```
 

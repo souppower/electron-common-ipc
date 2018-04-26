@@ -10,7 +10,7 @@ var PerfTests = function _PerfTests(type, busPath) {
     }
 
     this.connect = function() {
-        _ipcBus.connect(`perfTestsBus ${_type}`)
+        _ipcBus.connect({ peerName: `perfTestsBus ${_type}` })
             .then((msg) => {
                 _ipcBus.on('test-performance-trace', (ipcBusEvent, activateTrace) => this.onIPCBus_TestPerformanceTrace(ipcBusEvent, activateTrace));
                 _ipcBus.on('test-performance-run', (ipcBusEvent, testParams) => this.onIPCBus_TestPerformanceRun(ipcBusEvent, testParams));
@@ -76,7 +76,7 @@ var PerfTests = function _PerfTests(type, busPath) {
         }
         else {
             if (testParams.typeCommand == 'Request') {
-                _ipcBus.request(2000, type, msgContent)
+                _ipcBus.request(type, 2000, msgContent)
                 .then((ipcRequestResponse) => this.onIPCBus_TestPerformance(ipcRequestResponse.event, ipcRequestResponse.payload[0])) 
                 .catch();
             }
