@@ -88,9 +88,11 @@ export interface IpcBusServiceCall {
 export interface IpcBusServiceCallHandler {
     (call: IpcBusServiceCall, sender: IpcBusPeer, request: IpcBusRequest): void;
 }
-export class ServiceStatus {
-    constructor(public started: boolean, public callHandlers: Array<string>, public supportEventEmitter: boolean) {
-    }
+
+export interface ServiceStatus {
+    started: boolean;
+    callHandlers: string[];
+    supportEventEmitter: boolean;
 }
 
 export interface IpcBusService {

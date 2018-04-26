@@ -58,7 +58,7 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     const webContents = connData.conn;
                     let log = this.createLog(webContents, ipcBusCommand, args);
-                    this._logger.info(`Receive Message`, log);
+                    this._logger.info(`ReceiveMessage`, log);
                 });
                 break;
             }
@@ -66,7 +66,7 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
                 const webContents = this._requestChannels.get(ipcBusCommand.data.replyChannel);
                 if (webContents) {
                     let log = this.createLog(webContents, ipcBusCommand, args);
-                    this._logger.info(`Receive Request`, log);
+                    this._logger.info(`ReceiveRequest`, log);
                 }
                 break;
             }

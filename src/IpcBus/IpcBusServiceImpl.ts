@@ -30,7 +30,12 @@ export class IpcBusServiceImpl implements IpcBusInterfaces.IpcBusService {
 
         //  Register internal call handlers
         this.registerCallHandler(IpcBusInterfaces.IPCBUS_SERVICE_CALL_GETSTATUS, (call: IpcBusInterfaces.IpcBusServiceCall, sender: IpcBusInterfaces.IpcBusPeer, request: IpcBusInterfaces.IpcBusRequest) => {
-            request.resolve(new IpcBusInterfaces.ServiceStatus(true, this._getCallHandlerNames(), (this._prevImplEmit != null)));
+            let serviceStatus: IpcBusInterfaces.ServiceStatus = {
+                started: true,
+                callHandlers: this._getCallHandlerNames(),
+                supportEventEmitter: (this._prevImplEmit != null)
+            };
+            request.resolve(serviceStatus);
         });
 
         //  Register call handlers for exposed instance's method
@@ -90,7 +95,12 @@ export class IpcBusServiceImpl implements IpcBusInterfaces.IpcBusService {
         this._ipcBusClient.addListener(IpcBusUtils.getServiceCallChannel(this._serviceName), this._callReceivedLamdba);
 
         // The service is started, send available call handlers to clients
-        this.sendEvent(IpcBusInterfaces.IPCBUS_SERVICE_EVENT_START, new IpcBusInterfaces.ServiceStatus(true, this._getCallHandlerNames(), (this._prevImplEmit != null)));
+        let serviceStatus: IpcBusInterfaces.ServiceStatus = {
+            started: true,
+            callHandlers: this._getCallHandlerNames(),
+            supportEventEmitter: (this._prevImplEmit != null)
+        };
+        this.sendEvent(IpcBusInterfaces.IPCBUS_SERVICE_EVENT_START, serviceStatus);
 
         IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcService] Service '${this._serviceName}' is STARTED`);
     }
