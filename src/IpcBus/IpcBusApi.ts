@@ -32,8 +32,9 @@ export function _CreateIpcBusBroker(busPath?: string): IpcBusBroker {
         case 'browser':
         case 'node':
             if (ipcOptions.isValid()) {
-                if (process.env['ELECTRON_IPC_BUS_LOGPATH']) {
-                    ipcBusBroker = new IpcBusBrokerLogger(processType as IpcBusProcessType, ipcOptions);
+                let logPath = process.env['ELECTRON_IPC_BROKER_LOGPATH'];
+                if (logPath) {
+                    ipcBusBroker = new IpcBusBrokerLogger(logPath, processType as IpcBusProcessType, ipcOptions);
                 }
                 else {
                     ipcBusBroker = new IpcBusBrokerImpl(processType as IpcBusProcessType, ipcOptions);
@@ -58,8 +59,9 @@ export function _CreateIpcBusBridge(busPath?: string): IpcBusBridge {
     switch (processType) {
         case 'browser':
             if (ipcOptions.isValid()) {
-                if (process.env['ELECTRON_IPC_BUS_LOGPATH']) {
-                    ipcBusBridge = new IpcBusBridgeLogger(processType as IpcBusProcessType, ipcOptions);
+                let logPath = process.env['ELECTRON_IPC_BRIDGE_LOGPATH'];
+                if (logPath) {
+                    ipcBusBridge = new IpcBusBridgeLogger(logPath, processType as IpcBusProcessType, ipcOptions);
                 }
                 else {
                     ipcBusBridge = new IpcBusBridgeImpl(processType as IpcBusProcessType, ipcOptions);

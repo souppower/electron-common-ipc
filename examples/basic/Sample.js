@@ -25,7 +25,7 @@ electronApp.on('ready', function () {
                     // Create clients
                     const ipcBusClient1 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
                     const ipcBusClient2 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
-                    Promise.all([ipcBusClient1.connect('client1'), ipcBusClient2.connect('client2')])
+                    Promise.all([ipcBusClient1.connect({ peerName: 'client1' }), ipcBusClient2.connect({ peerName: 'client2' })])
                         .then((msg) => {
                             // Chatting on channel 'greeting'
                             ipcBusClient1.addListener('greeting', (ipcBusEvent, greetingMsg) => {
@@ -55,7 +55,7 @@ electronApp.on('ready', function () {
 
                             ipcBusClient2.send('greeting', 'hello everyone!');
 
-                            ipcBusClient2.request('greeting', 'hello partner!')
+                            ipcBusClient2.request('greeting', 0, 'hello partner!')
                                 .then((ipcBusRequestResponse) => {
                                     console.log(JSON.stringify(ipcBusRequestResponse.event.sender) + ' replied ' + ipcBusRequestResponse.payload);
                                 })
@@ -63,7 +63,7 @@ electronApp.on('ready', function () {
                                     console.log('I have no friend :-(');
                                 });
 
-                            ipcBusClient1.request(1000, 'greeting', 'hello partner, please answer within 1sec!')
+                            ipcBusClient1.request('greeting', 1000, 'hello partner, please answer within 1sec!')
                                 .then((ipcBusRequestResponse) => {
                                     console.log(JSON.stringify(ipcBusRequestResponse.event.sender) + ' replied ' + ipcBusRequestResponse.payload);
                                 })

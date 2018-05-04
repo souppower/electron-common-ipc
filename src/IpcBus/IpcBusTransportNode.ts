@@ -10,8 +10,7 @@ import * as IpcBusInterfaces from './IpcBusInterfaces';
 import { IpcBusTransport } from './IpcBusTransport';
 import { IpcBusCommand, IpcBusData } from './IpcBusCommand';
 
-// import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, BufferedSocketWriter } from 'socket-serializer';
-import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter } from 'socket-serializer';
+import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter } from 'socket-serializer';
 
 // Implementation for Node process
 /** @internal */
@@ -19,6 +18,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
     protected _baseIpc: BaseIpc;
     protected _busConn: any;
     private _promiseConnected: Promise<string>;
+    private _socketBuffer: number;
     private _socketWriter: Writer;
 
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
@@ -43,34 +43,39 @@ export class IpcBusTransportNode extends IpcBusTransport {
     }
 
     /// IpcBusTransport API
-    ipcConnect(timeoutDelay: number, peerName?: string): Promise<string> {
+    ipcConnect(options: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<string> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
         if (!p) {
             p = this._promiseConnected = new Promise<string>((resolve, reject) => {
-                if (peerName == null) {
-                    peerName = `${this._ipcBusPeer.process.type}_${this._ipcBusPeer.process.pid}`;
-                }
-                this._ipcBusPeer.name = peerName;
+                this._ipcBusPeer.name = options.peerName || `${this._ipcBusPeer.process.type}_${this._ipcBusPeer.process.pid}`;
+                this._socketBuffer = options.socketBuffer;
                 let timer: NodeJS.Timer;
                 // Below zero = infinite
-                if (timeoutDelay >= 0) {
+                if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
                         this._reset();
-                        let msg = `[IPCBus:Node] error = timeout (${timeoutDelay} ms) on ${JSON.stringify(this.ipcOptions)}`;
+                        let msg = `[IPCBus:Node] error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                         reject(msg);
-                    }, timeoutDelay);
+                    }, options.timeoutDelay);
                 }
                 this._baseIpc = new BaseIpc();
                 this._baseIpc.on('connect', (conn: any) => {
                     this._busConn = conn;
                     if (this._baseIpc) {
                         this._baseIpc.removeAllListeners('error');
-                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Node] connected on ${JSON.stringify(this.ipcOptions)}`);
+                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Node] connected on ${JSON.stringify(this._ipcOptions)}`);
                         clearTimeout(timer);
-                        // this._socketWriter = new BufferedSocketWriter(this._busConn, 8128);
-                        this._socketWriter = new SocketWriter(this._busConn);
+                        if ((this._socketBuffer == null) || (this._socketBuffer === 0)) {
+                            this._socketWriter = new SocketWriter(this._busConn);
+                        }
+                        else if (this._socketBuffer < 0) {
+                            this._socketWriter = new DelayedSocketWriter(this._busConn);
+                        }
+                        else if (this._socketBuffer > 0) {
+                            this._socketWriter = new BufferedSocketWriter(this._busConn, this._socketBuffer);
+                        }
                         this.ipcPushCommand(IpcBusCommand.Kind.Connect, '');
                         resolve('connected');
                     }
@@ -93,7 +98,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
                     }
                 });
                 this._baseIpc.once('error', (err: any) => {
-                    let msg = `[IPCBus:Node] error = ${err} on ${JSON.stringify(this.ipcOptions)}`;
+                    let msg = `[IPCBus:Node] error = ${err} on ${JSON.stringify(this._ipcOptions)}`;
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                     clearTimeout(timer);
                     this._reset();
@@ -105,7 +110,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
                     this._onClose();
                     reject(msg);
                 });
-                this._baseIpc.connect(this.ipcOptions.port, this.ipcOptions.host);
+                this._baseIpc.connect(this._ipcOptions.port, this._ipcOptions.host);
             });
         }
         return p;

@@ -231,7 +231,7 @@ var MainProcess = (function () {
 
         function onIPCElectron_RequestMessage(topicName, topicMsg) {
             console.log('Master - onIPCElectron_RequestMessage : topic:' + topicName + ' msg:' + topicMsg);
-            ipcBusClient.request(2000, topicName, topicMsg)
+            ipcBusClient.request(topicName, 2000, topicMsg)
                 .then((requestPromiseResponse) => {
                     processMainToView.postRequestThen(requestPromiseResponse);
                 })
@@ -473,7 +473,7 @@ function startApp() {
         const timeServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, 'time', 20000);
         
         // Check service's availability and make a remote call when it is available
-        timeServiceProxy.connect(20000)
+        timeServiceProxy.connect({ timeoutDelay: 20000 })
         .then((wrapper) => {
     //    timeServiceProxy.connect().then(() => {
             console.log('<MAIN Service> Service is STARTED !');
@@ -523,7 +523,7 @@ function prepareApp() {
         .then((msg) => {
             console.log('<MAIN> IPC bridge is ready !');
             // Setup IPC Client (and renderer bridge)
-            ipcBusClient.connect('MainBus')
+            ipcBusClient.connect({ peerName: 'MainBus' })
                 .then(() => startApp());
         });
 }
