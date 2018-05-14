@@ -42,7 +42,7 @@
             "env": {
                 "NODE_PRESERVE_SYMLINKS": "1",
                 "NODE_ENV": "development",
-                "ELECTRON_IPC_BUS_LOGPATH": "c:\\temp\\electron-ipc-bus\\"
+                "ELECTRON_IPC_BRIDGE_LOGPATH": "c:\\temp\\electron-ipc-bus\\"
             },
             "console": "internalConsole",
             "sourceMaps": false,

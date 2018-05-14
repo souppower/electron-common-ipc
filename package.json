@@ -1,6 +1,6 @@
 {
   "name": "electron-common-ipc",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "A safe IPC bus for applications built on Electron.",
   "repository": {
     "type": "git",
@@ -16,7 +16,7 @@
     "process",
     "rpc"
   ],
-  "author": "Emmanuel Kimmerlin, Michael Vasseur",
+  "author": "Emmanuel Kimmerlin",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/emmkimme/electron-common-ipc/issues"
