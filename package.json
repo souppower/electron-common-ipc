@@ -1,6 +1,6 @@
 {
   "name": "electron-common-ipc",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "A safe IPC bus for applications built on Electron.",
   "repository": {
     "type": "git",
@@ -32,7 +32,7 @@
   "types": "./lib/electron-common-ipc.d.ts",
   "browser": "./lib/electron-common-ipc-browser.js",
   "dependencies": {
-    "socket-serializer": "^0.28.0",
+    "socket-serializer": "^0.29.0",
     "uuid": "3.0.1",
     "winston": "^2.4.1"
   },
