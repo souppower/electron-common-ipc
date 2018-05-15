@@ -32,7 +32,7 @@ export abstract class IpcBusTransport {
 
     private generateReplyChannel(): string {
         ++this._requestNumber;
-        return `/electron-ipc-bus/request-${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
+        return `${IpcBusInterfaces.IPCBUS_CHANNEL}/request-${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
     }
 
     protected _onEventReceived(ipcBusCommand: IpcBusCommand, args: any[]) {

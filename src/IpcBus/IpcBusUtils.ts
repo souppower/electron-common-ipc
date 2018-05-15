@@ -1,4 +1,6 @@
 // Constants
+import { IPCBUS_CHANNEL } from './IpcBusInterfaces';
+
 export const IPC_BUS_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
 export const IPC_BUS_RENDERER_COMMAND = 'IpcBusRenderer:Command';
 export const IPC_BUS_RENDERER_EVENT = 'IpcBusRenderer:Event';
@@ -51,9 +53,11 @@ export function ExtractIpcOptions(busPath: string): IpcOptions {
     return ipcOptions;
 }
 
+export const IPCBUS_SERVICE_WRAPPER_EVENT = 'service-wrapper-event';
+
 // Helper to get a valid service channel namespace
 export function getServiceNamespace(serviceName: string): string {
-    return `/electron-ipc-bus/ipc-service/${serviceName}`;
+    return `${IPCBUS_CHANNEL}/ipc-service/${serviceName}`;
 }
 
 // Helper to get the call channel related to given service

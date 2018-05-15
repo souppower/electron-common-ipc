@@ -51,50 +51,37 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
         return this._wrapper;
     }
 
-    getStatus(): Promise<IpcBusInterfaces.ServiceStatus> {
-        return new Promise<IpcBusInterfaces.ServiceStatus>((resolve, reject) => {
-            const statusCallMsg = { handlerName: IpcBusInterfaces.IPCBUS_SERVICE_CALL_GETSTATUS };
-            this._ipcBusClient.request(IpcBusUtils.getServiceCallChannel(this._serviceName), this._callTimeout, statusCallMsg)
-                .then((res: IpcBusInterfaces.IpcBusRequestResponse) => {
-                    const serviceStatus = <IpcBusInterfaces.ServiceStatus> res.payload;
-                    IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Service '${this._serviceName}' availability = ${serviceStatus.started}`);
-                    resolve(serviceStatus);
-                })
-                .catch((res: IpcBusInterfaces.IpcBusRequestResponse) => {
-                    IpcBusUtils.Logger.service && IpcBusUtils.Logger.warn(`[IpcBusServiceProxy] Service '${this._serviceName}' error ${res.err}`);
-                });
-        });
+    private _call<T>(name: string, ...args: any[]): Promise<T> {
+        const callMsg = { handlerName: name, args: args };
+        return this._ipcBusClient.request(IpcBusUtils.getServiceCallChannel(this._serviceName), this._callTimeout, callMsg)
+            .then((res: IpcBusInterfaces.IpcBusRequestResponse) => {
+                IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] resolve call to '${name}' from service '${this._serviceName}' - res: ${JSON.stringify(res)}`);
+                return <T>res.payload;
+            })
+            .catch((res: IpcBusInterfaces.IpcBusRequestResponse) => {
+                IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] reject call to '${name}' from service '${this._serviceName}' - res: ${JSON.stringify(res)}`);
+                throw res.err;
+            });
     }
 
-    call<T>(name: string, ...args: any[]): Promise<T> {
-        const callMsg = { handlerName: name, args: args };
-        if (this._isStarted) {
-            return new Promise<T>((resolve, reject) => {
-                this._ipcBusClient
-                    .request(IpcBusUtils.getServiceCallChannel(this._serviceName), this._callTimeout, callMsg)
-                    .then((res: IpcBusInterfaces.IpcBusRequestResponse) => {
-                        IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] resolve call to '${name}' from service '${this._serviceName}' - res: ${JSON.stringify(res)}`);
-                        resolve(<T>res.payload);
-                    })
-                    .catch((res: IpcBusInterfaces.IpcBusRequestResponse) => {
-                        IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] reject call to '${name}' from service '${this._serviceName}' - res: ${JSON.stringify(res)}`);
-                        reject(res.err);
-                    });
-            });
-        } else {
-            return new Promise<T>((resolve, reject) => {
-                IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Call to '${name}' from service '${this._serviceName}' delayed as the service is not available`);
+    getStatus(): Promise<IpcBusInterfaces.ServiceStatus> {
+        return this._call<IpcBusInterfaces.ServiceStatus>(IpcBusInterfaces.IPCBUS_SERVICE_CALL_GETSTATUS);
+    }
 
-                const delayedCall = () => {
-                    IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Executing delayed call to '${name}' from service '${this._serviceName}' ...`);
-                    this._ipcBusClient
-                        .request(IpcBusUtils.getServiceCallChannel(this._serviceName), this._callTimeout, callMsg)
-                        .then((res: IpcBusInterfaces.IpcBusRequestResponse) => resolve(<T>res.payload))
-                        .catch((res: IpcBusInterfaces.IpcBusRequestResponse) => reject(res.err));
-                };
-                this._delayedCalls.push(delayedCall);
-            });
+   call<T>(name: string, ...args: any[]): Promise<T> {
+        if (this._isStarted) {
+            return this._call(name, ...args);
         }
+        return new Promise<T>((resolve, reject) => {
+            IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Call to '${name}' from service '${this._serviceName}' delayed as the service is not available`);
+            const delayedCall = () => {
+                IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Executing delayed call to '${name}' from service '${this._serviceName}' ...`);
+                this._call(name, ...args)
+                .then((res: T) => resolve(res))
+                .catch((err: any) => reject(err));
+            };
+            this._delayedCalls.push(delayedCall);
+        });
     }
 
     getWrapper<T>(): T {
@@ -147,7 +134,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
     }
 
     private _onEventReceived(event: IpcBusInterfaces.IpcBusEvent, msg: IpcBusInterfaces.IpcBusServiceEvent) {
-        if (msg.eventName === IpcBusInterfaces.IPCBUS_SERVICE_WRAPPER_EVENT) {
+        if (msg.eventName === IpcBusUtils.IPCBUS_SERVICE_WRAPPER_EVENT) {
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Wrapper '${this._serviceName}' receive event '${msg.args[0]}'`);
             this._wrapper.emit(msg.args[0], ...msg.args[1]);
         }

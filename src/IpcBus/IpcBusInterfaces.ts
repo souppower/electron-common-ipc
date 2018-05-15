@@ -1,15 +1,15 @@
 /// <reference types='node' />
-import events = require('events');
+import { EventEmitter } from 'events';
 
 // Special call handlers
 export const IPCBUS_SERVICE_CALL_GETSTATUS: string = '__getServiceStatus';
 // Special channels
-export const IPCBUS_CHANNEL_QUERY_STATE: string = '/electron-ipc-bus/queryState';
-export const IPCBUS_CHANNEL_SERVICE_AVAILABLE = '/electron-ipc-bus/serviceAvailable';
+export const IPCBUS_CHANNEL: string = '/electron-ipc-bus';
+export const IPCBUS_CHANNEL_QUERY_STATE: string = `${IPCBUS_CHANNEL}/queryState`;
+export const IPCBUS_CHANNEL_SERVICE_AVAILABLE = `${IPCBUS_CHANNEL}/serviceAvailable`;
 // Special events
 export const IPCBUS_SERVICE_EVENT_START = 'service-event-start';
 export const IPCBUS_SERVICE_EVENT_STOP = 'service-event-stop';
-export const IPCBUS_SERVICE_WRAPPER_EVENT = 'service-wrapper-event';
 
 export interface IpcBusRequest {
     resolve(payload: Object | string): void;
@@ -61,7 +61,7 @@ export namespace IpcBusClient {
     }
 }
 
-export interface IpcBusClient extends events.EventEmitter {
+export interface IpcBusClient extends EventEmitter {
     peer: IpcBusPeer;
 
     connect(options?: IpcBusClient.ConnectOptions): Promise<string>;
@@ -140,7 +140,7 @@ export namespace IpcBusServiceProxy {
     }
 }
 
-export interface IpcBusServiceProxy extends events.EventEmitter {
+export interface IpcBusServiceProxy extends EventEmitter {
     readonly isStarted: boolean;
 
     connect<T>(options?: IpcBusServiceProxy.ConnectOptions): Promise<T>;
