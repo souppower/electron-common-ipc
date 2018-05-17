@@ -20,8 +20,8 @@
   },
   "dependencies": {
     "bootstrap": "^3.3.7",
-    "electron": "^1.8.2",
-    "electron-common-ipc": "^1.0.0",
+    "electron": "^2.0.0",
+    "electron-common-ipc": "^2.0.0",
     "typescript": "^2.5.2",
     "uuid": "2.0.3"
   }

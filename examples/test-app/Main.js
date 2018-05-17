@@ -523,7 +523,7 @@ function prepareApp() {
         .then((msg) => {
             console.log('<MAIN> IPC bridge is ready !');
             // Setup IPC Client (and renderer bridge)
-            ipcBusClient.connect({ peerName: 'MainBus' })
+            ipcBusClient.connect({ peerName: 'MainBus', socketBuffer: 2048 })
                 .then(() => startApp());
         });
 }
