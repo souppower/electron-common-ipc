@@ -36,58 +36,8 @@ export class IpcBusBrokerLogger extends IpcBusBrokerImpl {
         for (let i = 1, l = packet.parseArrayLength(); i < l; ++i) {
             log[`arg${i - 1}`] = packet.parseArrayAt(i);
         }
-        switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.Connect:
-                log[socket] = socket.remotePort;
-                this._logger.info(`Connect`, log);
-                break;
-
-            case IpcBusCommand.Kind.Disconnect:
-                log[socket] = socket.remotePort;
-                this._logger.info(`Disconnect`, log);
-                break;
-
-            case IpcBusCommand.Kind.Close:
-                log[socket] = socket.remotePort;
-                this._logger.info(`Close`, log);
-                break;
-
-            case IpcBusCommand.Kind.AddChannelListener:
-                this._logger.info(`AddChannelListener`, log);
-                break;
-
-            case IpcBusCommand.Kind.RemoveChannelAllListeners:
-                this._logger.info(`RemoveChannelAllListeners`, log);
-                break;
-
-            case IpcBusCommand.Kind.RemoveChannelListener:
-                this._logger.info(`RemoveListeners`, log);
-                break;
-
-            case IpcBusCommand.Kind.RemoveListeners:
-                this._logger.info(`RemoveAll`, log);
-                break;
-
-            case IpcBusCommand.Kind.SendMessage:
-                this._logger.info(`SendMessage`, log);
-                break;
-
-            case IpcBusCommand.Kind.RequestMessage:
-                this._logger.info(`RequestMessage`, log);
-                break;
-
-            case IpcBusCommand.Kind.RequestResponse:
-                this._logger.info(`RequestResponse`, log);
-                break;
-
-            case IpcBusCommand.Kind.RequestCancel:
-                this._logger.info(`RequestCancel`, log);
-                break;
-
-            default:
-                this._logger.error(`Wrong ipcBusCommand`, log);
-                break;
-        }
+        log[socket] = socket.remotePort;
+        this._logger.info(ipcBusCommand.kind, log);
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(log);
 
         super._onData(packet, socket, server);

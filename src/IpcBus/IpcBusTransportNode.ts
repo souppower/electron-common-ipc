@@ -8,7 +8,7 @@ import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
 import { IpcBusTransport } from './IpcBusTransport';
-import { IpcBusCommand, IpcBusData } from './IpcBusCommand';
+import { IpcBusCommand } from './IpcBusCommand';
 
 import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter } from 'socket-serializer';
 
@@ -18,11 +18,14 @@ export class IpcBusTransportNode extends IpcBusTransport {
     protected _baseIpc: BaseIpc;
     protected _busConn: any;
     private _promiseConnected: Promise<string>;
+
     private _socketBuffer: number;
     private _socketWriter: Writer;
+    private _packet: IpcPacketBufferWrap;
 
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
         super({ type: processType, pid: process.pid }, ipcOptions);
+        this._packet = new IpcPacketBufferWrap();
         assert((processType === 'browser') || (processType === 'node'), `IpcBusTransportNode: processType must not be a process ${processType}`);
     }
 
@@ -121,31 +124,18 @@ export class IpcBusTransportNode extends IpcBusTransport {
         this._reset();
     }
 
-    ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusData?: IpcBusData, args?: any[]): void {
-        this._ipcPushCommand({ kind: command, channel: channel, peer: this.peer, data: ipcBusData }, args);
+    ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void {
+        this._ipcPushCommand({ kind: command, channel: channel, peer: this.peer, request: ipcBusCommandRequest }, args);
     }
 
     protected _ipcPushCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._busConn) {
             if (args) {
-                args = [ipcBusCommand, ...args];
+                this._packet.writeArray(this._socketWriter, [ipcBusCommand, ...args]);
             }
             else {
-                args = [ipcBusCommand];
+                this._packet.writeArray(this._socketWriter, [ipcBusCommand]);
             }
-            // let packet = new IpcPacketBuffer();
-            // packet.serializeArray(args);
-            // // let bytesWritten = packet.buffer.length;
-            // this._busConn.write(packet.buffer);
-            // IpcPacketBuffer.serializeToSocket(args, this._busConn);
-
-            let packet = new IpcPacketBufferWrap();
-            // packet.write(this._socketWriter, args);
-            packet.write(this._socketWriter, args);
-
-            // let bytesWritten = IpcPacketBuffer.fromToSocket(args, this._busConn);
-            // console.log(`ipcBusCommand ${bytesWritten}`);
-            // console.log(JSON.stringify(ipcBusCommand, null, 4));
         }
     }
 }

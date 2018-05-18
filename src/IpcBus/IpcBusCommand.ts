@@ -1,22 +1,16 @@
 import { IpcBusPeer } from './IpcBusInterfaces';
 
 /** @internal */
-export class IpcBusData {
-    replyChannel?: string;
-    resolve?: boolean;
-    reject?: boolean;
-}
-
-/** @internal */
 export class IpcBusCommand {
     kind: IpcBusCommand.Kind;
     channel: string;
     peer: IpcBusPeer;
-    data?: IpcBusData;
+    request?: IpcBusCommand.Request;
 }
 
 /** @internal */
 export namespace IpcBusCommand {
+    /** @internal */
     export enum Kind {
         Connect                     = 'COO',    // COnnexion
         Disconnect                  = 'COD',
@@ -30,4 +24,12 @@ export namespace IpcBusCommand {
         RequestResponse             = 'RQR',
         RequestCancel               = 'RQC'
     };
+
+    /** @internal */
+    export class Request {
+        replyChannel: string;
+        resolve?: boolean;
+        reject?: boolean;
+    }
+
 }

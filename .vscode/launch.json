@@ -43,7 +43,7 @@
             ],
             "env": {
                 "NODE_PRESERVE_SYMLINKS": "1",
-                "ELECTRON_IPC_BRIDGE_LOGPATH": "C:\\temp\\electron_ipc_bus",
+                // "ELECTRON_IPC_BRIDGE_LOGPATH": "C:\\temp\\electron_ipc_bus",
                 "NODE_ENV": "development"
             },
             // "console": "integratedTerminal",

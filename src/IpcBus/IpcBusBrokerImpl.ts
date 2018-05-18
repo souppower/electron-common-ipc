@@ -211,25 +211,25 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
 
             case IpcBusCommand.Kind.SendMessage:
                 // Send ipcBusCommand to subscribed connections
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, function (connData, channel) {
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.write(packet.buffer);
                 });
                 break;
 
             case IpcBusCommand.Kind.RequestMessage:
                 // Register on the replyChannel
-                this._requestChannels.set(ipcBusCommand.data.replyChannel, socket);
+                this._requestChannels.set(ipcBusCommand.request.replyChannel, socket);
 
                 // Request ipcBusCommand to subscribed connections
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, function (connData, channel) {
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.write(packet.buffer);
                 });
                 break;
 
             case IpcBusCommand.Kind.RequestResponse: {
-                let replySocket = this._requestChannels.get(ipcBusCommand.data.replyChannel);
+                let replySocket = this._requestChannels.get(ipcBusCommand.request.replyChannel);
                 if (replySocket) {
-                    this._requestChannels.delete(ipcBusCommand.data.replyChannel);
+                    this._requestChannels.delete(ipcBusCommand.request.replyChannel);
                     // Send ipcBusCommand to subscribed connections
                     replySocket.write(packet.buffer);
                 }
@@ -237,7 +237,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
             }
 
             case IpcBusCommand.Kind.RequestCancel:
-                this._requestChannels.delete(ipcBusCommand.data.replyChannel);
+                this._requestChannels.delete(ipcBusCommand.request.replyChannel);
                 break;
 
             default:

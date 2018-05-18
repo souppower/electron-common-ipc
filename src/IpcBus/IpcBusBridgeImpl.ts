@@ -1,3 +1,5 @@
+/// <reference path='../typings/electron.d.ts' />
+
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
@@ -84,9 +86,9 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
                 break;
 
             case IpcBusCommand.Kind.RequestResponse:
-                const webContents = this._requestChannels.get(ipcBusCommand.data.replyChannel);
+                const webContents = this._requestChannels.get(ipcBusCommand.request.replyChannel);
                 if (webContents) {
-                    this._requestChannels.delete(ipcBusCommand.data.replyChannel);
+                    this._requestChannels.delete(ipcBusCommand.request.replyChannel);
                     webContents.send(IpcBusUtils.IPC_BUS_RENDERER_EVENT, ipcBusCommand, args);
                 }
                 break;
@@ -144,7 +146,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
     protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
         const webContents = event.sender;
         const ipcBusPeer = ipcBusCommand.peer;
-        const ipcBusData = ipcBusCommand.data;
+        const ipcBusCommandRequest = ipcBusCommand.request;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Connect :
                 this._onConnect(webContents, ipcBusPeer);
@@ -192,11 +194,11 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
                 break;
 
             case IpcBusCommand.Kind.RequestMessage :
-                this._requestChannels.set(ipcBusData.replyChannel, webContents);
+                this._requestChannels.set(ipcBusCommandRequest.replyChannel, webContents);
                 break;
 
             case IpcBusCommand.Kind.RequestCancel :
-                this._requestChannels.delete(ipcBusData.replyChannel);
+                this._requestChannels.delete(ipcBusCommandRequest.replyChannel);
                 break;
 
             default :

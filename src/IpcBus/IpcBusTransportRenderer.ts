@@ -1,4 +1,4 @@
-/// <reference types='node' />
+/// <reference path='../typings/electron.d.ts' />
 
 import * as assert from 'assert';
 
@@ -6,7 +6,7 @@ import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
 import { IpcBusTransport } from './IpcBusTransport';
-import { IpcBusCommand, IpcBusData } from './IpcBusCommand';
+import { IpcBusCommand } from './IpcBusCommand';
 
 
 // Implementation for renderer process
@@ -111,9 +111,9 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
         this._reset();
     }
 
-    ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusData?: IpcBusData, args?: any[]): void {
+    ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void {
         if (this._ipcRenderer) {
-            this._ipcRenderer.send(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, { kind: command, channel: channel, peer: this.peer, data: ipcBusData }, args);
+            this._ipcRenderer.send(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, { kind: command, channel: channel, peer: this.peer, request: ipcBusCommandRequest }, args);
         }
     }
 }

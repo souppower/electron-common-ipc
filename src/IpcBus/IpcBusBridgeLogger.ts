@@ -1,3 +1,5 @@
+/// <reference path='../typings/electron.d.ts' />
+
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -56,75 +58,28 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     const webContents = connData.conn;
                     let log = this.createLog(webContents, ipcBusCommand, args);
-                    this._logger.info(`ReceiveMessage`, log);
+                    this._logger.info(ipcBusCommand.kind, log);
                 });
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                const webContents = this._requestChannels.get(ipcBusCommand.data.replyChannel);
+                const webContents = this._requestChannels.get(ipcBusCommand.request.replyChannel);
                 if (webContents) {
                     let log = this.createLog(webContents, ipcBusCommand, args);
-                    this._logger.info(`ReceiveRequest`, log);
+                    this._logger.info(ipcBusCommand.kind, log);
                 }
                 break;
             }
         }
+
         super._onEventReceived(ipcBusCommand, args);
     }
 
     protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
         let log = this.createLog(event.sender, ipcBusCommand, args);
-
-        switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.Connect :
-                this._logger.info(`Connect`, log);
-                break;
-
-            case IpcBusCommand.Kind.Disconnect :
-                this._logger.info(`Disconnect`, log);
-                break;
-
-            case IpcBusCommand.Kind.Close :
-                // We do not close the socket, we just disconnect a peer
-                this._logger.info(`Close`, log);
-                break;
-
-            case IpcBusCommand.Kind.AddChannelListener:
-                this._logger.info(`AddChannelListener`, log);
-                break;
-
-            case IpcBusCommand.Kind.RemoveChannelAllListeners:
-                this._logger.info(`RemoveChannelAllListeners`, log);
-                break;
-
-            case IpcBusCommand.Kind.RemoveChannelListener:
-                this._logger.info(`RemoveListeners`, log);
-                break;
-
-            case IpcBusCommand.Kind.RemoveListeners:
-                this._logger.info(`RemoveAll`, log);
-                break;
-
-            case IpcBusCommand.Kind.SendMessage:
-                this._logger.info(`SendMessage`, log);
-                break;
-
-            case IpcBusCommand.Kind.RequestMessage:
-                this._logger.info(`RequestMessage`, log);
-                break;
-
-            case IpcBusCommand.Kind.RequestResponse:
-                this._logger.info(`RequestResponse`, log);
-                break;
-
-            case IpcBusCommand.Kind.RequestCancel:
-                this._logger.info(`RequestCancel`, log);
-                break;
-
-            default :
-                break;
-        }
+        this._logger.info(ipcBusCommand.kind, log);
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(log);
+
         super._onRendererMessage(event, ipcBusCommand, args);
     }
 }
