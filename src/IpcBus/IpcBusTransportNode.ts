@@ -89,17 +89,8 @@ export class IpcBusTransportNode extends IpcBusTransport {
                 this._ipcBusPeer.name = options.peerName || `${this._ipcBusPeer.process.type}_${this._ipcBusPeer.process.pid}`;
                 this._socketBuffer = options.socketBuffer;
 
-                let baseIpc = new BaseIpc();
                 let timer: NodeJS.Timer = null;
-                let fctReject = (msg: string) => {
-                    if (timer) {
-                        clearTimeout(timer);
-                    }
-                    baseIpc.socket.removeAllListeners();
-                    this._reset();
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
-                    reject(msg);
-                };
+                let fctReject: (msg: string) => void;
                 // Below zero = infinite
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
@@ -119,9 +110,12 @@ export class IpcBusTransportNode extends IpcBusTransport {
                     fctReject(msg);
                 };
 
+                let baseIpc = new BaseIpc();
                 let catchOpen = (conn: any) => {
                     clearTimeout(timer);
-                    baseIpc.socket.removeAllListeners();
+                    baseIpc.socket.removeListener('connect', catchOpen);
+                    baseIpc.socket.removeListener('error', catchError);
+                    baseIpc.socket.removeListener('close', catchClose);
 
                     this._baseIpc = baseIpc;
 
@@ -141,6 +135,18 @@ export class IpcBusTransportNode extends IpcBusTransport {
                     }
                     this.ipcPushCommand(IpcBusCommand.Kind.Connect, '');
                     resolve();
+                };
+
+                fctReject = (msg: string) => {
+                    if (timer) {
+                        clearTimeout(timer);
+                    }
+                    baseIpc.socket.removeListener('connect', catchOpen);
+                    baseIpc.socket.removeListener('error', catchError);
+                    baseIpc.socket.removeListener('close', catchClose);
+                    this._reset();
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
+                    reject(msg);
                 };
 
                 baseIpc.connect(this._ipcOptions.port, this._ipcOptions.host);

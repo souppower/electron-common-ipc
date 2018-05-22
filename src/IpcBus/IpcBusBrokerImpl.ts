@@ -71,15 +71,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
             p = this._promiseStarted = new Promise<void>((resolve, reject) => {
                 let baseIpc = new IpcPacketNet();
                 let timer: NodeJS.Timer = null;
-                let fctReject = (msg: string) => {
-                    if (timer) {
-                        clearTimeout(timer);
-                    }
-                    baseIpc.server.removeAllListeners();
-                    this._reset();
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
-                    reject(msg);
-                };
+                let fctReject: (msg: string) => void;
 
                 // Below zero = infinite
                 if (options.timeoutDelay >= 0) {
@@ -102,7 +94,9 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
 
                 let catchListening =  (server: any) => {
                     clearTimeout(timer);
-                    this._baseIpc.server.removeAllListeners();
+                    baseIpc.server.removeListener('listening', catchListening);
+                    baseIpc.server.removeListener('error', catchError);
+                    baseIpc.server.removeListener('close', catchClose);
 
                     this._baseIpc = baseIpc;
 
@@ -124,6 +118,18 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
                             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                             reject(msg);
                         });
+                };
+
+                fctReject = (msg: string) => {
+                    if (timer) {
+                        clearTimeout(timer);
+                    }
+                    baseIpc.server.removeListener('listening', catchListening);
+                    baseIpc.server.removeListener('error', catchError);
+                    baseIpc.server.removeListener('close', catchClose);
+                    this._reset();
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
+                    reject(msg);
                 };
 
                 baseIpc.listen(this._ipcOptions.port, this._ipcOptions.host);

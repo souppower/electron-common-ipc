@@ -16,12 +16,17 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
     private _delayedCalls = new Array<Function>();
     private _isStarted: boolean;
     private _wrapper: CallWrapperEventEmitter = null;
+    private _ipcBusClient: IpcBusInterfaces.IpcBusClient;
+    private _serviceName: string;
+    private _callTimeout: number;
 
-    constructor(private _ipcBusClient: IpcBusInterfaces.IpcBusClient,
-        private _serviceName: string,
-        private _callTimeout: number = 1000) {
+    constructor(ipcBusClient: IpcBusInterfaces.IpcBusClient, serviceName: string, callTimeout: number = 1000) {
         super();
         super.setMaxListeners(0);
+
+        this._ipcBusClient = ipcBusClient;
+        this._serviceName = serviceName;
+        this._callTimeout = callTimeout;
 
         this._wrapper = new CallWrapperEventEmitter();
 
@@ -40,7 +45,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
             });
 
         // Register service start/stop/event events
-        _ipcBusClient.addListener(IpcBusUtils.getServiceEventChannel(this._serviceName), this._eventReceivedLamdba);
+        this._ipcBusClient.addListener(IpcBusUtils.getServiceEventChannel(this._serviceName), this._eventReceivedLamdba);
     }
 
     get isStarted(): boolean {
