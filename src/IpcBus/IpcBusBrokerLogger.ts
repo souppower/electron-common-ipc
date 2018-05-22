@@ -30,7 +30,7 @@ export class IpcBusBrokerLogger extends IpcBusBrokerImpl {
         });
     }
 
-    protected _onData(packet: IpcPacketBuffer, socket: any, server: any): void {
+    protected _onServerData(packet: IpcPacketBuffer, socket: any, server: any): void {
         let ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
         let log: any = { packetSize: packet.packetSize, command: ipcBusCommand};
         for (let i = 1, l = packet.parseArrayLength(); i < l; ++i) {
@@ -40,6 +40,6 @@ export class IpcBusBrokerLogger extends IpcBusBrokerImpl {
         this._logger.info(ipcBusCommand.kind, log);
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(log);
 
-        super._onData(packet, socket, server);
+        super._onServerData(packet, socket, server);
     }
 }

@@ -26,11 +26,11 @@ export class IpcBusCommonClient extends EventEmitter
         return this._ipcBusTransport.peer;
     }
 
-    connect(options?: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<string> {
+    connect(options?: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<void> {
         return this._ipcBusTransport.ipcConnect(options);
     }
 
-    close(options?: IpcBusInterfaces.IpcBusClient.CloseOptions) {
+    close(options?: IpcBusInterfaces.IpcBusClient.CloseOptions): Promise<void> {
         super.removeAllListeners();
         return this._ipcBusTransport.ipcClose(options);
     }

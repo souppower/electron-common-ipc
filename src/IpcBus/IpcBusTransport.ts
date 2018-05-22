@@ -127,9 +127,7 @@ export abstract class IpcBusTransport {
         return p;
     }
 
-    protected abstract _onClose(): void;
-
-    abstract ipcConnect(options: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<string>;
+    abstract ipcConnect(options: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<void>;
     abstract ipcClose(options?: IpcBusInterfaces.IpcBusClient.CloseOptions): Promise<void>;
     abstract ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void;
 }

@@ -70,7 +70,7 @@ export namespace IpcBusClient {
 export interface IpcBusClient extends EventEmitter {
     peer: IpcBusPeer;
 
-    connect(options?: IpcBusClient.ConnectOptions): Promise<string>;
+    connect(options?: IpcBusClient.ConnectOptions): Promise<void>;
     close(options?: IpcBusClient.CloseOptions): Promise<void>;
 
     send(channel: string, ...args: any[]): void;
@@ -97,7 +97,7 @@ export namespace IpcBusBroker {
 }
 
 export interface IpcBusBroker {
-    start(options?: IpcBusBroker.StartOptions): Promise<string>;
+    start(options?: IpcBusBroker.StartOptions): Promise<void>;
     stop(options?: IpcBusBroker.StopOptions): Promise<void>;
     queryState(): Object;
     isServiceAvailable(serviceName: string): boolean;
@@ -112,7 +112,7 @@ export namespace IpcBusBridge {
 }
 
 export interface IpcBusBridge {
-    start(options?: IpcBusBridge.StartOptions): Promise<string>;
+    start(options?: IpcBusBridge.StartOptions): Promise<void>;
     stop(options?: IpcBusBridge.StopOptions): Promise<void>;
 }
 

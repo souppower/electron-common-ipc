@@ -14,7 +14,7 @@ import { IpcBusCommand } from './IpcBusCommand';
 export class IpcBusTransportRenderer extends IpcBusTransport {
     private _ipcRenderer: any;
     private _onIpcEventReceived: Function;
-    private _promiseConnected: Promise<string>;
+    private _promiseConnected: Promise<void>;
 
     // private _ipcRendererReady: Promise<void>;
 
@@ -52,10 +52,6 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
         }
     }
 
-    protected _onClose() {
-        this._reset();
-    }
-
     private _onConnect(eventOrPeer: any, peerOrUndefined: IpcBusInterfaces.IpcBusPeer): void {
         // In sandbox mode, 1st parameter is no more the event, but the 2nd argument !!!
         if (peerOrUndefined) {
@@ -71,7 +67,7 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
     };
 
     /// IpcBusTrandport API
-    ipcConnect(options?: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<string> {
+    ipcConnect(options?: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<void> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
         if (!p) {
@@ -79,7 +75,7 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
             if (options.timeoutDelay == null) {
                 options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
             }
-            p = this._promiseConnected = new Promise<string>((resolve, reject) => {
+            p = this._promiseConnected = new Promise<void>((resolve, reject) => {
                 // this._ipcRendererReady.then(() => {
                     this._ipcRenderer = require('electron').ipcRenderer;
                     // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
@@ -97,7 +93,7 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
                         if (this._ipcRenderer) {
                             clearTimeout(timer);
                             this._onConnect(eventOrPeer, peerOrUndefined);
-                            resolve('connected');
+                            resolve();
                         }
                         else {
                             this._reset();

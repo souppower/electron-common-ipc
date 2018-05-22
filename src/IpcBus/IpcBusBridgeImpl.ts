@@ -32,23 +32,24 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
         // };
     }
 
-    protected _onClose() {
+    protected _onSocketClose() {
         this._ipcBusPeers.clear();
         this._ipcMain.removeListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
+        super._onSocketClose();
     }
 
     // IpcBusBridge API
-    start(options?: IpcBusInterfaces.IpcBusBridge.StartOptions): Promise<string> {
+    start(options?: IpcBusInterfaces.IpcBusBridge.StartOptions): Promise<void> {
         options = options || {};
-        let p = new Promise<string>((resolve, reject) => {
+        let p = new Promise<void>((resolve, reject) => {
             this.ipcConnect({ peerName: `IpcBusBridge`, ...options } )
-                .then((msg) => {
+                .then(() => {
                     // Guard against people calling start several times
                     if (this._ipcMain.listenerCount(IpcBusUtils.IPC_BUS_RENDERER_COMMAND) === 0) {
                         this._ipcMain.addListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
                     }
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
-                    resolve(msg);
+                    resolve();
                 })
                 .catch((err) => {
                     reject(err);
