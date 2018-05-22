@@ -43,21 +43,21 @@ export class IpcBusServiceImpl implements IpcBusInterfaces.IpcBusService {
             // Register handlers for functions of service's Implementation (except the ones inherited from EventEmitter)
             // Looking in legacy class
             for (let memberName in this._exposedInstance) {
-                const method = this._exposedInstance[memberName];
-                if ((typeof method === 'function')
-                    && this._isFunctionVisible(memberName)) {
-                    this.registerCallHandler(memberName,
-                    (call: IpcBusInterfaces.IpcBusServiceCall, sender: IpcBusInterfaces.IpcBusPeer, request: IpcBusInterfaces.IpcBusRequest) => this._doCall(call, sender, request));
+                if (this._isFunctionVisible(memberName)) {
+                    const method = this._exposedInstance[memberName];
+                    if (typeof method === 'function') {
+                        this.registerCallHandler(memberName,
+                            (call: IpcBusInterfaces.IpcBusServiceCall, sender: IpcBusInterfaces.IpcBusPeer, request: IpcBusInterfaces.IpcBusRequest) => this._doCall(call, sender, request));
+                    }
                 }
             }
             // Looking in ES6 class
             for (let memberName of Object.getOwnPropertyNames(Object.getPrototypeOf(this._exposedInstance))) {
-                if (!this._callHandlers.has(memberName)) {
+                if (!this._callHandlers.has(memberName) && this._isFunctionVisible(memberName)) {
                     const method = this._exposedInstance[memberName];
-                    if ((method instanceof Function)
-                        && this._isFunctionVisible(memberName)) {
+                    if (method instanceof Function) {
                         this.registerCallHandler(memberName,
-                        (call: IpcBusInterfaces.IpcBusServiceCall, sender: IpcBusInterfaces.IpcBusPeer, request: IpcBusInterfaces.IpcBusRequest) => this._doCall(call, sender, request));
+                            (call: IpcBusInterfaces.IpcBusServiceCall, sender: IpcBusInterfaces.IpcBusPeer, request: IpcBusInterfaces.IpcBusRequest) => this._doCall(call, sender, request));
                     }
                 }
             }
