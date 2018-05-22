@@ -106,9 +106,10 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
         return p;
     }
 
-    ipcClose(): void {
+    ipcClose(options?: IpcBusInterfaces.IpcBusClient.CloseOptions): Promise<void> {
         this.ipcPushCommand(IpcBusCommand.Kind.Close, '');
         this._reset();
+        return Promise.resolve();
     }
 
     ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void {

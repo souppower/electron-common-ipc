@@ -119,9 +119,33 @@ export class IpcBusTransportNode extends IpcBusTransport {
         return p;
     }
 
-    ipcClose() {
+    ipcClose(options?: IpcBusInterfaces.IpcBusClient.CloseOptions): Promise<void> {
         this.ipcPushCommand(IpcBusCommand.Kind.Close, '');
-        this._reset();
+        return new Promise<void>((resolve, reject) => {
+            if (this._baseIpc) {
+                let timer: NodeJS.Timer;
+                // Below zero = infinite
+                if (options.timeoutDelay >= 0) {
+                    timer = setTimeout(() => {
+                        let msg = `[IPCBus:Node] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
+                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
+                        reject(msg);
+                    }, options.timeoutDelay);
+                }
+                this._baseIpc.on('close', (conn: any) => {
+                    clearTimeout(timer);
+                    resolve();
+                });
+                this._baseIpc.on('error', (conn: any) => {
+                    clearTimeout(timer);
+                    resolve();
+                });
+                this._reset();
+            }
+            else {
+                resolve();
+            }
+        });
     }
 
     ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void {

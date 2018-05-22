@@ -60,9 +60,9 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
         return p;
     }
 
-    stop() {
-        this.ipcClose();
+    stop(options?: IpcBusInterfaces.IpcBusBridge.StopOptions): Promise<void> {
         this._ipcMain.removeListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
+        return this.ipcClose(options);
     }
 
     // Not exposed

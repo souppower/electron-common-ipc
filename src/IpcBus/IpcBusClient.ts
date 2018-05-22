@@ -35,9 +35,9 @@ export class IpcBusCommonClient extends EventEmitter
         return this._ipcBusTransport.ipcConnect(options);
     }
 
-    close() {
+    close(options?: IpcBusInterfaces.IpcBusClient.CloseOptions) {
         super.removeAllListeners();
-        this._ipcBusTransport.ipcClose();
+        return this._ipcBusTransport.ipcClose(options);
     }
 
     send(channel: string, ...args: any[]) {

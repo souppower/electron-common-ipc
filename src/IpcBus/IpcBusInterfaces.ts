@@ -11,6 +11,10 @@ export const IPCBUS_CHANNEL_SERVICE_AVAILABLE = `${IPCBUS_CHANNEL}/serviceAvaila
 export const IPCBUS_SERVICE_EVENT_START = 'service-event-start';
 export const IPCBUS_SERVICE_EVENT_STOP = 'service-event-stop';
 
+// Log en vars
+export const ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH';
+export const ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH';
+
 export interface IpcBusRequest {
     resolve(payload: Object | string): void;
     reject(err: string): void;
@@ -59,13 +63,15 @@ export namespace IpcBusClient {
     export interface ConnectOptions extends IpcTimeoutOptions, IpcSocketOptions {
         peerName?: string;
     }
+    export interface CloseOptions extends IpcTimeoutOptions {
+    }
 }
 
 export interface IpcBusClient extends EventEmitter {
     peer: IpcBusPeer;
 
     connect(options?: IpcBusClient.ConnectOptions): Promise<string>;
-    close(): void;
+    close(options?: IpcBusClient.CloseOptions): Promise<void>;
 
     send(channel: string, ...args: any[]): void;
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
@@ -85,11 +91,14 @@ export interface IpcBusClient extends EventEmitter {
 export namespace IpcBusBroker {
     export interface StartOptions extends IpcTimeoutOptions{
     }
+
+    export interface StopOptions extends IpcTimeoutOptions {
+    }
 }
 
 export interface IpcBusBroker {
     start(options?: IpcBusBroker.StartOptions): Promise<string>;
-    stop(): void;
+    stop(options?: IpcBusBroker.StopOptions): Promise<void>;
     queryState(): Object;
     isServiceAvailable(serviceName: string): boolean;
 }
@@ -97,11 +106,14 @@ export interface IpcBusBroker {
 export namespace IpcBusBridge {
     export interface StartOptions extends IpcTimeoutOptions {
     }
+
+    export interface StopOptions extends IpcTimeoutOptions {
+    }
 }
 
 export interface IpcBusBridge {
     start(options?: IpcBusBridge.StartOptions): Promise<string>;
-    stop(): void;
+    stop(options?: IpcBusBridge.StopOptions): Promise<void>;
 }
 
 export interface IpcBusServiceCall {
