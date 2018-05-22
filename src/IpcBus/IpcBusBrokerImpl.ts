@@ -113,6 +113,10 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
     }
 
     stop(options?: IpcBusInterfaces.IpcBusBroker.StopOptions): Promise<void> {
+        options = options || {};
+        if (options.timeoutDelay == null) {
+            options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
+        }
         return new Promise<void>((resolve, reject) => {
             if (this._ipcServer) {
                 let timer: NodeJS.Timer;

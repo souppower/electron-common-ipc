@@ -46,10 +46,14 @@ export class IpcBusTransportNode extends IpcBusTransport {
     }
 
     /// IpcBusTransport API
-    ipcConnect(options: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<string> {
+    ipcConnect(options?: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<string> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
         if (!p) {
+            options = options || {};
+            if (options.timeoutDelay == null) {
+                options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
+            }
             p = this._promiseConnected = new Promise<string>((resolve, reject) => {
                 this._ipcBusPeer.name = options.peerName || `${this._ipcBusPeer.process.type}_${this._ipcBusPeer.process.pid}`;
                 this._socketBuffer = options.socketBuffer;
@@ -120,9 +124,13 @@ export class IpcBusTransportNode extends IpcBusTransport {
     }
 
     ipcClose(options?: IpcBusInterfaces.IpcBusClient.CloseOptions): Promise<void> {
-        this.ipcPushCommand(IpcBusCommand.Kind.Close, '');
+        options = options || {};
+        if (options.timeoutDelay == null) {
+            options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
+        }
         return new Promise<void>((resolve, reject) => {
             if (this._baseIpc) {
+                this.ipcPushCommand(IpcBusCommand.Kind.Close, '');
                 let timer: NodeJS.Timer;
                 // Below zero = infinite
                 if (options.timeoutDelay >= 0) {

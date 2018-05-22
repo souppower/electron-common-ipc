@@ -71,10 +71,14 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
     };
 
     /// IpcBusTrandport API
-    ipcConnect(options: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<string> {
+    ipcConnect(options?: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<string> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
         if (!p) {
+            options = options || {};
+            if (options.timeoutDelay == null) {
+                options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
+            }
             p = this._promiseConnected = new Promise<string>((resolve, reject) => {
                 // this._ipcRendererReady.then(() => {
                     this._ipcRenderer = require('electron').ipcRenderer;
@@ -107,8 +111,10 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
     }
 
     ipcClose(options?: IpcBusInterfaces.IpcBusClient.CloseOptions): Promise<void> {
-        this.ipcPushCommand(IpcBusCommand.Kind.Close, '');
-        this._reset();
+        if (this._ipcRenderer) {
+            this.ipcPushCommand(IpcBusCommand.Kind.Close, '');
+            this._reset();
+        }
         return Promise.resolve();
     }
 

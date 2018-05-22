@@ -40,9 +40,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
     // IpcBusBridge API
     start(options?: IpcBusInterfaces.IpcBusBridge.StartOptions): Promise<string> {
         options = options || {};
-        if (options.timeoutDelay == null) {
-            options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
-        }
         let p = new Promise<string>((resolve, reject) => {
             this.ipcConnect({ peerName: `IpcBusBridge`, ...options } )
                 .then((msg) => {
