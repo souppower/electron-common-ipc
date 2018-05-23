@@ -28,3 +28,19 @@ describe('Client', () => {
 
 });
 
+describe('Client', () => {
+  before(async () => {
+    return brokersLifeCycle.startBrokers();
+  });
+
+  after(async () => {
+    return brokersLifeCycle.stopBrokers();
+  });
+
+  let ipcBusClient;
+  it('start client', async () => {
+    ipcBusClient = ipcBusModule.CreateIpcBusClient(brokersLifeCycle.ipcBusPath);
+    return ipcBusClient.connect({ peerName: 'client' })
+  });
+});
+

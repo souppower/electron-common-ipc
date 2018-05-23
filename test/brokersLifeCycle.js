@@ -13,7 +13,12 @@ function _startBrokers() {
   return ipcBusBroker.start()
     .then((msg) => {
       console.log('IpcBusBroker started');
-
+    })
+    .catch((err) => {
+      console.log(`IpcBusBroker started failed ${err}`);
+      throw err;
+    })
+    .then((msg) => {
       // Create bridge
       ipcBusBridge = ipcBusModule.CreateIpcBusBridge(ipcBusPath);
       // Start bridge
@@ -26,10 +31,6 @@ function _startBrokers() {
           throw err;
         });
     })
-    .catch((err) => {
-      console.log(`IpcBusBroker started failed ${err}`);
-      throw err;
-    });
 }
 
 function _stopBrokers() {
@@ -37,20 +38,22 @@ function _stopBrokers() {
     .then(() => {
       ipcBusBridge = null;
       console.log('IpcBusBridge stopped');
+    })
+    .catch((err) => {
+      console.log(`IpcBusBridge stopped failed ${err}`);
+      throw err;
+    })
+    .then(() => {
       return ipcBusBroker.stop()
         .then(() => {
           ipcBusBroker = null;
           console.log('IpcBusBroker stopped');
         })
         .catch((err) => {
-          console.log(`IpcBusBridge stopped failed ${err}`);
+          console.log(`IpcBusBroker stopped failed ${err}`);
           throw err;
         });
     })
-    .catch((err) => {
-      console.log(`IpcBusBroker stopped failed ${err}`);
-      throw err;
-    });
 }
 
 function startBrokers() {
