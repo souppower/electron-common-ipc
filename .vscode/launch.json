@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Sandbox Test tr-apps",
+            "name": "Launch Test tr-apps",
             "type": "node",
             "request": "launch",
             "protocol": "inspector",
@@ -15,8 +15,7 @@
             "cwd": "${workspaceRoot}/examples/test-app/",
             "runtimeExecutable": "${workspaceRoot}/examples/test-app/node_modules/electron/dist/electron.exe",
             "runtimeArgs": [
-                "--enable-sandbox",
-                "--process-per-site",
+                // "--enable-sandbox",
                 "--remote-debugging-port=8315"
             ],
             "env": {},
@@ -27,31 +26,53 @@
             ]
         },
         {
-            "name": "Launch Standard Test tr-apps",
+            "name": "Run Electron-Mocha Tests",
             "type": "node",
             "request": "launch",
-            // "protocol": "legacy",
+            "program": "${workspaceRoot}/node_modules/electron-mocha/bin/electron-mocha",
+            "port": 5858,
             "protocol": "inspector",
-            "program": "${workspaceRoot}/examples/test-app/Main.js",
-            "stopOnEntry": false,
-            "args": [],
-            "cwd": "${workspaceRoot}/examples/test-app/",
-            "runtimeExecutable": "${workspaceRoot}/examples/test-app/node_modules/electron/dist/electron.exe",
-            "runtimeArgs": [
-                "--process-per-site",
-                "--remote-debugging-port=8315"
+            "cwd": "${workspaceRoot}/lib",
+            "args": [
+                // specify one or more test locations to run
+                // "${workspaceRoot}/build/df-core/test/windowmanager/window-affinity.spec",
+                // "${workspaceRoot}/build/eikon-framework/test/url-manager/url-manager.test",
+                // "${workspaceRoot}/build/eikon-framework/test/shortcut/ShortcutManagerImpl.spec",
+                // "${workspaceRoot}/build/eikon-framework/test/jetdata/jetClipboard.test",
+                "${workspaceRoot}/test",
+                "--recursive",
+                // "--require", "${workspaceRoot}/tools/unit_test/require.js",
+                "--reporter", "spec",
+                "--no-timeouts",
+                "--colors",
+                // "--debug",
+                "--inspect-brk=5858"
+                // "--debug-brk"
             ],
-            "env": {
-                "NODE_PRESERVE_SYMLINKS": "1",
-                // "ELECTRON_IPC_BRIDGE_LOGPATH": "C:\\temp\\electron_ipc_bus",
-                "NODE_ENV": "development"
+            "windows": {
+                "env": {
+                    "ELECTRON_PATH": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+                }
             },
-            // "console": "integratedTerminal",
+            "osx": {
+                "env": {
+                    "ELECTRON_PATH": "${workspaceRoot}/node_modules/.bin/electron"
+                }
+            },
+            "linux": {
+                "env": {
+                    "ELECTRON_PATH": "${workspaceRoot}/node_modules/.bin/electron"
+                }
+            },
+            "outputCapture": "std",
             "console": "internalConsole",
+            // "internalConsoleOptions": "openOnSessionStart",
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceRoot}/**/*.js"
-            ]
+                "${workspaceRoot}/build/**/*.js",
+                "!${workspaceRoot}/build/**/node_modules/**/*.js"
+            ],
+            "trace": false
         }
     ]
 }

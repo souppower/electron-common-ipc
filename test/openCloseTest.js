@@ -2,24 +2,78 @@ const chai = require('chai');
 const assert = chai.assert;
 const expect = chai.expect;
 
-const ipcBusApi = require('../lib/electron-common-ipc');
+const ipcBusModule = require('../lib/electron-common-ipc');
+const electronApp = require('electron').app;
 
-describe('Connection', function () {
+describe('Brokers', () => {
+  const ipcBusPath = 50494;
+  let ipcBusBroker;
+  let ipcBusBridge;
 
-    it(`Connect/Close`, function () {
-      let bufferListReader = new BufferListReader.BufferListReader();
-      bufferListReader.appendBuffer(paramBuffer);
-      bufferListReader.appendBuffer(paramBuffer);
-      bufferListReader.appendBuffer(paramBuffer);
-      {
-        let result = bufferListReader.readBuffer(64);
-        assert(Buffer.compare(globalBuffer.slice(0, 64), result) === 0);
-      }
-      {
-        let result = bufferListReader.readBuffer(128);
-        assert(Buffer.compare(globalBuffer.slice(64, 64 + 128), result) === 0);
-      }
+  function startBrokers() {
+    // Create broker
+    ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);
+    // Start broker
+    return ipcBusBroker.start()
+      .then((msg) => {
+        console.log('IpcBusBroker started');
+
+        // Create bridge
+        ipcBusBridge = ipcBusModule.CreateIpcBusBridge(ipcBusPath);
+        // Start bridge
+        return ipcBusBridge.start()
+          .then((msg) => {
+            console.log('IpcBusBridge started');
+          });
+      });
+  }
+
+  function stopBrokers() {
+    return ipcBusBridge.stop()
+      .then(() => {
+        console.log('IpcBusBridge stopped');
+        return ipcBusBroker.stop()
+          .then(() => {
+            console.log('IpcBusBroker stopped');
+          });
+      });
+  }
+
+
+  it('start brokers', (done) => {
+    if (electronApp.isReady()) {
+      startBrokers()
+        .then(() => {
+          done();
+        });
+    }
+
+    // Startup
+    electronApp.on('ready', () => {
+      startBrokers()
+        .then(() => {
+          done();
+        });
     });
-});
+  });
 
+  it('stop brokers', (done) => {
+    if (electronApp.isReady()) {
+      stopBrokers()
+        .then(() => {
+          done();
+        });
+    }
+
+    // Startup
+    electronApp.on('ready', () => {
+      stopBrokers()
+        .then(() => {
+          done();
+        });
+    });
+  });
+
+
+});
 

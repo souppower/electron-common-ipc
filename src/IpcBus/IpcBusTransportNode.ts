@@ -174,32 +174,27 @@ export class IpcBusTransportNode extends IpcBusTransport {
         return new Promise<void>((resolve, reject) => {
             if (this._socket) {
                 let timer: NodeJS.Timer;
-                this._baseIpc.socket.once('drain', () => {
-                    let baseIpc = this._baseIpc;
+                this._socket.once('drain', () => {
+                    let socket = this._socket;
                     let catchClose = () => {
                         clearTimeout(timer);
-
-                let catchClose = () => {
-                    clearTimeout(timer);
-                        baseIpc.socket.removeListener('close', catchClose);
-                    socket.removeListener('close', catchClose);
+                        socket.removeListener('close', catchClose);
                         resolve();
                     };
                     // Below zero = infinite
                     if (options.timeoutDelay >= 0) {
                         timer = setTimeout(() => {
-                        socket.removeListener('close', catchClose);
-
+                            socket.removeListener('close', catchClose);
                             let msg = `[IPCBus:Node] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
                             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                             reject(msg);
                         }, options.timeoutDelay);
                     }
-                this._socket.addListener('close', catchClose);
-                this._socket.destroy();
-                    this._baseIpc.socket.destroy();
+                    this._socket.addListener('close', catchClose);
+                    this._socket.destroy();
                 });
                 this.ipcPushCommand(IpcBusCommand.Kind.Close, '');
+                this._socket.end();
             }
             else {
                 resolve();

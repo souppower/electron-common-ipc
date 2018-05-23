@@ -1,4 +1,4 @@
-/// <reference path='../typings/electron.d.ts' />
+/// <reference types='electron' />
 
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
