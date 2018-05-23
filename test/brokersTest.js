@@ -4,61 +4,12 @@ const expect = chai.expect;
 
 const ipcBusModule = require('../lib/electron-common-ipc');
 const electronApp = require('electron').app;
+const brokersLifeCycle = require('./brokersLifeCycle');
 
 describe('Brokers', () => {
-  const ipcBusPath = 50494;
-  let ipcBusBroker;
-  let ipcBusBridge;
-
-  function startBrokers() {
-    // Create broker
-    ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);
-    // Start broker
-    return ipcBusBroker.start()
-      .then((msg) => {
-        console.log('IpcBusBroker started');
-
-        // Create bridge
-        ipcBusBridge = ipcBusModule.CreateIpcBusBridge(ipcBusPath);
-        // Start bridge
-        return ipcBusBridge.start()
-          .then((msg) => {
-            console.log('IpcBusBridge started');
-          })
-          .catch((err) => {
-            console.log(`IpcBusBridge started failed ${err}`);
-            throw err;
-          });
-      })
-      .catch((err) => {
-        console.log(`IpcBusBroker started failed ${err}`);
-        throw err;
-      });
-}
-
-  function stopBrokers() {
-    return ipcBusBridge.stop()
-      .then(() => {
-        console.log('IpcBusBridge stopped');
-        return ipcBusBroker.stop()
-          .then(() => {
-            console.log('IpcBusBroker stopped');
-          })
-          .catch((err) => {
-            console.log(`IpcBusBridge stopped failed ${err}`);
-            throw err;
-          });
-      })
-      .catch((err) => {
-        console.log(`IpcBusBroker stopped failed ${err}`);
-        throw err;
-      });
-  }
-
-
   it('start brokers', (done) => {
     if (electronApp.isReady()) {
-      startBrokers()
+      brokersLifeCycle.startBrokers()
         .then(() => {
           done();
         })
@@ -69,7 +20,7 @@ describe('Brokers', () => {
 
     // Startup
     electronApp.on('ready', () => {
-      startBrokers()
+      brokersLifeCycle.startBrokers()
         .then(() => {
           done();
         })
@@ -81,7 +32,7 @@ describe('Brokers', () => {
 
   it('stop brokers', (done) => {
     if (electronApp.isReady()) {
-      stopBrokers()
+      brokersLifeCycle.stopBrokers()
         .then(() => {
           done();
         })
@@ -92,7 +43,7 @@ describe('Brokers', () => {
 
     // Startup
     electronApp.on('ready', () => {
-      stopBrokers()
+      brokersLifeCycle.stopBrokers()
         .then(() => {
           done();
         })
