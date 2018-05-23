@@ -6,7 +6,7 @@ const ipcBusPath = 50494;
 let ipcBusBroker;
 let ipcBusBridge;
 
-function startBrokers() {
+function _startBrokers() {
   // Create broker
   ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);
   // Start broker
@@ -32,7 +32,7 @@ function startBrokers() {
     });
 }
 
-function stopBrokers() {
+function _stopBrokers() {
   return ipcBusBridge.stop()
     .then(() => {
       ipcBusBridge = null;
@@ -53,5 +53,43 @@ function stopBrokers() {
     });
 }
 
+function startBrokers() {
+  if (electronApp.isReady()) {
+    return _startBrokers()
+  }
+
+  return new Promise((resolve, reject) => {
+    electronApp.on('ready', () => {
+      _startBrokers()
+        .then(() => {
+          resolve();
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
+  });
+}
+
+function stopBrokers() {
+  if (electronApp.isReady()) {
+    return _stopBrokers()
+  }
+
+  return new Promise((resolve, reject) => {
+    electronApp.on('ready', () => {
+      _stopBrokers()
+        .then(() => {
+          resolve();
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
+  });
+}
+
+
 exports.startBrokers = startBrokers;
 exports.stopBrokers = stopBrokers;
+exports.ipcBusPath = ipcBusPath;
