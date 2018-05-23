@@ -308,6 +308,9 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
                 this._ipcBusPeers.set(ipcBusCommand.peer.id, ipcBusCommand.peer);
                 break;
 
+            // User by peers associated with a webContent.
+            // There is only one socket for managing all this peers
+            // We must not close this socket but just peer in it
             case IpcBusCommand.Kind.Disconnect:
                 if (this._ipcBusPeers.delete(ipcBusCommand.peer.id)) {
                     this._subscriptions.releasePeerId(socket.remotePort, ipcBusCommand.peer.id);

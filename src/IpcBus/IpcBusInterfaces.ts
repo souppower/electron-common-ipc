@@ -89,7 +89,7 @@ export interface IpcBusClient extends EventEmitter {
 }
 
 export namespace IpcBusBroker {
-    export interface StartOptions extends IpcTimeoutOptions{
+    export interface StartOptions extends IpcTimeoutOptions {
     }
 
     export interface StopOptions extends IpcTimeoutOptions {

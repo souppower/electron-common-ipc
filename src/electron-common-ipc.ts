@@ -10,6 +10,9 @@ export {IPCBUS_CHANNEL_SERVICE_AVAILABLE} from './IpcBus/IpcBusInterfaces';
 export {IPCBUS_SERVICE_EVENT_START} from './IpcBus/IpcBusInterfaces';
 export {IPCBUS_SERVICE_EVENT_STOP} from './IpcBus/IpcBusInterfaces';
 
+export {ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR} from './IpcBus/IpcBusInterfaces';
+export {ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR} from './IpcBus/IpcBusInterfaces';
+
 export {ServiceStatus} from './IpcBus/IpcBusInterfaces';
 
 import {IpcBusClient} from './IpcBus/IpcBusInterfaces';
@@ -22,10 +25,10 @@ import {_CreateIpcBusBroker} from './IpcBus/IpcBusApi';
 import {_CreateIpcBusBridge} from './IpcBus/IpcBusApi';
 import {_CreateIpcBusClient} from './IpcBus/IpcBusApi';
 
-import {_CreateIpcBusService} from './IpcBus/IpcBusApiRenderer';
-import {_CreateIpcBusServiceProxy} from './IpcBus/IpcBusApiRenderer';
-import {_ActivateIpcBusTrace} from './IpcBus/IpcBusApiRenderer';
-import {_ActivateServiceTrace} from './IpcBus/IpcBusApiRenderer';
+import {_CreateIpcBusService} from './IpcBus/IpcBusApi-browser';
+import {_CreateIpcBusServiceProxy} from './IpcBus/IpcBusApi-browser';
+import {_ActivateIpcBusTrace} from './IpcBus/IpcBusApi-browser';
+import {_ActivateServiceTrace} from './IpcBus/IpcBusApi-browser';
 
 export function CreateIpcBusBroker(busPath?: string): IpcBusBroker {
     return _CreateIpcBusBroker(busPath);
