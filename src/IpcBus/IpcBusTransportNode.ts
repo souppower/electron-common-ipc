@@ -45,6 +45,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
     protected _onSocketError(err: any) {
         let msg = `[IPCBus:Node] server error ${err}`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
+        this._socket.destroy();
         this._reset();
     }
 
@@ -87,6 +88,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
                 this._socket.removeListener(key, this._socketBinds[key]);
             }
             this._socket.end();
+            this._socket.unref();
             this._socket = null;
         }
     }

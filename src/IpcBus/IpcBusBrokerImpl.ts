@@ -47,16 +47,26 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
     }
 
     private _reset() {
-        this._promiseStarted = null;
         if (this._baseIpc) {
-            this._ipcBusBrokerClient.close();
-            this._baseIpc.server.removeListener('connection', this._onServerConnectionBind);
-            this._baseIpc.server.removeListener('error', this._onServerErrorBind);
-            this._baseIpc.server.removeListener('close', this._onServerCloseBind);
-            this._baseIpc.removeListener('packet', this._onServerDataBind);
-            this._baseIpc.server.close();
+            let baseIpc = this._baseIpc;
             this._baseIpc = null;
+
+            baseIpc.server.removeListener('connection', this._onServerConnectionBind);
+            baseIpc.server.removeListener('error', this._onServerErrorBind);
+            baseIpc.server.removeListener('close', this._onServerCloseBind);
+            baseIpc.removeListener('packet', this._onServerDataBind);
+            this._subscriptions.forEachConnection((connData) => {
+                // connData.conn.end();
+                connData.conn.destroy();
+            });
+            this._ipcBusBrokerClient.close();
+            baseIpc.server.close();
+            baseIpc.server.unref();
         }
+        this._promiseStarted = null;
+        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<string>('IPCBus:Broker');
+        this._requestChannels = new Map<string, any>();
+        this._ipcBusPeers = new Map<string, IpcBusInterfaces.IpcBusPeer>();
     }
 
     // IpcBusBroker API
@@ -218,7 +228,10 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
     }
 
     protected _onSocketClose(socket: any): void {
-        this._socketCleanUp(socket);
+        // Not closing server
+        if (this._baseIpc) {
+            this._socketCleanUp(socket);
+        }
     }
 
     protected _onServerClose(): void {

@@ -5,7 +5,7 @@ export const IPC_BUS_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
 export const IPC_BUS_RENDERER_COMMAND = 'IpcBusRenderer:Command';
 export const IPC_BUS_RENDERER_EVENT = 'IpcBusRenderer:Event';
 
-export const IPC_BUS_TIMEOUT = 2000;
+export const IPC_BUS_TIMEOUT = 60000;   // 2000;
 
 /** @internal */
 function GetCmdLineArgValue(argName: string): string {
@@ -224,6 +224,18 @@ export class ChannelConnectionMap<T extends string | number> {
         // ForEach is supposed to support deletion during the iteration !
         this._channelsMap.forEach((connsMap, channel) => {
             this._releaseConnData(false, channel, connsMap, connKey, null);
+        });
+    }
+
+    public forEachConnection(callback: ChannelConnectionMap.ForEachHandler<T>) {
+        let connections = new Map<T, ChannelConnectionMap.ConnectionData<T>>();
+        this._channelsMap.forEach((connsMap, channel) => {
+            connsMap.forEach((connData, connKey) => {
+                connections.set(connData.connKey, connData);
+            });
+        });
+        connections.forEach((connData, connKey) => {
+            callback(connData, '');
         });
     }
 
