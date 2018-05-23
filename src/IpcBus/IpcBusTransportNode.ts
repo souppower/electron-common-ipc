@@ -189,28 +189,22 @@ export class IpcBusTransportNode extends IpcBusTransport {
                 let socketLocalBinds: { [key: string]: Function } = {};
                 let catchClose = () => {
                     clearTimeout(timer);
-                    // for (let key in socketLocalBinds) {
-                    //     socket.removeListener(key, socketLocalBinds[key]);
-                    // }
-                    resolve();
-                };
-                let catchError = () => {
-                    clearTimeout(timer);
-                    // for (let key in socketLocalBinds) {
-                    //     socket.removeListener(key, socketLocalBinds[key]);
-                    // }
+                    for (let key in socketLocalBinds) {
+                        socket.removeListener(key, socketLocalBinds[key]);
+                    }
                     resolve();
                 };
                 // Below zero = infinite
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
-                        socket.removeListener('close', catchClose);
+                        for (let key in socketLocalBinds) {
+                            socket.removeListener(key, socketLocalBinds[key]);
+                        }
                         let msg = `[IPCBus:Node] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                         reject(msg);
                     }, options.timeoutDelay);
                 }
-                socketLocalBinds['error'] = catchError.bind(this);
                 socketLocalBinds['close'] = catchClose.bind(this);
                 for (let key in socketLocalBinds) {
                     socket.addListener(key, socketLocalBinds[key]);
