@@ -17,7 +17,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
     private _promiseConnected: Promise<void>;
 
     protected _socket: net.Socket;
-    protected _socketBinds: { [key: string]: Function };
+    protected _netBinds: { [key: string]: Function };
 
     private _socketBuffer: number;
     private _socketWriter: Writer;
@@ -34,11 +34,11 @@ export class IpcBusTransportNode extends IpcBusTransport {
         this._bufferListReader = new BufferListReader();
         this._packetBuffer = new IpcPacketBuffer();
 
-        this._socketBinds = {};
-        this._socketBinds['error'] = this._onSocketError.bind(this);
-        this._socketBinds['close'] = this._onSocketClose.bind(this);
-        this._socketBinds['data'] = this._onSocketData.bind(this);
-        this._socketBinds['end'] = this._onSocketEnd.bind(this);
+        this._netBinds = {};
+        this._netBinds['error'] = this._onSocketError.bind(this);
+        this._netBinds['close'] = this._onSocketClose.bind(this);
+        this._netBinds['data'] = this._onSocketData.bind(this);
+        this._netBinds['end'] = this._onSocketEnd.bind(this);
     }
 
     protected _onSocketError(err: any) {
@@ -83,12 +83,13 @@ export class IpcBusTransportNode extends IpcBusTransport {
         this._promiseConnected = null;
         this._socketWriter = null;
         if (this._socket) {
-            for (let key in this._socketBinds) {
-                this._socket.removeListener(key, this._socketBinds[key]);
-            }
-            this._socket.end();
-            this._socket.unref();
+            let socket = this._socket;
             this._socket = null;
+            for (let key in this._netBinds) {
+                socket.removeListener(key, this._netBinds[key]);
+            }
+
+            socket.end();
         }
     }
 
@@ -136,8 +137,8 @@ export class IpcBusTransportNode extends IpcBusTransport {
 
                     this._socket = socket;
 
-                    for (let key in this._socketBinds) {
-                        this._socket.addListener(key, this._socketBinds[key]);
+                    for (let key in this._netBinds) {
+                        this._socket.addListener(key, this._netBinds[key]);
                     }
 
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Node] connected on ${JSON.stringify(this._ipcOptions)}`);

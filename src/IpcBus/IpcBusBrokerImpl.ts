@@ -36,7 +36,6 @@ class IpcBusBrokerSocket {
         this._socketBinds['error'] = this._onSocketError.bind(this);
         this._socketBinds['close'] = this._onSocketClose.bind(this);
         this._socketBinds['data'] = this._onSocketData.bind(this);
-        // this._socketBinds['end'] = this._onSocketEnd.bind(this);
 
         for (let key in this._socketBinds) {
             this._socket.addListener(key, this._socketBinds[key]);
@@ -80,10 +79,12 @@ class IpcBusBrokerSocket {
 
 /** @internal */
 export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBrokerSocketClient {
-    private _server: net.Server;
     private _ipcOptions: IpcBusUtils.IpcOptions;
     private _ipcBusBrokerClient: IpcBusCommonClient;
     private _socketClients: Map<number, IpcBusBrokerSocket>;
+
+    private _server: net.Server;
+    private _netBinds: { [key: string]: Function };
 
     private _promiseStarted: Promise<void>;
 
@@ -94,23 +95,20 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
     private _queryStateLamdba: IpcBusInterfaces.IpcBusListener = (ipcBusEvent: IpcBusInterfaces.IpcBusEvent, replyChannel: string) => this._onQueryState(ipcBusEvent, replyChannel);
     private _serviceAvailableLambda: IpcBusInterfaces.IpcBusListener = (ipcBusEvent: IpcBusInterfaces.IpcBusEvent, serviceName: string) => this._onServiceAvailable(ipcBusEvent, serviceName);
 
-    private _onServerConnectionBind: Function;
-    private _onServerCloseBind: Function;
-    private _onServerErrorBind: Function;
-
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
         this._ipcOptions = ipcOptions;
 
-        this._onServerConnectionBind = this._onServerConnection.bind(this);
-        this._onServerCloseBind = this._onServerClose.bind(this);
-        this._onServerErrorBind = this._onServerError.bind(this);
+        this._netBinds = {};
+        this._netBinds['error'] = this._onServerError.bind(this);
+        this._netBinds['close'] = this._onServerClose.bind(this);
+        this._netBinds['connection'] = this._onServerConnection.bind(this);
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<number>('IPCBus:Broker');
         this._requestChannels = new Map<string, net.Socket>();
         this._socketClients = new Map<number, IpcBusBrokerSocket>();
         this._ipcBusPeers = new Map<string, IpcBusInterfaces.IpcBusPeer>();
 
-        let ipcBusTransport: IpcBusTransport = new IpcBusTransportNode(processType, ipcOptions);
+        let ipcBusTransport = new IpcBusTransportNode(processType, ipcOptions);
         this._ipcBusBrokerClient = new IpcBusCommonClient(ipcBusTransport);
     }
 
@@ -118,10 +116,10 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
         if (this._server) {
             let server = this._server;
             this._server = null;
+            for (let key in this._netBinds) {
+                server.removeListener(key, this._netBinds[key]);
+            }
 
-            server.removeListener('connection', this._onServerConnectionBind);
-            server.removeListener('error', this._onServerErrorBind);
-            server.removeListener('close', this._onServerCloseBind);
             this._socketClients.forEach((socket) => {
                 // connData.conn.end();
                 socket.destroy();
@@ -179,9 +177,9 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
                     this._server = server;
 
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Listening for incoming connections on ${JSON.stringify(this._ipcOptions)}`);
-                    this._server.on('connection', this._onServerConnectionBind);
-                    this._server.on('error', this._onServerErrorBind);
-                    this._server.on('close', this._onServerCloseBind);
+                    for (let key in this._netBinds) {
+                        this._server.addListener(key, this._netBinds[key]);
+                    }
 
                     this._ipcBusBrokerClient.connect({ peerName: `IpcBusBrokerClient` })
                         .then(() => {
