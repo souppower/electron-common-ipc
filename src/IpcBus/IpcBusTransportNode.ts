@@ -1,8 +1,7 @@
 /// <reference types='node' />
 
 import * as assert from 'assert';
-
-import { IpcPacketNet as BaseIpc } from 'socket-serializer';
+import * as net from 'net';
 
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
@@ -10,31 +9,36 @@ import * as IpcBusInterfaces from './IpcBusInterfaces';
 import { IpcBusTransport } from './IpcBusTransport';
 import { IpcBusCommand } from './IpcBusCommand';
 
-import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter } from 'socket-serializer';
+import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
 
 // Implementation for Node process
 /** @internal */
 export class IpcBusTransportNode extends IpcBusTransport {
-    protected _baseIpc: BaseIpc;
     private _promiseConnected: Promise<void>;
+
+    protected _socket: net.Socket;
+    private _onSocketErrorBind: Function;
+    private _onSocketCloseBind: Function;
+    private _onSocketDataBind: Function;
 
     private _socketBuffer: number;
     private _socketWriter: Writer;
-    private _packet: IpcPacketBufferWrap;
 
-    private _onSocketErrorBind: Function;
-    private _onSocketCloseBind: Function;
-    private _onSocketPacketBind: Function;
+    private _packet: IpcPacketBufferWrap;
+    private _packetBuffer: IpcPacketBuffer;
+    private _bufferListReader: BufferListReader;
 
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
         assert((processType === 'browser') || (processType === 'node'), `IpcBusTransportNode: processType must not be a process ${processType}`);
 
         super({ type: processType, pid: process.pid }, ipcOptions);
         this._packet = new IpcPacketBufferWrap();
+        this._bufferListReader = new BufferListReader();
+        this._packetBuffer = new IpcPacketBuffer();
 
         this._onSocketErrorBind = this._onSocketError.bind(this);
         this._onSocketCloseBind = this._onSocketClose.bind(this);
-        this._onSocketPacketBind = this._onSocketPacket.bind(this);
+        this._onSocketDataBind = this._onSocketData.bind(this);
     }
 
     protected _onSocketError(err: any) {
@@ -49,30 +53,34 @@ export class IpcBusTransportNode extends IpcBusTransport {
         this._reset();
     }
 
-    protected _onSocketPacket(packet: IpcPacketBuffer) {
-        let args = packet.parseArray();
-        let ipcBusCommand: IpcBusCommand = args.shift();
-        // console.log(`packet`);
-        // console.log(JSON.stringify(ipcBusCommand, null, 4));
-        if (ipcBusCommand && ipcBusCommand.peer) {
-            this._onEventReceived(ipcBusCommand, args);
-        }
-        else {
+    protected _onSocketData(buffer: Buffer) {
+        this._bufferListReader.appendBuffer(buffer);
+
+        while (this._packetBuffer.decodeFromReader(this._bufferListReader)) {
+            let args = this._packetBuffer.parseArray();
+            let ipcBusCommand: IpcBusCommand = args.shift();
+            // console.log(`packet`);
             // console.log(JSON.stringify(ipcBusCommand, null, 4));
-            // console.log(args);
-            throw `[IPCBus:Node] Not valid packet !`;
+            if (ipcBusCommand && ipcBusCommand.peer) {
+                this._onEventReceived(ipcBusCommand, args);
+            }
+            else {
+                // console.log(JSON.stringify(ipcBusCommand, null, 4));
+                // console.log(args);
+                throw `[IPCBus:Node] Not valid packet !`;
+            }
         }
     }
 
     private _reset() {
         this._promiseConnected = null;
         this._socketWriter = null;
-        if (this._baseIpc) {
-            this._baseIpc.removeListener('packet', this._onSocketPacketBind);
-            this._baseIpc.socket.removeListener('error', this._onSocketErrorBind);
-            this._baseIpc.socket.removeListener('close', this._onSocketCloseBind);
-            this._baseIpc.socket.end();
-            this._baseIpc = null;
+        if (this._socket) {
+            this._socket.removeListener('data', this._onSocketDataBind);
+            this._socket.removeListener('error', this._onSocketErrorBind);
+            this._socket.removeListener('close', this._onSocketCloseBind);
+            this._socket.end();
+            this._socket = null;
         }
     }
 
@@ -110,28 +118,28 @@ export class IpcBusTransportNode extends IpcBusTransport {
                     fctReject(msg);
                 };
 
-                let baseIpc = new BaseIpc();
+                let socket: net.Socket;
                 let catchOpen = (conn: any) => {
                     clearTimeout(timer);
-                    baseIpc.socket.removeListener('connect', catchOpen);
-                    baseIpc.socket.removeListener('error', catchError);
-                    baseIpc.socket.removeListener('close', catchClose);
+                    socket.removeListener('connect', catchOpen);
+                    socket.removeListener('error', catchError);
+                    socket.removeListener('close', catchClose);
 
-                    this._baseIpc = baseIpc;
+                    this._socket = socket;
 
-                    this._baseIpc.addListener('packet', this._onSocketPacketBind);
-                    this._baseIpc.socket.addListener('error', this._onSocketErrorBind);
-                    this._baseIpc.socket.addListener('close', this._onSocketCloseBind);
+                    this._socket.addListener('data', this._onSocketDataBind);
+                    this._socket.addListener('error', this._onSocketErrorBind);
+                    this._socket.addListener('close', this._onSocketCloseBind);
 
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Node] connected on ${JSON.stringify(this._ipcOptions)}`);
                     if ((this._socketBuffer == null) || (this._socketBuffer === 0)) {
-                        this._socketWriter = new SocketWriter(this._baseIpc.socket);
+                        this._socketWriter = new SocketWriter(this._socket);
                     }
                     else if (this._socketBuffer < 0) {
-                        this._socketWriter = new DelayedSocketWriter(this._baseIpc.socket);
+                        this._socketWriter = new DelayedSocketWriter(this._socket);
                     }
                     else if (this._socketBuffer > 0) {
-                        this._socketWriter = new BufferedSocketWriter(this._baseIpc.socket, this._socketBuffer);
+                        this._socketWriter = new BufferedSocketWriter(this._socket, this._socketBuffer);
                     }
                     this.ipcPushCommand(IpcBusCommand.Kind.Connect, '');
                     resolve();
@@ -141,18 +149,18 @@ export class IpcBusTransportNode extends IpcBusTransport {
                     if (timer) {
                         clearTimeout(timer);
                     }
-                    baseIpc.socket.removeListener('connect', catchOpen);
-                    baseIpc.socket.removeListener('error', catchError);
-                    baseIpc.socket.removeListener('close', catchClose);
+                    socket.removeListener('connect', catchOpen);
+                    socket.removeListener('error', catchError);
+                    socket.removeListener('close', catchClose);
                     this._reset();
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                     reject(msg);
                 };
 
-                baseIpc.connect(this._ipcOptions.port, this._ipcOptions.host);
-                baseIpc.socket.addListener('connect', catchOpen);
-                baseIpc.socket.addListener('error', catchError);
-                baseIpc.socket.addListener('close', catchClose);
+                socket = net.connect(this._ipcOptions.port, this._ipcOptions.host);
+                socket.addListener('connect', catchOpen);
+                socket.addListener('error', catchError);
+                socket.addListener('close', catchClose);
             });
         }
         return p;
@@ -164,27 +172,31 @@ export class IpcBusTransportNode extends IpcBusTransport {
             options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
         return new Promise<void>((resolve, reject) => {
-            if (this._baseIpc) {
+            if (this._socket) {
                 let timer: NodeJS.Timer;
                 this._baseIpc.socket.once('drain', () => {
                     let baseIpc = this._baseIpc;
                     let catchClose = () => {
                         clearTimeout(timer);
+
+                let catchClose = () => {
+                    clearTimeout(timer);
                         baseIpc.socket.removeListener('close', catchClose);
+                    socket.removeListener('close', catchClose);
                         resolve();
                     };
                     // Below zero = infinite
                     if (options.timeoutDelay >= 0) {
                         timer = setTimeout(() => {
-                            baseIpc.socket.removeListener('close', catchClose);
+                        socket.removeListener('close', catchClose);
 
                             let msg = `[IPCBus:Node] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
                             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                             reject(msg);
                         }, options.timeoutDelay);
                     }
-                    this._baseIpc.socket.addListener('close', catchClose);
-                    this._baseIpc.socket.end();
+                this._socket.addListener('close', catchClose);
+                this._socket.destroy();
                     this._baseIpc.socket.destroy();
                 });
                 this.ipcPushCommand(IpcBusCommand.Kind.Close, '');
@@ -200,7 +212,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
     }
 
     protected _ipcPushCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        if (this._socketWriter) {
+        if (this._socket) {
             if (args) {
                 this._packet.writeArray(this._socketWriter, [ipcBusCommand, ...args]);
             }
