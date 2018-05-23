@@ -8,8 +8,13 @@ const brokersLifeCycle = require('./brokersLifeCycle');
 
 
 describe('Client', () => {
+  let ipcBusPath;
+
   before(async () => {
-    return brokersLifeCycle.startBrokers();
+    return brokersLifeCycle.startBrokers()
+    .then((port) => {
+      ipcBusPath = port;
+    });
   });
 
   after(async () => {
@@ -18,7 +23,7 @@ describe('Client', () => {
 
   let ipcBusClient;
   it('start client', async () => {
-    ipcBusClient = ipcBusModule.CreateIpcBusClient(brokersLifeCycle.ipcBusPath);
+    ipcBusClient = ipcBusModule.CreateIpcBusClient(ipcBusPath);
     return ipcBusClient.connect({ peerName: 'client' })
   });
 
@@ -29,8 +34,13 @@ describe('Client', () => {
 });
 
 describe('Client', () => {
+  let ipcBusPath;
+
   before(async () => {
-    return brokersLifeCycle.startBrokers();
+    return brokersLifeCycle.startBrokers()
+    .then((port) => {
+      ipcBusPath = port;
+    });
   });
 
   after(async () => {
@@ -39,7 +49,7 @@ describe('Client', () => {
 
   let ipcBusClient;
   it('start client', async () => {
-    ipcBusClient = ipcBusModule.CreateIpcBusClient(brokersLifeCycle.ipcBusPath);
+    ipcBusClient = ipcBusModule.CreateIpcBusClient(ipcBusPath);
     return ipcBusClient.connect({ peerName: 'client' })
   });
 });

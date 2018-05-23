@@ -1,7 +1,6 @@
 import * as net from 'net';
 
-import { IpcPacketNet } from 'socket-serializer';
-import { IpcPacketBuffer } from 'socket-serializer';
+import { IpcPacketBuffer, BufferListReader } from 'socket-serializer';
 
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
@@ -12,12 +11,79 @@ import { IpcBusTransport } from './IpcBusTransport';
 import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusTransportNode } from './IpcBusTransportNode';
 
+interface IpcBusBrokerSocketClient {
+    onSocketPacket(packetBuffer: IpcPacketBuffer, socket: net.Socket): void;
+    onSocketError(socket: net.Socket, err: string): void;
+    onSocketClose(socket: net.Socket): void;
+};
+
+class IpcBusBrokerSocket {
+    private _socket: net.Socket;
+    protected _socketBinds: { [key: string]: Function };
+
+    private _packetBuffer: IpcPacketBuffer;
+    private _bufferListReader: BufferListReader;
+    private _client: IpcBusBrokerSocketClient;
+
+    constructor(socket: net.Socket, client: IpcBusBrokerSocketClient) {
+        this._socket = socket;
+        this._client = client;
+
+        this._bufferListReader = new BufferListReader();
+        this._packetBuffer = new IpcPacketBuffer();
+
+        this._socketBinds = {};
+        this._socketBinds['error'] = this._onSocketError.bind(this);
+        this._socketBinds['close'] = this._onSocketClose.bind(this);
+        this._socketBinds['data'] = this._onSocketData.bind(this);
+        // this._socketBinds['end'] = this._onSocketEnd.bind(this);
+
+        for (let key in this._socketBinds) {
+            this._socket.addListener(key, this._socketBinds[key]);
+        }
+    }
+
+    destroy() {
+        if (this._socket) {
+            for (let key in this._socketBinds) {
+                this._socket.removeListener(key, this._socketBinds[key]);
+            }
+            this._socket.end();
+            // this._socket.destroy();
+            this._socket = null;
+        }
+    }
+
+    protected _onSocketData(buffer: Buffer) {
+        this._bufferListReader.appendBuffer(buffer);
+        while (this._packetBuffer.decodeFromReader(this._bufferListReader)) {
+            this._client.onSocketPacket(this._packetBuffer, this._socket);
+        }
+    }
+
+    protected _onSocketError(err: any) {
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Error on connection: ${this._socket.remoteAddress} - ${err}`);
+        this._client.onSocketError(this._socket, err);
+    }
+
+    protected _onSocketClose() {
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Close on connection: ${this._socket.remoteAddress}`);
+        this._client.onSocketClose(this._socket);
+    }
+
+    // protected _onSocketEnd() {
+    //     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Close on connection: ${socket.remoteAddress}`);
+    //     this._client.onSocketClose(this._socket);
+    // }
+}
+
+
 /** @internal */
-export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
-    private _baseIpc: IpcPacketNet;
+export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBrokerSocketClient {
+    private _server: net.Server;
     private _ipcOptions: IpcBusUtils.IpcOptions;
     private _ipcBusBrokerClient: IpcBusCommonClient;
-    private _socketClients: Map<number, net.Socket>;
+    private _socketClients: Map<number, IpcBusBrokerSocket>;
 
     private _promiseStarted: Promise<void>;
 
@@ -28,7 +94,6 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
     private _queryStateLamdba: IpcBusInterfaces.IpcBusListener = (ipcBusEvent: IpcBusInterfaces.IpcBusEvent, replyChannel: string) => this._onQueryState(ipcBusEvent, replyChannel);
     private _serviceAvailableLambda: IpcBusInterfaces.IpcBusListener = (ipcBusEvent: IpcBusInterfaces.IpcBusEvent, serviceName: string) => this._onServiceAvailable(ipcBusEvent, serviceName);
 
-    private _onServerDataBind: Function;
     private _onServerConnectionBind: Function;
     private _onServerCloseBind: Function;
     private _onServerErrorBind: Function;
@@ -36,14 +101,13 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
         this._ipcOptions = ipcOptions;
 
-        this._onServerDataBind = this._onServerData.bind(this);
         this._onServerConnectionBind = this._onServerConnection.bind(this);
         this._onServerCloseBind = this._onServerClose.bind(this);
         this._onServerErrorBind = this._onServerError.bind(this);
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<number>('IPCBus:Broker');
         this._requestChannels = new Map<string, net.Socket>();
-        this._socketClients = new Map<number, net.Socket>();
+        this._socketClients = new Map<number, IpcBusBrokerSocket>();
         this._ipcBusPeers = new Map<string, IpcBusInterfaces.IpcBusPeer>();
 
         let ipcBusTransport: IpcBusTransport = new IpcBusTransportNode(processType, ipcOptions);
@@ -51,21 +115,20 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
     }
 
     private _reset() {
-        if (this._baseIpc) {
-            let baseIpc = this._baseIpc;
-            this._baseIpc = null;
+        if (this._server) {
+            let server = this._server;
+            this._server = null;
 
-            baseIpc.server.removeListener('connection', this._onServerConnectionBind);
-            baseIpc.server.removeListener('error', this._onServerErrorBind);
-            baseIpc.server.removeListener('close', this._onServerCloseBind);
-            baseIpc.removeListener('packet', this._onServerDataBind);
+            server.removeListener('connection', this._onServerConnectionBind);
+            server.removeListener('error', this._onServerErrorBind);
+            server.removeListener('close', this._onServerCloseBind);
             this._socketClients.forEach((socket) => {
                 // connData.conn.end();
                 socket.destroy();
             });
             this._ipcBusBrokerClient.close();
-            baseIpc.server.close();
-            baseIpc.server.unref();
+            server.close();
+            server.unref();
         }
         this._promiseStarted = null;
         this._requestChannels.clear();
@@ -84,7 +147,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
         let p = this._promiseStarted;
         if (!p) {
             p = this._promiseStarted = new Promise<void>((resolve, reject) => {
-                let baseIpc = new IpcPacketNet();
+                let server = net.createServer();
                 let timer: NodeJS.Timer = null;
                 let fctReject: (msg: string) => void;
 
@@ -107,19 +170,18 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
                     fctReject(msg);
                 };
 
-                let catchListening =  (server: any) => {
+                let catchListening =  (_server: any) => {
                     clearTimeout(timer);
-                    baseIpc.server.removeListener('listening', catchListening);
-                    baseIpc.server.removeListener('error', catchError);
-                    baseIpc.server.removeListener('close', catchClose);
+                    server.removeListener('listening', catchListening);
+                    server.removeListener('error', catchError);
+                    server.removeListener('close', catchClose);
 
-                    this._baseIpc = baseIpc;
+                    this._server = server;
 
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Listening for incoming connections on ${JSON.stringify(this._ipcOptions)}`);
-                    this._baseIpc.server.on('connection', this._onServerConnectionBind);
-                    this._baseIpc.server.on('error', this._onServerErrorBind);
-                    this._baseIpc.server.on('close', this._onServerCloseBind);
-                    this._baseIpc.on('packet', this._onServerDataBind);
+                    this._server.on('connection', this._onServerConnectionBind);
+                    this._server.on('error', this._onServerErrorBind);
+                    this._server.on('close', this._onServerCloseBind);
 
                     this._ipcBusBrokerClient.connect({ peerName: `IpcBusBrokerClient` })
                         .then(() => {
@@ -139,18 +201,18 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
                     if (timer) {
                         clearTimeout(timer);
                     }
-                    baseIpc.server.removeListener('listening', catchListening);
-                    baseIpc.server.removeListener('error', catchError);
-                    baseIpc.server.removeListener('close', catchClose);
+                    server.removeListener('listening', catchListening);
+                    server.removeListener('error', catchError);
+                    server.removeListener('close', catchClose);
                     this._reset();
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                     reject(msg);
                 };
 
-                baseIpc.listen(this._ipcOptions.port, this._ipcOptions.host);
-                baseIpc.server.addListener('listening', catchListening);
-                baseIpc.server.addListener('error', catchError);
-                baseIpc.server.addListener('close', catchClose);
+                server.listen(this._ipcOptions.port, this._ipcOptions.host);
+                server.addListener('listening', catchListening);
+                server.addListener('error', catchError);
+                server.addListener('close', catchClose);
             });
         }
         return p;
@@ -162,25 +224,25 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
             options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
         return new Promise<void>((resolve, reject) => {
-            if (this._baseIpc) {
-                let baseIpc = this._baseIpc;
+            if (this._server) {
+                let server = this._server;
                 let timer: NodeJS.Timer;
                 let catchClose = () => {
                     clearTimeout(timer);
-                    baseIpc.server.removeListener('close', catchClose);
+                    server.removeListener('close', catchClose);
                     resolve();
                 };
 
                 // Below zero = infinite
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
-                        baseIpc.server.removeListener('close', catchClose);
+                        server.removeListener('close', catchClose);
                         let msg = `[IPCBus:Broker] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                         reject(msg);
                     }, options.timeoutDelay);
                 }
-                baseIpc.server.addListener('close', catchClose);
+                server.addListener('close', catchClose);
                 this._reset();
             }
             else {
@@ -200,43 +262,49 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Connection closed !`);
     }
 
-    protected _onSocketClose(socket: net.Socket): void {
-        // Not closing server
-        if (this._baseIpc) {
+    protected _onSocketConnected(socket: net.Socket): void {
+        this._socketClients.set(socket.remotePort, new IpcBusBrokerSocket(socket, this));
+    }
+
+    onSocketError(socket: net.Socket, err: string): void {
+        // Not closing _server
+        if (this._server) {
+            this._socketClients.delete(socket.remotePort);
+            this._socketCleanUp(socket);
+        }
+    }
+
+    onSocketClose(socket: net.Socket): void {
+        // Not closing _server
+        if (this._server) {
             this._socketClients.delete(socket.remotePort);
             this._socketCleanUp(socket);
         }
     }
 
     protected _onServerClose(): void {
-        let msg = `[IPCBus:Broker] server close`;
+        let msg = `[IPCBus:Broker] _server close`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(msg);
         this._reset();
     }
 
     protected _onServerError(err: any) {
-        let msg = `[IPCBus:Broker] server error ${err}`;
+        let msg = `[IPCBus:Broker] _server error ${err}`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
         this._reset();
     }
 
-    protected _onServerConnection(socket: net.Socket, server: net.Server): void {
+    protected _onServerConnection(socket: net.Socket, _server: net.Server): void {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Incoming connection !`);
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info('[IPCBus:Broker] socket.address=' + JSON.stringify(socket.address()));
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info('[IPCBus:Broker] socket.localAddress=' + socket.localAddress);
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info('[IPCBus:Broker] socket.remoteAddress=' + socket.remoteAddress);
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info('[IPCBus:Broker] socket.remotePort=' + socket.remotePort);
-        this._socketClients.set(socket.remotePort, socket);
-        socket.on('error', (err: string) => {
-            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Error on connection: ${err}`);
-        });
-        socket.on('close', () => {
-            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Close on connection: ${socket.remoteAddress}`);
-            this._onSocketClose(socket);
-        });
+        this._onSocketConnected(socket);
     }
 
-    protected _onServerData(packet: IpcPacketBuffer, socket: net.Socket, server: net.Server): void {
+    // protected _onServerData(packet: IpcPacketBuffer, socket: net.Socket, _server: net.Server): void {
+    onSocketPacket(packet: IpcPacketBuffer, socket: net.Socket): void {
         let ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Connect:
@@ -250,7 +318,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
                 break;
 
             case IpcBusCommand.Kind.Close:
-                this._socketCleanUp(socket);
+                this.onSocketClose(socket);
                 break;
 
             case IpcBusCommand.Kind.AddChannelListener:

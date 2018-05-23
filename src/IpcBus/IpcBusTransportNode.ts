@@ -17,7 +17,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
     private _promiseConnected: Promise<void>;
 
     protected _socket: net.Socket;
-    private _socketBinds: { [key: string]: Function };
+    protected _socketBinds: { [key: string]: Function };
 
     private _socketBuffer: number;
     private _socketWriter: Writer;
@@ -25,7 +25,6 @@ export class IpcBusTransportNode extends IpcBusTransport {
     private _packet: IpcPacketBufferWrap;
     private _packetBuffer: IpcPacketBuffer;
     private _bufferListReader: BufferListReader;
-
 
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
         assert((processType === 'browser') || (processType === 'node'), `IpcBusTransportNode: processType must not be a process ${processType}`);
@@ -187,9 +186,19 @@ export class IpcBusTransportNode extends IpcBusTransport {
             if (this._socket) {
                 let timer: NodeJS.Timer;
                 let socket = this._socket;
+                let socketLocalBinds: { [key: string]: Function } = {};
                 let catchClose = () => {
                     clearTimeout(timer);
-                    socket.removeListener('close', catchClose);
+                    // for (let key in socketLocalBinds) {
+                    //     socket.removeListener(key, socketLocalBinds[key]);
+                    // }
+                    resolve();
+                };
+                let catchError = () => {
+                    clearTimeout(timer);
+                    // for (let key in socketLocalBinds) {
+                    //     socket.removeListener(key, socketLocalBinds[key]);
+                    // }
                     resolve();
                 };
                 // Below zero = infinite
@@ -201,7 +210,11 @@ export class IpcBusTransportNode extends IpcBusTransport {
                         reject(msg);
                     }, options.timeoutDelay);
                 }
-                this._socket.addListener('close', catchClose);
+                socketLocalBinds['error'] = catchError.bind(this);
+                socketLocalBinds['close'] = catchClose.bind(this);
+                for (let key in socketLocalBinds) {
+                    socket.addListener(key, socketLocalBinds[key]);
+                }
                 this.ipcPushCommand(IpcBusCommand.Kind.Close, '');
                 this._reset();
             }

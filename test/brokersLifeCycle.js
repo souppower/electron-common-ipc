@@ -1,36 +1,42 @@
 
 const ipcBusModule = require('../lib/electron-common-ipc');
 const electronApp = require('electron').app;
+const portfinder = require('portfinder');
 
-const ipcBusPath = 50494;
 let ipcBusBroker;
 let ipcBusBridge;
 
 function _startBrokers() {
-  // Create broker
-  ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);
-  // Start broker
-  return ipcBusBroker.start()
-    .then((msg) => {
-      console.log('IpcBusBroker started');
-    })
-    .catch((err) => {
-      console.log(`IpcBusBroker started failed ${err}`);
-      throw err;
-    })
-    .then((msg) => {
-      // Create bridge
-      ipcBusBridge = ipcBusModule.CreateIpcBusBridge(ipcBusPath);
-      // Start bridge
-      return ipcBusBridge.start()
-        .then((msg) => {
-          console.log('IpcBusBridge started');
-        })
-        .catch((err) => {
-          console.log(`IpcBusBridge started failed ${err}`);
-          throw err;
-        });
-    })
+  //  // https://en.wikipedia.org/wiki/Ephemeral_port
+   let port = 49152;
+   return portfinder.getPortPromise({port: port})
+   .then((ipcBusPath) => {
+    // Create broker
+    ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);
+    // Start broker
+    return ipcBusBroker.start()
+      .then((msg) => {
+        console.log('IpcBusBroker started');
+      })
+      .catch((err) => {
+        console.log(`IpcBusBroker started failed ${err}`);
+        throw err;
+      })
+      .then((msg) => {
+        // Create bridge
+        ipcBusBridge = ipcBusModule.CreateIpcBusBridge(ipcBusPath);
+        // Start bridge
+        return ipcBusBridge.start()
+          .then((msg) => {
+            console.log('IpcBusBridge started');
+            return port;
+          })
+          .catch((err) => {
+            console.log(`IpcBusBridge started failed ${err}`);
+            throw err;
+          });
+      })
+    });
 }
 
 function _stopBrokers() {
@@ -95,4 +101,3 @@ function stopBrokers() {
 
 exports.startBrokers = startBrokers;
 exports.stopBrokers = stopBrokers;
-exports.ipcBusPath = ipcBusPath;
