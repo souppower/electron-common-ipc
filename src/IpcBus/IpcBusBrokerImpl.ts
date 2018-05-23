@@ -7,7 +7,6 @@ import * as IpcBusUtils from './IpcBusUtils';
 // import * as util from 'util';
 
 import { IpcBusCommonClient } from './IpcBusClient';
-import { IpcBusTransport } from './IpcBusTransport';
 import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusTransportNode } from './IpcBusTransportNode';
 
@@ -88,7 +87,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
 
     private _promiseStarted: Promise<void>;
 
-    private _subscriptions: IpcBusUtils.ChannelConnectionMap<number>;
+    private _subscriptions: IpcBusUtils.ChannelConnectionMap<number, net.Socket>;
     private _requestChannels: Map<string, net.Socket>;
     private _ipcBusPeers: Map<string, IpcBusInterfaces.IpcBusPeer>;
 
@@ -103,7 +102,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
         this._netBinds['close'] = this._onServerClose.bind(this);
         this._netBinds['connection'] = this._onServerConnection.bind(this);
 
-        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<number>('IPCBus:Broker');
+        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<number, net.Socket>('IPCBus:Broker');
         this._requestChannels = new Map<string, net.Socket>();
         this._socketClients = new Map<number, IpcBusBrokerSocket>();
         this._ipcBusPeers = new Map<string, IpcBusInterfaces.IpcBusPeer>();
@@ -343,7 +342,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
                 break;
 
             case IpcBusCommand.Kind.RequestMessage:
-                // Register on the replyChannel
+                // Register the replyChannel
                 this._requestChannels.set(ipcBusCommand.request.replyChannel, socket);
 
                 // Request ipcBusCommand to subscribed connections
@@ -356,7 +355,6 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
                 let replySocket = this._requestChannels.get(ipcBusCommand.request.replyChannel);
                 if (replySocket) {
                     this._requestChannels.delete(ipcBusCommand.request.replyChannel);
-                    // Send ipcBusCommand to subscribed connections
                     replySocket.write(packet.buffer);
                 }
                 break;

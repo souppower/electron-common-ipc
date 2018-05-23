@@ -79,7 +79,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
         }
     }
 
-    private _reset() {
+    protected _reset() {
         this._promiseConnected = null;
         this._socketWriter = null;
         if (this._socket) {
@@ -217,10 +217,6 @@ export class IpcBusTransportNode extends IpcBusTransport {
                 resolve();
             }
         });
-    }
-
-    ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void {
-        this._ipcPushCommand({ kind: command, channel: channel, peer: this.peer, request: ipcBusCommandRequest }, args);
     }
 
     protected _ipcPushCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {

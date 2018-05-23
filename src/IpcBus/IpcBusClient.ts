@@ -72,13 +72,13 @@ export class IpcBusCommonClient extends EventEmitter
     }
 
     removeAllListeners(channel?: string): this {
+        super.removeAllListeners(channel);
         if (channel) {
             this._ipcBusTransport.ipcPushCommand(IpcBusCommand.Kind.RemoveChannelAllListeners, channel);
         }
         else {
             this._ipcBusTransport.ipcPushCommand(IpcBusCommand.Kind.RemoveListeners, '');
         }
-        super.removeAllListeners(channel);
         return this;
     }
 

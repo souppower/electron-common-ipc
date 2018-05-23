@@ -1,6 +1,6 @@
 {
   "name": "electron-common-ipc",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "A safe IPC bus for applications built on Electron.",
   "repository": {
     "type": "git",
@@ -66,6 +66,6 @@
     "test": "electron-mocha test --recursive",
     "tsc": "tsc",
     "tslint": "tslint",
-    "publication": "npm publish ./ --registry https://registry.npmjs.org/"
+    "publication": "npm publish ./ --registry https://registry.npmjs.org"
   }
 }

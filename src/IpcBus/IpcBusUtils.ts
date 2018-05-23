@@ -94,13 +94,13 @@ export class Logger {
 // then list of ref counted peerIds for this transport
 
 /** @internal */
-export class ChannelConnectionMap<T extends string | number> {
+export class ChannelConnectionMap<T1 extends string | number, T2> {
     private _name: string;
-    private _channelsMap: Map<string, Map<T, ChannelConnectionMap.ConnectionData<T>>>;
+    private _channelsMap: Map<string, Map<T1, ChannelConnectionMap.ConnectionData<T1, T2>>>;
 
     constructor(name: string) {
         this._name = name;
-        this._channelsMap = new Map<string, Map<T, ChannelConnectionMap.ConnectionData<T>>>();
+        this._channelsMap = new Map<string, Map<T1, ChannelConnectionMap.ConnectionData<T1, T2>>>();
     }
 
     private _info(str: string) {
@@ -123,12 +123,12 @@ export class ChannelConnectionMap<T extends string | number> {
         this._channelsMap.clear();
     }
 
-    addRef(channel: string, connKey: T, conn: any, peerId: string) {
+    addRef(channel: string, connKey: T1, conn: any, peerId: string) {
         Logger.enable && this._info(`AddRef: '${channel}', connKey = ${connKey}`);
 
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
-            connsMap = new Map<T, ChannelConnectionMap.ConnectionData<T>>();
+            connsMap = new Map<T1, ChannelConnectionMap.ConnectionData<T1, T2>>();
             // This channel has NOT been subscribed yet, add it to the map
             this._channelsMap.set(channel, connsMap);
             // Logger.enable && this._info(`AddRef: channel '${channel}' is added`);
@@ -136,7 +136,7 @@ export class ChannelConnectionMap<T extends string | number> {
         let connData = connsMap.get(connKey);
         if (connData == null) {
             // This channel has NOT been already subscribed by this connection
-            connData = new ChannelConnectionMap.ConnectionData<T>(connKey, conn);
+            connData = new ChannelConnectionMap.ConnectionData<T1, T2>(connKey, conn);
             connsMap.set(connKey, connData);
             // Logger.enable && this._info(`AddRef: connKey = ${connKey} is added`);
         }
@@ -152,7 +152,7 @@ export class ChannelConnectionMap<T extends string | number> {
         Logger.enable && this._info(`AddRef: '${channel}', connKey = ${connKey}, count = ${connData.peerIds.size}`);
     }
 
-    private _releaseConnData(all: boolean, channel: string, connsMap: Map<T, ChannelConnectionMap.ConnectionData<T>>, connKey: T, peerId: string) {
+    private _releaseConnData(all: boolean, channel: string, connsMap: Map<T1, ChannelConnectionMap.ConnectionData<T1, T2>>, connKey: T1, peerId: string) {
         let connData = connsMap.get(connKey);
         if (connData == null) {
             Logger.enable && this._warn(`Release '${channel}': connKey = ${connKey} is unknown`);
@@ -194,7 +194,7 @@ export class ChannelConnectionMap<T extends string | number> {
         }
     }
 
-    private _release(all: boolean, channel: string, connKey: T, peerId: string) {
+    private _release(all: boolean, channel: string, connKey: T1, peerId: string) {
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`Release '${channel}': '${channel}' is unknown`);
@@ -204,16 +204,16 @@ export class ChannelConnectionMap<T extends string | number> {
         }
     }
 
-    release(channel: string, connKey: T, peerId: string) {
+    release(channel: string, connKey: T1, peerId: string) {
         this._release(false, channel, connKey, peerId);
     }
 
-    releaseAll(channel: string, connKey: T, peerId: string) {
+    releaseAll(channel: string, connKey: T1, peerId: string) {
         Logger.enable && this._info(`releaseAll: connKey = ${connKey}`);
         this._release(true, channel, connKey, peerId);
     }
 
-    releasePeerId(connKey: T, peerId: string) {
+    releasePeerId(connKey: T1, peerId: string) {
         Logger.enable && this._info(`releasePeerId: peerId = ${peerId}`);
 
         // ForEach is supposed to support deletion during the iteration !
@@ -222,7 +222,7 @@ export class ChannelConnectionMap<T extends string | number> {
         });
     }
 
-    releaseConnection(connKey: T) {
+    releaseConnection(connKey: T1) {
         Logger.enable && this._info(`ReleaseConn: connKey = ${connKey}`);
 
         // ForEach is supposed to support deletion during the iteration !
@@ -231,8 +231,8 @@ export class ChannelConnectionMap<T extends string | number> {
         });
     }
 
-    forEachConnection(callback: ChannelConnectionMap.ForEachHandler<T>) {
-        let connections = new Map<T, ChannelConnectionMap.ConnectionData<T>>();
+    forEachConnection(callback: ChannelConnectionMap.ForEachHandler<T1, T2>) {
+        let connections = new Map<T1, ChannelConnectionMap.ConnectionData<T1, T2>>();
         this._channelsMap.forEach((connsMap, channel) => {
             connsMap.forEach((connData, connKey) => {
                 connections.set(connData.connKey, connData);
@@ -243,7 +243,7 @@ export class ChannelConnectionMap<T extends string | number> {
         });
     }
 
-    forEachChannel(channel: string, callback: ChannelConnectionMap.ForEachHandler<T>) {
+    forEachChannel(channel: string, callback: ChannelConnectionMap.ForEachHandler<T1, T2>) {
         Logger.enable && this._info(`forEachChannel: '${channel}'`);
 
         if ((callback instanceof Function) === false) {
@@ -263,7 +263,7 @@ export class ChannelConnectionMap<T extends string | number> {
         }
     }
 
-    forEach(callback: ChannelConnectionMap.ForEachHandler<T>) {
+    forEach(callback: ChannelConnectionMap.ForEachHandler<T1, T2>) {
         Logger.enable && this._info('forEach');
 
         if ((callback instanceof Function) === false) {
@@ -289,25 +289,25 @@ export interface PeerIdRefCount {
 /** @internal */
 export namespace ChannelConnectionMap {
     /** @internal */
-    export class ConnectionData<T extends string | number> {
-        readonly connKey: T;
-        readonly conn: any;
+    export class ConnectionData<T1 extends string | number, T2> {
+        readonly connKey: T1;
+        readonly conn: T2;
         peerIds: Map<string, PeerIdRefCount> = new Map<string, PeerIdRefCount>();
 
-        constructor(connKey: T, conn: any) {
+        constructor(connKey: T1, conn: T2) {
             this.connKey = connKey;
             this.conn = conn;
         }
     }
 
     // /** @internal */
-    // export interface MapHandler<T extends string | number> {
-    //     (channel: string, peerId: string, connData: ConnectionData<T>): void;
+    // export interface MapHandler<T1 extends string | number> {
+    //     (channel: string, peerId: string, connData: ConnectionData<T1, T2>): void;
     // };
 
     /** @internal */
-    export interface ForEachHandler<T extends string | number> {
-        (ConnectionData: ConnectionData<T>, channel: string): void;
+    export interface ForEachHandler<T1 extends string | number, T2> {
+        (ConnectionData: ConnectionData<T1, T2>, channel: string): void;
     };
 };
 

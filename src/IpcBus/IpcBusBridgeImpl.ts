@@ -13,7 +13,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
     private _ipcBusPeers: Map<string, IpcBusInterfaces.IpcBusPeer>;
     private _onRendererMessageBind: Function;
 
-    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<number>;
+    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<number, Electron.WebContents>;
     protected _requestChannels: Map<string, any>;
 
 //    _lambdaCleanUpHandler: Function;
@@ -23,7 +23,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
 
         this._ipcMain = require('electron').ipcMain;
 
-        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<number>('IPCBus:Bridge');
+        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<number, Electron.WebContents>('IPCBus:Bridge');
         this._requestChannels = new Map<string, any>();
         this._ipcBusPeers = new Map<string, IpcBusInterfaces.IpcBusPeer>();
         this._onRendererMessageBind = this._onRendererMessage.bind(this);
@@ -32,34 +32,29 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
         // };
     }
 
-    protected _onSocketClose() {
-        this._ipcBusPeers.clear();
-        this._ipcMain.removeListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
+    protected _reset() {
+        if (this._ipcMain.listenerCount(IpcBusUtils.IPC_BUS_RENDERER_COMMAND) > 0) {
+            this._ipcBusPeers.clear();
+            this._requestChannels.clear();
+            this._ipcMain.removeListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
+        }
         super._onSocketClose();
     }
 
     // IpcBusBridge API
     start(options?: IpcBusInterfaces.IpcBusBridge.StartOptions): Promise<void> {
         options = options || {};
-        let p = new Promise<void>((resolve, reject) => {
-            this.ipcConnect({ peerName: `IpcBusBridge`, ...options } )
-                .then(() => {
-                    // Guard against people calling start several times
-                    if (this._ipcMain.listenerCount(IpcBusUtils.IPC_BUS_RENDERER_COMMAND) === 0) {
-                        this._ipcMain.addListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
-                    }
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
-                    resolve();
-                })
-                .catch((err) => {
-                    reject(err);
-                });
-        });
-        return p;
+        return this.ipcConnect({ peerName: `IpcBusBridge`, ...options } )
+            .then(() => {
+                // Guard against people calling start several times
+                if (this._ipcMain.listenerCount(IpcBusUtils.IPC_BUS_RENDERER_COMMAND) === 0) {
+                    this._ipcMain.addListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
+                }
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
+            });
     }
 
     stop(options?: IpcBusInterfaces.IpcBusBridge.StopOptions): Promise<void> {
-        this._ipcMain.removeListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
         return this.ipcClose(options);
     }
 
@@ -144,7 +139,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
     protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
         const webContents = event.sender;
         const ipcBusPeer = ipcBusCommand.peer;
-        const ipcBusCommandRequest = ipcBusCommand.request;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Connect :
                 this._onConnect(webContents, ipcBusPeer);
@@ -192,11 +186,11 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
                 break;
 
             case IpcBusCommand.Kind.RequestMessage :
-                this._requestChannels.set(ipcBusCommandRequest.replyChannel, webContents);
+                this._requestChannels.set(ipcBusCommand.request.replyChannel, webContents);
                 break;
 
             case IpcBusCommand.Kind.RequestCancel :
-                this._requestChannels.delete(ipcBusCommandRequest.replyChannel);
+                this._requestChannels.delete(ipcBusCommand.request.replyChannel);
                 break;
 
             default :

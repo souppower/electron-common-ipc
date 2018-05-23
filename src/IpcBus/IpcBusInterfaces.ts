@@ -15,17 +15,6 @@ export const IPCBUS_SERVICE_EVENT_STOP = 'service-event-stop';
 export const ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH';
 export const ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH';
 
-export interface IpcBusRequest {
-    resolve(payload: Object | string): void;
-    reject(err: string): void;
-}
-
-export interface IpcBusRequestResponse {
-    event: IpcBusEvent;
-    payload?: Object | string;
-    err?: string;
-}
-
 export type IpcBusProcessType = 'browser' | 'renderer' | 'node' | 'native';
 
 export interface IpcBusProcess {
@@ -39,6 +28,17 @@ export interface IpcBusPeer {
     id: string;
     name: string;
     process: IpcBusProcess;
+}
+
+export interface IpcBusRequest {
+    resolve(payload: Object | string): void;
+    reject(err: string): void;
+}
+
+export interface IpcBusRequestResponse {
+    event: IpcBusEvent;
+    payload?: Object | string;
+    err?: string;
 }
 
 export interface IpcBusEvent {

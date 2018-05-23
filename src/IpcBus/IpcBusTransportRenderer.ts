@@ -114,9 +114,9 @@ export class IpcBusTransportRenderer extends IpcBusTransport {
         return Promise.resolve();
     }
 
-    ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void {
+    protected _ipcPushCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._ipcRenderer) {
-            this._ipcRenderer.send(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, { kind: command, channel: channel, peer: this.peer, request: ipcBusCommandRequest }, args);
+            this._ipcRenderer.send(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, ipcBusCommand, args);
         }
     }
 }

@@ -1,7 +1,7 @@
 import { IpcBusPeer } from './IpcBusInterfaces';
 
 /** @internal */
-export class IpcBusCommand {
+export interface IpcBusCommand {
     kind: IpcBusCommand.Kind;
     channel: string;
     peer: IpcBusPeer;
@@ -26,7 +26,7 @@ export namespace IpcBusCommand {
     };
 
     /** @internal */
-    export class Request {
+    export interface Request {
         replyChannel: string;
         resolve?: boolean;
         reject?: boolean;

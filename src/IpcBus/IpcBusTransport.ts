@@ -127,7 +127,11 @@ export abstract class IpcBusTransport {
         return p;
     }
 
+    ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void {
+        this._ipcPushCommand({ kind: command, channel: channel, peer: this.peer, request: ipcBusCommandRequest }, args);
+    }
+
     abstract ipcConnect(options: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<void>;
     abstract ipcClose(options?: IpcBusInterfaces.IpcBusClient.CloseOptions): Promise<void>;
-    abstract ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void;
+    protected abstract _ipcPushCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
 }
