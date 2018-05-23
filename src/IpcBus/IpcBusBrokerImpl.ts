@@ -148,34 +148,25 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
         }
         return new Promise<void>((resolve, reject) => {
             if (this._baseIpc) {
-                let timer: NodeJS.Timer;
                 let baseIpc = this._baseIpc;
-
+                let timer: NodeJS.Timer;
                 let catchClose = () => {
                     clearTimeout(timer);
                     baseIpc.server.removeListener('close', catchClose);
                     resolve();
                 };
+
                 // Below zero = infinite
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
                         baseIpc.server.removeListener('close', catchClose);
-
                         let msg = `[IPCBus:Broker] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                         reject(msg);
                     }, options.timeoutDelay);
                 }
-
-                // this._ipcServer.on('close', (conn: any) => {
-                //     clearTimeout(timer);
-                //     resolve();
-                // });
-                // this._ipcServer.on('error', (conn: any) => {
-                //     clearTimeout(timer);
-                //     resolve();
-                // });
-                // this._reset();
+                baseIpc.server.addListener('close', catchClose);
+                this._reset();
             }
             else {
                 resolve();

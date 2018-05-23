@@ -80,6 +80,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
             this._socket.removeListener('error', this._onSocketErrorBind);
             this._socket.removeListener('close', this._onSocketCloseBind);
             this._socket.end();
+            this._socket.destroy();
             this._socket = null;
         }
     }
@@ -174,27 +175,24 @@ export class IpcBusTransportNode extends IpcBusTransport {
         return new Promise<void>((resolve, reject) => {
             if (this._socket) {
                 let timer: NodeJS.Timer;
-                this._socket.once('drain', () => {
-                    let socket = this._socket;
-                    let catchClose = () => {
-                        clearTimeout(timer);
+                let socket = this._socket;
+                let catchClose = () => {
+                    clearTimeout(timer);
+                    socket.removeListener('close', catchClose);
+                    resolve();
+                };
+                // Below zero = infinite
+                if (options.timeoutDelay >= 0) {
+                    timer = setTimeout(() => {
                         socket.removeListener('close', catchClose);
-                        resolve();
-                    };
-                    // Below zero = infinite
-                    if (options.timeoutDelay >= 0) {
-                        timer = setTimeout(() => {
-                            socket.removeListener('close', catchClose);
-                            let msg = `[IPCBus:Node] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
-                            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
-                            reject(msg);
-                        }, options.timeoutDelay);
-                    }
-                    this._socket.addListener('close', catchClose);
-                    this._socket.destroy();
-                });
+                        let msg = `[IPCBus:Node] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
+                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
+                        reject(msg);
+                    }, options.timeoutDelay);
+                }
+                this._socket.addListener('close', catchClose);
                 this.ipcPushCommand(IpcBusCommand.Kind.Close, '');
-                this._socket.end();
+                this._reset();
             }
             else {
                 resolve();

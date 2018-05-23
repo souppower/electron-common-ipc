@@ -24,9 +24,17 @@ describe('Brokers', () => {
         return ipcBusBridge.start()
           .then((msg) => {
             console.log('IpcBusBridge started');
+          })
+          .catch((err) => {
+            console.log(`IpcBusBridge started failed ${err}`);
+            throw err;
           });
+      })
+      .catch((err) => {
+        console.log(`IpcBusBroker started failed ${err}`);
+        throw err;
       });
-  }
+}
 
   function stopBrokers() {
     return ipcBusBridge.stop()
@@ -35,7 +43,15 @@ describe('Brokers', () => {
         return ipcBusBroker.stop()
           .then(() => {
             console.log('IpcBusBroker stopped');
+          })
+          .catch((err) => {
+            console.log(`IpcBusBridge stopped failed ${err}`);
+            throw err;
           });
+      })
+      .catch((err) => {
+        console.log(`IpcBusBroker stopped failed ${err}`);
+        throw err;
       });
   }
 
@@ -45,6 +61,9 @@ describe('Brokers', () => {
       startBrokers()
         .then(() => {
           done();
+        })
+        .catch((err) => {
+          done(err);
         });
     }
 
@@ -53,6 +72,9 @@ describe('Brokers', () => {
       startBrokers()
         .then(() => {
           done();
+        })
+        .catch((err) => {
+          done(err);
         });
     });
   });
@@ -62,6 +84,9 @@ describe('Brokers', () => {
       stopBrokers()
         .then(() => {
           done();
+        })
+        .catch((err) => {
+          done(err);
         });
     }
 
@@ -70,6 +95,9 @@ describe('Brokers', () => {
       stopBrokers()
         .then(() => {
           done();
+        })
+        .catch((err) => {
+          done(err);
         });
     });
   });
