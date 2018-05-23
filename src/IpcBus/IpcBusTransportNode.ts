@@ -165,27 +165,29 @@ export class IpcBusTransportNode extends IpcBusTransport {
         }
         return new Promise<void>((resolve, reject) => {
             if (this._baseIpc) {
-                this.ipcPushCommand(IpcBusCommand.Kind.Close, '');
                 let timer: NodeJS.Timer;
-                let baseIpc = this._baseIpc;
-
-                let catchClose = () => {
-                    clearTimeout(timer);
-                    baseIpc.socket.removeListener('close', catchClose);
-                    resolve();
-                };
-                // Below zero = infinite
-                if (options.timeoutDelay >= 0) {
-                    timer = setTimeout(() => {
+                this._baseIpc.socket.once('drain', () => {
+                    let baseIpc = this._baseIpc;
+                    let catchClose = () => {
+                        clearTimeout(timer);
                         baseIpc.socket.removeListener('close', catchClose);
+                        resolve();
+                    };
+                    // Below zero = infinite
+                    if (options.timeoutDelay >= 0) {
+                        timer = setTimeout(() => {
+                            baseIpc.socket.removeListener('close', catchClose);
 
-                        let msg = `[IPCBus:Node] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
-                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
-                        reject(msg);
-                    }, options.timeoutDelay);
-                }
-                this._baseIpc.socket.addListener('close', catchClose);
-                this._baseIpc.socket.destroy();
+                            let msg = `[IPCBus:Node] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
+                            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
+                            reject(msg);
+                        }, options.timeoutDelay);
+                    }
+                    this._baseIpc.socket.addListener('close', catchClose);
+                    this._baseIpc.socket.end();
+                    this._baseIpc.socket.destroy();
+                });
+                this.ipcPushCommand(IpcBusCommand.Kind.Close, '');
             }
             else {
                 resolve();
