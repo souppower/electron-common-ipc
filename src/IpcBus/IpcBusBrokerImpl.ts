@@ -1,3 +1,5 @@
+import * as net from 'net';
+
 import { IpcPacketNet } from 'socket-serializer';
 import { IpcPacketBuffer } from 'socket-serializer';
 
@@ -15,11 +17,12 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
     private _baseIpc: IpcPacketNet;
     private _ipcOptions: IpcBusUtils.IpcOptions;
     private _ipcBusBrokerClient: IpcBusCommonClient;
+    private _socketClients: Map<number, net.Socket>;
 
     private _promiseStarted: Promise<void>;
 
-    private _subscriptions: IpcBusUtils.ChannelConnectionMap<string>;
-    private _requestChannels: Map<string, any>;
+    private _subscriptions: IpcBusUtils.ChannelConnectionMap<number>;
+    private _requestChannels: Map<string, net.Socket>;
     private _ipcBusPeers: Map<string, IpcBusInterfaces.IpcBusPeer>;
 
     private _queryStateLamdba: IpcBusInterfaces.IpcBusListener = (ipcBusEvent: IpcBusInterfaces.IpcBusEvent, replyChannel: string) => this._onQueryState(ipcBusEvent, replyChannel);
@@ -38,8 +41,9 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
         this._onServerCloseBind = this._onServerClose.bind(this);
         this._onServerErrorBind = this._onServerError.bind(this);
 
-        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<string>('IPCBus:Broker');
-        this._requestChannels = new Map<string, any>();
+        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<number>('IPCBus:Broker');
+        this._requestChannels = new Map<string, net.Socket>();
+        this._socketClients = new Map<number, net.Socket>();
         this._ipcBusPeers = new Map<string, IpcBusInterfaces.IpcBusPeer>();
 
         let ipcBusTransport: IpcBusTransport = new IpcBusTransportNode(processType, ipcOptions);
@@ -55,18 +59,19 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
             baseIpc.server.removeListener('error', this._onServerErrorBind);
             baseIpc.server.removeListener('close', this._onServerCloseBind);
             baseIpc.removeListener('packet', this._onServerDataBind);
-            this._subscriptions.forEachConnection((connData) => {
+            this._socketClients.forEach((socket) => {
                 // connData.conn.end();
-                connData.conn.destroy();
+                socket.destroy();
             });
             this._ipcBusBrokerClient.close();
             baseIpc.server.close();
             baseIpc.server.unref();
         }
         this._promiseStarted = null;
-        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<string>('IPCBus:Broker');
-        this._requestChannels = new Map<string, any>();
-        this._ipcBusPeers = new Map<string, IpcBusInterfaces.IpcBusPeer>();
+        this._requestChannels.clear();
+        this._socketClients.clear();
+        this._ipcBusPeers.clear();
+        this._subscriptions.clear();
     }
 
     // IpcBusBroker API
@@ -184,38 +189,6 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
         });
     }
 
-    queryState(): Object {
-        let queryStateResult: Object[] = [];
-        this._subscriptions.forEach((connData, channel) => {
-            connData.peerIds.forEach((peerIdRefCount) => {
-                queryStateResult.push({ channel: channel, peer: this._ipcBusPeers.get(peerIdRefCount.peerId), count: peerIdRefCount.refCount });
-            });
-        });
-        return queryStateResult;
-    }
-
-    isServiceAvailable(serviceName: string): boolean {
-        return this._subscriptions.hasChannel(IpcBusUtils.getServiceCallChannel(serviceName));
-    }
-
-    protected _onQueryState(ipcBusEvent: IpcBusInterfaces.IpcBusEvent, replyChannel: string) {
-        const queryState = this.queryState();
-        if (ipcBusEvent.request) {
-            ipcBusEvent.request.resolve(queryState);
-        }
-        else if (replyChannel != null) {
-            this._ipcBusBrokerClient.send(replyChannel, queryState);
-        }
-    }
-
-    protected _onServiceAvailable(ipcBusEvent: IpcBusInterfaces.IpcBusEvent, serviceName: string) {
-        const availability = this.isServiceAvailable(serviceName);
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Service '${serviceName}' availability : ${availability}`);
-        if (ipcBusEvent.request) {
-            ipcBusEvent.request.resolve(availability);
-        }
-    }
-
     protected _socketCleanUp(socket: any): void {
         this._subscriptions.releaseConnection(socket.remotePort);
         // ForEach is supposed to support deletion during the iteration !
@@ -227,9 +200,10 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Connection closed !`);
     }
 
-    protected _onSocketClose(socket: any): void {
+    protected _onSocketClose(socket: net.Socket): void {
         // Not closing server
         if (this._baseIpc) {
+            this._socketClients.delete(socket.remotePort);
             this._socketCleanUp(socket);
         }
     }
@@ -246,12 +220,13 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
         this._reset();
     }
 
-    protected _onServerConnection(socket: any, server: any): void {
+    protected _onServerConnection(socket: net.Socket, server: net.Server): void {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Incoming connection !`);
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info('[IPCBus:Broker] socket.address=' + JSON.stringify(socket.address()));
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info('[IPCBus:Broker] socket.localAddress=' + socket.localAddress);
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info('[IPCBus:Broker] socket.remoteAddress=' + socket.remoteAddress);
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info('[IPCBus:Broker] socket.remotePort=' + socket.remotePort);
+        this._socketClients.set(socket.remotePort, socket);
         socket.on('error', (err: string) => {
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Error on connection: ${err}`);
         });
@@ -261,7 +236,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
         });
     }
 
-    protected _onServerData(packet: IpcPacketBuffer, socket: any, server: any): void {
+    protected _onServerData(packet: IpcPacketBuffer, socket: net.Socket, server: net.Server): void {
         let ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Connect:
@@ -330,4 +305,37 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker {
                 throw 'IpcBusBrokerImpl: Not valid packet !';
         }
     }
+
+    queryState(): Object {
+        let queryStateResult: Object[] = [];
+        this._subscriptions.forEach((connData, channel) => {
+            connData.peerIds.forEach((peerIdRefCount) => {
+                queryStateResult.push({ channel: channel, peer: this._ipcBusPeers.get(peerIdRefCount.peerId), count: peerIdRefCount.refCount });
+            });
+        });
+        return queryStateResult;
+    }
+
+    isServiceAvailable(serviceName: string): boolean {
+        return this._subscriptions.hasChannel(IpcBusUtils.getServiceCallChannel(serviceName));
+    }
+
+    protected _onQueryState(ipcBusEvent: IpcBusInterfaces.IpcBusEvent, replyChannel: string) {
+        const queryState = this.queryState();
+        if (ipcBusEvent.request) {
+            ipcBusEvent.request.resolve(queryState);
+        }
+        else if (replyChannel != null) {
+            this._ipcBusBrokerClient.send(replyChannel, queryState);
+        }
+    }
+
+    protected _onServiceAvailable(ipcBusEvent: IpcBusInterfaces.IpcBusEvent, serviceName: string) {
+        const availability = this.isServiceAvailable(serviceName);
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Service '${serviceName}' availability : ${availability}`);
+        if (ipcBusEvent.request) {
+            ipcBusEvent.request.resolve(availability);
+        }
+    }
+
 }

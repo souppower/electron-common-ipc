@@ -5,7 +5,7 @@ export const IPC_BUS_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
 export const IPC_BUS_RENDERER_COMMAND = 'IpcBusRenderer:Command';
 export const IPC_BUS_RENDERER_EVENT = 'IpcBusRenderer:Event';
 
-export const IPC_BUS_TIMEOUT = 60000;   // 2000;
+export const IPC_BUS_TIMEOUT = 2000;
 
 /** @internal */
 function GetCmdLineArgValue(argName: string): string {
@@ -72,8 +72,8 @@ export function getServiceEventChannel(serviceName: string): string {
 
 /** @internal */
 export class Logger {
-    public static enable: boolean = false;
-    public static service: boolean = false;
+    static enable: boolean = false;
+    static service: boolean = false;
 
     static info(msg: string) {
         console.log(msg);
@@ -115,11 +115,15 @@ export class ChannelConnectionMap<T extends string | number> {
         Logger.enable && Logger.error(`[${this._name}] ${str}`);
     }
 
-    public hasChannel(channel: string): boolean {
+    hasChannel(channel: string): boolean {
         return this._channelsMap.has(channel);
     }
 
-    public addRef(channel: string, connKey: T, conn: any, peerId: string) {
+    clear() {
+        this._channelsMap.clear();
+    }
+
+    addRef(channel: string, connKey: T, conn: any, peerId: string) {
         Logger.enable && this._info(`AddRef: '${channel}', connKey = ${connKey}`);
 
         let connsMap = this._channelsMap.get(channel);
@@ -200,16 +204,16 @@ export class ChannelConnectionMap<T extends string | number> {
         }
     }
 
-    public release(channel: string, connKey: T, peerId: string) {
+    release(channel: string, connKey: T, peerId: string) {
         this._release(false, channel, connKey, peerId);
     }
 
-    public releaseAll(channel: string, connKey: T, peerId: string) {
+    releaseAll(channel: string, connKey: T, peerId: string) {
         Logger.enable && this._info(`releaseAll: connKey = ${connKey}`);
         this._release(true, channel, connKey, peerId);
     }
 
-    public releasePeerId(connKey: T, peerId: string) {
+    releasePeerId(connKey: T, peerId: string) {
         Logger.enable && this._info(`releasePeerId: peerId = ${peerId}`);
 
         // ForEach is supposed to support deletion during the iteration !
@@ -218,7 +222,7 @@ export class ChannelConnectionMap<T extends string | number> {
         });
     }
 
-    public releaseConnection(connKey: T) {
+    releaseConnection(connKey: T) {
         Logger.enable && this._info(`ReleaseConn: connKey = ${connKey}`);
 
         // ForEach is supposed to support deletion during the iteration !
@@ -227,7 +231,7 @@ export class ChannelConnectionMap<T extends string | number> {
         });
     }
 
-    public forEachConnection(callback: ChannelConnectionMap.ForEachHandler<T>) {
+    forEachConnection(callback: ChannelConnectionMap.ForEachHandler<T>) {
         let connections = new Map<T, ChannelConnectionMap.ConnectionData<T>>();
         this._channelsMap.forEach((connsMap, channel) => {
             connsMap.forEach((connData, connKey) => {
@@ -239,7 +243,7 @@ export class ChannelConnectionMap<T extends string | number> {
         });
     }
 
-    public forEachChannel(channel: string, callback: ChannelConnectionMap.ForEachHandler<T>) {
+    forEachChannel(channel: string, callback: ChannelConnectionMap.ForEachHandler<T>) {
         Logger.enable && this._info(`forEachChannel: '${channel}'`);
 
         if ((callback instanceof Function) === false) {
@@ -259,7 +263,7 @@ export class ChannelConnectionMap<T extends string | number> {
         }
     }
 
-    public forEach(callback: ChannelConnectionMap.ForEachHandler<T>) {
+    forEach(callback: ChannelConnectionMap.ForEachHandler<T>) {
         Logger.enable && this._info('forEach');
 
         if ((callback instanceof Function) === false) {
