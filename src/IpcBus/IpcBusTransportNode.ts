@@ -134,9 +134,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
                     for (let key in socketLocalBinds) {
                         socket.removeListener(key, socketLocalBinds[key]);
                     }
-
                     this._socket = socket;
-
                     for (let key in this._netBinds) {
                         this._socket.addListener(key, this._netBinds[key]);
                     }

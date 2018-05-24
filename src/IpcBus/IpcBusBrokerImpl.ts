@@ -41,7 +41,7 @@ class IpcBusBrokerSocket {
         }
     }
 
-    destroy() {
+    release() {
         if (this._socket) {
             for (let key in this._socketBinds) {
                 this._socket.removeListener(key, this._socketBinds[key]);
@@ -120,8 +120,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
             }
 
             this._socketClients.forEach((socket) => {
-                // connData.conn.end();
-                socket.destroy();
+                socket.release();
             });
             this._ipcBusBrokerClient.close();
             server.close();
