@@ -38,7 +38,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
             this._requestChannels.clear();
             this._ipcMain.removeListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
         }
-        super._onSocketClose();
+        super._reset();
     }
 
     // IpcBusBridge API
