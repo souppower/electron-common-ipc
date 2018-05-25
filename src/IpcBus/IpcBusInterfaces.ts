@@ -152,10 +152,14 @@ export namespace IpcBusServiceProxy {
 
 export interface IpcBusServiceProxy extends EventEmitter {
     readonly isStarted: boolean;
+    readonly wrapper: Object;
 
     connect<T>(options?: IpcBusServiceProxy.ConnectOptions): Promise<T>;
     getStatus(): Promise<ServiceStatus>;
     getWrapper<T>(): T;
+
+    call<T>(name: string, ...args: any[]): Promise<T>;
+    apply<T>(name: string, args: any[]): Promise<T>;
 
     // onServiceStart(handler: () => void);
     // onServiceStop(handler: () => void);

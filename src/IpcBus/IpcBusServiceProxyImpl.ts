@@ -105,7 +105,11 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
             });
     }
 
-    private call<T>(name: string, ...args: any[]): Promise<T> {
+    apply<T>(name: string, args: any[]): Promise<T> {
+        return this.call(name, ...args);
+    }
+
+    call<T>(name: string, ...args: any[]): Promise<T> {
         if (this._isStarted) {
             return this._call(name, ...args);
         }
