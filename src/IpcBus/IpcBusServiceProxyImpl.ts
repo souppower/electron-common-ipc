@@ -20,7 +20,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
     private _serviceName: string;
     private _callTimeout: number;
 
-    constructor(ipcBusClient: IpcBusInterfaces.IpcBusClient, serviceName: string, callTimeout: number = 1000) {
+    constructor(ipcBusClient: IpcBusInterfaces.IpcBusClient, serviceName: string, callTimeout: number = IpcBusUtils.IPC_BUS_TIMEOUT) {
         super();
         super.setMaxListeners(0);
 
@@ -42,6 +42,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
             })
             // DeprecationWarning: Unhandled promise rejections are deprecated
             .catch((err) => {
+                IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] first status to '${this._serviceName}' - err: ${err}`);
             });
 
         // Register service start/stop/event events
@@ -70,7 +71,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
     }
 
     getStatus(): Promise<IpcBusInterfaces.ServiceStatus> {
-        return this._call<IpcBusInterfaces.ServiceStatus>(IpcBusInterfaces.IPCBUS_SERVICE_CALL_GETSTATUS);
+        return this._call<IpcBusInterfaces.ServiceStatus>(IpcBusUtils.IPCBUS_SERVICE_CALL_GETSTATUS);
     }
 
    call<T>(name: string, ...args: any[]): Promise<T> {
@@ -121,7 +122,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
     }
 
     private _updateWrapper(serviceStatus: IpcBusInterfaces.ServiceStatus): void {
-        for(let i = 0, l = serviceStatus.callHandlers.length; i < l; ++i) {
+        for (let i = 0, l = serviceStatus.callHandlers.length; i < l; ++i) {
             let handlerName = serviceStatus.callHandlers[i];
             const proc = (...args: any[]) => {
                 return this.call<Object>(handlerName, ...args);
@@ -132,7 +133,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
     }
 
     private _sendDelayedCalls(): void {
-        for(let i = 0, l = this._delayedCalls.length; i < l; ++i) {
+        for (let i = 0, l = this._delayedCalls.length; i < l; ++i) {
             this._delayedCalls[i]();
         }
         this._delayedCalls.splice(0, this._delayedCalls.length);

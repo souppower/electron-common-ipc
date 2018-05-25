@@ -446,20 +446,12 @@ function TimeServiceImpl() {
 }
 
 class TimeServiceImpl2 extends EventEmitter {
-
     getCurrent(source) {
         console.log(`<MAIN Service> Service time is serving '${source}' with the current time !`);
         const currentTime = new Date().getTime();
         this.emit('currentTime', currentTime);
         return currentTime;
     };
-
-    _beforeCallHandler(call, sender, request) {
-
-        console.log(`<MAIN Service> About to call TimeServiceImpl2::${call.handlerName}`);
-
-        return call.args;
-    }
 }
 
 util.inherits(TimeServiceImpl, EventEmitter);

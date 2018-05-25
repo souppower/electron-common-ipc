@@ -54,6 +54,8 @@ export function ExtractIpcOptions(busPath: string): IpcOptions {
 }
 
 export const IPCBUS_SERVICE_WRAPPER_EVENT = 'service-wrapper-event';
+// Special call handlers
+export const IPCBUS_SERVICE_CALL_GETSTATUS: string = '__getServiceStatus';
 
 // Helper to get a valid service channel namespace
 export function getServiceNamespace(serviceName: string): string {

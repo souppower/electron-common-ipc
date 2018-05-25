@@ -3,25 +3,11 @@ const assert = chai.assert;
 const expect = chai.expect;
 
 const ipcBusModule = require('../lib/electron-common-ipc');
-const electronApp = require('electron').app;
 const brokersLifeCycle = require('./brokersLifeCycle');
-
-
-let ipcBusClient1;
-let ipcBusClient2;
-function startClients() {
-  const ipcBusClient1 = ipcBusModule.CreateIpcBusClient(brokersLifeCycle.ipcBusPath);
-  const ipcBusClient2 = ipcBusModule.CreateIpcBusClient(brokersLifeCycle.ipcBusPath);
-  return Promise.all([ipcBusClient1.connect({ peerName: 'client1' }), ipcBusClient2.connect({ peerName: 'client2' })]);
-}
-
-function stopClients() {
-  return Promise.all([ipcBusClient1.close(), ipcBusClient2.close()]);
-}
 
 describe('Client', () => {
   before((done) => {
-    brokersLifeCycle.startBrokers()
+    return brokersLifeCycle.startBrokers()
       .then(() => {
         done();
       })

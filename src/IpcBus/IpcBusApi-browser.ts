@@ -32,7 +32,7 @@ export function _CreateIpcBusService(client: IpcBusClient, serviceName: string, 
 }
 
 /** @internal */
-export function _CreateIpcBusServiceProxy(client: IpcBusClient, serviceName: string, callTimeout: number = 1000): IpcBusServiceProxy {
+export function _CreateIpcBusServiceProxy(client: IpcBusClient, serviceName: string, callTimeout?: number): IpcBusServiceProxy {
     return new IpcBusServiceProxyImpl(client, serviceName, callTimeout);
 }
 /** @internal */

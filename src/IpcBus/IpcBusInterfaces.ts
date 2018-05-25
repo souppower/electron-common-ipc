@@ -1,8 +1,6 @@
 /// <reference types='node' />
 import { EventEmitter } from 'events';
 
-// Special call handlers
-export const IPCBUS_SERVICE_CALL_GETSTATUS: string = '__getServiceStatus';
 // Special channels
 export const IPCBUS_CHANNEL: string = '/electron-ipc-bus';
 export const IPCBUS_CHANNEL_QUERY_STATE: string = `${IPCBUS_CHANNEL}/queryState`;

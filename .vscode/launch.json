@@ -34,14 +34,9 @@
             "protocol": "inspector",
             "cwd": "${workspaceRoot}/lib",
             "args": [
-                // specify one or more test locations to run
-                // "${workspaceRoot}/build/df-core/test/windowmanager/window-affinity.spec",
-                // "${workspaceRoot}/build/eikon-framework/test/url-manager/url-manager.test",
-                // "${workspaceRoot}/build/eikon-framework/test/shortcut/ShortcutManagerImpl.spec",
-                // "${workspaceRoot}/build/eikon-framework/test/jetdata/jetClipboard.test",
+                // "--grep=Service",
                 "${workspaceRoot}/test",
                 "--recursive",
-                // "--require", "${workspaceRoot}/tools/unit_test/require.js",
                 "--reporter", "spec",
                 "--no-timeouts",
                 "--colors",

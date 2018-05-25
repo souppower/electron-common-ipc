@@ -29,7 +29,7 @@ export class IpcBusServiceImpl implements IpcBusInterfaces.IpcBusService {
         this._callHandlers = new Map<string, IpcBusInterfaces.IpcBusServiceCallHandler>();
 
         //  Register internal call handlers
-        this.registerCallHandler(IpcBusInterfaces.IPCBUS_SERVICE_CALL_GETSTATUS, (call: IpcBusInterfaces.IpcBusServiceCall, sender: IpcBusInterfaces.IpcBusPeer, request: IpcBusInterfaces.IpcBusRequest) => {
+        this.registerCallHandler(IpcBusUtils.IPCBUS_SERVICE_CALL_GETSTATUS, (call: IpcBusInterfaces.IpcBusServiceCall, sender: IpcBusInterfaces.IpcBusPeer, request: IpcBusInterfaces.IpcBusRequest) => {
             let serviceStatus: IpcBusInterfaces.ServiceStatus = {
                 started: true,
                 callHandlers: this._getCallHandlerNames(),
@@ -106,7 +106,6 @@ export class IpcBusServiceImpl implements IpcBusInterfaces.IpcBusService {
     }
 
     stop(): void {
-
         if (this._exposedInstance && this._prevImplEmit) {
             // Unhook events emitted by implementation to send them via IPC
             this._exposedInstance['emit'] = this._prevImplEmit;

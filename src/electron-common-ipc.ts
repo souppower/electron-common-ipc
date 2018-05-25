@@ -46,7 +46,7 @@ export function CreateIpcBusService(client: IpcBusClient, serviceName: string, s
     return _CreateIpcBusService(client, serviceName, serviceImpl);
 }
 
-export function CreateIpcBusServiceProxy(client: IpcBusClient, serviceName: string, callTimeout: number = 1000): IpcBusServiceProxy {
+export function CreateIpcBusServiceProxy(client: IpcBusClient, serviceName: string, callTimeout?: number): IpcBusServiceProxy {
     return _CreateIpcBusServiceProxy(client, serviceName, callTimeout);
 }
 
