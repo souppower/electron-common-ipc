@@ -29,8 +29,6 @@ function TestService() {
 
 util.inherits(TestService, EventEmitter);
 
-const testServiceName = 'test-service';
-
 describe('Service', () => {
   let ipcBusPath;
   let ipcBusClient;
@@ -51,7 +49,9 @@ describe('Service', () => {
   });
 
   describe('Creation', () => {
-    it('connect', () => {
+    it('connect service first', () => {
+      const testServiceName = 'test-service1';
+
       const testServiceInstance = new TestService();
       const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
       testService.start();
@@ -60,9 +60,25 @@ describe('Service', () => {
       const testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
       return testServiceProxy.connect();
     });
+
+    it('connect proxy first', (done) => {
+      const testServiceName = 'test-service2';
+
+      // Create the proxy (client-side)
+      const testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
+      testServiceProxy.connect()
+      .then(() => {
+        done();
+      });
+
+      const testServiceInstance = new TestService();
+      const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
+      testService.start();
+    });
   });
 
   describe('Call', () => {
+    const testServiceName = 'test-service3';
     let testServiceProxy;
     let testServiceInstance;
     before(() => {

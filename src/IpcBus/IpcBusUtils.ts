@@ -5,7 +5,7 @@ export const IPC_BUS_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
 export const IPC_BUS_RENDERER_COMMAND = 'IpcBusRenderer:Command';
 export const IPC_BUS_RENDERER_EVENT = 'IpcBusRenderer:Event';
 
-export const IPC_BUS_TIMEOUT = 2000;
+export const IPC_BUS_TIMEOUT = 20000;
 
 /** @internal */
 function GetCmdLineArgValue(argName: string): string {

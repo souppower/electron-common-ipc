@@ -155,6 +155,8 @@ export interface IpcBusServiceProxy extends EventEmitter {
 
     connect<T>(options?: IpcBusServiceProxy.ConnectOptions): Promise<T>;
     getStatus(): Promise<ServiceStatus>;
-    call<T>(handlerName: string, ...args: any[]): Promise<T>;
     getWrapper<T>(): T;
+
+    // onServiceStart(handler: () => void);
+    // onServiceStop(handler: () => void);
 }
