@@ -47,6 +47,7 @@ class IpcBusBrokerSocket {
                 this._socket.removeListener(key, this._socketBinds[key]);
             }
             this._socket.end();
+            this._socket.unref();
             // this._socket.destroy();
             this._socket = null;
         }

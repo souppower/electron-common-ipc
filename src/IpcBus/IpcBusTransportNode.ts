@@ -90,6 +90,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
             }
 
             socket.end();
+            socket.unref();
         }
     }
 
