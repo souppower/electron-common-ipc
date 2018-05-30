@@ -134,7 +134,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
         return this._call<IpcBusInterfaces.ServiceStatus>(IpcBusUtils.IPCBUS_SERVICE_CALL_GETSTATUS);
     }
 
-    createCall<T>(name: string, args: any[]): Deferred<T> {
+    private _createCall<T>(name: string, args: any[]): Deferred<T> {
         let deferred = new Deferred<T>((resolve, reject) => {
             const callMsg = { handlerName: name, args: args };
             this._ipcBusClient.request(IpcBusUtils.getServiceCallChannel(this._serviceName), -1, callMsg)
@@ -154,13 +154,13 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
     }
 
     private _call<T>(name: string, ...args: any[]): Promise<T> {
-        let deferred = this.createCall<T>(name, args);
+        let deferred = this._createCall<T>(name, args);
         deferred.execute();
         return deferred.promise;
     }
 
     apply<T>(name: string, args: any[]): Promise<T> {
-        let deferred = this.createCall<T>(name, args);
+        let deferred = this._createCall<T>(name, args);
         if (this._isStarted) {
             deferred.execute();
         }
