@@ -226,7 +226,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
             this.emit(IpcBusInterfaces.IPCBUS_SERVICE_EVENT_STOP);
 
             this._pendingCalls.forEach((deferred) => {
-                deferred.reject('service stopped');
+                deferred.reject(`Service '${this._serviceName}' stopped`);
             });
         }
     }
