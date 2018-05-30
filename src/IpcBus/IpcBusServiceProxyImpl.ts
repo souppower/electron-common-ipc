@@ -178,7 +178,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
         for (let i = 0, l = serviceStatus.callHandlers.length; i < l; ++i) {
             let handlerName = serviceStatus.callHandlers[i];
             const proc = (...args: any[]) => {
-                return this.call<Object>(handlerName, ...args);
+                return this.apply<Object>(handlerName, args);
             };
             this._wrapper[handlerName] = proc;
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Service '${this._serviceName}' added '${handlerName}' to its wrapper`);
