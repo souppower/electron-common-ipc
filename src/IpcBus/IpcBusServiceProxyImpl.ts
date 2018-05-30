@@ -3,37 +3,40 @@
 import { EventEmitter } from 'events';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
-import { deflateRaw } from 'zlib';
 
 /** @internal */
 export class Deferred<T> {
+    private static _globalCounter: number = 0;
+
     public promise: Promise<T>;
 
     public resolve: (t: T) => void;
     public reject: (err: string) => void;
+    public id: number;
 
-    private _body: Function;
+    private _executor: Function;
 
-    constructor(body: Function, immediat: boolean = true) {
+    constructor(executor: (resolve: (value?: T | PromiseLike<T>) => void, reject: (reason?: any) => void)  => void, immediat: boolean = true) {
+        this.id = ++Deferred._globalCounter;
         this.promise = new Promise<T>((resolve, reject) => {
             this.reject = reject;
             this.resolve = resolve;
             if (immediat) {
-                if (body) {
-                    body();
+                if (executor) {
+                    executor(resolve, reject);
                 }
             }
             else {
-                this._body = body;
+                this._executor = executor;
             }
         });
     }
 
     public execute() {
-        if (this._body) {
-            this._body();
+        if (this._executor) {
+            this._executor(this.resolve, this.reject);
         }
-}
+    }
 
     public then(...args: any[]): any {
         return this.promise.then(...args);
@@ -59,13 +62,11 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
     private _callTimeout: number;
 
     private _pendingCalls: Map<number, Deferred<any>>;
-    private _counterCall: number;
 
     constructor(ipcBusClient: IpcBusInterfaces.IpcBusClient, serviceName: string, callTimeout: number = IpcBusUtils.IPC_BUS_TIMEOUT) {
         super();
         super.setMaxListeners(0);
 
-        this._counterCall = 0;
         this._pendingCalls = new Map<number, Deferred<any>>();
 
         this._ipcBusClient = ipcBusClient;
@@ -96,7 +97,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
     connect<T>(options?: IpcBusInterfaces.IpcBusServiceProxy.ConnectOptions): Promise<T> {
         options = options || {};
         if (options.timeoutDelay == null) {
-            options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
+            options.timeoutDelay = this._callTimeout;
         }
         return new Promise<T>((resolve, reject) => {
             if (this._isStarted) {
@@ -137,24 +138,21 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
     }
 
     createCall<T>(name: string, args: any[]): Deferred<T> {
-        ++this._counterCall;
-        // closure
-        let currentCounter = this._counterCall;
         let deferred = new Deferred<T>((resolve, reject) => {
             const callMsg = { handlerName: name, args: args };
             this._ipcBusClient.request(IpcBusUtils.getServiceCallChannel(this._serviceName), -1, callMsg)
                 .then((res: IpcBusInterfaces.IpcBusRequestResponse) => {
                     IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] resolve call to '${name}' from service '${this._serviceName}' - res: ${JSON.stringify(res)}`);
-                    this._pendingCalls.delete(currentCounter);
+                    this._pendingCalls.delete(deferred.id);
                     resolve(<T>res.payload);
                 })
                 .catch((res: IpcBusInterfaces.IpcBusRequestResponse) => {
                     IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] reject call to '${name}' from service '${this._serviceName}' - res: ${JSON.stringify(res)}`);
-                    this._pendingCalls.delete(currentCounter);
+                    this._pendingCalls.delete(deferred.id);
                     reject(res.err);
                 });
         }, false);
-        this._pendingCalls.set(this._counterCall, deferred);
+        this._pendingCalls.set(deferred.id, deferred);
         return deferred;
     }
 

@@ -34,7 +34,7 @@
             "protocol": "inspector",
             "cwd": "${workspaceRoot}/lib",
             "args": [
-                "--grep=Client",
+                "--grep=Service",
                 "${workspaceRoot}/test",
                 "--recursive",
                 "--reporter", "spec",
