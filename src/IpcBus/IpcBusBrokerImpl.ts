@@ -318,7 +318,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
                 break;
 
             case IpcBusCommand.Kind.Close:
-                this.onSocketClose(socket);
+                this._socketCleanUp(socket);
                 break;
 
             case IpcBusCommand.Kind.AddChannelListener:
