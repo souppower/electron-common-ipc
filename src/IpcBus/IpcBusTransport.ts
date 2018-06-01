@@ -50,12 +50,12 @@ export abstract class IpcBusTransport {
                     resolve: (payload: Object | string) => {
                         ipcBusCommand.request.resolve = true;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
-                        this.ipcPushCommand(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
+                        this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
                     },
                     reject: (err: string) => {
                         ipcBusCommand.request.reject = true;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
-                        this.ipcPushCommand(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
+                        this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
                     }
                 };
                 this.eventEmitter.emit(ipcBusCommand.channel, ipcBusEvent, ...args);
@@ -88,7 +88,7 @@ export abstract class IpcBusTransport {
                 // Unregister locally
                 this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
                 // Unregister remotely
-                // this.ipcPushCommand(IpcBusCommand.Kind.RequestCancel, IpcBusCommand.Request, ipcBusEvent);
+                // this.ipcSend(IpcBusCommand.Kind.RequestCancel, IpcBusCommand.Request, ipcBusEvent);
                 if (ipcBusCommand.request.resolve) {
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] resolve`);
                     let response: IpcBusInterfaces.IpcBusRequestResponse = { event: ipcBusEvent, payload: args[0] };
@@ -109,14 +109,14 @@ export abstract class IpcBusTransport {
             // Register locally
             this._requestFunctions.set(ipcBusCommandRequest.replyChannel, localRequestCallback);
             // Execute request
-            this.ipcPushCommand(IpcBusCommand.Kind.RequestMessage, channel, ipcBusCommandRequest, args);
+            this.ipcSend(IpcBusCommand.Kind.RequestMessage, channel, ipcBusCommandRequest, args);
 
             // Clean-up
             if (timeoutDelay >= 0) {
                 setTimeout(() => {
                     if (this._requestFunctions.delete(ipcBusCommandRequest.replyChannel)) {
                         // Unregister remotely
-                        this.ipcPushCommand(IpcBusCommand.Kind.RequestCancel, channel, ipcBusCommandRequest);
+                        this.ipcSend(IpcBusCommand.Kind.RequestCancel, channel, ipcBusCommandRequest);
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] reject: timeout`);
                         let response: IpcBusInterfaces.IpcBusRequestResponse = { event: { channel: channel, sender: this._ipcBusPeer }, err: 'timeout' };
                         reject(response);
@@ -127,11 +127,11 @@ export abstract class IpcBusTransport {
         return p;
     }
 
-    ipcPushCommand(command: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void {
-        this._ipcPushCommand({ kind: command, channel: channel, peer: this.peer, request: ipcBusCommandRequest }, args);
+    ipcSend(kind: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void {
+        this._ipcSend({ kind, channel, peer: this.peer, request: ipcBusCommandRequest }, args);
     }
 
     abstract ipcConnect(options: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<void>;
     abstract ipcClose(options?: IpcBusInterfaces.IpcBusClient.CloseOptions): Promise<void>;
-    protected abstract _ipcPushCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
+    protected abstract _ipcSend(ipcBusCommand: IpcBusCommand, args?: any[]): void;
 }

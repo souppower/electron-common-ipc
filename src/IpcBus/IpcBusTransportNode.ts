@@ -150,7 +150,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
                     else if (this._socketBuffer > 0) {
                         this._socketWriter = new BufferedSocketWriter(this._socket, this._socketBuffer);
                     }
-                    this.ipcPushCommand(IpcBusCommand.Kind.Connect, '');
+                    this.ipcSend(IpcBusCommand.Kind.Connect, '');
                     resolve();
                 };
 
@@ -209,7 +209,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
                 for (let key in socketLocalBinds) {
                     socket.addListener(key, socketLocalBinds[key]);
                 }
-                this.ipcPushCommand(IpcBusCommand.Kind.Close, '');
+                this.ipcSend(IpcBusCommand.Kind.Close, '');
                 this._reset();
             }
             else {
@@ -218,7 +218,7 @@ export class IpcBusTransportNode extends IpcBusTransport {
         });
     }
 
-    protected _ipcPushCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    protected _ipcSend(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._socket) {
             if (args) {
                 this._packet.writeArray(this._socketWriter, [ipcBusCommand, ...args]);

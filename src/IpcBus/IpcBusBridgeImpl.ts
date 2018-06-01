@@ -16,8 +16,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<number, Electron.WebContents>;
     protected _requestChannels: Map<string, any>;
 
-//    _lambdaCleanUpHandler: Function;
-
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
         super(processType, ipcOptions);
 
@@ -27,9 +25,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
         this._requestChannels = new Map<string, any>();
         this._ipcBusPeers = new Map<string, IpcBusInterfaces.IpcBusPeer>();
         this._onRendererMessageBind = this._onRendererMessage.bind(this);
-        // this._lambdaCleanUpHandler = (webContentsId: string) => {
-        //     this.rendererCleanUp(webContentsId);
-        // };
     }
 
     protected _reset() {
@@ -108,7 +103,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
             this._rendererCleanUp(webContents, webContentsId, ipcBusPeer.id);
             // Simulate the close message
             if (this._ipcBusPeers.delete(ipcBusPeer.id)) {
-                this._ipcPushCommand({ kind: IpcBusCommand.Kind.Disconnect, channel: '', peer: ipcBusPeer });
+                this._ipcSend({ kind: IpcBusCommand.Kind.Disconnect, channel: '', peer: ipcBusPeer });
             }
         });
         // webContents.addListener('destroyed', this._lambdaCleanUpHandler);
@@ -150,12 +145,12 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
                 // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
                 if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
                     webContents.send(IpcBusUtils.IPC_BUS_RENDERER_CONNECT, ipcBusPeer);
-                    this._ipcPushCommand(ipcBusCommand, args);
+                    this._ipcSend(ipcBusCommand, args);
                 }
                 else {
                     webContents.on('did-finish-load', () => {
                         webContents.send(IpcBusUtils.IPC_BUS_RENDERER_CONNECT, ipcBusPeer);
-                        this._ipcPushCommand(ipcBusCommand, args);
+                        this._ipcSend(ipcBusCommand, args);
                     });
                 }
                 // WARNING, this 'return' is on purpose.
@@ -196,7 +191,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInter
             default :
                 break;
         }
-        this._ipcPushCommand(ipcBusCommand, args);
+        this._ipcSend(ipcBusCommand, args);
     }
 }
 
