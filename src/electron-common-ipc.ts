@@ -38,7 +38,7 @@ export function CreateIpcBusBridge(busPath?: string): IpcBusBridge {
     return _CreateIpcBusBridge(busPath);
 }
 
-export function CreateIpcBusClient(busPath?: string): IpcBusClient {
+export function CreateIpcBusClient(busPath?: string): IpcBusClient | null {
     return _CreateIpcBusClient(busPath);
 }
 

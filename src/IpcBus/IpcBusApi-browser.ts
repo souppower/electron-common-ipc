@@ -10,20 +10,17 @@ import { IpcBusService } from './IpcBusInterfaces';
 import { IpcBusServiceProxyImpl } from './IpcBusServiceProxyImpl';
 import { IpcBusServiceProxy } from './IpcBusInterfaces';
 
-import { IpcBusCommonClient } from './IpcBusClient';
 import { IpcBusTransport } from './IpcBusTransport';
 import { IpcBusTransportRenderer } from './IpcBusTransportRenderer';
 
 /** @internal */
-export function _CreateIpcBusClientRenderer(busPath?: string): IpcBusClient {
+export function _CreateIpcBusClientRenderer(busPath?: string): IpcBusClient | null {
     let ipcOptions = IpcBusUtils.ExtractIpcOptions(busPath);
-    let ipcBusTransport: IpcBusTransport = new IpcBusTransportRenderer('renderer', ipcOptions);
-
-    let ipcBusClient: IpcBusClient = null;
-    if (ipcBusTransport != null) {
-        ipcBusClient = new IpcBusCommonClient(ipcBusTransport) as IpcBusClient;
+    if (!ipcOptions.isValid()) {
+        return null;
     }
-    return ipcBusClient;
+    let ipcBusTransport: IpcBusTransport = new IpcBusTransportRenderer('renderer', ipcOptions);
+    return ipcBusTransport.client;
 }
 
 /** @internal */

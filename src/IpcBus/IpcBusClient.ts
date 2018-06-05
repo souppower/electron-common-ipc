@@ -18,7 +18,6 @@ export class IpcBusCommonClient extends EventEmitter
         super();
         super.setMaxListeners(0);
         this._ipcBusTransport = ipcBusTransport;
-        this._ipcBusTransport.eventEmitter = this;
     }
 
     // IpcBusClient API
@@ -40,7 +39,7 @@ export class IpcBusCommonClient extends EventEmitter
     }
 
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusInterfaces.IpcBusRequestResponse> {
-        return this._ipcBusTransport.request(channel, timeoutDelay, args);
+        return this._ipcBusTransport.ipcRequest(channel, timeoutDelay, args);
     }
 
     // EventEmitter API

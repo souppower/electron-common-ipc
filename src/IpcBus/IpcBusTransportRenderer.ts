@@ -5,13 +5,13 @@ import * as assert from 'assert';
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
-import { IpcBusTransport } from './IpcBusTransport';
+import { IpcBusTransportBase } from './IpcBusTransportBase';
 import { IpcBusCommand } from './IpcBusCommand';
 
 
 // Implementation for renderer process
 /** @internal */
-export class IpcBusTransportRenderer extends IpcBusTransport {
+export class IpcBusTransportRenderer extends IpcBusTransportBase {
     private _ipcRenderer: any;
     private _onIpcEventReceived: Function;
     private _promiseConnected: Promise<void>;

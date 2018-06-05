@@ -6,14 +6,14 @@ import * as net from 'net';
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
-import { IpcBusTransport } from './IpcBusTransport';
+import { IpcBusTransportBase } from './IpcBusTransportBase';
 import { IpcBusCommand } from './IpcBusCommand';
 
 import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
 
 // Implementation for Node process
 /** @internal */
-export class IpcBusTransportNode extends IpcBusTransport {
+export class IpcBusTransportNode extends IpcBusTransportBase {
     private _promiseConnected: Promise<void>;
 
     protected _socket: net.Socket;
