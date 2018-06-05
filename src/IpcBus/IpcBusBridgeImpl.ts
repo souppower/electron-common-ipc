@@ -103,7 +103,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
             this._rendererCleanUp(webContents, webContentsId, ipcBusPeer.id);
             // Simulate the close message
             if (this._ipcBusPeers.delete(ipcBusPeer.id)) {
-                this._ipcSend({ kind: IpcBusCommand.Kind.Disconnect, channel: '', peer: ipcBusPeer });
+                this.ipcPostCommand({ kind: IpcBusCommand.Kind.Disconnect, channel: '', peer: ipcBusPeer });
             }
         });
         // webContents.addListener('destroyed', this._lambdaCleanUpHandler);
@@ -145,12 +145,12 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
                 // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
                 if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
                     webContents.send(IpcBusUtils.IPC_BUS_RENDERER_CONNECT, ipcBusPeer);
-                    this._ipcSend(ipcBusCommand, args);
+                    this.ipcPostCommand(ipcBusCommand, args);
                 }
                 else {
                     webContents.on('did-finish-load', () => {
                         webContents.send(IpcBusUtils.IPC_BUS_RENDERER_CONNECT, ipcBusPeer);
-                        this._ipcSend(ipcBusCommand, args);
+                        this.ipcPostCommand(ipcBusCommand, args);
                     });
                 }
                 // WARNING, this 'return' is on purpose.
@@ -191,7 +191,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
             default :
                 break;
         }
-        this._ipcSend(ipcBusCommand, args);
+        this.ipcPostCommand(ipcBusCommand, args);
     }
 }
 

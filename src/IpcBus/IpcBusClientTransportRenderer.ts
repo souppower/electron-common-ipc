@@ -47,7 +47,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
     };
 
     /// IpcBusTrandport API
-    ipcConnect(options?: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<void> {
+    protected ipcConnect(options?: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<void> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
         if (!p) {
@@ -86,7 +86,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
         return p;
     }
 
-    ipcClose(options?: IpcBusInterfaces.IpcBusClient.CloseOptions): Promise<void> {
+    protected ipcClose(options?: IpcBusInterfaces.IpcBusClient.CloseOptions): Promise<void> {
         if (this._ipcRenderer) {
             this.ipcSend(IpcBusCommand.Kind.Close, '');
             this._reset();
@@ -94,7 +94,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
         return Promise.resolve();
     }
 
-    protected _ipcSend(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    protected ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._ipcRenderer) {
             this._ipcRenderer.send(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, ipcBusCommand, args);
         }

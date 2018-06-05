@@ -95,7 +95,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
     }
 
     /// IpcBusClientTransport API
-    ipcConnect(options?: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<void> {
+    protected ipcConnect(options?: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<void> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
         if (!p) {
@@ -177,7 +177,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
         return p;
     }
 
-    ipcClose(options?: IpcBusInterfaces.IpcBusClient.CloseOptions): Promise<void> {
+    protected ipcClose(options?: IpcBusInterfaces.IpcBusClient.CloseOptions): Promise<void> {
         options = options || {};
         if (options.timeoutDelay == null) {
             options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
@@ -218,7 +218,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
         });
     }
 
-    protected _ipcSend(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    protected ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._socket) {
             if (args) {
                 this._packet.writeArray(this._socketWriter, [ipcBusCommand, ...args]);

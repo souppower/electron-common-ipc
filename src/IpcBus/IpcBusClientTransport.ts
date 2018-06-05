@@ -1,25 +1,20 @@
-/// <reference types='node' />
-
-import { EventEmitter } from 'events';
-
 import * as uuid from 'uuid';
 
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommand } from './IpcBusCommand';
+import { IpcBusClientImpl } from './IpcBusClientImpl';
 
 /** @internal */
-export abstract class IpcBusClientTransport extends EventEmitter implements IpcBusInterfaces.IpcBusClient {
+export abstract class IpcBusClientTransport extends IpcBusClientImpl {
     protected _ipcBusPeer: IpcBusInterfaces.IpcBusPeer;
     protected readonly _ipcOptions: IpcBusUtils.IpcOptions;
 
     protected _requestFunctions: Map<string, Function>;
     protected _requestNumber: number;
 
-
     constructor(ipcBusProcess: IpcBusInterfaces.IpcBusProcess, ipcOptions: IpcBusUtils.IpcOptions) {
         super();
-        this.setMaxListeners(0);
 
         this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusProcess };
         this._ipcOptions = ipcOptions;
@@ -34,78 +29,6 @@ export abstract class IpcBusClientTransport extends EventEmitter implements IpcB
         return this._ipcBusPeer;
     }
 
-    connect(options?: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<void> {
-        return this.ipcConnect(options);
-    }
-
-    close(options?: IpcBusInterfaces.IpcBusClient.CloseOptions): Promise<void> {
-        super.removeAllListeners();
-        return this.ipcClose(options);
-    }
-
-    send(channel: string, ...args: any[]) {
-        this.ipcSend(IpcBusCommand.Kind.SendMessage, channel, undefined, args);
-    }
-
-    request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusInterfaces.IpcBusRequestResponse> {
-        return this.ipcRequest(channel, timeoutDelay, args);
-    }
-
-    // EventEmitter API
-    addListener(channel: string, listener: IpcBusInterfaces.IpcBusListener): this {
-        super.addListener(channel, listener);
-        this.ipcSend(IpcBusCommand.Kind.AddChannelListener, channel);
-        return this;
-    }
-
-    removeListener(channel: string, listener: IpcBusInterfaces.IpcBusListener): this {
-        super.removeListener(channel, listener);
-        this.ipcSend(IpcBusCommand.Kind.RemoveChannelListener, channel);
-        return this;
-    }
-
-    on(channel: string, listener: IpcBusInterfaces.IpcBusListener): this {
-        return this.addListener(channel, listener);
-    }
-
-    once(channel: string, listener: IpcBusInterfaces.IpcBusListener): this {
-        super.once(channel, listener);
-        // removeListener will be automatically called by NodeJS when callback has been triggered
-        this.ipcSend(IpcBusCommand.Kind.AddChannelListener, channel);
-        return this;
-    }
-
-    off(channel: string, listener: IpcBusInterfaces.IpcBusListener): this {
-        return this.removeListener(channel, listener);
-    }
-
-    removeAllListeners(channel?: string): this {
-        super.removeAllListeners(channel);
-        if (channel) {
-            this.ipcSend(IpcBusCommand.Kind.RemoveChannelAllListeners, channel);
-        }
-        else {
-            this.ipcSend(IpcBusCommand.Kind.RemoveListeners, '');
-        }
-        return this;
-    }
-
-    // Added in Node 6...
-    prependListener(channel: string, listener: IpcBusInterfaces.IpcBusListener): this {
-        super.prependListener(channel, listener);
-        this.ipcSend(IpcBusCommand.Kind.AddChannelListener, channel);
-        return this;
-    }
-
-    prependOnceListener(channel: string, listener: IpcBusInterfaces.IpcBusListener): this {
-        super.prependOnceListener(channel, listener);
-        this.ipcSend(IpcBusCommand.Kind.AddChannelListener, channel);
-        return this;
-    }
-
-    // ----------------------
-    // Tranport
-    // ----------------------
     private generateReplyChannel(): string {
         ++this._requestNumber;
         return `${IpcBusInterfaces.IPCBUS_CHANNEL}/request-${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
@@ -203,11 +126,9 @@ export abstract class IpcBusClientTransport extends EventEmitter implements IpcB
         return p;
     }
 
-    ipcSend(kind: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void {
-        this._ipcSend({ kind, channel, peer: this.peer, request: ipcBusCommandRequest }, args);
+    protected ipcSend(kind: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void {
+        this.ipcPostCommand({ kind, channel, peer: this.peer, request: ipcBusCommandRequest }, args);
     }
 
-    abstract ipcConnect(options: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<void>;
-    abstract ipcClose(options?: IpcBusInterfaces.IpcBusClient.CloseOptions): Promise<void>;
-    protected abstract _ipcSend(ipcBusCommand: IpcBusCommand, args?: any[]): void;
+    protected abstract ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
 }
