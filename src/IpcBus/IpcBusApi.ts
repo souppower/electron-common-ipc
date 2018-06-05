@@ -13,10 +13,8 @@ import { IpcBusBrokerLogger } from './IpcBusBrokerLogger';
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
 
-import { IpcBusTransportNode } from './IpcBusTransportNode';
-import { IpcBusTransportRenderer } from './IpcBusTransportRenderer';
-
-import { IpcBusTransport} from './IpcBusTransport';
+import { IpcBusClientTransportNode } from './IpcBusClientTransportNode';
+import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
 
 import * as ElectronUtils from './ElectronUtils';
 
@@ -84,16 +82,16 @@ export function _CreateIpcBusClient(busPath?: string): IpcBusClient | null {
     }
     let processType = ElectronUtils.GuessElectronProcessType();
     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`CreateIpcBusForProcess process type = ${processType} on ${JSON.stringify(ipcOptions)}`);
-    let ipcBusTransport: IpcBusTransport = null;
+    let ipcBusClient: IpcBusClient = null;
     switch (processType) {
         // This case 'renderer' is not reachable as IpcBusApi-browser is used in a browser (see browserify 'browser' field in package.json)
         case 'renderer':
-            ipcBusTransport = new IpcBusTransportRenderer(processType, ipcOptions);
+            ipcBusClient = new IpcBusClientTransportRenderer(processType, ipcOptions);
             break;
         case 'browser':
         case 'node':
-            ipcBusTransport = new IpcBusTransportNode(processType, ipcOptions);
+            ipcBusClient = new IpcBusClientTransportNode(processType, ipcOptions);
             break;
     }
-    return ipcBusTransport.client;
+    return ipcBusClient;
 }

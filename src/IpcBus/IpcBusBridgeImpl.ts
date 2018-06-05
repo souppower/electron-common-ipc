@@ -4,11 +4,11 @@ import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
 import { IpcBusCommand } from './IpcBusCommand';
-import { IpcBusTransportNode } from './IpcBusTransportNode';
+import { IpcBusClientTransportNode } from './IpcBusClientTransportNode';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
-export class IpcBusBridgeImpl extends IpcBusTransportNode implements IpcBusInterfaces.IpcBusBridge {
+export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBusInterfaces.IpcBusBridge {
     private _ipcMain: any;
     private _ipcBusPeers: Map<string, IpcBusInterfaces.IpcBusPeer>;
     private _onRendererMessageBind: Function;

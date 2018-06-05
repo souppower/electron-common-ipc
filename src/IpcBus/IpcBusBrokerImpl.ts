@@ -6,9 +6,8 @@ import * as IpcBusInterfaces from './IpcBusInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
 // import * as util from 'util';
 
-import { IpcBusCommonClient } from './IpcBusClient';
 import { IpcBusCommand } from './IpcBusCommand';
-import { IpcBusTransportNode } from './IpcBusTransportNode';
+import { IpcBusClientTransportNode } from './IpcBusClientTransportNode';
 
 interface IpcBusBrokerSocketClient {
     onSocketPacket(packetBuffer: IpcPacketBuffer, socket: net.Socket): void;
@@ -80,7 +79,7 @@ class IpcBusBrokerSocket {
 /** @internal */
 export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBrokerSocketClient {
     private _ipcOptions: IpcBusUtils.IpcOptions;
-    private _ipcBusBrokerClient: IpcBusCommonClient;
+    private _ipcBusBrokerClient: IpcBusInterfaces.IpcBusClient;
     private _socketClients: Map<number, IpcBusBrokerSocket>;
 
     private _server: net.Server;
@@ -108,8 +107,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
         this._socketClients = new Map<number, IpcBusBrokerSocket>();
         this._ipcBusPeers = new Map<string, IpcBusInterfaces.IpcBusPeer>();
 
-        let ipcBusTransport = new IpcBusTransportNode(processType, ipcOptions);
-        this._ipcBusBrokerClient = new IpcBusCommonClient(ipcBusTransport);
+        this._ipcBusBrokerClient = new IpcBusClientTransportNode(processType, ipcOptions);
     }
 
     private _reset() {

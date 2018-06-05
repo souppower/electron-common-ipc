@@ -5,13 +5,13 @@ import * as assert from 'assert';
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
-import { IpcBusTransportBase } from './IpcBusTransportBase';
+import { IpcBusClientTransport } from './IpcBusClientTransport';
 import { IpcBusCommand } from './IpcBusCommand';
 
 
 // Implementation for renderer process
 /** @internal */
-export class IpcBusTransportRenderer extends IpcBusTransportBase {
+export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
     private _ipcRenderer: any;
     private _onIpcEventReceived: Function;
     private _promiseConnected: Promise<void>;
@@ -19,28 +19,8 @@ export class IpcBusTransportRenderer extends IpcBusTransportBase {
     // private _ipcRendererReady: Promise<void>;
 
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
-        assert(processType === 'renderer', `IpcBusTransportRenderer: processType must not be a process ${processType}`);
+        assert(processType === 'renderer', `IpcBusClientTransportRenderer: processType must not be a process ${processType}`);
         super({ type: processType, pid: -1 }, ipcOptions);
-
-// ipcRenderer is not ready until the DOM Content is loaded (https://github.com/electron/electron/issues/7455)
-    //     this._ipcRendererReady = new Promise<void>((resolve, reject) => {
-    //         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] document readystate=${document.readyState}`);
-    //         if (document.readyState !== 'loading') {
-    //             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] is ready`);
-    //             resolve();
-    //         }
-    //         else {
-    //             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] wait for readiness`);
-    //             let onWaitingForIpcRendererReadiness = () => {
-    //                 if (document.readyState !== 'loading') {
-    //                     document.removeEventListener('readystatechange', onWaitingForIpcRendererReadiness);
-    //                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] is ready`);
-    //                     resolve();
-    //                 }
-    //             };
-    //             document.addEventListener('readystatechange', onWaitingForIpcRendererReadiness);
-    //         }
-    //     });
     }
 
     protected _reset() {

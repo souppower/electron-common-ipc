@@ -6,14 +6,14 @@ import * as net from 'net';
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
-import { IpcBusTransportBase } from './IpcBusTransportBase';
+import { IpcBusClientTransport } from './IpcBusClientTransport';
 import { IpcBusCommand } from './IpcBusCommand';
 
 import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
 
 // Implementation for Node process
 /** @internal */
-export class IpcBusTransportNode extends IpcBusTransportBase {
+export class IpcBusClientTransportNode extends IpcBusClientTransport {
     private _promiseConnected: Promise<void>;
 
     protected _socket: net.Socket;
@@ -27,7 +27,7 @@ export class IpcBusTransportNode extends IpcBusTransportBase {
     private _bufferListReader: BufferListReader;
 
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
-        assert((processType === 'browser') || (processType === 'node'), `IpcBusTransportNode: processType must not be a process ${processType}`);
+        assert((processType === 'browser') || (processType === 'node'), `IpcBusClientTransportNode: processType must not be a process ${processType}`);
 
         super({ type: processType, pid: process.pid }, ipcOptions);
         this._packet = new IpcPacketBufferWrap();
@@ -94,7 +94,7 @@ export class IpcBusTransportNode extends IpcBusTransportBase {
         }
     }
 
-    /// IpcBusTransport API
+    /// IpcBusClientTransport API
     ipcConnect(options?: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<void> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
