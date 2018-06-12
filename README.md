@@ -605,13 +605,15 @@ This sets the function that will be executed to serve the specified remote call.
 As this is run in the context of a promise, the function must call either request.resolve()
 or request.reject() to fulfill the promise.
 ```js
-ipcMyService.registerCallHandler('getCurrentTime', (call, request) => {
-                        try {                        {
-                            request.resolve(new Date().getTime());
-                        } catch(e) {
-                            request.reject(e);
-                        }
-                    });
+ipcMyService.registerCallHandler('getCurrentTime', (event, call) => {
+    if (event.request) {
+            try {                        {
+                request.resolve(new Date().getTime());
+            } catch(e) {
+                request.reject(e);
+            }
+        });
+    }
 ```
 
 ### sendEvent(name, ...args): void
