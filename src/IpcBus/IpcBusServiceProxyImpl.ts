@@ -56,7 +56,7 @@ class CallWrapperEventEmitter extends EventEmitter {
 export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterfaces.IpcBusServiceProxy {
     private _eventReceivedLamdba: IpcBusInterfaces.IpcBusListener = (event: IpcBusInterfaces.IpcBusEvent, ...args: any[]) => this._onEventReceived(event, <IpcBusInterfaces.IpcBusServiceEvent>args[0]);
     private _isStarted: boolean;
-    private _wrapper: CallWrapperEventEmitter = null;
+    private _wrapper: CallWrapperEventEmitter;
     private _ipcBusClient: IpcBusInterfaces.IpcBusClient;
     private _serviceName: string;
     private _callTimeout: number;
@@ -134,7 +134,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
         return this._call<IpcBusInterfaces.ServiceStatus>(IpcBusUtils.IPCBUS_SERVICE_CALL_GETSTATUS);
     }
 
-    private _createCall<T>(name: string, args: any[]): Deferred<T> {
+    private _requestApply<T>(name: string, args: any[]): Deferred<T> {
         let deferred = new Deferred<T>((resolve, reject) => {
             const callMsg = { handlerName: name, args: args };
             this._ipcBusClient.request(IpcBusUtils.getServiceCallChannel(this._serviceName), -1, callMsg)
@@ -154,13 +154,13 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
     }
 
     private _call<T>(name: string, ...args: any[]): Promise<T> {
-        let deferred = this._createCall<T>(name, args);
+        let deferred = this._requestApply<T>(name, args);
         deferred.execute();
         return deferred.promise;
     }
 
-    apply<T>(name: string, args: any[]): Promise<T> {
-        let deferred = this._createCall<T>(name, args);
+    requestApply<T>(name: string, args: any[]): Promise<T> {
+        let deferred = this._requestApply<T>(name, args);
         if (this._isStarted) {
             deferred.execute();
         }
@@ -170,17 +170,55 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
         return deferred.promise;
     }
 
+    requestCall<T>(name: string, ...args: any[]): Promise<T> {
+        return this.requestApply(name, args);
+    }
+
+    apply<T>(name: string, args: any[]): Promise<T> {
+        return this.requestApply(name, args);
+    }
+
     call<T>(name: string, ...args: any[]): Promise<T> {
-        return this.apply(name, args);
+        return this.requestApply(name, args);
+    }
+
+    private _sendApply(name: string, args: any[]): Deferred<void> {
+        let deferred = new Deferred<void>((resolve, reject) => {
+            const callMsg = { handlerName: name, args: args };
+            this._ipcBusClient.send(IpcBusUtils.getServiceCallChannel(this._serviceName), -1, callMsg);
+            this._pendingCalls.delete(deferred.id);
+        }, false);
+        this._pendingCalls.set(deferred.id, deferred);
+        return deferred;
+    }
+
+    sendApply(name: string, args: any[]): void {
+        if (this._isStarted) {
+            const callMsg = { handlerName: name, args: args };
+            this._ipcBusClient.send(IpcBusUtils.getServiceCallChannel(this._serviceName), -1, callMsg);
+        }
+        else {
+            this._sendApply(name, args);
+            IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] call delayed '${name}' from service '${this._serviceName}'`);
+        }
+    }
+
+    sendCall(name: string, ...args: any[]): void {
+        return this.sendApply(name, args);
     }
 
     private _updateWrapper(serviceStatus: IpcBusInterfaces.ServiceStatus): void {
         for (let i = 0, l = serviceStatus.callHandlers.length; i < l; ++i) {
             let handlerName = serviceStatus.callHandlers[i];
-            const proc = (...args: any[]) => {
-                return this.apply<Object>(handlerName, args);
+            const requestProc = (...args: any[]) => {
+                return this.requestApply<Object>(handlerName, args);
             };
-            this._wrapper[handlerName] = proc;
+            const sendProc = (...args: any[]) => {
+                return this.sendApply(handlerName, args);
+            };
+            this._wrapper[handlerName] = requestProc;
+            this._wrapper[`request_${handlerName}`] = requestProc;
+            this._wrapper[`send_${handlerName}`] = sendProc;
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Service '${this._serviceName}' added '${handlerName}' to its wrapper`);
         }
     }

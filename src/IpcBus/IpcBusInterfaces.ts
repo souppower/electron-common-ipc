@@ -120,7 +120,7 @@ export interface IpcBusServiceCall {
 }
 
 export interface IpcBusServiceCallHandler {
-    (call: IpcBusServiceCall, sender: IpcBusPeer, request: IpcBusRequest): void;
+    (event: IpcBusEvent, call: IpcBusServiceCall): void;
 }
 
 export interface ServiceStatus {
@@ -158,8 +158,17 @@ export interface IpcBusServiceProxy extends EventEmitter {
     getStatus(): Promise<ServiceStatus>;
     getWrapper<T>(): T;
 
+    // Kept for backward
     call<T>(name: string, ...args: any[]): Promise<T>;
     apply<T>(name: string, args: any[]): Promise<T>;
+
+    // Do wait for the stub response, equivalent to call/apply.
+    requestCall<T>(name: string, ...args: any[]): Promise<T>;
+    requestApply<T>(name: string, args: any[]): Promise<T>;
+
+    // Do not wait for the stub response, more efficient.
+    sendCall(name: string, ...args: any[]): void;
+    sendApply(name: string, args: any[]): void;
 
     // onServiceStart(handler: () => void);
     // onServiceStop(handler: () => void);

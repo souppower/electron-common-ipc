@@ -29,13 +29,13 @@ export class IpcBusServiceImpl implements IpcBusInterfaces.IpcBusService {
         this._callHandlers = new Map<string, IpcBusInterfaces.IpcBusServiceCallHandler>();
 
         //  Register internal call handlers
-        this.registerCallHandler(IpcBusUtils.IPCBUS_SERVICE_CALL_GETSTATUS, (call: IpcBusInterfaces.IpcBusServiceCall, sender: IpcBusInterfaces.IpcBusPeer, request: IpcBusInterfaces.IpcBusRequest) => {
+        this.registerCallHandler(IpcBusUtils.IPCBUS_SERVICE_CALL_GETSTATUS, (event: IpcBusInterfaces.IpcBusEvent, call: IpcBusInterfaces.IpcBusServiceCall) => {
             let serviceStatus: IpcBusInterfaces.ServiceStatus = {
                 started: true,
                 callHandlers: this._getCallHandlerNames(),
                 supportEventEmitter: (this._prevImplEmit != null)
             };
-            request.resolve(serviceStatus);
+            event.request.resolve(serviceStatus);
         });
 
         //  Register call handlers for exposed instance's method
@@ -47,7 +47,7 @@ export class IpcBusServiceImpl implements IpcBusInterfaces.IpcBusService {
                     const method = this._exposedInstance[memberName];
                     if (typeof method === 'function') {
                         this.registerCallHandler(memberName,
-                            (call: IpcBusInterfaces.IpcBusServiceCall, sender: IpcBusInterfaces.IpcBusPeer, request: IpcBusInterfaces.IpcBusRequest) => this._doCall(call, sender, request));
+                            (event: IpcBusInterfaces.IpcBusEvent, call: IpcBusInterfaces.IpcBusServiceCall) => this._doCall(event, call));
                     }
                 }
             }
@@ -57,7 +57,7 @@ export class IpcBusServiceImpl implements IpcBusInterfaces.IpcBusService {
                     const method = this._exposedInstance[memberName];
                     if (method instanceof Function) {
                         this.registerCallHandler(memberName,
-                            (call: IpcBusInterfaces.IpcBusServiceCall, sender: IpcBusInterfaces.IpcBusPeer, request: IpcBusInterfaces.IpcBusRequest) => this._doCall(call, sender, request));
+                            (event: IpcBusInterfaces.IpcBusEvent, call: IpcBusInterfaces.IpcBusServiceCall) => this._doCall(event, call));
                     }
                 }
             }
@@ -144,7 +144,7 @@ export class IpcBusServiceImpl implements IpcBusInterfaces.IpcBusService {
         }
         else {
             try {
-                callHandler(msg, event.sender, event.request);
+                callHandler(event, msg);
             }
             catch (e) {
                 event.request.reject(e);
@@ -153,22 +153,32 @@ export class IpcBusServiceImpl implements IpcBusInterfaces.IpcBusService {
         }
     }
 
-    private _doCall(call: IpcBusInterfaces.IpcBusServiceCall, sender: IpcBusInterfaces.IpcBusPeer, request: IpcBusInterfaces.IpcBusRequest) {
+    private _doCall(event: IpcBusInterfaces.IpcBusEvent, call: IpcBusInterfaces.IpcBusServiceCall) {
         IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcService] Service '${this._serviceName}' is calling implementation's '${call.handlerName}'`);
-        try {
-            const result = this._exposedInstance[call.handlerName](...call.args);
-            if (result && result['then']) {
-                // result is a valid promise
-                result.then(request.resolve, request.reject);
+        if (event.request) {
+            try {
+                const result = this._exposedInstance[call.handlerName](...call.args);
+                if (result && result['then']) {
+                    // result is a valid promise
+                    result.then(event.request.resolve, event.request.reject);
+                }
+                else {
+                    // result is "just" a value
+                    event.request.resolve(result);
+                }
             }
-            else {
-                // result is "just" a value
-                request.resolve(result);
+            catch (e) {
+                event.request.reject(e);
+                IpcBusUtils.Logger.service && IpcBusUtils.Logger.error(`[IpcService] Service '${this._serviceName}' encountered an exception while processing request to '${call.handlerName}' : ${e}`);
             }
         }
-        catch (e) {
-            request.reject(e);
-            IpcBusUtils.Logger.service && IpcBusUtils.Logger.error(`[IpcService] Service '${this._serviceName}' encountered an exception while processing call to '${call.handlerName}' : ${e}`);
+        else {
+            try {
+                this._exposedInstance[call.handlerName](...call.args);
+            }
+            catch (e) {
+                IpcBusUtils.Logger.service && IpcBusUtils.Logger.error(`[IpcService] Service '${this._serviceName}' encountered an exception while processing call to '${call.handlerName}' : ${e}`);
+            }
         }
     }
 
