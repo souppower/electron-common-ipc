@@ -13,7 +13,7 @@ export const IPCBUS_SERVICE_EVENT_STOP = 'service-event-stop';
 export const ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH';
 export const ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH';
 
-export type IpcBusProcessType = 'browser' | 'renderer' | 'node' | 'native';
+export type IpcBusProcessType = 'browser' | 'renderer' | 'node' | 'native' | string;
 
 export interface IpcBusProcess {
     type: IpcBusProcessType;
@@ -113,6 +113,43 @@ export interface IpcBusBridge {
     start(options?: IpcBusBridge.StartOptions): Promise<void>;
     stop(options?: IpcBusBridge.StopOptions): Promise<void>;
 }
+
+export interface IpcSocketConnectOptions {
+    port?: number;
+    host?: string;
+    path?: string;
+}
+
+export interface CreateIpcBusClientOptions extends IpcSocketConnectOptions {
+}
+
+export interface CreateIpcBusClientFunction {
+    (options: CreateIpcBusClientOptions): IpcBusClient | null ;
+    (port: number, hostname?: string): IpcBusClient | null ;
+    (path: string): IpcBusClient | null ;
+}
+
+export interface CreateIpcBusBrokerOptions extends IpcSocketConnectOptions {
+}
+
+export interface CreateIpcBusBrokerFunction {
+    (options: CreateIpcBusBrokerOptions): IpcBusBroker | null ;
+    (port: number, hostname?: string): IpcBusBroker | null ;
+    (path: string): IpcBusBroker | null ;
+}
+
+export interface CreateIpcBusBridgeOptions extends IpcSocketConnectOptions {
+}
+
+export interface CreateIpcBusBridgeFunction {
+    (options: CreateIpcBusBridgeOptions): IpcBusBridge | null ;
+    (port: number, hostname?: string): IpcBusBridge | null ;
+    (path: string): IpcBusBridge | null ;
+}
+
+
+
+
 
 export interface IpcBusServiceCall {
     handlerName: string;

@@ -1,13 +1,13 @@
 # electron-common-ipc
-A safe IPC (Inter-Process Communication) bus for applications built on Electron. 
+A safe IPC (Inter-Process Communication) bus for applications built on Node or Electron. 
 
-This bus offers a common API for exchanging data between any Electron process : Node, Master and Renderer instances.
+This bus offers a common API for exchanging data between any processes : Node adn Electron (Master and Renderer instances).
 
 
 # Features
 * Publish/Subscribe oriented API
-* Works with sandboxed renderer process
-* Support for renderer affinity (several webpages hosted in the same renderer process)
+* Works with Electron sandboxed renderer process
+* Support for Electron renderer affinity (several webpages hosted in the same renderer process)
 * Remote calls/events and pending messages management with Services
 
 # Installation
@@ -37,8 +37,9 @@ const electronApp = require('electron').app;
 // Configuration
 const ipcBusPath = 50494;
 // const ipcBusPath = '/myfavorite/path';
+// const ipcBusPath = 'localhost:49152';
 
-// Startup
+// In Electron, listen app ready event
 electronApp.on('ready', function () {
     // Create broker
     const ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);
@@ -49,7 +50,7 @@ electronApp.on('ready', function () {
 
             // Create bridge
             const ipcBusBridge = ipcBusModule.CreateIpcBusBridge(ipcBusPath);
-            // Start bridge
+            // In Electron, start bridge ensuring connection between renderer/s and master processes
             ipcBusBridge.start()
                 .then((msg) => {
                     console.log('IpcBusBridge started');

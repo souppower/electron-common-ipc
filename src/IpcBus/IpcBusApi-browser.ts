@@ -1,6 +1,6 @@
 
 // import * as IpcBusInterfaces from './IpcBusInterfaces';
-import { IpcBusClient } from './IpcBusInterfaces';
+import { IpcBusClient, CreateIpcBusClientFunction } from './IpcBusInterfaces';
 // import { IpcBusRequestResponse } from './IpcBusInterfaces';
 // export * from './IpcBusInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
@@ -12,32 +12,24 @@ import { IpcBusServiceProxy } from './IpcBusInterfaces';
 
 import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
 
-/** @internal */
-export function _CreateIpcBusClientRenderer(busPath?: string): IpcBusClient | null {
-    let ipcOptions = IpcBusUtils.ExtractIpcOptions(busPath);
-    // Not used in renderer so do not care !!
-    // if (!ipcOptions.isValid()) {
-    //     return null;
-    // }
-    let ipcBusClient: IpcBusClient = new IpcBusClientTransportRenderer('renderer', ipcOptions);
+export let CreateIpcBusClientRenderer: CreateIpcBusClientFunction = (options: any, hostname?: string) => {
+    let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
+    let ipcBusClient: IpcBusClient = new IpcBusClientTransportRenderer('renderer', localOptions || {});
     return ipcBusClient;
-}
+};
 
-/** @internal */
-export function _CreateIpcBusService(client: IpcBusClient, serviceName: string, serviceImpl: any = undefined): IpcBusService {
+export function CreateIpcBusService(client: IpcBusClient, serviceName: string, serviceImpl: any = undefined): IpcBusService {
     return new IpcBusServiceImpl(client, serviceName, serviceImpl);
 }
 
-/** @internal */
-export function _CreateIpcBusServiceProxy(client: IpcBusClient, serviceName: string, callTimeout?: number): IpcBusServiceProxy {
+export function CreateIpcBusServiceProxy(client: IpcBusClient, serviceName: string, callTimeout?: number): IpcBusServiceProxy {
     return new IpcBusServiceProxyImpl(client, serviceName, callTimeout);
 }
-/** @internal */
-export function _ActivateIpcBusTrace(enable: boolean): void {
+
+export function ActivateIpcBusTrace(enable: boolean): void {
     IpcBusUtils.Logger.enable = enable;
 }
 
-/** @internal */
-export function _ActivateServiceTrace(enable: boolean): void {
+export function ActivateServiceTrace(enable: boolean): void {
     IpcBusUtils.Logger.service = enable;
 }

@@ -16,7 +16,7 @@ import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
 export class IpcBusBrokerLogger extends IpcBusBrokerImpl {
     private _logger: winston.LoggerInstance;
 
-    constructor(logPath: string, processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
+    constructor(logPath: string, processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusInterfaces.CreateIpcBusBrokerOptions) {
         super(processType, ipcOptions);
 
         !fs.existsSync(logPath) && fs.mkdirSync(logPath);

@@ -8,12 +8,12 @@ import { IpcBusClientImpl } from './IpcBusClientImpl';
 /** @internal */
 export abstract class IpcBusClientTransport extends IpcBusClientImpl {
     protected _ipcBusPeer: IpcBusInterfaces.IpcBusPeer;
-    protected readonly _ipcOptions: IpcBusUtils.IpcOptions;
+    protected readonly _ipcOptions: IpcBusInterfaces.CreateIpcBusClientOptions;
 
     protected _requestFunctions: Map<string, Function>;
     protected _requestNumber: number;
 
-    constructor(ipcBusProcess: IpcBusInterfaces.IpcBusProcess, ipcOptions: IpcBusUtils.IpcOptions) {
+    constructor(ipcBusProcess: IpcBusInterfaces.IpcBusProcess, ipcOptions: IpcBusInterfaces.CreateIpcBusClientOptions) {
         super();
 
         this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusProcess };

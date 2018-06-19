@@ -1,12 +1,12 @@
 
 // import * as IpcBusInterfaces from './IpcBusInterfaces';
-import { IpcBusClient, IpcBusProcessType } from './IpcBusInterfaces';
+import { IpcBusClient, CreateIpcBusClientFunction, IpcBusProcessType } from './IpcBusInterfaces';
 // import { IpcBusRequestResponse } from './IpcBusInterfaces';
 // export * from './IpcBusInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
 
-import { IpcBusBroker } from './IpcBusInterfaces';
-import { IpcBusBridge } from './IpcBusInterfaces';
+import { IpcBusBroker, CreateIpcBusBrokerFunction } from './IpcBusInterfaces';
+import { IpcBusBridge, CreateIpcBusBridgeFunction  } from './IpcBusInterfaces';
 
 import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
 import { IpcBusBrokerLogger } from './IpcBusBrokerLogger';
@@ -18,24 +18,24 @@ import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
 
 import * as ElectronUtils from './ElectronUtils';
 
-/** @internal */
-export function _CreateIpcBusBroker(busPath?: string): IpcBusBroker {
-    let ipcBusBroker: IpcBusBroker = null;
+export let CreateIpcBusBroker: CreateIpcBusBrokerFunction = (options: any, hostname?: string): IpcBusBroker => {
+    let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
+    if (localOptions) {
+        return null;
+    }
 
-    let ipcOptions = IpcBusUtils.ExtractIpcOptions(busPath);
+    let ipcBusBroker: IpcBusBroker = null;
     let processType = ElectronUtils.GuessElectronProcessType();
-    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBroker process type = ${processType} on ${JSON.stringify(ipcOptions)}`);
+    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBroker process type = ${processType} on ${JSON.stringify(options)}`);
     switch (processType) {
         case 'browser':
         case 'node':
-            if (ipcOptions.isValid()) {
-                let logPath = process.env['ELECTRON_IPC_BROKER_LOGPATH'];
-                if (logPath) {
-                    ipcBusBroker = new IpcBusBrokerLogger(logPath, processType as IpcBusProcessType, ipcOptions);
-                }
-                else {
-                    ipcBusBroker = new IpcBusBrokerImpl(processType as IpcBusProcessType, ipcOptions);
-                }
+            let logPath = process.env['ELECTRON_IPC_BROKER_LOGPATH'];
+            if (logPath) {
+                ipcBusBroker = new IpcBusBrokerLogger(logPath, processType as IpcBusProcessType, localOptions);
+            }
+            else {
+                ipcBusBroker = new IpcBusBrokerImpl(processType as IpcBusProcessType, localOptions);
             }
             break;
         // not supported process
@@ -44,25 +44,25 @@ export function _CreateIpcBusBroker(busPath?: string): IpcBusBroker {
             break;
     }
     return ipcBusBroker;
-}
+};
 
-/** @internal */
-export function _CreateIpcBusBridge(busPath?: string): IpcBusBridge | null{
-    let ipcOptions = IpcBusUtils.ExtractIpcOptions(busPath);
-    if (!ipcOptions.isValid()) {
+export let CreateIpcBusBridge: CreateIpcBusBridgeFunction = (options: any, hostname?: string): IpcBusBridge => {
+    let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
+    if (localOptions) {
         return null;
     }
-    let processType = ElectronUtils.GuessElectronProcessType();
-    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBridge process type = ${processType} on ${JSON.stringify(ipcOptions)}`);
+
     let ipcBusBridge: IpcBusBridge = null;
+    let processType = ElectronUtils.GuessElectronProcessType();
+    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBridge process type = ${processType} on ${JSON.stringify(options)}`);
     switch (processType) {
         case 'browser':
             let logPath = process.env['ELECTRON_IPC_BRIDGE_LOGPATH'];
             if (logPath) {
-                ipcBusBridge = new IpcBusBridgeLogger(logPath, processType as IpcBusProcessType, ipcOptions);
+                ipcBusBridge = new IpcBusBridgeLogger(logPath, processType as IpcBusProcessType, localOptions);
             }
             else {
-                ipcBusBridge = new IpcBusBridgeImpl(processType as IpcBusProcessType, ipcOptions);
+                ipcBusBridge = new IpcBusBridgeImpl(processType as IpcBusProcessType, localOptions);
             }
             break;
         // not supported process
@@ -72,26 +72,24 @@ export function _CreateIpcBusBridge(busPath?: string): IpcBusBridge | null{
             break;
     }
     return ipcBusBridge;
-}
+};
 
-/** @internal */
-export function _CreateIpcBusClient(busPath?: string): IpcBusClient | null {
-    let ipcOptions = IpcBusUtils.ExtractIpcOptions(busPath);
-    if (!ipcOptions.isValid()) {
-        return null;
-    }
+export let CreateIpcBusClient: CreateIpcBusClientFunction = (options: any, hostname?: string): IpcBusClient => {
+    let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
     let processType = ElectronUtils.GuessElectronProcessType();
-    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`CreateIpcBusForProcess process type = ${processType} on ${JSON.stringify(ipcOptions)}`);
+    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`CreateIpcBusForProcess process type = ${processType} on ${JSON.stringify(options)}`);
     let ipcBusClient: IpcBusClient = null;
     switch (processType) {
         // This case 'renderer' is not reachable as IpcBusApi-browser is used in a browser (see browserify 'browser' field in package.json)
         case 'renderer':
-            ipcBusClient = new IpcBusClientTransportRenderer(processType, ipcOptions);
+            ipcBusClient = new IpcBusClientTransportRenderer(processType, localOptions || {});
             break;
         case 'browser':
         case 'node':
-            ipcBusClient = new IpcBusClientTransportNode(processType, ipcOptions);
+                if (localOptions) {
+                    ipcBusClient = new IpcBusClientTransportNode(processType, localOptions);
+                }
             break;
     }
     return ipcBusClient;
-}
+};

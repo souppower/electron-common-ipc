@@ -18,7 +18,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
 
     // private _ipcRendererReady: Promise<void>;
 
-    constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
+    constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusInterfaces.CreateIpcBusClientOptions) {
         assert(processType === 'renderer', `IpcBusClientTransportRenderer: processType must not be a process ${processType}`);
         super({ type: processType, pid: -1 }, ipcOptions);
     }

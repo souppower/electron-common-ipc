@@ -78,7 +78,7 @@ class IpcBusBrokerSocket {
 
 /** @internal */
 export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBrokerSocketClient {
-    private _ipcOptions: IpcBusUtils.IpcOptions;
+    private _ipcOptions: IpcBusInterfaces.CreateIpcBusBrokerOptions;
     private _ipcBusBrokerClient: IpcBusInterfaces.IpcBusClient;
     private _socketClients: Map<number, IpcBusBrokerSocket>;
 
@@ -94,7 +94,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
     private _queryStateLamdba: IpcBusInterfaces.IpcBusListener = (ipcBusEvent: IpcBusInterfaces.IpcBusEvent, replyChannel: string) => this._onQueryState(ipcBusEvent, replyChannel);
     private _serviceAvailableLambda: IpcBusInterfaces.IpcBusListener = (ipcBusEvent: IpcBusInterfaces.IpcBusEvent, serviceName: string) => this._onServiceAvailable(ipcBusEvent, serviceName);
 
-    constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusUtils.IpcOptions) {
+    constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusInterfaces.CreateIpcBusBrokerOptions) {
         this._ipcOptions = ipcOptions;
 
         this._netBinds = {};
@@ -107,7 +107,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
         this._socketClients = new Map<number, IpcBusBrokerSocket>();
         this._ipcBusPeers = new Map<string, IpcBusInterfaces.IpcBusPeer>();
 
-        this._ipcBusBrokerClient = new IpcBusClientTransportNode(processType, ipcOptions);
+        this._ipcBusBrokerClient = new IpcBusClientTransportNode(processType, { port: this._ipcOptions.port, host: this._ipcOptions.host, path: this._ipcOptions.path });
     }
 
     private _reset() {
@@ -203,8 +203,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                     reject(msg);
                 };
-
-                server.listen(this._ipcOptions.port, this._ipcOptions.host);
+                server.listen({ port: this._ipcOptions.port, host: this._ipcOptions.host, path: this._ipcOptions.path });
                 server.addListener('listening', catchListening);
                 server.addListener('error', catchError);
                 server.addListener('close', catchClose);
