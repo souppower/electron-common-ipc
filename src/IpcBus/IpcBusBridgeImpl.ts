@@ -5,6 +5,7 @@ import * as IpcBusInterfaces from './IpcBusInterfaces';
 
 import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusClientTransportNode } from './IpcBusClientTransportNode';
+import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_COMMAND, IPCBUS_TRANSPORT_RENDERER_EVENT } from './IpcBusClientTransportRenderer';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
@@ -28,10 +29,10 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
     }
 
     protected _reset() {
-        if (this._ipcMain.listenerCount(IpcBusUtils.IPC_BUS_RENDERER_COMMAND) > 0) {
+        if (this._ipcMain.listenerCount(IPCBUS_TRANSPORT_RENDERER_COMMAND) > 0) {
             this._ipcBusPeers.clear();
             this._requestChannels.clear();
-            this._ipcMain.removeListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
+            this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessageBind);
         }
         super._reset();
     }
@@ -42,8 +43,8 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         return this.ipcConnect({ peerName: `IpcBusBridge`, ...options } )
             .then(() => {
                 // Guard against people calling start several times
-                if (this._ipcMain.listenerCount(IpcBusUtils.IPC_BUS_RENDERER_COMMAND) === 0) {
-                    this._ipcMain.addListener(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, this._onRendererMessageBind);
+                if (this._ipcMain.listenerCount(IPCBUS_TRANSPORT_RENDERER_COMMAND) === 0) {
+                    this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessageBind);
                 }
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
             });
@@ -69,7 +70,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestMessage:
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-                    connData.conn.send(IpcBusUtils.IPC_BUS_RENDERER_EVENT, ipcBusCommand, args);
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, args);
                 });
                 break;
 
@@ -77,7 +78,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
                 const webContents = this._requestChannels.get(ipcBusCommand.request.replyChannel);
                 if (webContents) {
                     this._requestChannels.delete(ipcBusCommand.request.replyChannel);
-                    webContents.send(IpcBusUtils.IPC_BUS_RENDERER_EVENT, ipcBusCommand, args);
+                    webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, args);
                 }
                 break;
         }
@@ -144,12 +145,12 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
 
                 // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
                 if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
-                    webContents.send(IpcBusUtils.IPC_BUS_RENDERER_CONNECT, ipcBusPeer);
+                    webContents.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
                     this.ipcPostCommand(ipcBusCommand, args);
                 }
                 else {
                     webContents.on('did-finish-load', () => {
-                        webContents.send(IpcBusUtils.IPC_BUS_RENDERER_CONNECT, ipcBusPeer);
+                        webContents.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
                         this.ipcPostCommand(ipcBusCommand, args);
                     });
                 }

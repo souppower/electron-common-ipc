@@ -8,6 +8,9 @@ import * as IpcBusInterfaces from './IpcBusInterfaces';
 import { IpcBusClientTransport } from './IpcBusClientTransport';
 import { IpcBusCommand } from './IpcBusCommand';
 
+export const IPCBUS_TRANSPORT_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
+export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'IpcBusRenderer:Command';
+export const IPCBUS_TRANSPORT_RENDERER_EVENT = 'IpcBusRenderer:Event';
 
 // Implementation for renderer process
 /** @internal */
@@ -26,8 +29,8 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
     protected _reset() {
         this._promiseConnected = null;
         if (this._ipcRenderer) {
-            this._ipcRenderer.removeAllListeners(IpcBusUtils.IPC_BUS_RENDERER_CONNECT);
-            this._ipcRenderer.removeAllListeners(IpcBusUtils.IPC_BUS_RENDERER_EVENT);
+            this._ipcRenderer.removeAllListeners(IPCBUS_TRANSPORT_RENDERER_CONNECT);
+            this._ipcRenderer.removeAllListeners(IPCBUS_TRANSPORT_RENDERER_EVENT);
             this._ipcRenderer = null;
         }
     }
@@ -43,7 +46,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
             this._onIpcEventReceived = (ipcBusCommand: IpcBusCommand, args: any[]) => this._onEventReceived(ipcBusCommand, args);
         }
-        this._ipcRenderer.addListener(IpcBusUtils.IPC_BUS_RENDERER_EVENT, this._onIpcEventReceived);
+        this._ipcRenderer.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
     };
 
     /// IpcBusTrandport API
@@ -69,7 +72,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
                         }, options.timeoutDelay);
                     }
                     // We wait for the bridge confirmation
-                    this._ipcRenderer.once(IpcBusUtils.IPC_BUS_RENDERER_CONNECT, (eventOrPeer: any, peerOrUndefined: IpcBusInterfaces.IpcBusPeer) => {
+                    this._ipcRenderer.once(IPCBUS_TRANSPORT_RENDERER_CONNECT, (eventOrPeer: any, peerOrUndefined: IpcBusInterfaces.IpcBusPeer) => {
                         if (this._ipcRenderer) {
                             clearTimeout(timer);
                             this._onConnect(eventOrPeer, peerOrUndefined);
@@ -96,7 +99,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
 
     protected ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._ipcRenderer) {
-            this._ipcRenderer.send(IpcBusUtils.IPC_BUS_RENDERER_COMMAND, ipcBusCommand, args);
+            this._ipcRenderer.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, args);
         }
     }
 }

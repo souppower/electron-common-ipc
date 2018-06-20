@@ -1,30 +1,27 @@
 // Constants
 import { IPCBUS_CHANNEL, IpcNetOptions } from './IpcBusInterfaces';
 
-export const IPC_BUS_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
-export const IPC_BUS_RENDERER_COMMAND = 'IpcBusRenderer:Command';
-export const IPC_BUS_RENDERER_EVENT = 'IpcBusRenderer:Event';
 
 export const IPC_BUS_TIMEOUT = 2000;
 
-// /** @internal */
-// function GetCmdLineArgValue(argName: string): string {
-//     for (let i = 0; i < process.argv.length; ++i) {
-//         if (process.argv[i].startsWith('--' + argName)) {
-//             const argValue = process.argv[i].split('=')[1];
-//             return argValue;
-//         }
-//     }
-//     return null;
-// }
-
 export function CheckCreateOptions(options: IpcNetOptions | string | number, hostName?: string): IpcNetOptions | null {
+    // A port number : 59233, 42153
+    // A port number + hostname : 59233, '127.0.0.1'
     if (Number(options) >= 0) {
         return { port: Number(options), host: hostName };
     }
+    // A 'hostname:port' pattern : 'localhost:8082'
+    // A path : '//local-ipc'
     else if (typeof options === 'string') {
+        let parts = options.split(':');
+        if (parts.length === 2) {
+            if (Number(parts[1]) >= 0) {
+                return { port: Number(parts[1]), host: parts[0] };
+            }
+        }
         return { path: options };
     }
+    // An IpcNetOptions object similar to NodeJS.net.ListenOptions
     else if (typeof options === 'object') {
         let localOptions: IpcNetOptions = options as Object || {};
         if (localOptions.port) {
