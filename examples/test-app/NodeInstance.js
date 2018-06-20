@@ -10,8 +10,21 @@ const util = require('util');
 const path = require('path');
 const child_process = require('child_process');
 
+function GetCmdLineArgValue(argName)  {
+    for (let i = 0; i < process.argv.length; ++i) {
+        if (process.argv[i].startsWith('--' + argName)) {
+            const argValue = process.argv[i].split('=')[1];
+            return argValue;
+        }
+    }
+    return null;
+}
+
+let busPath = GetCmdLineArgValue('bus-path');
+console.log(busPath);
+
 const ipcBusModule = require('electron-common-ipc');
-const ipcBus = ipcBusModule.CreateIpcBusClient();
+const ipcBus = ipcBusModule.CreateIpcBusClient(busPath);
 ipcBusModule.ActivateIpcBusTrace(true);
 
 const PerfTests = require('./PerfTests.js');

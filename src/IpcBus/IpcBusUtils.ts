@@ -19,18 +19,20 @@ export const IPC_BUS_TIMEOUT = 2000;
 // }
 
 export function CheckCreateOptions(options: IpcNetOptions | string | number, hostName?: string): IpcNetOptions | null {
-    if (typeof options === 'number') {
-        return { port: options, host: hostName };
+    if (Number(options) >= 0) {
+        return { port: Number(options), host: hostName };
     }
     else if (typeof options === 'string') {
         return { path: options };
     }
-    options = options || {};
-    if (options.port) {
-        return options;
-    }
-    if (options.path) {
-        return options;
+    else if (typeof options === 'object') {
+        let localOptions: IpcNetOptions = options as Object || {};
+        if (localOptions.port) {
+            return localOptions;
+        }
+        if (localOptions.path) {
+            return localOptions;
+        }
     }
     return null;
 }
