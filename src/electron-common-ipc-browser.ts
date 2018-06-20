@@ -7,7 +7,7 @@ export {CreateIpcBusServiceProxy} from './IpcBus/IpcBusApi-browser';
 export {ActivateIpcBusTrace} from './IpcBus/IpcBusApi-browser';
 export {ActivateServiceTrace} from './IpcBus/IpcBusApi-browser';
 
-import { CreateIpcBusClientFunction} from './IpcBus/IpcBusInterfaces';
+import { IpcBusClient } from './IpcBus/IpcBusInterfaces';
 import { CreateIpcBusClientRenderer } from './IpcBus/IpcBusApi-browser';
 
-export let CreateIpcBusClient: CreateIpcBusClientFunction = CreateIpcBusClientRenderer;
+export let CreateIpcBusClient: IpcBusClient.CreateFunction = CreateIpcBusClientRenderer;

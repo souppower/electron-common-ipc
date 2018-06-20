@@ -1,12 +1,12 @@
 
 // import * as IpcBusInterfaces from './IpcBusInterfaces';
-import { IpcBusClient, CreateIpcBusClientFunction, IpcBusProcessType } from './IpcBusInterfaces';
+import { IpcBusClient, IpcBusProcessType } from './IpcBusInterfaces';
 // import { IpcBusRequestResponse } from './IpcBusInterfaces';
 // export * from './IpcBusInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
 
-import { IpcBusBroker, CreateIpcBusBrokerFunction } from './IpcBusInterfaces';
-import { IpcBusBridge, CreateIpcBusBridgeFunction  } from './IpcBusInterfaces';
+import { IpcBusBroker } from './IpcBusInterfaces';
+import { IpcBusBridge  } from './IpcBusInterfaces';
 
 import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
 import { IpcBusBrokerLogger } from './IpcBusBrokerLogger';
@@ -18,9 +18,9 @@ import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
 
 import * as ElectronUtils from './ElectronUtils';
 
-export let CreateIpcBusBroker: CreateIpcBusBrokerFunction = (options: any, hostname?: string): IpcBusBroker => {
+export let CreateIpcBusBroker: IpcBusBroker.CreateFunction = (options: any, hostname?: string): IpcBusBroker => {
     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-    if (localOptions) {
+    if (!localOptions) {
         return null;
     }
 
@@ -46,9 +46,9 @@ export let CreateIpcBusBroker: CreateIpcBusBrokerFunction = (options: any, hostn
     return ipcBusBroker;
 };
 
-export let CreateIpcBusBridge: CreateIpcBusBridgeFunction = (options: any, hostname?: string): IpcBusBridge => {
+export let CreateIpcBusBridge: IpcBusBridge.CreateFunction = (options: any, hostname?: string): IpcBusBridge => {
     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-    if (localOptions) {
+    if (!localOptions) {
         return null;
     }
 
@@ -74,7 +74,7 @@ export let CreateIpcBusBridge: CreateIpcBusBridgeFunction = (options: any, hostn
     return ipcBusBridge;
 };
 
-export let CreateIpcBusClient: CreateIpcBusClientFunction = (options: any, hostname?: string): IpcBusClient => {
+export let CreateIpcBusClient: IpcBusClient.CreateFunction = (options: any, hostname?: string): IpcBusClient => {
     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
     let processType = ElectronUtils.GuessElectronProcessType();
     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`CreateIpcBusForProcess process type = ${processType} on ${JSON.stringify(options)}`);

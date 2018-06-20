@@ -16,8 +16,8 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<number, Electron.WebContents>;
     protected _requestChannels: Map<string, any>;
 
-    constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusInterfaces.CreateIpcBusBridgeOptions) {
-        super(processType, { port: ipcOptions.port, host: ipcOptions.host, path: ipcOptions.path });
+    constructor(processType: IpcBusInterfaces.IpcBusProcessType, options: IpcBusInterfaces.IpcBusBridge.CreateOptions) {
+        super(processType, options);
 
         this._ipcMain = require('electron').ipcMain;
 

@@ -53,15 +53,30 @@ export interface IpcTimeoutOptions {
     timeoutDelay?: number;
 }
 
-export interface IpcSocketOptions {
+export interface IpcSocketBufferingOptions {
     socketBuffer?: number;
 }
 
+export interface IpcNetOptions {
+    port?: number;
+    host?: string;
+    path?: string;
+}
+
 export namespace IpcBusClient {
-    export interface ConnectOptions extends IpcTimeoutOptions, IpcSocketOptions {
+    export interface ConnectOptions extends IpcTimeoutOptions, IpcSocketBufferingOptions {
         peerName?: string;
     }
     export interface CloseOptions extends IpcTimeoutOptions {
+    }
+
+    export interface CreateOptions extends IpcNetOptions {
+    }
+
+    export interface CreateFunction {
+        (options: CreateOptions): IpcBusClient | null ;
+        (port: number, hostname?: string): IpcBusClient | null ;
+        (path: string): IpcBusClient | null ;
     }
 }
 
@@ -92,6 +107,15 @@ export namespace IpcBusBroker {
 
     export interface StopOptions extends IpcTimeoutOptions {
     }
+
+    export interface CreateOptions extends IpcNetOptions {
+    }
+
+    export interface CreateFunction {
+        (options: CreateOptions): IpcBusBroker | null ;
+        (port: number, hostname?: string): IpcBusBroker | null ;
+        (path: string): IpcBusBroker | null ;
+    }
 }
 
 export interface IpcBusBroker {
@@ -107,49 +131,21 @@ export namespace IpcBusBridge {
 
     export interface StopOptions extends IpcTimeoutOptions {
     }
+
+    export interface CreateOptions extends IpcNetOptions {
+    }
+
+    export interface CreateFunction {
+        (options: CreateOptions): IpcBusBridge | null ;
+        (port: number, hostname?: string): IpcBusBridge | null ;
+        (path: string): IpcBusBridge | null ;
+    }
 }
 
 export interface IpcBusBridge {
     start(options?: IpcBusBridge.StartOptions): Promise<void>;
     stop(options?: IpcBusBridge.StopOptions): Promise<void>;
 }
-
-export interface IpcSocketConnectOptions {
-    port?: number;
-    host?: string;
-    path?: string;
-}
-
-export interface CreateIpcBusClientOptions extends IpcSocketConnectOptions {
-}
-
-export interface CreateIpcBusClientFunction {
-    (options: CreateIpcBusClientOptions): IpcBusClient | null ;
-    (port: number, hostname?: string): IpcBusClient | null ;
-    (path: string): IpcBusClient | null ;
-}
-
-export interface CreateIpcBusBrokerOptions extends IpcSocketConnectOptions {
-}
-
-export interface CreateIpcBusBrokerFunction {
-    (options: CreateIpcBusBrokerOptions): IpcBusBroker | null ;
-    (port: number, hostname?: string): IpcBusBroker | null ;
-    (path: string): IpcBusBroker | null ;
-}
-
-export interface CreateIpcBusBridgeOptions extends IpcSocketConnectOptions {
-}
-
-export interface CreateIpcBusBridgeFunction {
-    (options: CreateIpcBusBridgeOptions): IpcBusBridge | null ;
-    (port: number, hostname?: string): IpcBusBridge | null ;
-    (path: string): IpcBusBridge | null ;
-}
-
-
-
-
 
 export interface IpcBusServiceCall {
     handlerName: string;

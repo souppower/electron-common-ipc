@@ -1,0 +1,5 @@
+"Type";"Link";"Ref";"Time"
+"Send string (1000000)";"browser => renderer";"Send string (1000000) browser => renderer";"92"
+"Send string (1000000)";"renderer => renderer";"Send string (1000000) renderer => renderer";"114"
+"Send string (1000000)";"renderer => browser";"Send string (1000000) renderer => browser";"132"
+"Send string (1000000)";"browser => browser";"Send string (1000000) browser => browser";"162"

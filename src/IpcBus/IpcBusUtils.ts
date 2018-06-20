@@ -1,5 +1,5 @@
 // Constants
-import { IPCBUS_CHANNEL, CreateOptions } from './IpcBusInterfaces';
+import { IPCBUS_CHANNEL, IpcNetOptions } from './IpcBusInterfaces';
 
 export const IPC_BUS_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
 export const IPC_BUS_RENDERER_COMMAND = 'IpcBusRenderer:Command';
@@ -18,13 +18,14 @@ export const IPC_BUS_TIMEOUT = 2000;
 //     return null;
 // }
 
-export function CheckCreateOptions(options: CreateOptions | string | number, hostName?: string): CreateOptions | null {
+export function CheckCreateOptions(options: IpcNetOptions | string | number, hostName?: string): IpcNetOptions | null {
     if (typeof options === 'number') {
         return { port: options, host: hostName };
     }
     else if (typeof options === 'string') {
         return { path: options };
     }
+    options = options || {};
     if (options.port) {
         return options;
     }

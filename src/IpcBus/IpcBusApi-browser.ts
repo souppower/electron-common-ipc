@@ -1,6 +1,6 @@
 
 // import * as IpcBusInterfaces from './IpcBusInterfaces';
-import { IpcBusClient, CreateIpcBusClientFunction } from './IpcBusInterfaces';
+import { IpcBusClient } from './IpcBusInterfaces';
 // import { IpcBusRequestResponse } from './IpcBusInterfaces';
 // export * from './IpcBusInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
@@ -12,7 +12,7 @@ import { IpcBusServiceProxy } from './IpcBusInterfaces';
 
 import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
 
-export let CreateIpcBusClientRenderer: CreateIpcBusClientFunction = (options: any, hostname?: string) => {
+export let CreateIpcBusClientRenderer: IpcBusClient.CreateFunction = (options: any, hostname?: string) => {
     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
     let ipcBusClient: IpcBusClient = new IpcBusClientTransportRenderer('renderer', localOptions || {});
     return ipcBusClient;

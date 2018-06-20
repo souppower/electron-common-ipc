@@ -78,7 +78,7 @@ class IpcBusBrokerSocket {
 
 /** @internal */
 export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBrokerSocketClient {
-    private _ipcOptions: IpcBusInterfaces.CreateIpcBusBrokerOptions;
+    private _netOptions: IpcBusInterfaces.IpcNetOptions;
     private _ipcBusBrokerClient: IpcBusInterfaces.IpcBusClient;
     private _socketClients: Map<number, IpcBusBrokerSocket>;
 
@@ -94,8 +94,8 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
     private _queryStateLamdba: IpcBusInterfaces.IpcBusListener = (ipcBusEvent: IpcBusInterfaces.IpcBusEvent, replyChannel: string) => this._onQueryState(ipcBusEvent, replyChannel);
     private _serviceAvailableLambda: IpcBusInterfaces.IpcBusListener = (ipcBusEvent: IpcBusInterfaces.IpcBusEvent, serviceName: string) => this._onServiceAvailable(ipcBusEvent, serviceName);
 
-    constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusInterfaces.CreateIpcBusBrokerOptions) {
-        this._ipcOptions = ipcOptions;
+    constructor(processType: IpcBusInterfaces.IpcBusProcessType, options: IpcBusInterfaces.IpcBusBroker.CreateOptions) {
+        this._netOptions = options;
 
         this._netBinds = {};
         this._netBinds['error'] = this._onServerError.bind(this);
@@ -107,7 +107,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
         this._socketClients = new Map<number, IpcBusBrokerSocket>();
         this._ipcBusPeers = new Map<string, IpcBusInterfaces.IpcBusPeer>();
 
-        this._ipcBusBrokerClient = new IpcBusClientTransportNode(processType, { port: this._ipcOptions.port, host: this._ipcOptions.host, path: this._ipcOptions.path });
+        this._ipcBusBrokerClient = new IpcBusClientTransportNode(processType, { port: this._netOptions.port, host: this._netOptions.host, path: this._netOptions.path });
     }
 
     private _reset() {
@@ -150,18 +150,18 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
                         timer = null;
-                        let msg = `[IPCBus:Broker] error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
+                        let msg = `[IPCBus:Broker] error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._netOptions)}`;
                         fctReject(msg);
                     }, options.timeoutDelay);
                 }
 
                 let catchError = (err: any) => {
-                    let msg = `[IPCBus:Broker] error = ${err} on ${JSON.stringify(this._ipcOptions)}`;
+                    let msg = `[IPCBus:Broker] error = ${err} on ${JSON.stringify(this._netOptions)}`;
                     fctReject(msg);
                 };
 
                 let catchClose = () => {
-                    let msg = `[IPCBus:Broker] close on ${JSON.stringify(this._ipcOptions)}`;
+                    let msg = `[IPCBus:Broker] close on ${JSON.stringify(this._netOptions)}`;
                     fctReject(msg);
                 };
 
@@ -173,7 +173,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
 
                     this._server = server;
 
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Listening for incoming connections on ${JSON.stringify(this._ipcOptions)}`);
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Listening for incoming connections on ${JSON.stringify(this._netOptions)}`);
                     for (let key in this._netBinds) {
                         this._server.addListener(key, this._netBinds[key]);
                     }
@@ -203,10 +203,10 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                     reject(msg);
                 };
-                server.listen({ port: this._ipcOptions.port, host: this._ipcOptions.host, path: this._ipcOptions.path });
                 server.addListener('listening', catchListening);
                 server.addListener('error', catchError);
                 server.addListener('close', catchClose);
+                server.listen({ port: this._netOptions.port, host: this._netOptions.host, path: this._netOptions.path });
             });
         }
         return p;
@@ -231,7 +231,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
                         server.removeListener('close', catchClose);
-                        let msg = `[IPCBus:Broker] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
+                        let msg = `[IPCBus:Broker] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._netOptions)}`;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                         reject(msg);
                     }, options.timeoutDelay);

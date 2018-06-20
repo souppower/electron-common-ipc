@@ -16,8 +16,8 @@ import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
     private _logger: winston.LoggerInstance;
 
-    constructor(logPath: string, processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusInterfaces.CreateIpcBusBridgeOptions) {
-        super(processType, ipcOptions);
+    constructor(logPath: string, processType: IpcBusInterfaces.IpcBusProcessType, options: IpcBusInterfaces.IpcBusBridge.CreateOptions) {
+        super(processType, options);
 
         !fs.existsSync(logPath) && fs.mkdirSync(logPath);
 

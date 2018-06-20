@@ -26,10 +26,10 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
     private _packetBuffer: IpcPacketBuffer;
     private _bufferListReader: BufferListReader;
 
-    constructor(processType: IpcBusInterfaces.IpcBusProcessType, ipcOptions: IpcBusInterfaces.CreateIpcBusClientOptions) {
+    constructor(processType: IpcBusInterfaces.IpcBusProcessType, options: IpcBusInterfaces.IpcBusClient.CreateOptions) {
         assert((processType === 'browser') || (processType === 'node'), `IpcBusClientTransportNode: processType must not be a process ${processType}`);
 
-        super({ type: processType, pid: process.pid }, ipcOptions);
+        super({ type: processType, pid: process.pid }, options);
         this._packet = new IpcPacketBufferWrap();
         this._bufferListReader = new BufferListReader();
         this._packetBuffer = new IpcPacketBuffer();
@@ -113,13 +113,13 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
                         timer = null;
-                        let msg = `[IPCBus:Node] error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
+                        let msg = `[IPCBus:Node] error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._netOptions)}`;
                         fctReject(msg);
                     }, options.timeoutDelay);
                 }
 
                 let catchError = (err: any) => {
-                    let msg = `[IPCBus:Node] error = ${err} on ${JSON.stringify(this._ipcOptions)}`;
+                    let msg = `[IPCBus:Node] error = ${err} on ${JSON.stringify(this._netOptions)}`;
                     fctReject(msg);
                 };
 
@@ -128,7 +128,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
                     fctReject(msg);
                 };
 
-                let socket: net.Socket;
+                let socket = new net.Socket();
                 let socketLocalBinds: { [key: string]: Function } = {};
                 let catchOpen = (conn: any) => {
                     clearTimeout(timer);
@@ -140,7 +140,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
                         this._socket.addListener(key, this._netBinds[key]);
                     }
 
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Node] connected on ${JSON.stringify(this._ipcOptions)}`);
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Node] connected on ${JSON.stringify(this._netOptions)}`);
                     if ((this._socketBuffer == null) || (this._socketBuffer === 0)) {
                         this._socketWriter = new SocketWriter(this._socket);
                     }
@@ -168,14 +168,14 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
                 socketLocalBinds['error'] = catchError.bind(this);
                 socketLocalBinds['close'] = catchClose.bind(this);
                 socketLocalBinds['connect'] = catchOpen.bind(this);
-                if (this._ipcOptions.path) {
-                    socket = net.connect(this._ipcOptions.path);
-                }
-                else {
-                    socket = net.connect(this._ipcOptions.port, this._ipcOptions.host);
-                }
                 for (let key in socketLocalBinds) {
                     socket.addListener(key, socketLocalBinds[key]);
+                }
+                if (this._netOptions.path) {
+                    socket.connect(this._netOptions.path);
+                }
+                else {
+                    socket.connect(this._netOptions.port, this._netOptions.host);
                 }
             });
         }
@@ -205,7 +205,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
                         for (let key in socketLocalBinds) {
                             socket.removeListener(key, socketLocalBinds[key]);
                         }
-                        let msg = `[IPCBus:Node] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._ipcOptions)}`;
+                        let msg = `[IPCBus:Node] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._netOptions)}`;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                         reject(msg);
                     }, options.timeoutDelay);
