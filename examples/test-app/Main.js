@@ -21,14 +21,14 @@ electronApp.commandLine.appendSwitch('host-rules', 'MAP * 127.0.0.1');
 
 // Misc
 const uuid = require('uuid');
-const busPath = 55556; // '/tr-ipc-bus/' + uuid.v4();
+const busPath = 49158; // '/tr-ipc-bus/' + uuid.v4();
 console.log('IPC Bus Path : ' + busPath);
 
 // IPC Bus
 const ipcBusModule = require('electron-common-ipc');
 const ipcBusClient = ipcBusModule.CreateIpcBusClient(busPath);
-//ipcBusModule.ActivateIpcBusTrace(true);
-//ipcBusModule.ActivateServiceTrace(true);
+// ipcBusModule.ActivateIpcBusTrace(true);
+// ipcBusModule.ActivateServiceTrace(true);
 
 // Startup
 let ipcBrokerProcess = null;

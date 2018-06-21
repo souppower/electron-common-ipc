@@ -1,57 +1,39 @@
 // Constants
-import { IPCBUS_CHANNEL } from './IpcBusInterfaces';
+import { IPCBUS_CHANNEL, IpcNetOptions } from './IpcBusInterfaces';
 
-export const IPC_BUS_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
-export const IPC_BUS_RENDERER_COMMAND = 'IpcBusRenderer:Command';
-export const IPC_BUS_RENDERER_EVENT = 'IpcBusRenderer:Event';
 
 export const IPC_BUS_TIMEOUT = 2000;
 
-/** @internal */
-function GetCmdLineArgValue(argName: string): string {
-    for (let i = 0; i < process.argv.length; ++i) {
-        if (process.argv[i].startsWith('--' + argName)) {
-            const argValue = process.argv[i].split('=')[1];
-            return argValue;
+export function CheckCreateOptions(options: IpcNetOptions | string | number, hostName?: string): IpcNetOptions | null {
+    // A port number : 59233, 42153
+    // A port number + hostname : 59233, '127.0.0.1'
+    if (Number(options) >= 0) {
+        return { port: Number(options), host: hostName };
+    }
+    // A 'hostname:port' pattern : 'localhost:8082'
+    // A path : '//local-ipc'
+    else if (typeof options === 'string') {
+        let parts = options.split(':');
+        if (parts.length === 2) {
+            if (Number(parts[1]) >= 0) {
+                return { port: Number(parts[1]), host: parts[0] };
+            }
+        }
+        return { path: options };
+    }
+    // An IpcNetOptions object similar to NodeJS.net.ListenOptions
+    else if (typeof options === 'object') {
+        let localOptions: IpcNetOptions = options as Object || {};
+        if (localOptions.port) {
+            return localOptions;
+        }
+        if (localOptions.path) {
+            return localOptions;
         }
     }
     return null;
 }
 
-/** @internal */
-export class IpcOptions {
-    port: any;      // with easy ipc, port can be either a number or a string (Function support is hidden).
-    host: string;
-
-    isValid(): boolean {
-        return (this.port != null);
-    }
-};
-
-// This method may be called from a pure JS stack.
-// It means we can not trust type and we have to check it.
-export function ExtractIpcOptions(busPath: string): IpcOptions {
-    let ipcOptions: IpcOptions = new IpcOptions();
-    if (busPath == null) {
-        busPath = GetCmdLineArgValue('bus-path');
-    }
-    if (busPath != null) {
-        if (typeof busPath === 'number') {
-            ipcOptions.port = busPath;
-        }
-        else if (typeof busPath === 'string') {
-            let parts = busPath.split(':');
-            if (parts.length === 1) {
-                ipcOptions.port = parts[0];
-            }
-            else if (parts.length === 2) {
-                ipcOptions.host = parts[0];
-                ipcOptions.port = parts[1];
-            }
-        }
-    }
-    return ipcOptions;
-}
 
 export const IPCBUS_SERVICE_WRAPPER_EVENT = 'service-wrapper-event';
 // Special call handlers

@@ -19,6 +19,7 @@
                 "--remote-debugging-port=8315"
             ],
             "env": {},
+            "outputCapture": "std",
             "console": "internalConsole",
             "sourceMaps": true,
             "outFiles": [

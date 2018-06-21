@@ -8,9 +8,8 @@ import { IpcBusCommand } from './IpcBusCommand';
 
 // Implementation for a common IpcBusClient
 /** @internal */
-export abstract class IpcBusClientImpl extends EventEmitter
-                                implements IpcBusInterfaces.IpcBusClient {
-    constructor() {
+export abstract class IpcBusClientImpl extends EventEmitter implements IpcBusInterfaces.IpcBusClient {
+    constructor(options: IpcBusInterfaces.IpcBusClient.CreateOptions) {
         super();
         super.setMaxListeners(0);
     }

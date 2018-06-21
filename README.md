@@ -1,13 +1,22 @@
 # electron-common-ipc
-A safe IPC (Inter-Process Communication) bus for applications built on Electron. 
+An IPC (Inter-Process Communication) bus for applications built on [Node](https://nodejs.org/en/) or [Electron](https://electronjs.org/). 
 
-This bus offers a common API for exchanging data between any Electron process : Node, Master and Renderer instances.
+This bus offers a EventEmitter-like API for exchanging data between any processes (Node, Electron Master, Electron Renderer/s).
+* Node to Node, 
+* Node to Electron (Master and Renderer processes), 
+* Electon to Node, 
+* Electron to Electron.
+
+Node needs a "BusBroker" in charge to commute messages to right listeners
+Electron needs an additional broker : "BusBridge" in charge to commute messages between renderers (WebPages), Master and Node.
+
+A WebPage is then able to dialog with a node process and vice-versa.
 
 
 # Features
-* Publish/Subscribe oriented API
-* Works with sandboxed renderer process
-* Support for renderer affinity (several webpages hosted in the same renderer process)
+* EventEmitter oriented API
+* Works with Electron sandboxed renderer process
+* Support for Electron renderer affinity (several webpages hosted in the same renderer process)
 * Remote calls/events and pending messages management with Services
 
 # Installation
@@ -37,8 +46,9 @@ const electronApp = require('electron').app;
 // Configuration
 const ipcBusPath = 50494;
 // const ipcBusPath = '/myfavorite/path';
+// const ipcBusPath = 'localhost:49152';
 
-// Startup
+// In Electron, listen app ready event (not needed in pure Node)
 electronApp.on('ready', function () {
     // Create broker
     const ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);
@@ -47,9 +57,8 @@ electronApp.on('ready', function () {
         .then((msg) => {
             console.log('IpcBusBroker started');
 
-            // Create bridge
+            // In Electron, start bridge ensuring connection between renderer/s and master processes (not needed in pure Node)
             const ipcBusBridge = ipcBusModule.CreateIpcBusBridge(ipcBusPath);
-            // Start bridge
             ipcBusBridge.start()
                 .then((msg) => {
                     console.log('IpcBusBridge started');
@@ -126,9 +135,9 @@ export interface IpcTimeoutOptions {
 A timeoutdelay below zero leads to an infinite waiting.
 
 ```ts
-export interface IpcSocketOptions {
+export interface IpcSocketBufferingOptions {
     socketBuffer?: number;
-}
+} 
 ```
 - **socketBuffer** [0 | undefined | null] : message is serialized in small pieces written immediatly to the socket
 - **socketBuffer** < 0 : message is serialized in objects (number, string, buffer...), each object is written immediatly to the socket

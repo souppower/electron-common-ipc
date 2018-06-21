@@ -13,7 +13,7 @@ export const IPCBUS_SERVICE_EVENT_STOP = 'service-event-stop';
 export const ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH';
 export const ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH';
 
-export type IpcBusProcessType = 'browser' | 'renderer' | 'node' | 'native';
+export type IpcBusProcessType = 'browser' | 'renderer' | 'node' | 'native' | string;
 
 export interface IpcBusProcess {
     type: IpcBusProcessType;
@@ -53,15 +53,30 @@ export interface IpcTimeoutOptions {
     timeoutDelay?: number;
 }
 
-export interface IpcSocketOptions {
+export interface IpcSocketBufferingOptions {
     socketBuffer?: number;
 }
 
+export interface IpcNetOptions {
+    port?: number;
+    host?: string;
+    path?: string;
+}
+
 export namespace IpcBusClient {
-    export interface ConnectOptions extends IpcTimeoutOptions, IpcSocketOptions {
+    export interface ConnectOptions extends IpcTimeoutOptions, IpcSocketBufferingOptions {
         peerName?: string;
     }
     export interface CloseOptions extends IpcTimeoutOptions {
+    }
+
+    export interface CreateOptions extends IpcNetOptions {
+    }
+
+    export interface CreateFunction {
+        (options: CreateOptions): IpcBusClient | null ;
+        (port: number, hostname?: string): IpcBusClient | null ;
+        (path: string): IpcBusClient | null ;
     }
 }
 
@@ -92,6 +107,15 @@ export namespace IpcBusBroker {
 
     export interface StopOptions extends IpcTimeoutOptions {
     }
+
+    export interface CreateOptions extends IpcNetOptions {
+    }
+
+    export interface CreateFunction {
+        (options: CreateOptions): IpcBusBroker | null ;
+        (port: number, hostname?: string): IpcBusBroker | null ;
+        (path: string): IpcBusBroker | null ;
+    }
 }
 
 export interface IpcBusBroker {
@@ -106,6 +130,15 @@ export namespace IpcBusBridge {
     }
 
     export interface StopOptions extends IpcTimeoutOptions {
+    }
+
+    export interface CreateOptions extends IpcNetOptions {
+    }
+
+    export interface CreateFunction {
+        (options: CreateOptions): IpcBusBridge | null ;
+        (port: number, hostname?: string): IpcBusBridge | null ;
+        (path: string): IpcBusBridge | null ;
     }
 }
 
