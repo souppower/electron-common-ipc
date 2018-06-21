@@ -1,7 +1,6 @@
 // Constants
 import { IPCBUS_CHANNEL, IpcNetOptions } from './IpcBusInterfaces';
 
-
 export const IPC_BUS_TIMEOUT = 2000;
 
 export function CheckCreateOptions(options: IpcNetOptions | string | number, hostName?: string): IpcNetOptions | null {

@@ -2,6 +2,8 @@
 
 import * as assert from 'assert';
 
+import { IpcPacketBuffer } from 'socket-serializer';
+
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
@@ -40,11 +42,11 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
         if (peerOrUndefined) {
             this._ipcBusPeer = peerOrUndefined;
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] Activate Standard listening for #${this._ipcBusPeer.name}`);
-            this._onIpcEventReceived = (eventEmitter: any, ipcBusCommand: IpcBusCommand, args: any[]) => this._onEventReceived(ipcBusCommand, args);
+            this._onIpcEventReceived = (eventEmitter: any, ipcBusCommand: IpcBusCommand, packetBuffer: IpcPacketBuffer) => this._onEventReceived(ipcBusCommand, packetBuffer);
         } else {
             this._ipcBusPeer = eventOrPeer;
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
-            this._onIpcEventReceived = (ipcBusCommand: IpcBusCommand, args: any[]) => this._onEventReceived(ipcBusCommand, args);
+            this._onIpcEventReceived = (ipcBusCommand: IpcBusCommand, packetBuffer: IpcPacketBuffer) => this._onEventReceived(ipcBusCommand, packetBuffer);
         }
         this._ipcRenderer.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
     };

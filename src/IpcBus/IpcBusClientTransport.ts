@@ -1,4 +1,5 @@
 import * as uuid from 'uuid';
+import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
@@ -34,9 +35,10 @@ export abstract class IpcBusClientTransport extends IpcBusClientImpl {
         return `${IpcBusInterfaces.IPCBUS_CHANNEL}/request-${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
     }
 
-    protected _onEventReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
+    protected _onEventReceived(ipcBusCommand: IpcBusCommand, packetBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
+                let args = packetBuffer.parseArraySlice(1);
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
                 const ipcBusEvent: IpcBusInterfaces.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
                 this.emit(ipcBusCommand.channel, ipcBusEvent, ...args);
@@ -57,6 +59,7 @@ export abstract class IpcBusClientTransport extends IpcBusClientImpl {
                         this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
                     }
                 };
+                let args = packetBuffer.parseArraySlice(1);
                 this.emit(ipcBusCommand.channel, ipcBusEvent, ...args);
                 break;
             }
@@ -64,6 +67,7 @@ export abstract class IpcBusClientTransport extends IpcBusClientImpl {
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
                 const localRequestCallback = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
                 if (localRequestCallback) {
+                    let args = packetBuffer.parseArraySlice(1);
                     localRequestCallback(ipcBusCommand, args);
                 }
                 break;

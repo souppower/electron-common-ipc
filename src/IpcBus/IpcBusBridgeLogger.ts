@@ -5,6 +5,8 @@ import * as fs from 'fs';
 
 import * as winston from 'winston';
 
+import { IpcPacketBuffer } from 'socket-serializer';
+
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
@@ -51,10 +53,11 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         return log;
     }
 
-    protected _onEventReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
+    protected _onEventReceived(ipcBusCommand: IpcBusCommand, packetBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestMessage: {
+                let args = packetBuffer.parseArraySlice(1);
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     const webContents = connData.conn;
                     let log = this.createLog(webContents, ipcBusCommand, args);
@@ -65,6 +68,7 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
             case IpcBusCommand.Kind.RequestResponse: {
                 const webContents = this._requestChannels.get(ipcBusCommand.request.replyChannel);
                 if (webContents) {
+                    let args = packetBuffer.parseArraySlice(1);
                     let log = this.createLog(webContents, ipcBusCommand, args);
                     this._logger.info(ipcBusCommand.kind, log);
                 }
@@ -72,7 +76,7 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
             }
         }
 
-        super._onEventReceived(ipcBusCommand, args);
+        super._onEventReceived(ipcBusCommand, packetBuffer);
     }
 
     protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {

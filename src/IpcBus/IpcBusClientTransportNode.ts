@@ -3,13 +3,13 @@
 import * as assert from 'assert';
 import * as net from 'net';
 
+import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
+
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
 import { IpcBusClientTransport } from './IpcBusClientTransport';
 import { IpcBusCommand } from './IpcBusCommand';
-
-import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
 
 // Implementation for Node process
 /** @internal */
@@ -64,16 +64,11 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
         this._bufferListReader.appendBuffer(buffer);
 
         while (this._packetBuffer.decodeFromReader(this._bufferListReader)) {
-            let args = this._packetBuffer.parseArray();
-            let ipcBusCommand: IpcBusCommand = args.shift();
-            // console.log(`packet`);
-            // console.log(JSON.stringify(ipcBusCommand, null, 4));
+            let ipcBusCommand: IpcBusCommand = this._packetBuffer.parseArrayAt(0);
             if (ipcBusCommand && ipcBusCommand.peer) {
-                this._onEventReceived(ipcBusCommand, args);
+                this._onEventReceived(ipcBusCommand, this._packetBuffer);
             }
             else {
-                // console.log(JSON.stringify(ipcBusCommand, null, 4));
-                // console.log(args);
                 throw `[IPCBus:Node] Not valid packet !`;
             }
         }

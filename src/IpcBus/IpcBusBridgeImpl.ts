@@ -1,4 +1,4 @@
-/// <reference types='electron' />
+import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
@@ -65,12 +65,12 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         return queryStateResult;
     }
 
-    protected _onEventReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
+    protected _onEventReceived(ipcBusCommand: IpcBusCommand, packetBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestMessage:
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, args);
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, packetBuffer);
                 });
                 break;
 
@@ -78,7 +78,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
                 const webContents = this._requestChannels.get(ipcBusCommand.request.replyChannel);
                 if (webContents) {
                     this._requestChannels.delete(ipcBusCommand.request.replyChannel);
-                    webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, args);
+                    webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, packetBuffer);
                 }
                 break;
         }
