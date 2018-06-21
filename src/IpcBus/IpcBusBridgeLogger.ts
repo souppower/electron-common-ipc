@@ -53,11 +53,12 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         return log;
     }
 
-    protected _onEventReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+    protected _onEventReceived(ipcPacketBuffer: IpcPacketBuffer) {
+        let args = ipcPacketBuffer.parseArray();
+        let ipcBusCommand: IpcBusCommand = args.shift();
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestMessage: {
-                let args = ipcPacketBuffer.parseArraySlice(1);
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     const webContents = connData.conn;
                     let log = this.createLog(webContents, ipcBusCommand, args);
@@ -68,7 +69,6 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
             case IpcBusCommand.Kind.RequestResponse: {
                 const webContents = this._requestChannels.get(ipcBusCommand.request.replyChannel);
                 if (webContents) {
-                    let args = ipcPacketBuffer.parseArraySlice(1);
                     let log = this.createLog(webContents, ipcBusCommand, args);
                     this._logger.info(ipcBusCommand.kind, log);
                 }
@@ -76,15 +76,18 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
             }
         }
 
-        super._onEventReceived(ipcBusCommand, ipcPacketBuffer);
+        super._onEventReceived(ipcPacketBuffer);
     }
 
-    protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
+    protected _onRendererMessage(event: any, buffer: Buffer) {
+        this._packetBuffer.decodeFromBuffer(buffer);
+        let args = this._packetBuffer.parseArray();
+        let ipcBusCommand: IpcBusCommand = args.shift();
         let log = this.createLog(event.sender, ipcBusCommand, args);
         this._logger.info(ipcBusCommand.kind, log);
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(log);
 
-        super._onRendererMessage(event, ipcBusCommand, args);
+        super._onRendererMessage(event, buffer);
     }
 }
 

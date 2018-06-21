@@ -22,8 +22,8 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
     private _socketBuffer: number;
     private _socketWriter: Writer;
 
-    private _packet: IpcPacketBufferWrap;
-    private _packetBuffer: IpcPacketBuffer;
+    protected _packet: IpcPacketBufferWrap;
+    protected _packetBuffer: IpcPacketBuffer;
     private _bufferListReader: BufferListReader;
 
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, options: IpcBusInterfaces.IpcBusClient.CreateOptions) {
@@ -66,7 +66,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
         while (this._packetBuffer.decodeFromReader(this._bufferListReader)) {
             let ipcBusCommand: IpcBusCommand = this._packetBuffer.parseArrayAt(0);
             if (ipcBusCommand && ipcBusCommand.peer) {
-                this._onEventReceived(ipcBusCommand, this._packetBuffer);
+                this._onEventReceived(this._packetBuffer);
             }
             else {
                 throw `[IPCBus:Node] Not valid packet !`;

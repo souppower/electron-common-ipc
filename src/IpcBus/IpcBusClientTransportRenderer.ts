@@ -9,6 +9,7 @@ import * as IpcBusInterfaces from './IpcBusInterfaces';
 
 import { IpcBusClientTransport } from './IpcBusClientTransport';
 import { IpcBusCommand } from './IpcBusCommand';
+import { BufferListWriter } from 'socket-serializer/lib/socket-serializer';
 
 export const IPCBUS_TRANSPORT_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
 export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'IpcBusRenderer:Command';
@@ -46,14 +47,14 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] Activate Standard listening for #${this._ipcBusPeer.name}`);
             this._onIpcEventReceived = (eventEmitter: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) => {
                 this._packetBuffer.decodeFromBuffer(buffer);
-                this._onEventReceived(ipcBusCommand, this._packetBuffer);
+                this._onEventReceived(this._packetBuffer);
             };
         } else {
             this._ipcBusPeer = eventOrPeer;
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
             this._onIpcEventReceived = (ipcBusCommand: IpcBusCommand, buffer: Buffer) => {
                 this._packetBuffer.decodeFromBuffer(buffer);
-                this._onEventReceived(ipcBusCommand, this._packetBuffer);
+                this._onEventReceived(this._packetBuffer);
             };
         }
         this._ipcRenderer.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
@@ -109,7 +110,14 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
 
     protected ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._ipcRenderer) {
-            this._ipcRenderer.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, args);
+            let bufferWriter = new BufferListWriter();
+            if (args) {
+                this._packetBuffer.writeArray(bufferWriter, [ipcBusCommand, ...args]);
+            }
+            else {
+                this._packetBuffer.writeArray(bufferWriter, [ipcBusCommand]);
+            }
+            this._ipcRenderer.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, bufferWriter.buffer);
         }
     }
 }

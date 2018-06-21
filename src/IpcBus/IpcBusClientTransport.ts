@@ -35,10 +35,11 @@ export abstract class IpcBusClientTransport extends IpcBusClientImpl {
         return `${IpcBusInterfaces.IPCBUS_CHANNEL}/request-${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
     }
 
-    protected _onEventReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+    protected _onEventReceived(ipcPacketBuffer: IpcPacketBuffer) {
+        let args = ipcPacketBuffer.parseArray();
+        let ipcBusCommand: IpcBusCommand = args.shift();
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                let args = ipcPacketBuffer.parseArraySlice(1);
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
                 const ipcBusEvent: IpcBusInterfaces.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
                 this.emit(ipcBusCommand.channel, ipcBusEvent, ...args);
@@ -59,7 +60,6 @@ export abstract class IpcBusClientTransport extends IpcBusClientImpl {
                         this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
                     }
                 };
-                let args = ipcPacketBuffer.parseArraySlice(1);
                 this.emit(ipcBusCommand.channel, ipcBusEvent, ...args);
                 break;
             }
@@ -67,7 +67,6 @@ export abstract class IpcBusClientTransport extends IpcBusClientImpl {
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
                 const localRequestCallback = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
                 if (localRequestCallback) {
-                    let args = ipcPacketBuffer.parseArraySlice(1);
                     localRequestCallback(ipcBusCommand, args);
                 }
                 break;
