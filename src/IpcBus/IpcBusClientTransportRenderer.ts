@@ -20,12 +20,14 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
     private _ipcRenderer: any;
     private _onIpcEventReceived: Function;
     private _promiseConnected: Promise<void>;
+    private _packetBuffer: IpcPacketBuffer;
 
     // private _ipcRendererReady: Promise<void>;
 
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, options: IpcBusInterfaces.IpcBusClient.CreateOptions) {
         assert(processType === 'renderer', `IpcBusClientTransportRenderer: processType must not be a process ${processType}`);
         super({ type: processType, pid: -1 }, options);
+        this._packetBuffer = new IpcPacketBuffer();
     }
 
     protected _reset() {
@@ -42,11 +44,17 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
         if (peerOrUndefined) {
             this._ipcBusPeer = peerOrUndefined;
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] Activate Standard listening for #${this._ipcBusPeer.name}`);
-            this._onIpcEventReceived = (eventEmitter: any, ipcBusCommand: IpcBusCommand, packetBuffer: IpcPacketBuffer) => this._onEventReceived(ipcBusCommand, packetBuffer);
+            this._onIpcEventReceived = (eventEmitter: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) => {
+                this._packetBuffer.decodeFromBuffer(buffer);
+                this._onEventReceived(ipcBusCommand, this._packetBuffer);
+            };
         } else {
             this._ipcBusPeer = eventOrPeer;
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
-            this._onIpcEventReceived = (ipcBusCommand: IpcBusCommand, packetBuffer: IpcPacketBuffer) => this._onEventReceived(ipcBusCommand, packetBuffer);
+            this._onIpcEventReceived = (ipcBusCommand: IpcBusCommand, buffer: Buffer) => {
+                this._packetBuffer.decodeFromBuffer(buffer);
+                this._onEventReceived(ipcBusCommand, this._packetBuffer);
+            };
         }
         this._ipcRenderer.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
     };

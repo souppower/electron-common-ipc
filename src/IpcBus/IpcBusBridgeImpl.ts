@@ -65,12 +65,12 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         return queryStateResult;
     }
 
-    protected _onEventReceived(ipcBusCommand: IpcBusCommand, packetBuffer: IpcPacketBuffer) {
+    protected _onEventReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestMessage:
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, packetBuffer);
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, ipcPacketBuffer.buffer);
                 });
                 break;
 
@@ -78,7 +78,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
                 const webContents = this._requestChannels.get(ipcBusCommand.request.replyChannel);
                 if (webContents) {
                     this._requestChannels.delete(ipcBusCommand.request.replyChannel);
-                    webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, packetBuffer);
+                    webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, ipcPacketBuffer.buffer);
                 }
                 break;
         }

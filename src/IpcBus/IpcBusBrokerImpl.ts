@@ -10,7 +10,7 @@ import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusClientTransportNode } from './IpcBusClientTransportNode';
 
 interface IpcBusBrokerSocketClient {
-    onSocketPacket(packetBuffer: IpcPacketBuffer, socket: net.Socket): void;
+    onSocketPacket(ipcPacketBuffer: IpcPacketBuffer, socket: net.Socket): void;
     onSocketError(socket: net.Socket, err: string): void;
     onSocketClose(socket: net.Socket): void;
 };

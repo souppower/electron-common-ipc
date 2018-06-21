@@ -53,11 +53,11 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         return log;
     }
 
-    protected _onEventReceived(ipcBusCommand: IpcBusCommand, packetBuffer: IpcPacketBuffer) {
+    protected _onEventReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestMessage: {
-                let args = packetBuffer.parseArraySlice(1);
+                let args = ipcPacketBuffer.parseArraySlice(1);
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     const webContents = connData.conn;
                     let log = this.createLog(webContents, ipcBusCommand, args);
@@ -68,7 +68,7 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
             case IpcBusCommand.Kind.RequestResponse: {
                 const webContents = this._requestChannels.get(ipcBusCommand.request.replyChannel);
                 if (webContents) {
-                    let args = packetBuffer.parseArraySlice(1);
+                    let args = ipcPacketBuffer.parseArraySlice(1);
                     let log = this.createLog(webContents, ipcBusCommand, args);
                     this._logger.info(ipcBusCommand.kind, log);
                 }
@@ -76,7 +76,7 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
             }
         }
 
-        super._onEventReceived(ipcBusCommand, packetBuffer);
+        super._onEventReceived(ipcBusCommand, ipcPacketBuffer);
     }
 
     protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
