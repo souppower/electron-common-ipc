@@ -133,21 +133,21 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         ipcBusPeer.name = peerName;
     }
 
-    protected _onRendererMessage(event: any, buffer: Buffer) {
-        this._packetBuffer.decodeFromBuffer(buffer);
-        let ipcBusCommand: IpcBusCommand = this._packetBuffer.parseArrayAt(0);
-
+    protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
         const webContents = event.sender;
         const ipcBusPeer = ipcBusCommand.peer;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Connect : {
+                this._packetBuffer.decodeFromBuffer(buffer);
                 let args = this._packetBuffer.parseArraySlice(1);
                 this._onConnect(webContents, ipcBusPeer);
+
+                // buffer content is modified, we can not just forward it
                 ipcBusPeer.name = args[0] || ipcBusPeer.name;
+
                 // We get back to the webContents
                 // - to confirm the connection
                 // - to provide peerName and id/s
-
                 // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
                 if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
                     webContents.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
@@ -166,10 +166,14 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
             case IpcBusCommand.Kind.Close : {
                 let args = this._packetBuffer.parseArraySlice(1);
                 // We do not close the socket, we just disconnect a peer
+                // buffer content is modified, we can not just forward it
                 ipcBusCommand.kind = IpcBusCommand.Kind.Disconnect;
+
                 this._rendererCleanUp(webContents, webContents.id, ipcBusPeer.id);
                 this._ipcBusPeers.delete(ipcBusPeer.id);
+
                 this.ipcPostCommand(ipcBusCommand, args);
+                // WARNING, this 'return' is on purpose.
                 return;
             }
 
