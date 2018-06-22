@@ -19,7 +19,7 @@ class IpcBusBrokerSocket {
     private _socket: net.Socket;
     protected _socketBinds: { [key: string]: Function };
 
-    private _packetBuffer: IpcPacketBuffer;
+    private _packetIn: IpcPacketBuffer;
     private _bufferListReader: BufferListReader;
     private _client: IpcBusBrokerSocketClient;
 
@@ -28,7 +28,7 @@ class IpcBusBrokerSocket {
         this._client = client;
 
         this._bufferListReader = new BufferListReader();
-        this._packetBuffer = new IpcPacketBuffer();
+        this._packetIn = new IpcPacketBuffer();
 
         this._socketBinds = {};
         this._socketBinds['error'] = this._onSocketError.bind(this);
@@ -54,8 +54,8 @@ class IpcBusBrokerSocket {
 
     protected _onSocketData(buffer: Buffer) {
         this._bufferListReader.appendBuffer(buffer);
-        while (this._packetBuffer.decodeFromReader(this._bufferListReader)) {
-            this._client.onSocketPacket(this._packetBuffer, this._socket);
+        while (this._packetIn.decodeFromReader(this._bufferListReader)) {
+            this._client.onSocketPacket(this._packetIn, this._socket);
             // Remove read buffer
             this._bufferListReader.reduce();
         }

@@ -22,17 +22,19 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
     private _socketBuffer: number;
     private _socketWriter: Writer;
 
-    protected _packet: IpcPacketBufferWrap;
-    protected _packetBuffer: IpcPacketBuffer;
+    protected _packetOut: IpcPacketBufferWrap;
+
+    protected _packetIn: IpcPacketBuffer;
     private _bufferListReader: BufferListReader;
 
     constructor(processType: IpcBusInterfaces.IpcBusProcessType, options: IpcBusInterfaces.IpcBusClient.CreateOptions) {
         assert((processType === 'browser') || (processType === 'node'), `IpcBusClientTransportNode: processType must not be a process ${processType}`);
 
         super({ type: processType, pid: process.pid }, options);
-        this._packet = new IpcPacketBufferWrap();
+        this._packetOut = new IpcPacketBufferWrap();
+
         this._bufferListReader = new BufferListReader();
-        this._packetBuffer = new IpcPacketBuffer();
+        this._packetIn = new IpcPacketBuffer();
 
         this._netBinds = {};
         this._netBinds['error'] = this._onSocketError.bind(this);
@@ -62,10 +64,10 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
 
     protected _onSocketData(buffer: Buffer) {
         this._bufferListReader.appendBuffer(buffer);
-        while (this._packetBuffer.decodeFromReader(this._bufferListReader)) {
-            let ipcBusCommand: IpcBusCommand = this._packetBuffer.parseArrayAt(0);
+        while (this._packetIn.decodeFromReader(this._bufferListReader)) {
+            let ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
             if (ipcBusCommand && ipcBusCommand.peer) {
-                this._onEventReceived(this._packetBuffer);
+                this._onEventReceived(this._packetIn);
             }
             else {
                 throw `[IPCBus:Node] Not valid packet !`;
@@ -222,10 +224,10 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
     protected ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._socket) {
             if (args) {
-                this._packet.writeArray(this._socketWriter, [ipcBusCommand, ...args]);
+                this._packetOut.writeArray(this._socketWriter, [ipcBusCommand, ...args]);
             }
             else {
-                this._packet.writeArray(this._socketWriter, [ipcBusCommand]);
+                this._packetOut.writeArray(this._socketWriter, [ipcBusCommand]);
             }
         }
     }

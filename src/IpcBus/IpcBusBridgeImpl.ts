@@ -138,8 +138,9 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         const ipcBusPeer = ipcBusCommand.peer;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Connect : {
-                this._packetBuffer.decodeFromBuffer(buffer);
-                let args = this._packetBuffer.parseArraySlice(1);
+                let packetBuffer = new IpcPacketBuffer();
+                packetBuffer.decodeFromBuffer(buffer);
+                let args = packetBuffer.parseArraySlice(1);
                 this._onConnect(webContents, ipcBusPeer);
 
                 // buffer content is modified, we can not just forward it
@@ -164,7 +165,9 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
             }
             case IpcBusCommand.Kind.Disconnect :
             case IpcBusCommand.Kind.Close : {
-                let args = this._packetBuffer.parseArraySlice(1);
+                let packetBuffer = new IpcPacketBuffer();
+                packetBuffer.decodeFromBuffer(buffer);
+                let args = packetBuffer.parseArraySlice(1);
                 // We do not close the socket, we just disconnect a peer
                 // buffer content is modified, we can not just forward it
                 ipcBusCommand.kind = IpcBusCommand.Kind.Disconnect;

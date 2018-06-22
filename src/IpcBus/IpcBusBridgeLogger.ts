@@ -80,8 +80,8 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
     }
 
     protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
-        this._packetBuffer.decodeFromBuffer(buffer);
-        let args = this._packetBuffer.parseArraySlice(1);
+        this._packetIn.decodeFromBuffer(buffer);
+        let args = this._packetIn.parseArraySlice(1);
         let log = this.createLog(event.sender, ipcBusCommand, args);
         this._logger.info(ipcBusCommand.kind, log);
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(log);
