@@ -62,16 +62,16 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
 
     protected _onSocketData(buffer: Buffer) {
         this._bufferListReader.appendBuffer(buffer);
-
         while (this._packetBuffer.decodeFromReader(this._bufferListReader)) {
             let ipcBusCommand: IpcBusCommand = this._packetBuffer.parseArrayAt(0);
-            this._bufferListReader.reduce();
             if (ipcBusCommand && ipcBusCommand.peer) {
                 this._onEventReceived(this._packetBuffer);
             }
             else {
                 throw `[IPCBus:Node] Not valid packet !`;
             }
+            // Remove read buffer
+            this._bufferListReader.reduce();
         }
     }
 
