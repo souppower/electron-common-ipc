@@ -112,14 +112,14 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     protected ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._ipcRenderer) {
+            let bufferWriter = new BufferListWriter();
             if (args) {
-                let bufferWriter = new BufferListWriter();
                 this._packetBuffer.writeArray(bufferWriter, [ipcBusCommand, ...args]);
-                this._ipcRenderer.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, bufferWriter.buffer);
             }
             else {
-                this._ipcRenderer.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand);
+                this._packetBuffer.writeArray(bufferWriter, [ipcBusCommand]);
             }
+            this._ipcRenderer.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, bufferWriter.buffer);
         }
     }
 }
