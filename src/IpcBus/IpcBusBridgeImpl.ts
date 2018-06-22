@@ -95,22 +95,6 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         });
     }
 
-    private _onConnect(webContents: Electron.WebContents, ipcBusPeer: IpcBusInterfaces.IpcBusPeer): void {
-        this._ipcBusPeers.set(ipcBusPeer.id, ipcBusPeer);
-
-        // Have to closure the webContentsId as webContents.id is undefined when destroyed !!!
-        this._completePeerInfo(webContents, ipcBusPeer);
-        let webContentsId = webContents.id;
-        webContents.addListener('destroyed', () => {
-            this._rendererCleanUp(webContents, webContentsId, ipcBusPeer.id);
-            // Simulate the close message
-            if (this._ipcBusPeers.delete(ipcBusPeer.id)) {
-                this.ipcPostCommand({ kind: IpcBusCommand.Kind.Disconnect, channel: '', peer: ipcBusPeer });
-            }
-        });
-        // webContents.addListener('destroyed', this._lambdaCleanUpHandler);
-    }
-
     private _completePeerInfo(webContents: Electron.WebContents, ipcBusPeer: IpcBusInterfaces.IpcBusPeer): void {
         let peerName = `${ipcBusPeer.process.type}-${webContents.id}`;
         ipcBusPeer.process.wcid = webContents.id;
@@ -133,67 +117,88 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         ipcBusPeer.name = peerName;
     }
 
+    private _onConnect(webContents: Electron.WebContents, ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
+        let ipcBusPeer = ipcBusCommand.peer;
+        this._ipcBusPeers.set(ipcBusPeer.id, ipcBusPeer);
+
+        // Have to closure the webContentsId as webContents.id is undefined when destroyed !!!
+        this._completePeerInfo(webContents, ipcBusPeer);
+        let webContentsId = webContents.id;
+        webContents.addListener('destroyed', () => {
+            this._rendererCleanUp(webContents, webContentsId, ipcBusPeer.id);
+            // Simulate the close message
+            if (this._ipcBusPeers.delete(ipcBusPeer.id)) {
+                this.ipcPostCommand({ kind: IpcBusCommand.Kind.Disconnect, channel: '', peer: ipcBusPeer });
+            }
+        });
+
+        let packetBuffer = new IpcPacketBuffer();
+        packetBuffer.decodeFromBuffer(buffer);
+        let args = packetBuffer.parseArraySlice(1);
+
+        // buffer content is modified, we can not just forward it
+        ipcBusPeer.name = args[0] || ipcBusPeer.name;
+
+        // We get back to the webContents
+        // - to confirm the connection
+        // - to provide peerName and id/s
+        // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
+        if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
+            webContents.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
+            this.ipcPostCommand(ipcBusCommand, args);
+        }
+        else {
+            webContents.on('did-finish-load', () => {
+                webContents.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
+                this.ipcPostCommand(ipcBusCommand, args);
+            });
+        }
+        // webContents.addListener('destroyed', this._lambdaCleanUpHandler);
+    }
+
+    private _onDisconnect(webContents: Electron.WebContents, ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
+        let ipcBusPeer = ipcBusCommand.peer;
+        let packetBuffer = new IpcPacketBuffer();
+        packetBuffer.decodeFromBuffer(buffer);
+        let args = packetBuffer.parseArraySlice(1);
+        // We do not close the socket, we just disconnect a peer
+        // buffer content is modified, we can not just forward it
+        ipcBusCommand.kind = IpcBusCommand.Kind.Disconnect;
+
+        this._rendererCleanUp(webContents, webContents.id, ipcBusPeer.id);
+        this._ipcBusPeers.delete(ipcBusPeer.id);
+
+        this.ipcPostCommand(ipcBusCommand, args);
+    }
+
     protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
         const webContents = event.sender;
-        const ipcBusPeer = ipcBusCommand.peer;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Connect : {
-                let packetBuffer = new IpcPacketBuffer();
-                packetBuffer.decodeFromBuffer(buffer);
-                let args = packetBuffer.parseArraySlice(1);
-                this._onConnect(webContents, ipcBusPeer);
-
-                // buffer content is modified, we can not just forward it
-                ipcBusPeer.name = args[0] || ipcBusPeer.name;
-
-                // We get back to the webContents
-                // - to confirm the connection
-                // - to provide peerName and id/s
-                // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
-                if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
-                    webContents.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
-                    this.ipcPostCommand(ipcBusCommand, args);
-                }
-                else {
-                    webContents.on('did-finish-load', () => {
-                        webContents.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
-                        this.ipcPostCommand(ipcBusCommand, args);
-                    });
-                }
+                this._onConnect(webContents, ipcBusCommand, buffer);
                 // WARNING, this 'return' is on purpose.
                 return;
             }
             case IpcBusCommand.Kind.Disconnect :
             case IpcBusCommand.Kind.Close : {
-                let packetBuffer = new IpcPacketBuffer();
-                packetBuffer.decodeFromBuffer(buffer);
-                let args = packetBuffer.parseArraySlice(1);
-                // We do not close the socket, we just disconnect a peer
-                // buffer content is modified, we can not just forward it
-                ipcBusCommand.kind = IpcBusCommand.Kind.Disconnect;
-
-                this._rendererCleanUp(webContents, webContents.id, ipcBusPeer.id);
-                this._ipcBusPeers.delete(ipcBusPeer.id);
-
-                this.ipcPostCommand(ipcBusCommand, args);
+                this._onDisconnect(webContents, ipcBusCommand, buffer);
                 // WARNING, this 'return' is on purpose.
                 return;
             }
-
             case IpcBusCommand.Kind.AddChannelListener :
-                this._subscriptions.addRef(ipcBusCommand.channel, webContents.id, webContents, ipcBusPeer.id);
+                this._subscriptions.addRef(ipcBusCommand.channel, webContents.id, webContents, ipcBusCommand.peer.id);
                 break;
 
             case IpcBusCommand.Kind.RemoveChannelAllListeners :
-                this._subscriptions.releaseAll(ipcBusCommand.channel, webContents.id, ipcBusPeer.id);
+                this._subscriptions.releaseAll(ipcBusCommand.channel, webContents.id, ipcBusCommand.peer.id);
                 break;
 
             case IpcBusCommand.Kind.RemoveChannelListener :
-                this._subscriptions.release(ipcBusCommand.channel, webContents.id, ipcBusPeer.id);
+                this._subscriptions.release(ipcBusCommand.channel, webContents.id, ipcBusCommand.peer.id);
                 break;
 
             case IpcBusCommand.Kind.RemoveListeners :
-                this._rendererCleanUp(webContents, webContents.id, ipcBusPeer.id);
+                this._rendererCleanUp(webContents, webContents.id, ipcBusCommand.peer.id);
                 break;
 
             case IpcBusCommand.Kind.RequestMessage :
