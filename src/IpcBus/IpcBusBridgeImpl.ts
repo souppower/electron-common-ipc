@@ -1,4 +1,4 @@
-/// <reference types='electron' />
+import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
@@ -65,12 +65,13 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         return queryStateResult;
     }
 
-    protected _onEventReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
+    protected _onEventReceived(ipcPacketBuffer: IpcPacketBuffer) {
+        let ipcBusCommand: IpcBusCommand = ipcPacketBuffer.parseArrayAt(0);
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestMessage:
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, args);
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, ipcPacketBuffer.buffer);
                 });
                 break;
 
@@ -78,7 +79,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
                 const webContents = this._requestChannels.get(ipcBusCommand.request.replyChannel);
                 if (webContents) {
                     this._requestChannels.delete(ipcBusCommand.request.replyChannel);
-                    webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, args);
+                    webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, ipcPacketBuffer.buffer);
                 }
                 break;
         }
@@ -132,17 +133,21 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         ipcBusPeer.name = peerName;
     }
 
-    protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
+    protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
         const webContents = event.sender;
         const ipcBusPeer = ipcBusCommand.peer;
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.Connect :
+            case IpcBusCommand.Kind.Connect : {
+                this._packetBuffer.decodeFromBuffer(buffer);
+                let args = this._packetBuffer.parseArraySlice(1);
                 this._onConnect(webContents, ipcBusPeer);
+
+                // buffer content is modified, we can not just forward it
                 ipcBusPeer.name = args[0] || ipcBusPeer.name;
+
                 // We get back to the webContents
                 // - to confirm the connection
                 // - to provide peerName and id/s
-
                 // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
                 if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
                     webContents.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
@@ -156,14 +161,21 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
                 }
                 // WARNING, this 'return' is on purpose.
                 return;
-
+            }
             case IpcBusCommand.Kind.Disconnect :
-            case IpcBusCommand.Kind.Close :
+            case IpcBusCommand.Kind.Close : {
+                let args = this._packetBuffer.parseArraySlice(1);
                 // We do not close the socket, we just disconnect a peer
+                // buffer content is modified, we can not just forward it
                 ipcBusCommand.kind = IpcBusCommand.Kind.Disconnect;
+
                 this._rendererCleanUp(webContents, webContents.id, ipcBusPeer.id);
                 this._ipcBusPeers.delete(ipcBusPeer.id);
-                break;
+
+                this.ipcPostCommand(ipcBusCommand, args);
+                // WARNING, this 'return' is on purpose.
+                return;
+            }
 
             case IpcBusCommand.Kind.AddChannelListener :
                 this._subscriptions.addRef(ipcBusCommand.channel, webContents.id, webContents, ipcBusPeer.id);
@@ -192,7 +204,9 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
             default :
                 break;
         }
-        this.ipcPostCommand(ipcBusCommand, args);
+        if (this._socket) {
+            this._socket.write(buffer);
+        }
     }
 }
 

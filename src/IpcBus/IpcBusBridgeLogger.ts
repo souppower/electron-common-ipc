@@ -5,6 +5,8 @@ import * as fs from 'fs';
 
 import * as winston from 'winston';
 
+import { IpcPacketBuffer } from 'socket-serializer';
+
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
@@ -51,7 +53,9 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         return log;
     }
 
-    protected _onEventReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
+    protected _onEventReceived(ipcPacketBuffer: IpcPacketBuffer) {
+        let args = ipcPacketBuffer.parseArray();
+        let ipcBusCommand: IpcBusCommand = args.shift();
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestMessage: {
@@ -72,15 +76,17 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
             }
         }
 
-        super._onEventReceived(ipcBusCommand, args);
+        super._onEventReceived(ipcPacketBuffer);
     }
 
-    protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
+    protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
+        this._packetBuffer.decodeFromBuffer(buffer);
+        let args = this._packetBuffer.parseArraySlice(1);
         let log = this.createLog(event.sender, ipcBusCommand, args);
         this._logger.info(ipcBusCommand.kind, log);
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(log);
 
-        super._onRendererMessage(event, ipcBusCommand, args);
+        super._onRendererMessage(event, ipcBusCommand, buffer);
     }
 }
 

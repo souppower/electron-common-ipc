@@ -1,4 +1,5 @@
 import * as uuid from 'uuid';
+import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
@@ -34,7 +35,9 @@ export abstract class IpcBusClientTransport extends IpcBusClientImpl {
         return `${IpcBusInterfaces.IPCBUS_CHANNEL}/request-${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
     }
 
-    protected _onEventReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
+    protected _onEventReceived(ipcPacketBuffer: IpcPacketBuffer) {
+        let args = ipcPacketBuffer.parseArray();
+        let ipcBusCommand: IpcBusCommand = args.shift();
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
