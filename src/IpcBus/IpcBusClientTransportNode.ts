@@ -65,6 +65,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
 
         while (this._packetBuffer.decodeFromReader(this._bufferListReader)) {
             let ipcBusCommand: IpcBusCommand = this._packetBuffer.parseArrayAt(0);
+            this._bufferListReader.reduce();
             if (ipcBusCommand && ipcBusCommand.peer) {
                 this._onEventReceived(this._packetBuffer);
             }
