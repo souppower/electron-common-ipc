@@ -50,14 +50,14 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] Activate Standard listening for #${this._ipcBusPeer.name}`);
             this._onIpcEventReceived = (eventEmitter: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) => {
                 this._packetIn.decodeFromBuffer(buffer);
-                this._onEventReceived(this._packetIn);
+                this._onEventReceived(ipcBusCommand, this._packetIn);
             };
         } else {
             this._ipcBusPeer = eventOrPeer;
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
             this._onIpcEventReceived = (ipcBusCommand: IpcBusCommand, buffer: Buffer) => {
                 this._packetIn.decodeFromBuffer(buffer);
-                this._onEventReceived(this._packetIn);
+                this._onEventReceived(ipcBusCommand, this._packetIn);
             };
         }
         this._ipcRenderer.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);

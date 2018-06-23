@@ -53,9 +53,8 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         return log;
     }
 
-    protected _onEventReceived(ipcPacketBuffer: IpcPacketBuffer) {
-        let args = ipcPacketBuffer.parseArray();
-        let ipcBusCommand: IpcBusCommand = args.shift();
+    protected _onEventReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+        let args = ipcPacketBuffer.parseArraySlice(1);
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestMessage: {
@@ -76,7 +75,7 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
             }
         }
 
-        super._onEventReceived(ipcPacketBuffer);
+        super._onEventReceived(ipcBusCommand, ipcPacketBuffer);
     }
 
     protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) {

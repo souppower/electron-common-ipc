@@ -35,9 +35,8 @@ export abstract class IpcBusClientTransport extends IpcBusClientImpl {
         return `${IpcBusInterfaces.IPCBUS_CHANNEL}/request-${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
     }
 
-    protected _onEventReceived(ipcPacketBuffer: IpcPacketBuffer) {
-        let args = ipcPacketBuffer.parseArray();
-        let ipcBusCommand: IpcBusCommand = args.shift();
+    protected _onEventReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+        let args = ipcPacketBuffer.parseArraySlice(1);
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);

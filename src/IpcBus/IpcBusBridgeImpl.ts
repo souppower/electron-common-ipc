@@ -65,8 +65,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         return queryStateResult;
     }
 
-    protected _onEventReceived(ipcPacketBuffer: IpcPacketBuffer) {
-        let ipcBusCommand: IpcBusCommand = ipcPacketBuffer.parseArrayAt(0);
+    protected _onEventReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestMessage:
