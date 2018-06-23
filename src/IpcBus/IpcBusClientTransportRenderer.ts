@@ -2,14 +2,13 @@
 
 import * as assert from 'assert';
 
-import { IpcPacketBuffer, IpcPacketBufferWrap } from 'socket-serializer';
+import { IpcPacketBuffer, IpcPacketBufferWrap, BufferListWriter } from 'socket-serializer';
 
 import * as IpcBusUtils from './IpcBusUtils';
 import * as IpcBusInterfaces from './IpcBusInterfaces';
 
 import { IpcBusClientTransport } from './IpcBusClientTransport';
 import { IpcBusCommand } from './IpcBusCommand';
-import { BufferListWriter } from 'socket-serializer/lib/socket-serializer';
 
 export const IPCBUS_TRANSPORT_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
 export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'IpcBusRenderer:Command';
