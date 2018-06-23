@@ -88,16 +88,13 @@ function doInit(msgJSON) {
     console.log('node - doInit: topicName:' + args);
 }
 
-function dispatchMessage(msg)
-{
+function dispatchMessage(msg) {
     console.log('node - receive message:' + msg);
-    if (isConnected == false)
-    {
+    if (isConnected == false) {
         // console.log('node - delay message:' + msg);
         msgs.push(msg);
     }
-    else
-    {
+    else {
         var actionFcts =
         {
             subscribe : doSubscribeTopic,
@@ -109,10 +106,13 @@ function dispatchMessage(msg)
         };
 
         // console.log('node - execute message:' + msg);
-        var msgJSON = JSON.parse(msg);
-        if (actionFcts.hasOwnProperty(msgJSON['action']))
-        {
-            actionFcts[msgJSON['action']](msgJSON);
+        try {
+            var msgJSON = JSON.parse(msg);
+            if (actionFcts.hasOwnProperty(msgJSON['action'])) {
+                actionFcts[msgJSON['action']](msgJSON);
+            }
+        }
+        catch(_) {
         }
     }
 }
@@ -128,12 +128,11 @@ ipcBus.connect()
     .then(() => {
         console.log('node - connect');
         isConnected = true;
-        for(var msg in msgs)
-        {
+        for(var msg in msgs) {
             dispatchMessage(msg);
         }
         msgs = [];
-        perfTests = new PerfTests('node');
+        perfTests = new PerfTests('node', busPath);
         perfTests.connect();
 });
 

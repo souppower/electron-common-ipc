@@ -304,8 +304,8 @@ var NodeProcess = (function () {
 
     function NodeInstance() {
         this.process = spawnNodeInstance('NodeInstance.js');
-        this.process.stdout.addListener('data', data => { console.log('<NODE> ' + data.toString()); });
-        this.process.stderr.addListener('data', data => { console.log('<NODE> ' + data.toString()); });
+        // this.process.stdout.addListener('data', data => { console.log('<NODE> ' + data.toString()); });
+        // this.process.stderr.addListener('data', data => { console.log('<NODE> ' + data.toString()); });
         console.log('<MAIN> Node instance #' + this.process.pid + ' started !');
     }
 
