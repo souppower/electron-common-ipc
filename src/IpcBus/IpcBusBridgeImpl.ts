@@ -111,6 +111,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
             peerName += `_${ipcBusPeer.process.pid}`;
         }
         catch (err) {
+            // For backward we fill pid with webContents id
             ipcBusPeer.process.pid = webContents.id;
         }
         ipcBusPeer.name = peerName;
@@ -120,8 +121,9 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         let ipcBusPeer = ipcBusCommand.peer;
         this._ipcBusPeers.set(ipcBusPeer.id, ipcBusPeer);
 
-        // Have to closure the webContentsId as webContents.id is undefined when destroyed !!!
         this._completePeerInfo(webContents, ipcBusPeer);
+
+        // Have to closure the webContentsId as webContents.id is undefined when destroyed !!!
         let webContentsId = webContents.id;
         webContents.addListener('destroyed', () => {
             this._rendererCleanUp(webContents, webContentsId, ipcBusPeer.id);
@@ -134,8 +136,6 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         let packetBuffer = new IpcPacketBuffer();
         packetBuffer.decodeFromBuffer(buffer);
         let args = packetBuffer.parseArraySlice(1);
-
-        // buffer content is modified, we can not just forward it
         ipcBusPeer.name = args[0] || ipcBusPeer.name;
 
         // We get back to the webContents
@@ -144,11 +144,13 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
         if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
             webContents.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
-            this.ipcPostCommand(ipcBusCommand, args);
+                // ipcBusCommand.peer may be changed, the original buffer content is no more up-to-date, we have to rebuild it
+                this.ipcPostCommand(ipcBusCommand, args);
         }
         else {
             webContents.on('did-finish-load', () => {
                 webContents.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
+                // ipcBusCommand.peer may be, the original buffer content is no more up-to-date, we have to rebuild it
                 this.ipcPostCommand(ipcBusCommand, args);
             });
         }
@@ -157,16 +159,17 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
 
     private _onDisconnect(webContents: Electron.WebContents, ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
         let ipcBusPeer = ipcBusCommand.peer;
-        let packetBuffer = new IpcPacketBuffer();
-        packetBuffer.decodeFromBuffer(buffer);
-        let args = packetBuffer.parseArraySlice(1);
+        this._ipcBusPeers.delete(ipcBusPeer.id);
+
         // We do not close the socket, we just disconnect a peer
-        // buffer content is modified, we can not just forward it
         ipcBusCommand.kind = IpcBusCommand.Kind.Disconnect;
 
         this._rendererCleanUp(webContents, webContents.id, ipcBusPeer.id);
-        this._ipcBusPeers.delete(ipcBusPeer.id);
 
+        // ipcBusCommand has been changed, the original buffer content is no more up-to-date, we have to rebuild it
+        let packetBuffer = new IpcPacketBuffer();
+        packetBuffer.decodeFromBuffer(buffer);
+        let args = packetBuffer.parseArraySlice(1);
         this.ipcPostCommand(ipcBusCommand, args);
     }
 
