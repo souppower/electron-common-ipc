@@ -123,6 +123,8 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
             this._socketClients.forEach((socket) => {
                 socket.release();
             });
+            this._ipcBusBrokerClient.off(IpcBusInterfaces.IPCBUS_CHANNEL_QUERY_STATE, this._queryStateLamdba);
+            this._ipcBusBrokerClient.off(IpcBusInterfaces.IPCBUS_CHANNEL_SERVICE_AVAILABLE, this._serviceAvailableLambda);
             this._ipcBusBrokerClient.close();
             server.close();
             server.unref();

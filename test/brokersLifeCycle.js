@@ -1,7 +1,7 @@
 
 const ipcBusModule = require('../lib/electron-common-ipc');
 const electronApp = require('electron').app;
-const portfinder = require('portfinder');
+const sph = require('socket-port-helpers');
 
 let ipcBusBroker;
 let ipcBusBridge;
@@ -9,7 +9,7 @@ let ipcBusBridge;
 function _startBrokers() {
   //  // https://en.wikipedia.org/wiki/Ephemeral_port
    let port = 49152;
-   return portfinder.getPortPromise({port: port})
+   return sph.findFirstFreePort({portRange: `>=${port}`})
    .then((ipcBusPath) => {
     // Create broker
     ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);
