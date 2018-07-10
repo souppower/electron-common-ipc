@@ -10,7 +10,7 @@ import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusClientTransportNode } from './IpcBusClientTransportNode';
 
 interface IpcBusBrokerSocketClient {
-    onSocketPacket(ipcPacketBuffer: IpcPacketBuffer, socket: net.Socket): void;
+    onSocketPacket(socket: net.Socket, ipcPacketBuffer: IpcPacketBuffer): void;
     onSocketError(socket: net.Socket, err: string): void;
     onSocketClose(socket: net.Socket): void;
 };
@@ -55,7 +55,7 @@ class IpcBusBrokerSocket {
     protected _onSocketData(buffer: Buffer) {
         this._bufferListReader.appendBuffer(buffer);
         while (this._packetIn.decodeFromReader(this._bufferListReader)) {
-            this._client.onSocketPacket(this._packetIn, this._socket);
+            this._client.onSocketPacket(this._socket, this._packetIn);
             // Remove read buffer
             this._bufferListReader.reduce();
         }
@@ -302,7 +302,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
     }
 
     // protected _onServerData(packet: IpcPacketBuffer, socket: net.Socket, _server: net.Server): void {
-    onSocketPacket(packet: IpcPacketBuffer, socket: net.Socket): void {
+    onSocketPacket(socket: net.Socket, packet: IpcPacketBuffer): void {
         let ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Connect:

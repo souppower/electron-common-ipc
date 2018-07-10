@@ -9,9 +9,9 @@ import { IpcBusBroker } from './IpcBusInterfaces';
 import { IpcBusBridge  } from './IpcBusInterfaces';
 
 import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
-import { IpcBusBrokerLogger } from './IpcBusBrokerLogger';
+import { IpcBusBrokerJSONLogger } from './IpcBusBrokerJSONLogger';
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
-import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
+import { IpcBusBridgeJSONLogger } from './IpcBusBridgeJSONLogger';
 
 import { IpcBusClientTransportNode } from './IpcBusClientTransportNode';
 import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
@@ -32,7 +32,7 @@ export let CreateIpcBusBroker: IpcBusBroker.CreateFunction = (options: any, host
         case 'node':
             let logPath = process.env['ELECTRON_IPC_BROKER_LOGPATH'];
             if (logPath) {
-                ipcBusBroker = new IpcBusBrokerLogger(logPath, processType as IpcBusProcessType, localOptions);
+                ipcBusBroker = new IpcBusBrokerJSONLogger(logPath, processType as IpcBusProcessType, localOptions);
             }
             else {
                 ipcBusBroker = new IpcBusBrokerImpl(processType as IpcBusProcessType, localOptions);
@@ -59,7 +59,7 @@ export let CreateIpcBusBridge: IpcBusBridge.CreateFunction = (options: any, host
         case 'browser':
             let logPath = process.env['ELECTRON_IPC_BRIDGE_LOGPATH'];
             if (logPath) {
-                ipcBusBridge = new IpcBusBridgeLogger(logPath, processType as IpcBusProcessType, localOptions);
+                ipcBusBridge = new IpcBusBridgeJSONLogger(logPath, processType as IpcBusProcessType, localOptions);
             }
             else {
                 ipcBusBridge = new IpcBusBridgeImpl(processType as IpcBusProcessType, localOptions);
