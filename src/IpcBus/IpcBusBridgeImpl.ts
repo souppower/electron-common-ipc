@@ -11,9 +11,9 @@ import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_COMMAND, I
 /** @internal */
 export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBusInterfaces.IpcBusBridge {
     private _ipcMain: any;
-    private _ipcBusPeers: Map<string, IpcBusInterfaces.IpcBusPeer>;
     private _onRendererMessageBind: Function;
 
+    protected _ipcBusPeers: Map<string, IpcBusInterfaces.IpcBusPeer>;
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<number, Electron.WebContents>;
     protected _requestChannels: Map<string, any>;
 

@@ -27,12 +27,12 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
         this._logger.pipe(fs.createWriteStream(path.join(logPath, 'electron-common-ipcbus-bridge.csv')));
     }
 
-    protected addLog(webContents: Electron.WebContents, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): any {
+    protected addLog(webContents: Electron.WebContents, peer: IpcBusInterfaces.IpcBusPeer, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): any {
         ++this._line;
-        let log: string[] = [ this._line.toString(),  ipcBusCommand.kind, ipcPacketBuffer.packetSize.toString(), ipcBusCommand.peer.id, JSON.stringify(ipcBusCommand.peer.process) ];
+        let log: string[] = [ this._line.toString(),  ipcBusCommand.kind, ipcPacketBuffer.packetSize.toString(), peer.id, JSON.stringify(peer.process) ];
         if (args) {
             for (let i = 0, l = args.length; i < l; ++i) {
-                log.push(args[i]);
+                log.push(JSON.stringify(args[i]));
             }
         }
         this._logger.write(log);

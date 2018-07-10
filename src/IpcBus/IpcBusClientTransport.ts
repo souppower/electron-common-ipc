@@ -6,6 +6,9 @@ import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusClientImpl } from './IpcBusClientImpl';
 
+const replyChannelPrefix = `${IpcBusInterfaces.IPCBUS_CHANNEL}/request-`;
+const v1IdPattern = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+
 /** @internal */
 export abstract class IpcBusClientTransport extends IpcBusClientImpl {
     protected _ipcBusPeer: IpcBusInterfaces.IpcBusPeer;
@@ -32,7 +35,11 @@ export abstract class IpcBusClientTransport extends IpcBusClientImpl {
 
     private generateReplyChannel(): string {
         ++this._requestNumber;
-        return `${IpcBusInterfaces.IPCBUS_CHANNEL}/request-${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
+        return `${replyChannelPrefix}${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
+    }
+
+    protected extractPeerIdFromReplyChannel(replyChannel: string): string {
+        return replyChannel.substr(replyChannelPrefix.length, v1IdPattern.length);
     }
 
     protected _onEventReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {

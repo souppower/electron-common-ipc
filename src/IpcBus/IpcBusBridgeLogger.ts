@@ -12,7 +12,7 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         super(processType, options);
     }
 
-    protected abstract addLog(webContents: Electron.WebContents, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): void;
+    protected abstract addLog(webContents: Electron.WebContents, peer: IpcBusInterfaces.IpcBusPeer, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): void;
 
     protected _onEventReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
@@ -21,7 +21,10 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
                 let args = ipcPacketBuffer.parseArraySlice(1);
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     const webContents = connData.conn;
-                    this.addLog(webContents, ipcPacketBuffer, ipcBusCommand, args);
+                    connData.peerIds.forEach((peerId) => {
+                        let peer = this._ipcBusPeers.get(peerId.peerId);
+                        this.addLog(webContents, peer, ipcPacketBuffer, ipcBusCommand, args);
+                    })
                 });
                 break;
             }
@@ -29,7 +32,9 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
                 const webContents = this._requestChannels.get(ipcBusCommand.request.replyChannel);
                 if (webContents) {
                     let args = ipcPacketBuffer.parseArraySlice(1);
-                    this.addLog(webContents, ipcPacketBuffer, ipcBusCommand, args);
+                    let peerId = this.extractPeerIdFromReplyChannel(ipcBusCommand.request.replyChannel);
+                    let peer = this._ipcBusPeers.get(peerId);
+                    this.addLog(webContents, peer, ipcPacketBuffer, ipcBusCommand, args);
                 }
                 break;
             }
@@ -40,7 +45,7 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
     protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
         this._packetIn.decodeFromBuffer(buffer);
         let args = this._packetIn.parseArraySlice(1);
-        this.addLog(event.sender, this._packetIn, ipcBusCommand, args);
+        this.addLog(event.sender, ipcBusCommand.peer, this._packetIn, ipcBusCommand, args);
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(log);
 
         super._onRendererMessage(event, ipcBusCommand, buffer);

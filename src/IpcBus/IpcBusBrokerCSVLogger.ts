@@ -34,7 +34,7 @@ export class IpcBusBrokerCSVLogger extends IpcBusBrokerLogger {
         let log: string[] = [ this._line.toString(), ipcBusCommand.kind, packet.packetSize.toString(), ipcBusCommand.peer.id, JSON.stringify(ipcBusCommand.peer.process), socket.remotePort.toString() ];
         if (args) {
             for (let i = 0, l = args.length; i < l; ++i) {
-                log.push(args[i]);
+                log.push(JSON.stringify(args[i]));
             }
         }
         this._logger.write(log);
