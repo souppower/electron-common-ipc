@@ -36,6 +36,7 @@
   "types": "./lib/electron-common-ipc.d.ts",
   "browser": "./lib/electron-common-ipc-browser.js",
   "dependencies": {
+    "csv-write-stream": "^2.0.0",
     "socket-serializer": "^2.0.2",
     "uuid": "3.0.1",
     "winston": "^2.4.1"

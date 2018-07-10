@@ -10,8 +10,11 @@ import { IpcBusBridge  } from './IpcBusInterfaces';
 
 import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
 import { IpcBusBrokerJSONLogger } from './IpcBusBrokerJSONLogger';
+import { IpcBusBrokerCSVLogger } from './IpcBusBrokerCSVLogger';
+
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 import { IpcBusBridgeJSONLogger } from './IpcBusBridgeJSONLogger';
+import { IpcBusBridgeCSVLogger } from './IpcBusBridgeCSVLogger';
 
 import { IpcBusClientTransportNode } from './IpcBusClientTransportNode';
 import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
@@ -30,12 +33,18 @@ export let CreateIpcBusBroker: IpcBusBroker.CreateFunction = (options: any, host
     switch (processType) {
         case 'browser':
         case 'node':
-            let logPath = process.env['ELECTRON_IPC_BROKER_LOGPATH'];
+            let logPath = process.env['ELECTRON_IPC_BROKER_LOG_JSON'];
             if (logPath) {
                 ipcBusBroker = new IpcBusBrokerJSONLogger(logPath, processType as IpcBusProcessType, localOptions);
             }
             else {
-                ipcBusBroker = new IpcBusBrokerImpl(processType as IpcBusProcessType, localOptions);
+                let logPath = process.env['ELECTRON_IPC_BROKER_LOG_CSV'];
+                if (logPath) {
+                    ipcBusBroker = new IpcBusBrokerCSVLogger(logPath, processType as IpcBusProcessType, localOptions);
+                }
+                else {
+                    ipcBusBroker = new IpcBusBrokerImpl(processType as IpcBusProcessType, localOptions);
+                }
             }
             break;
         // not supported process
@@ -57,12 +66,18 @@ export let CreateIpcBusBridge: IpcBusBridge.CreateFunction = (options: any, host
     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBridge process type = ${processType} on ${JSON.stringify(options)}`);
     switch (processType) {
         case 'browser':
-            let logPath = process.env['ELECTRON_IPC_BRIDGE_LOGPATH'];
+            let logPath = process.env['ELECTRON_IPC_BRIDGE_LOG_JSON'];
             if (logPath) {
                 ipcBusBridge = new IpcBusBridgeJSONLogger(logPath, processType as IpcBusProcessType, localOptions);
             }
             else {
-                ipcBusBridge = new IpcBusBridgeImpl(processType as IpcBusProcessType, localOptions);
+                let logPath = process.env['ELECTRON_IPC_BRIDGE_LOG_CSV'];
+                if (logPath) {
+                    ipcBusBridge = new IpcBusBridgeCSVLogger(logPath, processType as IpcBusProcessType, localOptions);
+                }
+                else {
+                    ipcBusBridge = new IpcBusBridgeImpl(processType as IpcBusProcessType, localOptions);
+                }
             }
             break;
         // not supported process

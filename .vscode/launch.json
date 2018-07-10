@@ -21,7 +21,10 @@
                 "--remote-debugging-port=8315"
             ],
             "autoAttachChildren": true,
-            "env": {},
+            "env": {
+                "ELECTRON_IPC_BROKER_LOG_CSV": "c:\\temp\\ipc-log",
+                "ELECTRON_IPC_BRIDGE_LOG_CSV": "c:\\temp\\ipc-log",
+            },
             "outputCapture": "std",
             "console": "internalConsole",
             "sourceMaps": true,
