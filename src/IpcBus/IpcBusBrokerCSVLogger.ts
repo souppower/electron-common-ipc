@@ -27,7 +27,7 @@ export class IpcBusBrokerCSVLogger extends IpcBusBrokerLogger {
     }
 
     protected addLog(socket: net.Socket, packet: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): void {
-        let log: string[] = [ ipcBusCommand.kind, packet.packetSize.toString(), ipcBusCommand.peer.id, JSON.stringify(ipcBusCommand.peer.process), socket.remoteAddress ];
+        let log: string[] = [ ipcBusCommand.kind, packet.packetSize.toString(), ipcBusCommand.peer.id, JSON.stringify(ipcBusCommand.peer.process), socket.remotePort.toString() ];
         if (args) {
             for (let i = 0, l = args.length; i < l; ++i) {
                 log.push(args[i]);
