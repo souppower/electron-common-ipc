@@ -14,18 +14,22 @@ import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
 /** @internal */
 export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
     private _logger: any;
+    private _line: number;
 
-    constructor(logPath: string, processType: IpcBusInterfaces.IpcBusProcessType, options: IpcBusInterfaces.IpcBusBridge.CreateOptions) {
+    constructor(logPath: string, processType: IpcBusInterfaces.IpcBusProcessType, options: IpcBusInterfaces.IpcBusBroker.CreateOptions) {
         super(processType, options);
+
+        this._line = 0;
 
         !fs.existsSync(logPath) && fs.mkdirSync(logPath);
 
-        this._logger = csvWriter({ separator: ';', headers: ['kind', 'size', 'peer id', 'peer process', 'arg0', 'arg1', 'arg2', 'arg3', 'arg4', 'arg5' ]});
+        this._logger = csvWriter({ separator: ';', headers: ['#', 'kind', 'size', 'peer id', 'peer process', 'arg0', 'arg1', 'arg2', 'arg3', 'arg4', 'arg5' ]});
         this._logger.pipe(fs.createWriteStream(path.join(logPath, 'electron-common-ipcbus-bridge.csv')));
     }
 
     protected addLog(webContents: Electron.WebContents, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): any {
-        let log: string[] = [ ipcBusCommand.kind, ipcPacketBuffer.packetSize.toString(), ipcBusCommand.peer.id, JSON.stringify(ipcBusCommand.peer.process) ];
+        ++this._line;
+        let log: string[] = [ this._line.toString(),  ipcBusCommand.kind, ipcPacketBuffer.packetSize.toString(), ipcBusCommand.peer.id, JSON.stringify(ipcBusCommand.peer.process) ];
         if (args) {
             for (let i = 0, l = args.length; i < l; ++i) {
                 log.push(args[i]);
