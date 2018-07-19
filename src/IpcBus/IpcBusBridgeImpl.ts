@@ -178,13 +178,13 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Connect : {
                 this._onConnect(webContents, ipcBusCommand, buffer);
-                // WARNING, this 'return' is on purpose.
+                // BEWARE, this 'return' is on purpose.
                 return;
             }
             case IpcBusCommand.Kind.Disconnect :
             case IpcBusCommand.Kind.Close : {
                 this._onDisconnect(webContents, ipcBusCommand, buffer);
-                // WARNING, this 'return' is on purpose.
+                // BEWARE, this 'return' is on purpose.
                 return;
             }
             case IpcBusCommand.Kind.AddChannelListener :
