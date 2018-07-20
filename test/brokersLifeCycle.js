@@ -9,7 +9,7 @@ let ipcBusBridge;
 function _startBrokers() {
   //  // https://en.wikipedia.org/wiki/Ephemeral_port
    let port = 49152;
-   return sph.findFirstFreePort({portRange: `>=${port}`})
+   return sph.findFirstFreePort({portRange: `>=${port}`, log: false})
    .then((ipcBusPath) => {
     // Create broker
     ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);

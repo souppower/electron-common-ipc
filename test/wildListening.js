@@ -22,13 +22,21 @@ describe('Wildcard channel', () => {
   let ipcClient1;
   let ipcClient2;
   beforeEach(() => {
+      console.log(`IpcBusClient/s starting...`);
       ipcClient1 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
       ipcClient2 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
       return Promise.all([ipcClient1.connect({ peerName: 'client1' }), ipcClient2.connect({ peerName: 'client2' })])
+      .then(() => {
+        console.log(`IpcBusClient/s started`);
+      });
   });
 
   afterEach(() => {
-    return Promise.all([ipcClient1.close(), ipcClient2.close()]);
+    console.log(`IpcBusClient/s closing...`);
+    return Promise.all([ipcClient1.close(), ipcClient2.close()])
+    .then(() => {
+      console.log(`IpcBusClient/s closed`);
+    });
   });
 
   const channel1 = 'something';
@@ -43,6 +51,7 @@ describe('Wildcard channel', () => {
       }
     });
     ipcClient2.send(channel1, 'good');
+    // done();
   });
 
   it(`Listen 'some*' and 'something' channels`, (done) => {
@@ -73,5 +82,6 @@ describe('Wildcard channel', () => {
       }
     });
     ipcClient2.send(channel1, 'good');
+    // done();
   });
 })
