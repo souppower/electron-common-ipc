@@ -33,7 +33,7 @@ describe('Client', () => {
 
 });
 
-describe('Client', () => {
+describe('Client without closing it', () => {
   let ipcBusPath;
 
   before(async () => {

@@ -353,9 +353,6 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
                 break;
 
             case IpcBusCommand.Kind.SendMessage:
-                //  connData.conn.write(packet.buffer);
-                // ipcBusCommand.emit = 
-                // let args = ipcPacketBuffer.parseArrayAt(1);
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.write(packet.buffer);
                 });
