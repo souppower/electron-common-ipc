@@ -236,11 +236,11 @@ export class ChannelConnectionMap<T1 extends string | number, T2> extends EventE
         }
         else {
             if (peerId == null) {
-                connData.peerIds.clear();
+                connData.clearPeerIds();
             }
             else {
                 if (all) {
-                    if (connData.peerIds.delete(peerId) === false) {
+                    if (connData.removePeerId(peerId) === false) {
                         Logger.enable && this._warn(`Release '${channel}': peerId #${peerId} is unknown`);
                     }
                 }
@@ -371,7 +371,7 @@ export namespace ChannelConnectionMap {
             this.conn = conn;
         }
 
-        addPeerId(peerId: string) {
+        addPeerId(peerId: string): number {
             let peerIdRefCount = this.peerIds.get(peerId);
             if (peerIdRefCount == null) {
                 // This channel has NOT been already subcribed by this peername, by default 1
@@ -381,6 +381,15 @@ export namespace ChannelConnectionMap {
             else {
                 ++peerIdRefCount.refCount;
             }
+            return peerIdRefCount.refCount;
+        }
+
+        clearPeerIds() {
+            this.peerIds.clear();
+        }
+
+        removePeerId(peerId: string): boolean {
+            return this.peerIds.delete(peerId);
         }
 
         releasePeerId(peerId: string) {
