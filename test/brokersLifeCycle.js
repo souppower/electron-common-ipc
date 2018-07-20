@@ -14,6 +14,7 @@ function _startBrokers() {
     // Create broker
     ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);
     // Start broker
+    console.log('IpcBusBroker starting...');
     return ipcBusBroker.start()
       .then((msg) => {
         console.log('IpcBusBroker started');
@@ -24,6 +25,7 @@ function _startBrokers() {
       })
       .then((msg) => {
         // Create bridge
+        console.log('IpcBusBridge starting...');
         ipcBusBridge = ipcBusModule.CreateIpcBusBridge(ipcBusPath);
         // Start bridge
         return ipcBusBridge.start()
@@ -40,6 +42,7 @@ function _startBrokers() {
 }
 
 function _stopBrokers() {
+  console.log('IpcBusBridge stopping...');
   return ipcBusBridge.stop()
     .then(() => {
       ipcBusBridge = null;
@@ -50,6 +53,7 @@ function _stopBrokers() {
       throw err;
     })
     .then(() => {
+      console.log('IpcBusBroker stopping...');
       return ipcBusBroker.stop()
         .then(() => {
           ipcBusBroker = null;
