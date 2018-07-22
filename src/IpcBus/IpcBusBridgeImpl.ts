@@ -69,7 +69,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestMessage:
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
+                this._subscriptions.forEachChannel(ipcBusCommand.emit || ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, ipcPacketBuffer.buffer);
                 });
                 break;

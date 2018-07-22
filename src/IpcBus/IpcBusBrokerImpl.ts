@@ -360,7 +360,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
                     let args: any[] = null;
                     let bufferPacket = new IpcPacketBuffer();
                     this._wildSubscriptions.forEach((wildChannel) => {
-                        if (ipcBusCommand.channel.indexOf(wildChannel) === 0) {
+                        if (ipcBusCommand.channel.lastIndexOf(wildChannel, 0) === 0) {
                             ipcBusCommand.emit = wildChannel + '*';
                             args = args || packet.parseArrayAt(1);
                             bufferPacket.serializeArray([ipcBusCommand, args]);
