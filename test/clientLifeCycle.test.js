@@ -4,7 +4,7 @@ const expect = chai.expect;
 
 const ipcBusModule = require('../lib/electron-common-ipc');
 const electronApp = require('electron').app;
-const brokersLifeCycle = require('./brokersLifeCycle');
+const brokersLifeCycle = require('./helpers/brokersLifeCycle');
 
 
 describe('Client', () => {

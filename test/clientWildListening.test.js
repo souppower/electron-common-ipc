@@ -3,7 +3,7 @@ const assert = chai.assert;
 const expect = chai.expect;
 
 const ipcBusModule = require('../lib/electron-common-ipc');
-const brokersLifeCycle = require('./brokersLifeCycle');
+const brokersLifeCycle = require('./helpers/brokersLifeCycle');
 
 describe('Wildcard channel', () => {
   let ipcBusPath;

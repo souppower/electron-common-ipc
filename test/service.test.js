@@ -5,7 +5,7 @@ const EventEmitter = require('events');
 const util = require('util');
 
 const ipcBusModule = require('../lib/electron-common-ipc');
-const brokersLifeCycle = require('./brokersLifeCycle');
+const brokersLifeCycle = require('./helpers/brokersLifeCycle');
 
 
 function TestService() {
