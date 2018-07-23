@@ -1,6 +1,6 @@
 {
   "name": "electron-common-ipc",
-  "version": "4.2.4",
+  "version": "4.3.0",
   "description": "A safe IPC bus for applications built on Node or Electron.",
   "repository": {
     "type": "git",
@@ -18,7 +18,8 @@
     "socket",
     "eventEmitter",
     "bus",
-    "message"
+    "message",
+    "remoteCall"
   ],
   "author": "Emmanuel Kimmerlin",
   "license": "MIT",
