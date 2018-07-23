@@ -1,5 +1,6 @@
 // Constants
 import { IPCBUS_CHANNEL, IpcNetOptions } from './IpcBusInterfaces';
+import { EventEmitter } from 'events';
 
 export const IPC_BUS_TIMEOUT = 2000;
 
@@ -138,17 +139,43 @@ export class Logger {
     }
 };
 
+export function ContainsWildCards(str: string): boolean {
+    // return str.includes('*') || str.includes('?');
+    return str.charAt(str.length - 1) === '*';
+}
+
+export function WildCardsToRegex(str: string): RegExp {
+    return new RegExp(preg_quote(str).replace(/\\\*/g, '.*').replace(/\\\?/g, '.'), 'g');
+}
+
+function preg_quote(str: string): string {
+    // http://kevin.vanzonneveld.net
+    // +   original by: booeyOH
+    // +   improved by: Ates Goral (http://magnetiq.com)
+    // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+    // +   bugfixed by: Onno Marsman
+    // +   improved by: Brett Zamir (http://brett-zamir.me)
+    // *     example 1: preg_quote("$40");
+    // *     returns 1: '\$40'
+    // *     example 2: preg_quote("*RRRING* Hello?");
+    // *     returns 2: '\*RRRING\* Hello\?'
+    // *     example 3: preg_quote("\\.+*?[^]$(){}=!<>|:");
+    // *     returns 3: '\\\.\+\*\?\[\^\]\$\(\)\{\}\=\!\<\>\|\:'
+    return str.replace(new RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]', 'g'), '\\$&');
+}
+
 // Structure
 // Channel has key
 // then list of "transports" for this channel: key + implem (socket or webContents)
 // then list of ref counted peerIds for this transport
 
 /** @internal */
-export class ChannelConnectionMap<T1 extends string | number, T2> {
+export class ChannelConnectionMap<T1 extends string | number, T2> extends EventEmitter {
     private _name: string;
     private _channelsMap: Map<string, Map<T1, ChannelConnectionMap.ConnectionData<T1, T2>>>;
 
     constructor(name: string) {
+        super();
         this._name = name;
         this._channelsMap = new Map<string, Map<T1, ChannelConnectionMap.ConnectionData<T1, T2>>>();
     }
@@ -173,11 +200,13 @@ export class ChannelConnectionMap<T1 extends string | number, T2> {
         this._channelsMap.clear();
     }
 
-    addRef(channel: string, connKey: T1, conn: any, peerId: string) {
+    addRef(channel: string, connKey: T1, conn: any, peerId: string): number {
+        let channelAdded = false;
         Logger.enable && this._info(`AddRef: '${channel}', connKey = ${connKey}`);
 
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
+            channelAdded = true;
             connsMap = new Map<T1, ChannelConnectionMap.ConnectionData<T1, T2>>();
             // This channel has NOT been subscribed yet, add it to the map
             this._channelsMap.set(channel, connsMap);
@@ -190,77 +219,70 @@ export class ChannelConnectionMap<T1 extends string | number, T2> {
             connsMap.set(connKey, connData);
             // Logger.enable && this._info(`AddRef: connKey = ${connKey} is added`);
         }
-        let peerIdRefCount = connData.peerIds.get(peerId);
-        if (peerIdRefCount == null) {
-            // This channel has NOT been already subcribed by this peername, by default 1
-            peerIdRefCount = { peerId, refCount: 1 };
-            connData.peerIds.set(peerId, peerIdRefCount);
-        }
-        else {
-            ++peerIdRefCount.refCount;
-        }
+        connData.addPeerId(peerId);
         Logger.enable && this._info(`AddRef: '${channel}', connKey = ${connKey}, count = ${connData.peerIds.size}`);
+        if (channelAdded) {
+            this.emit('channel-added', channel);
+        }
+        return connsMap.size;
     }
 
-    private _releaseConnData(all: boolean, channel: string, connsMap: Map<T1, ChannelConnectionMap.ConnectionData<T1, T2>>, connKey: T1, peerId: string) {
+    private _releaseConnData(channel: string, connKey: T1, connsMap: Map<T1, ChannelConnectionMap.ConnectionData<T1, T2>>, peerId: string, all: boolean): number {
+        let channelRemoved = false;
         let connData = connsMap.get(connKey);
         if (connData == null) {
             Logger.enable && this._warn(`Release '${channel}': connKey = ${connKey} is unknown`);
+            return 0;
         }
         else {
             if (peerId == null) {
-                connData.peerIds.clear();
+                connData.clearPeerIds();
             }
             else {
                 if (all) {
-                    if (connData.peerIds.delete(peerId) === false) {
+                    if (connData.removePeerId(peerId) === false) {
                         Logger.enable && this._warn(`Release '${channel}': peerId #${peerId} is unknown`);
                     }
                 }
                 else {
-                    let peerIdRefCount = connData.peerIds.get(peerId);
-                    if (peerIdRefCount == null) {
-                        Logger.enable && this._warn(`Release '${channel}': peerId #${peerId} is unknown`);
-                    }
-                    else {
-                        // This connection has subscribed to this channel
-                        if (--peerIdRefCount.refCount <= 0) {
-                            // The connection is no more referenced
-                            connData.peerIds.delete(peerId);
-                            // Logger.enable && this._info(`Release: peerId #${peerId} is released`);
-                        }
-                    }
+                    connData.releasePeerId(peerId);
                 }
             }
             if (connData.peerIds.size === 0) {
                 connsMap.delete(connKey);
                 // Logger.enable && this._info(`Release: conn = ${connKey} is released`);
                 if (connsMap.size === 0) {
+                    channelRemoved = true;
                     this._channelsMap.delete(channel);
                     // Logger.enable && this._info(`Release: channel '${channel}' is released`);
                 }
             }
             Logger.enable && this._info(`Release '${channel}': connKey = ${connKey}, count = ${connData.peerIds.size}`);
+            if (channelRemoved) {
+                this.emit('channel-removed', channel);
+            }
+            return connsMap.size;
         }
     }
 
-    private _release(all: boolean, channel: string, connKey: T1, peerId: string) {
+    private _release(channel: string, connKey: T1, peerId: string, all: boolean): number {
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`Release '${channel}': '${channel}' is unknown`);
+            return 0;
         }
         else {
-            this._releaseConnData(all, channel, connsMap, connKey, peerId);
+            return this._releaseConnData(channel, connKey, connsMap, peerId, all);
         }
     }
 
-    release(channel: string, connKey: T1, peerId: string) {
-        this._release(false, channel, connKey, peerId);
+    release(channel: string, connKey: T1, peerId: string): number {
+        return this._release(channel, connKey, peerId, false);
     }
 
-    releaseAll(channel: string, connKey: T1, peerId: string) {
+    releaseAll(channel: string, connKey: T1, peerId: string): number {
         Logger.enable && this._info(`releaseAll: connKey = ${connKey}`);
-        this._release(true, channel, connKey, peerId);
+        return this._release(channel, connKey, peerId, true);
     }
 
     releasePeerId(connKey: T1, peerId: string) {
@@ -268,7 +290,7 @@ export class ChannelConnectionMap<T1 extends string | number, T2> {
 
         // ForEach is supposed to support deletion during the iteration !
         this._channelsMap.forEach((connsMap, channel) => {
-            this._releaseConnData(true, channel, connsMap, connKey, peerId);
+            this._releaseConnData(channel, connKey, connsMap, peerId, true);
         });
     }
 
@@ -277,7 +299,7 @@ export class ChannelConnectionMap<T1 extends string | number, T2> {
 
         // ForEach is supposed to support deletion during the iteration !
         this._channelsMap.forEach((connsMap, channel) => {
-            this._releaseConnData(false, channel, connsMap, connKey, null);
+            this._releaseConnData(channel, connKey, connsMap, null, false);
         });
     }
 
@@ -347,6 +369,44 @@ export namespace ChannelConnectionMap {
         constructor(connKey: T1, conn: T2) {
             this.connKey = connKey;
             this.conn = conn;
+        }
+
+        addPeerId(peerId: string): number {
+            let peerIdRefCount = this.peerIds.get(peerId);
+            if (peerIdRefCount == null) {
+                // This channel has NOT been already subcribed by this peername, by default 1
+                peerIdRefCount = { peerId, refCount: 1 };
+                this.peerIds.set(peerId, peerIdRefCount);
+            }
+            else {
+                ++peerIdRefCount.refCount;
+            }
+            return peerIdRefCount.refCount;
+        }
+
+        clearPeerIds() {
+            this.peerIds.clear();
+        }
+
+        removePeerId(peerId: string): boolean {
+            return this.peerIds.delete(peerId);
+        }
+
+        releasePeerId(peerId: string) {
+            let peerIdRefCount = this.peerIds.get(peerId);
+            if (peerIdRefCount == null) {
+                return null;
+                // Logger.enable && this._warn(`Release '${channel}': peerId #${peerId} is unknown`);
+            }
+            else {
+                // This connection has subscribed to this channel
+                if (--peerIdRefCount.refCount <= 0) {
+                    // The connection is no more referenced
+                    this.peerIds.delete(peerId);
+                    // Logger.enable && this._info(`Release: peerId #${peerId} is released`);
+                }
+            }
+            return peerIdRefCount.refCount;
         }
     }
 

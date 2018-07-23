@@ -5,10 +5,11 @@ const csvWriter = require('csv-write-stream');
 
 import { IpcPacketBuffer } from 'socket-serializer';
 
-import * as IpcBusInterfaces from './IpcBusInterfaces';
-import { IpcBusCommand } from './IpcBusCommand';
+import * as IpcBusInterfaces from '../IpcBusInterfaces';
+import { IpcBusCommand } from '../IpcBusCommand';
+import { JSON_stringify } from '../IpcBusUtils';
+
 import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
-import { JSON_stringify } from './IpcBusUtils';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */

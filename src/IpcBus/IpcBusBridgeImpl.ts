@@ -69,7 +69,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestMessage:
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
+                this._subscriptions.forEachChannel(ipcBusCommand.emit || ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, ipcPacketBuffer.buffer);
                 });
                 break;
@@ -135,7 +135,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
 
         let packetBuffer = new IpcPacketBuffer();
         packetBuffer.decodeFromBuffer(buffer);
-        let args = packetBuffer.parseArraySlice(1);
+        let args = packetBuffer.parseArrayAt(1);
         ipcBusPeer.name = args[0] || ipcBusPeer.name;
 
         // We get back to the webContents
@@ -169,7 +169,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         // ipcBusCommand has been changed, the original buffer content is no more up-to-date, we have to rebuild it
         let packetBuffer = new IpcPacketBuffer();
         packetBuffer.decodeFromBuffer(buffer);
-        let args = packetBuffer.parseArraySlice(1);
+        let args = packetBuffer.parseArrayAt(1);
         this.ipcPostCommand(ipcBusCommand, args);
     }
 

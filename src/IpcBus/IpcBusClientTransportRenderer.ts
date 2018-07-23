@@ -116,7 +116,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
         if (this._ipcRenderer) {
             let bufferWriter = new BufferListWriter();
             if (args) {
-                this._packetOut.writeArray(bufferWriter, [ipcBusCommand, ...args]);
+                this._packetOut.writeArray(bufferWriter, [ipcBusCommand, args]);
             }
             else {
                 this._packetOut.writeArray(bufferWriter, [ipcBusCommand]);

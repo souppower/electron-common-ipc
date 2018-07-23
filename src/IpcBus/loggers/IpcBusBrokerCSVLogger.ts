@@ -6,10 +6,11 @@ import * as fs from 'fs';
 const csvWriter = require('csv-write-stream');
 
 import { IpcPacketBuffer } from 'socket-serializer';
-import * as IpcBusInterfaces from './IpcBusInterfaces';
-import { IpcBusCommand } from './IpcBusCommand';
+import * as IpcBusInterfaces from '../IpcBusInterfaces';
+import { IpcBusCommand } from '../IpcBusCommand';
+import { JSON_stringify } from '../IpcBusUtils';
+
 import { IpcBusBrokerLogger } from './IpcBusBrokerLogger';
-import { JSON_stringify } from './IpcBusUtils';
 
 /** @internal */
 export class IpcBusBrokerCSVLogger extends IpcBusBrokerLogger {

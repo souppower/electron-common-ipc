@@ -9,12 +9,12 @@ import { IpcBusBroker } from './IpcBusInterfaces';
 import { IpcBusBridge  } from './IpcBusInterfaces';
 
 import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
-import { IpcBusBrokerJSONLogger } from './IpcBusBrokerJSONLogger';
-import { IpcBusBrokerCSVLogger } from './IpcBusBrokerCSVLogger';
+import { IpcBusBrokerJSONLogger } from './loggers/IpcBusBrokerJSONLogger';
+import { IpcBusBrokerCSVLogger } from './loggers/IpcBusBrokerCSVLogger';
 
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
-import { IpcBusBridgeJSONLogger } from './IpcBusBridgeJSONLogger';
-import { IpcBusBridgeCSVLogger } from './IpcBusBridgeCSVLogger';
+import { IpcBusBridgeJSONLogger } from './loggers/IpcBusBridgeJSONLogger';
+import { IpcBusBridgeCSVLogger } from './loggers/IpcBusBridgeCSVLogger';
 
 import { IpcBusClientTransportNode } from './IpcBusClientTransportNode';
 import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';

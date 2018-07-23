@@ -2,11 +2,11 @@ import * as net from 'net';
 
 import { IpcPacketBuffer } from 'socket-serializer';
 
-import * as IpcBusInterfaces from './IpcBusInterfaces';
+import * as IpcBusInterfaces from '../IpcBusInterfaces';
 
-import { IpcBusCommand } from './IpcBusCommand';
+import { IpcBusCommand } from '../IpcBusCommand';
 
-import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
+import { IpcBusBrokerImpl } from '../IpcBusBrokerImpl';
 
 /** @internal */
 export abstract class IpcBusBrokerLogger extends IpcBusBrokerImpl {
@@ -18,7 +18,7 @@ export abstract class IpcBusBrokerLogger extends IpcBusBrokerImpl {
 
     onSocketPacket(socket: net.Socket, packet: IpcPacketBuffer): void {
         let ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
-        let args = packet.parseArraySlice(1);
+        let args = packet.parseArrayAt(1);
         this.addLog(socket, packet, ipcBusCommand, args);
 
         super.onSocketPacket(socket, packet);

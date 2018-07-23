@@ -4,6 +4,7 @@ import { IpcBusPeer } from './IpcBusInterfaces';
 export interface IpcBusCommand {
     kind: IpcBusCommand.Kind;
     channel: string;
+    emit?: string;
     peer: IpcBusPeer;
     request?: IpcBusCommand.Request;
 }
