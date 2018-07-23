@@ -7,9 +7,9 @@ import * as winston from 'winston';
 
 import { IpcPacketBuffer } from 'socket-serializer';
 
-import * as IpcBusInterfaces from './IpcBusInterfaces';
+import * as IpcBusInterfaces from '../IpcBusInterfaces';
 
-import { IpcBusCommand } from './IpcBusCommand';
+import { IpcBusCommand } from '../IpcBusCommand';
 
 import { IpcBusBrokerLogger } from './IpcBusBrokerLogger';
 

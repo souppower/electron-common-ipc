@@ -6,51 +6,54 @@ const ipcBusModule = require('../lib/electron-common-ipc');
 const electronApp = require('electron').app;
 const brokersLifeCycle = require('./helpers/brokersLifeCycle');
 
+function test(remoteBroker) {
+  describe(`Client ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
+    let ipcBusPath;
 
-describe('Client', () => {
-  let ipcBusPath;
+    before(async () => {
+      return brokersLifeCycle.startBrokers(remoteBroker)
+        .then((port) => {
+          ipcBusPath = port;
+        });
+    });
 
-  before(async () => {
-    return brokersLifeCycle.startBrokers()
-    .then((port) => {
-      ipcBusPath = port;
+    after(async () => {
+      return brokersLifeCycle.stopBrokers(remoteBroker);
+    });
+
+    let ipcBusClient;
+    it('start client', async () => {
+      ipcBusClient = ipcBusModule.CreateIpcBusClient(ipcBusPath);
+      return ipcBusClient.connect({ peerName: 'client' })
+    });
+
+    it('stop client', async () => {
+      return ipcBusClient.close();
+    });
+
+  });
+
+  describe(`Client without closing it ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
+    let ipcBusPath;
+
+    before(async () => {
+      return brokersLifeCycle.startBrokers(remoteBroker)
+        .then((port) => {
+          ipcBusPath = port;
+        });
+    });
+
+    after(async () => {
+      return brokersLifeCycle.stopBrokers(remoteBroker);
+    });
+
+    let ipcBusClient;
+    it('start client', async () => {
+      ipcBusClient = ipcBusModule.CreateIpcBusClient(ipcBusPath);
+      return ipcBusClient.connect({ peerName: 'client' })
     });
   });
+}
 
-  after(async () => {
-    return brokersLifeCycle.stopBrokers();
-  });
-
-  let ipcBusClient;
-  it('start client', async () => {
-    ipcBusClient = ipcBusModule.CreateIpcBusClient(ipcBusPath);
-    return ipcBusClient.connect({ peerName: 'client' })
-  });
-
-  it('stop client', async () => {
-    return ipcBusClient.close();
-  });
-
-});
-
-describe('Client without closing it', () => {
-  let ipcBusPath;
-
-  before(async () => {
-    return brokersLifeCycle.startBrokers()
-    .then((port) => {
-      ipcBusPath = port;
-    });
-  });
-
-  after(async () => {
-    return brokersLifeCycle.stopBrokers();
-  });
-
-  let ipcBusClient;
-  it('start client', async () => {
-    ipcBusClient = ipcBusModule.CreateIpcBusClient(ipcBusPath);
-    return ipcBusClient.connect({ peerName: 'client' })
-  });
-});
-
+test(false);
+test(true);

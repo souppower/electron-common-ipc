@@ -1,8 +1,8 @@
 /// <reference types='node' />
 
 import {EventEmitter} from 'events';
-import * as IpcBusInterfaces from './IpcBusInterfaces';
-import * as IpcBusUtils from './IpcBusUtils';
+import * as IpcBusInterfaces from '../IpcBusInterfaces';
+import * as IpcBusUtils from '../IpcBusUtils';
 
 // Implementation of IPC service
 /** @internal */

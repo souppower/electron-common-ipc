@@ -5,9 +5,9 @@ import * as winston from 'winston';
 
 import { IpcPacketBuffer } from 'socket-serializer';
 
-import * as IpcBusInterfaces from './IpcBusInterfaces';
+import * as IpcBusInterfaces from '../IpcBusInterfaces';
+import { IpcBusCommand } from '../IpcBusCommand';
 
-import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain

@@ -10,7 +10,7 @@ describe('Brokers', () => {
   });
 });
 
-describe('Brokers remote', () => {
+describe('Brokers in remote process', () => {
     it('start brokers', async () => {
         return brokersLifeCycle.startBrokers(true);
     });

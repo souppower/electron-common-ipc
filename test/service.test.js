@@ -31,156 +31,162 @@ util.inherits(TestService, EventEmitter);
 
 const delayService = 500;
 
-describe('Service', () => {
-  let ipcBusPath;
-  let ipcBusClient;
+function test(remoteBroker) {
 
-  before(() => {
-    return brokersLifeCycle.startBrokers()
-      .then((port) => {
-        ipcBusPath = port;
-      })
-      .then(() => {
-        ipcBusClient = ipcBusModule.CreateIpcBusClient(ipcBusPath);
-        return ipcBusClient.connect({ peerName: 'client' });
-      });
-  });
+  describe(`Service ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
+    let ipcBusPath;
+    let ipcBusClient;
 
-  after(() => {
-    return brokersLifeCycle.stopBrokers();
-  });
-
-  describe('Creation', () => {
-    it('connect service first', () => {
-      const testServiceName = 'test-service1';
-
-      const testServiceInstance = new TestService();
-      const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
-      testService.start();
-
-      // Create the proxy (client-side)
-      const testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
-      return testServiceProxy.connect();
-    });
-
-    it(`connect proxy first (delay ${delayService} service creation)`, (done) => {
-      const testServiceName = 'test-service2';
-
-      // Create the proxy (client-side)
-      const testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
-      testServiceProxy.connect()
+    before(() => {
+      return brokersLifeCycle.startBrokers(remoteBroker)
+        .then((port) => {
+          ipcBusPath = port;
+        })
         .then(() => {
-          done();
+          ipcBusClient = ipcBusModule.CreateIpcBusClient(ipcBusPath);
+          return ipcBusClient.connect({ peerName: 'client' });
         });
-
-      // delay the start
-      setTimeout(() => {
-        const testServiceInstance = new TestService();
-        const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
-        testService.start();
-      }, delayService);
-    });
-  });
-
-  describe('Call', () => {
-    const testServiceName = 'test-service3';
-    let testServiceProxy;
-    let testServiceInstance;
-    before(() => {
-      testServiceInstance = new TestService();
-      const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
-      testService.start();
-
-      // Create the proxy (client-side)
-      testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
-      return testServiceProxy.connect();
-    });
-
-    it('getArg0', () => {
-      testServiceProxy.getWrapper().getArg0()
-        .then((value) => {
-          expect(value).toEqual(0);
-        });
-    });
-  
-    it('getArg1 - number', () => {
-      testServiceProxy.getWrapper().getArg1(1)
-        .then((value) => {
-          expect(value).toEqual(1);
-        });
-    });
-  
-    it('getArg1 - string', () => {
-      testServiceProxy.getWrapper().getArg1('string')
-        .then((value) => {
-          expect(value).toEqual('string');
-        });
-    });
-  
-    it('getArg2', () => {
-      testServiceProxy.getWrapper().getArg2(1, 'string')
-        .then((value) => {
-          expect(value.arg1).toEqual(1);
-          expect(value.arg2).toEqual('string');
-        });
-    });
-  
-    it('event', (done) => {
-      testServiceProxy.getWrapper().on('MyEvent', () => {
-        done();
-      });
-      testServiceInstance.triggerEvent();
-    });
-  });
-
-  describe('Call delayed', () => {
-    const testServiceName = 'test-service4';
-    let testServiceProxy;
-    let testServiceInstance;
-    before(() => {
-      // Create the proxy (client-side)
-      testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
-      testServiceProxy.connect();
-
-      testServiceInstance = new TestService();
-      // delay the start
-      setTimeout(() => {
-        const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
-        testService.start();
-      }, delayService);
     });
 
     after(() => {
-      return testServiceProxy.connect();
-    })
+      return brokersLifeCycle.stopBrokers(remoteBroker);
+    });
 
-    it('getArg0', () => {
-      testServiceProxy.call('getArg0')
-        .then((value) => {
-          expect(value).toEqual(0);
+    describe('Creation', () => {
+      it('connect service first', () => {
+        const testServiceName = 'test-service1';
+
+        const testServiceInstance = new TestService();
+        const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
+        testService.start();
+
+        // Create the proxy (client-side)
+        const testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
+        return testServiceProxy.connect();
+      });
+
+      it(`connect proxy first (delay ${delayService} service creation)`, (done) => {
+        const testServiceName = 'test-service2';
+
+        // Create the proxy (client-side)
+        const testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
+        testServiceProxy.connect()
+          .then(() => {
+            done();
+          });
+
+        // delay the start
+        setTimeout(() => {
+          const testServiceInstance = new TestService();
+          const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
+          testService.start();
+        }, delayService);
+      });
+    });
+
+    describe('Call', () => {
+      const testServiceName = 'test-service3';
+      let testServiceProxy;
+      let testServiceInstance;
+      before(() => {
+        testServiceInstance = new TestService();
+        const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
+        testService.start();
+
+        // Create the proxy (client-side)
+        testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
+        return testServiceProxy.connect();
+      });
+
+      it('getArg0', () => {
+        testServiceProxy.getWrapper().getArg0()
+          .then((value) => {
+            expect(value).toEqual(0);
+          });
+      });
+
+      it('getArg1 - number', () => {
+        testServiceProxy.getWrapper().getArg1(1)
+          .then((value) => {
+            expect(value).toEqual(1);
+          });
+      });
+
+      it('getArg1 - string', () => {
+        testServiceProxy.getWrapper().getArg1('string')
+          .then((value) => {
+            expect(value).toEqual('string');
+          });
+      });
+
+      it('getArg2', () => {
+        testServiceProxy.getWrapper().getArg2(1, 'string')
+          .then((value) => {
+            expect(value.arg1).toEqual(1);
+            expect(value.arg2).toEqual('string');
+          });
+      });
+
+      it('event', (done) => {
+        testServiceProxy.getWrapper().on('MyEvent', () => {
+          done();
         });
+        testServiceInstance.triggerEvent();
+      });
     });
-  
-    it('getArg1 - number', () => {
-      testServiceProxy.call('getArg1', 1)
-        .then((value) => {
-          expect(value).toEqual(1);
-        });
+
+    describe('Call delayed', () => {
+      const testServiceName = 'test-service4';
+      let testServiceProxy;
+      let testServiceInstance;
+      before(() => {
+        // Create the proxy (client-side)
+        testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
+        testServiceProxy.connect();
+
+        testServiceInstance = new TestService();
+        // delay the start
+        setTimeout(() => {
+          const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
+          testService.start();
+        }, delayService);
+      });
+
+      after(() => {
+        return testServiceProxy.connect();
+      })
+
+      it('getArg0', () => {
+        testServiceProxy.call('getArg0')
+          .then((value) => {
+            expect(value).toEqual(0);
+          });
+      });
+
+      it('getArg1 - number', () => {
+        testServiceProxy.call('getArg1', 1)
+          .then((value) => {
+            expect(value).toEqual(1);
+          });
+      });
+
+      it('getArg1 - string', () => {
+        testServiceProxy.call('getArg1', 'string')
+          .then((value) => {
+            expect(value).toEqual('string');
+          });
+      });
+
+      it('getArg2', () => {
+        testServiceProxy.call('getArg2', 1, 'string')
+          .then((value) => {
+            expect(value.arg1).toEqual(1);
+            expect(value.arg2).toEqual('string');
+          });
+      });
     });
-  
-    it('getArg1 - string', () => {
-      testServiceProxy.call('getArg1', 'string')
-        .then((value) => {
-          expect(value).toEqual('string');
-        });
-    });
-  
-    it('getArg2', () => {
-      testServiceProxy.call('getArg2', 1, 'string')
-        .then((value) => {
-          expect(value.arg1).toEqual(1);
-          expect(value.arg2).toEqual('string');
-        });
-    });
-    });
-});
+  });
+}
+
+test(false);
+test(true);

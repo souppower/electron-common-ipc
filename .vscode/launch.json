@@ -41,8 +41,8 @@
             "protocol": "inspector",
             "cwd": "${workspaceRoot}/lib",
             "args": [
-                // "--grep=Wildcard",
-                "--grep=Brokers",
+                "--grep=Wildcard",
+                // "--grep=Brokers",
                 "${workspaceRoot}/test/*.test.js",
                 "--recursive",
                 "--reporter", "spec",

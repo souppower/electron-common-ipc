@@ -113,12 +113,14 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
 
         this._subscriptions.on('channel-added', (channel: string) => {
             if (IpcBusUtils.ContainsWildCards(channel)) {
+                // Remove '*' suffix
                 this._wildSubscriptions.add(channel.slice(0, -1));
             }
         });
 
         this._subscriptions.on('channel-removed', (channel: string) => {
             if (IpcBusUtils.ContainsWildCards(channel)) {
+                // Remove '*' suffix
                 this._wildSubscriptions.delete(channel.slice(0, -1));
             }
         });
@@ -361,6 +363,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
                     let bufferPacket = new IpcPacketBuffer();
                     this._wildSubscriptions.forEach((wildChannel) => {
                         if (ipcBusCommand.channel.lastIndexOf(wildChannel, 0) === 0) {
+                            // Re-add '*' suffix
                             ipcBusCommand.emit = wildChannel + '*';
                             args = args || packet.parseArrayAt(1);
                             bufferPacket.serializeArray([ipcBusCommand, args]);

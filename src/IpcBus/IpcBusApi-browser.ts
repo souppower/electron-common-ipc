@@ -5,9 +5,9 @@ import { IpcBusClient } from './IpcBusInterfaces';
 // export * from './IpcBusInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
 
-import { IpcBusServiceImpl } from './IpcBusServiceImpl';
+import { IpcBusServiceImpl } from './service/IpcBusServiceImpl';
 import { IpcBusService } from './IpcBusInterfaces';
-import { IpcBusServiceProxyImpl } from './IpcBusServiceProxyImpl';
+import { IpcBusServiceProxyImpl } from './service/IpcBusServiceProxyImpl';
 import { IpcBusServiceProxy } from './IpcBusInterfaces';
 
 import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
