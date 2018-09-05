@@ -1,5 +1,3 @@
-/// <reference types='node' />
-
 import { EventEmitter } from 'events';
 
 import * as IpcBusInterfaces from './IpcBusInterfaces';
@@ -34,6 +32,15 @@ export abstract class IpcBusClientImpl extends EventEmitter implements IpcBusInt
     }
 
     // EventEmitter API
+    protected native_emit(event: string | symbol, ...args: any[]): boolean {
+        return super.emit(event, ...args);
+    }
+
+    emit(event: string, ...args: any[]): boolean {
+        this.ipcSend(IpcBusCommand.Kind.SendMessage, event, undefined, args);
+        return true;
+    }
+
     addListener(channel: string, listener: IpcBusInterfaces.IpcBusListener): this {
         super.addListener(channel, listener);
         this.ipcSend(IpcBusCommand.Kind.AddChannelListener, channel);

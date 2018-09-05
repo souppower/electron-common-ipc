@@ -90,8 +90,11 @@ export interface IpcBusClient extends EventEmitter {
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
 
     // EventEmitter API
+    emit(event: string, ...args: any[]): boolean;
+
     addListener(channel: string, listener: IpcBusListener): this;
     removeListener(channel: string, listener: IpcBusListener): this;
+    removeAllListeners(channel?: string): this;
     on(channel: string, listener: IpcBusListener): this;
     once(channel: string, listener: IpcBusListener): this;
     off(channel: string, listener: IpcBusListener): this;
