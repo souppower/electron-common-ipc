@@ -9,12 +9,52 @@ import { IpcBusClientImpl } from './IpcBusClientImpl';
 const replyChannelPrefix = `${IpcBusInterfaces.IPCBUS_CHANNEL}/request-`;
 const v1IdPattern = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
 
+
+/** @internal */
+class DeferredRequest {
+    public promise: Promise<IpcBusInterfaces.IpcBusRequestResponse>;
+
+    public resolve: (value: IpcBusInterfaces.IpcBusRequestResponse) => void;
+    public reject: (err: IpcBusInterfaces.IpcBusRequestResponse) => void;
+
+    private _channel: string;
+
+    constructor(channel: string) {
+        this._channel = channel;
+        this.promise = new Promise<IpcBusInterfaces.IpcBusRequestResponse>((resolve, reject) => {
+            this.reject = reject;
+            this.resolve = resolve;
+        });
+    }
+
+    fulFilled(ipcBusCommand: IpcBusCommand, args: any[]) {
+        // The channel is not generated one
+        let ipcBusEvent: IpcBusInterfaces.IpcBusEvent = { channel: this._channel, sender: ipcBusCommand.peer };
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] Peer #${ipcBusEvent.sender.name} replied to request on ${ipcBusCommand.request.replyChannel}`);
+        if (ipcBusCommand.request.resolve) {
+            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] resolve`);
+            let response: IpcBusInterfaces.IpcBusRequestResponse = { event: ipcBusEvent, payload: args[0] };
+            this.resolve(response);
+        }
+        else if (ipcBusCommand.request.reject) {
+            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] reject`);
+            let response: IpcBusInterfaces.IpcBusRequestResponse = { event: ipcBusEvent, err: args[0] };
+            this.reject(response);
+        }
+        else {
+            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] reject: unknown format`);
+            let response: IpcBusInterfaces.IpcBusRequestResponse = { event: ipcBusEvent, err: 'unknown format' };
+            this.reject(response);
+        }
+    };
+}
+
 /** @internal */
 export abstract class IpcBusClientTransport extends IpcBusClientImpl {
     protected _ipcBusPeer: IpcBusInterfaces.IpcBusPeer;
     protected readonly _netOptions: IpcBusInterfaces.IpcNetOptions;
 
-    protected _requestFunctions: Map<string, Function>;
+    protected _requestFunctions: Map<string, DeferredRequest>;
     protected _requestNumber: number;
 
     constructor(ipcBusProcess: IpcBusInterfaces.IpcBusProcess, options: IpcBusInterfaces.IpcBusClient.CreateOptions) {
@@ -22,7 +62,7 @@ export abstract class IpcBusClientTransport extends IpcBusClientImpl {
 
         this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusProcess };
         this._netOptions = options;
-        this._requestFunctions = new Map<string, Function>();
+        this._requestFunctions = new Map<string, DeferredRequest>();
         this._requestNumber = 0;
     }
 
@@ -72,10 +112,11 @@ export abstract class IpcBusClientTransport extends IpcBusClientImpl {
             }
             case IpcBusCommand.Kind.RequestResponse: {
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-                const localRequestCallback = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
-                if (localRequestCallback) {
+                const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
+                if (deferredRequest) {
+                    this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
                     let args = ipcPacketBuffer.parseArrayAt(1);
-                    localRequestCallback(ipcBusCommand, args);
+                    deferredRequest.fulFilled(ipcBusCommand, args);
                 }
                 break;
             }
@@ -86,55 +127,26 @@ export abstract class IpcBusClientTransport extends IpcBusClientImpl {
         if (timeoutDelay == null) {
             timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
+        const ipcBusCommandRequest: IpcBusCommand.Request = { replyChannel: this.generateReplyChannel() };
 
-        let p = new Promise<IpcBusInterfaces.IpcBusRequestResponse>((resolve, reject) => {
-            const ipcBusCommandRequest: IpcBusCommand.Request = { replyChannel: this.generateReplyChannel() };
-
-            // Prepare reply's handler, we have to change the replyChannel to channel
-            const localRequestCallback = (ipcBusCommand: IpcBusCommand, args: any[]) => {
-                // The channel is not generated one
-                let ipcBusEvent: IpcBusInterfaces.IpcBusEvent = { channel: channel, sender: ipcBusCommand.peer };
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] Peer #${ipcBusEvent.sender.name} replied to request on ${ipcBusCommand.request.replyChannel}`);
-                // Unregister locally
-                this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
-                // Unregister remotely
-                // this.ipcSend(IpcBusCommand.Kind.RequestCancel, IpcBusCommand.Request, ipcBusEvent);
-                if (ipcBusCommand.request.resolve) {
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] resolve`);
-                    let response: IpcBusInterfaces.IpcBusRequestResponse = { event: ipcBusEvent, payload: args[0] };
-                    resolve(response);
+        const deferredRequest = new DeferredRequest(channel);
+        // Register locally
+         this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
+         // Execute request
+         this.ipcSend(IpcBusCommand.Kind.RequestMessage, channel, ipcBusCommandRequest, args);
+        // Clean-up
+        if (timeoutDelay >= 0) {
+            setTimeout(() => {
+                if (this._requestFunctions.delete(ipcBusCommandRequest.replyChannel)) {
+                    // Unregister remotely
+                    this.ipcSend(IpcBusCommand.Kind.RequestCancel, channel, ipcBusCommandRequest);
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] reject: timeout`);
+                    let response: IpcBusInterfaces.IpcBusRequestResponse = { event: { channel: channel, sender: this._ipcBusPeer }, err: 'timeout' };
+                    deferredRequest.reject(response);
                 }
-                else if (ipcBusCommand.request.reject) {
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] reject`);
-                    let response: IpcBusInterfaces.IpcBusRequestResponse = { event: ipcBusEvent, err: args[0] };
-                    reject(response);
-                }
-                else {
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] reject: unknown format`);
-                    let response: IpcBusInterfaces.IpcBusRequestResponse = { event: ipcBusEvent, err: 'unknown format' };
-                    reject(response);
-                }
-            };
-
-            // Register locally
-            this._requestFunctions.set(ipcBusCommandRequest.replyChannel, localRequestCallback);
-            // Execute request
-            this.ipcSend(IpcBusCommand.Kind.RequestMessage, channel, ipcBusCommandRequest, args);
-
-            // Clean-up
-            if (timeoutDelay >= 0) {
-                setTimeout(() => {
-                    if (this._requestFunctions.delete(ipcBusCommandRequest.replyChannel)) {
-                        // Unregister remotely
-                        this.ipcSend(IpcBusCommand.Kind.RequestCancel, channel, ipcBusCommandRequest);
-                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IpcBusClient] reject: timeout`);
-                        let response: IpcBusInterfaces.IpcBusRequestResponse = { event: { channel: channel, sender: this._ipcBusPeer }, err: 'timeout' };
-                        reject(response);
-                    }
-                }, timeoutDelay);
-            }
-        });
-        return p;
+            }, timeoutDelay);
+        }
+        return deferredRequest.promise;
     }
 
     protected ipcSend(kind: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void {

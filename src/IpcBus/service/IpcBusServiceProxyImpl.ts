@@ -5,7 +5,7 @@ import * as IpcBusInterfaces from '../IpcBusInterfaces';
 import * as IpcBusUtils from '../IpcBusUtils';
 
 /** @internal */
-export class Deferred<T> {
+class Deferred<T> {
     private static _globalCounter: number = 0;
 
     public promise: Promise<T>;

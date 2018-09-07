@@ -222,7 +222,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
     }
 
     protected ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        if (this._socket) {
+        if (this._socketWriter) {
             if (args) {
                 this._packetOut.writeArray(this._socketWriter, [ipcBusCommand, args]);
             }
