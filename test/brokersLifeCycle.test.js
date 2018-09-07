@@ -1,4 +1,4 @@
-const brokersLifeCycle = require('./helpers/brokersLifeCycle');
+const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 
 describe('Brokers', () => {
   it('start brokers', async () => {

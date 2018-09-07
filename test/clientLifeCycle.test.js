@@ -4,7 +4,7 @@ const expect = chai.expect;
 
 const ipcBusModule = require('../lib/electron-common-ipc');
 const electronApp = require('electron').app;
-const brokersLifeCycle = require('./helpers/brokersLifeCycle');
+const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 
 function test(remoteBroker) {
   describe(`Client ${remoteBroker ? '(Broker in remote)' : ''}`, () => {

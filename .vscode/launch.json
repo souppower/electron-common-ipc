@@ -5,6 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "node",
+            "request": "attach",
+            "name": "Attach",
+            "port": 9229
+        },
+        {
             "name": "Launch Test tr-apps",
             "type": "node",
             "request": "launch",
@@ -22,8 +28,8 @@
             ],
             "autoAttachChildren": true,
             "env": {
-                "ELECTRON_IPC_BROKER_LOG_CSV": "c:\\temp\\ipc-log",
-                "ELECTRON_IPC_BRIDGE_LOG_CSV": "c:\\temp\\ipc-log",
+                // "ELECTRON_IPC_BROKER_LOG_CSV": "c:\\temp\\ipc-log",
+                // "ELECTRON_IPC_BRIDGE_LOG_CSV": "c:\\temp\\ipc-log",
             },
             "outputCapture": "std",
             "console": "internalConsole",
@@ -39,9 +45,10 @@
             "program": "${workspaceRoot}/node_modules/electron-mocha/bin/electron-mocha",
             "port": 5858,
             "protocol": "inspector",
+            "autoAttachChildProcesses": true,
             "cwd": "${workspaceRoot}/lib",
             "args": [
-                "--grep=Wildcard",
+                "--grep=Node",
                 // "--grep=Brokers",
                 "${workspaceRoot}/test/*.test.js",
                 "--recursive",
@@ -49,8 +56,8 @@
                 "--no-timeouts",
                 "--colors",
                 // "--debug",
-                "--inspect-brk=5858"
-                // "--debug-brk"
+                "--inspect-brk=5858",
+                "--debug-brk"
             ],
             "windows": {
                 "env": {

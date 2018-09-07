@@ -3,11 +3,11 @@ const assert = chai.assert;
 const expect = chai.expect;
 
 const ipcBusModule = require('../lib/electron-common-ipc');
-const brokersLifeCycle = require('./helpers/brokersLifeCycle');
+const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 
 function test(remoteBroker) {
 
-  describe(`Client messages ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
+  describe(`Master Client messages ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
     let ipcClient1;
     let ipcClient2;
     before(() => {

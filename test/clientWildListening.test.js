@@ -3,7 +3,7 @@ const assert = chai.assert;
 const expect = chai.expect;
 
 const ipcBusModule = require('../lib/electron-common-ipc');
-const brokersLifeCycle = require('./helpers/brokersLifeCycle');
+const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 
 function test(remoteBroker) {
 
