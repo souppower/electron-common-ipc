@@ -196,7 +196,7 @@ export interface IpcBusServiceProxy extends EventEmitter {
 
     // Kept for backward
     call<T>(name: string, ...args: any[]): Promise<T>;
-    apply<T>(name: string, args: any[]): Promise<T>;
+    apply<T>(name: string, args?: any[]): Promise<T>;
 
     // Do wait for the stub response, equivalent to call/apply.
     requestCall<T>(name: string, ...args: any[]): Promise<T>;
@@ -204,7 +204,7 @@ export interface IpcBusServiceProxy extends EventEmitter {
 
     // Do not wait for the stub response, more efficient.
     sendCall(name: string, ...args: any[]): void;
-    sendApply(name: string, args: any[]): void;
+    sendApply(name: string, args?: any[]): void;
 
     // onServiceStart(handler: () => void);
     // onServiceStop(handler: () => void);

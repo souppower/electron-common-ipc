@@ -134,7 +134,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
         return this._call<IpcBusInterfaces.ServiceStatus>(IpcBusUtils.IPCBUS_SERVICE_CALL_GETSTATUS);
     }
 
-    private _requestApply<T>(name: string, args: any[]): Deferred<T> {
+    private _requestApply<T>(name: string, args?: any[]): Deferred<T> {
         let deferred = new Deferred<T>((resolve, reject) => {
             const callMsg = { handlerName: name, args: args };
             this._ipcBusClient.request(IpcBusUtils.getServiceCallChannel(this._serviceName), -1, callMsg)
@@ -159,7 +159,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
         return deferred.promise;
     }
 
-    requestApply<T>(name: string, args: any[]): Promise<T> {
+    requestApply<T>(name: string, args?: any[]): Promise<T> {
         let deferred = this._requestApply<T>(name, args);
         if (this._isStarted) {
             deferred.execute();
@@ -174,7 +174,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
         return this.requestApply(name, args);
     }
 
-    apply<T>(name: string, args: any[]): Promise<T> {
+    apply<T>(name: string, args?: any[]): Promise<T> {
         return this.requestApply(name, args);
     }
 
@@ -182,7 +182,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
         return this.requestApply(name, args);
     }
 
-    private _sendApply(name: string, args: any[]): Deferred<void> {
+    private _sendApply(name: string, args?: any[]): Deferred<void> {
         let deferred = new Deferred<void>((resolve, reject) => {
             const callMsg = { handlerName: name, args: args };
             this._ipcBusClient.send(IpcBusUtils.getServiceCallChannel(this._serviceName), -1, callMsg);
@@ -192,7 +192,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusInterf
         return deferred;
     }
 
-    sendApply(name: string, args: any[]): void {
+    sendApply(name: string, args?: any[]): void {
         if (this._isStarted) {
             const callMsg = { handlerName: name, args: args };
             this._ipcBusClient.send(IpcBusUtils.getServiceCallChannel(this._serviceName), -1, callMsg);
