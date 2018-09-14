@@ -200,7 +200,7 @@ export interface IpcBusServiceProxy extends EventEmitter {
 
     // Do wait for the stub response, equivalent to call/apply.
     requestCall<T>(name: string, ...args: any[]): Promise<T>;
-    requestApply<T>(name: string, args: any[]): Promise<T>;
+    requestApply<T>(name: string, args?: any[]): Promise<T>;
 
     // Do not wait for the stub response, more efficient.
     sendCall(name: string, ...args: any[]): void;
