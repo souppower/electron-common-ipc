@@ -48,9 +48,10 @@
             "autoAttachChildProcesses": true,
             "cwd": "${workspaceRoot}/lib",
             "args": [
-                "--grep=Master",
+                // "--grep=Master",
                 // "--grep=Brokers",
                 // "--grep=Node",
+                "--grep=Service",
                 "${workspaceRoot}/test/*.test.js",
                 "--recursive",
                 "--reporter", "spec",

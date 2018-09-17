@@ -26,12 +26,22 @@ function TestService() {
     this.emit('MyEvent');
   }
 }
-
 util.inherits(TestService, EventEmitter);
+
+
+function TestService2() {
+  TestService.call(this);
+  this.getArg3 = function (arg1, arg2, arg3) {
+    console.log(`Service2.getArg3(${arg1}, ${arg2}, ${arg3}) is called`);
+    return { arg1, arg2, arg3 };
+  }
+}
+util.inherits(TestService2, TestService);
+
 
 const delayService = 500;
 
-function test(remoteBroker) {
+function test(remoteBroker, factory) {
 
   describe(`Service ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
     let ipcBusPath;
@@ -56,7 +66,7 @@ function test(remoteBroker) {
       it('connect service first', () => {
         const testServiceName = 'test-service1';
 
-        const testServiceInstance = new TestService();
+        const testServiceInstance = factory();
         const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
         testService.start();
 
@@ -77,7 +87,7 @@ function test(remoteBroker) {
 
         // delay the start
         setTimeout(() => {
-          const testServiceInstance = new TestService();
+          const testServiceInstance = factory();
           const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
           testService.start();
         }, delayService);
@@ -87,9 +97,8 @@ function test(remoteBroker) {
     describe('Call', () => {
       const testServiceName = 'test-service3';
       let testServiceProxy;
-      let testServiceInstance;
+      let testServiceInstance = factory();
       before(() => {
-        testServiceInstance = new TestService();
         const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
         testService.start();
 
@@ -127,6 +136,17 @@ function test(remoteBroker) {
           });
       });
 
+      if (testServiceInstance instanceof TestService2) {
+        it('getArg3', () => {
+          testServiceProxy.getWrapper().getArg3(1, 'string', { coucou: 'coucou' })
+            .then((value) => {
+              expect(value.arg1).toEqual(1);
+              expect(value.arg2).toEqual('string');
+              // expect(value.arg3).toEqual('string');
+            });
+        });
+      }
+
       it('event', (done) => {
         testServiceProxy.getWrapper().on('MyEvent', () => {
           done();
@@ -138,13 +158,12 @@ function test(remoteBroker) {
     describe('Call delayed', () => {
       const testServiceName = 'test-service4';
       let testServiceProxy;
-      let testServiceInstance;
+      let testServiceInstance = factory();;
       before(() => {
         // Create the proxy (client-side)
         testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
         testServiceProxy.connect();
 
-        testServiceInstance = new TestService();
         // delay the start
         setTimeout(() => {
           const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
@@ -184,9 +203,23 @@ function test(remoteBroker) {
             expect(value.arg2).toEqual('string');
           });
       });
+
+      if (testServiceInstance instanceof TestService2) {
+        it('getArg3', () => {
+          testServiceProxy.call('getArg3', 1, 'string', { coucou: 'coucou' })
+            .then((value) => {
+              expect(value.arg1).toEqual(1);
+              expect(value.arg2).toEqual('string');
+              // expect(value.arg3).toEqual('string');
+            });
+        });
+      }
     });
   });
 }
 
-test(false);
-test(true);
+test(false, () => new TestService());
+test(true, () => new TestService());
+
+test(false, () => new TestService2());
+test(true, () => new TestService2());

@@ -1,8 +1,48 @@
 /// <reference types='node' />
 
-import {EventEmitter} from 'events';
+import { EventEmitter } from 'events';
 import * as IpcBusInterfaces from '../IpcBusInterfaces';
 import * as IpcBusUtils from '../IpcBusUtils';
+
+
+// http://code.fitness/post/2016/01/javascript-enumerate-methods.html
+
+
+
+function hasMethod(obj: any, name: string): PropertyDescriptor | null {
+    if (name !== 'constructor') {
+        const desc = Object.getOwnPropertyDescriptor(obj, name);
+        if (!!desc && (typeof desc.value === 'function')) {
+            return desc;
+        }
+    }
+    return null;
+}
+
+function getInstanceMethodNames(obj: any, stop?: any): Map<string, PropertyDescriptor> {
+    let methodNames = new Map<string, PropertyDescriptor>();
+
+    Object.getOwnPropertyNames(obj)
+    .forEach(name => {
+        let desc = hasMethod(obj, name);
+        if (desc) {
+            methodNames.set(name, desc);
+        }
+    });
+
+    let proto = Object.getPrototypeOf(obj);
+    while (proto && (proto !== stop)) {
+        Object.getOwnPropertyNames(proto)
+        .forEach(name => {
+                let desc = hasMethod(proto, name);
+                if (desc) {
+                    methodNames.set(name, desc);
+                }
+            });
+        proto = Object.getPrototypeOf(proto);
+    }
+    return methodNames;
+}
 
 // Implementation of IPC service
 /** @internal */
@@ -13,7 +53,7 @@ export class IpcBusServiceImpl implements IpcBusInterfaces.IpcBusService {
 
     private static _hiddenMethods: Set<string> = null;
 
-    constructor(private _ipcBusClient: IpcBusInterfaces.IpcBusClient, private _serviceName: string, private _exposedInstance: any = undefined) {
+    constructor(private _ipcBusClient: IpcBusInterfaces.IpcBusClient, private _serviceName: string, private _exposedInstance: any) {
         if (IpcBusServiceImpl._hiddenMethods == null) {
             IpcBusServiceImpl._hiddenMethods = new Set<string>();
             for (let prop of Object.keys(EventEmitter.prototype)) {
@@ -40,27 +80,15 @@ export class IpcBusServiceImpl implements IpcBusInterfaces.IpcBusService {
 
         //  Register call handlers for exposed instance's method
         if (this._exposedInstance) {
+            let methodNames = getInstanceMethodNames(this._exposedInstance, EventEmitter.prototype);
             // Register handlers for functions of service's Implementation (except the ones inherited from EventEmitter)
             // Looking in legacy class
-            for (let memberName in this._exposedInstance) {
-                if (this._isFunctionVisible(memberName)) {
-                    const method = this._exposedInstance[memberName];
-                    if (typeof method === 'function') {
-                        this.registerCallHandler(memberName,
-                            (event: IpcBusInterfaces.IpcBusEvent, call: IpcBusInterfaces.IpcBusServiceCall) => this._doCall(event, call));
-                    }
+            methodNames.forEach((value, methodName) => {
+                if (this._isFunctionVisible(methodName)) {
+                    this.registerCallHandler(methodName,
+                        (event: IpcBusInterfaces.IpcBusEvent, call: IpcBusInterfaces.IpcBusServiceCall) => this._doCall(event, call));
                 }
-            }
-            // Looking in ES6 class
-            for (let memberName of Object.getOwnPropertyNames(Object.getPrototypeOf(this._exposedInstance))) {
-                if (!this._callHandlers.has(memberName) && this._isFunctionVisible(memberName)) {
-                    const method = this._exposedInstance[memberName];
-                    if (method instanceof Function) {
-                        this.registerCallHandler(memberName,
-                            (event: IpcBusInterfaces.IpcBusEvent, call: IpcBusInterfaces.IpcBusServiceCall) => this._doCall(event, call));
-                    }
-                }
-            }
+            });
         }
         else {
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcService] Service '${this._serviceName}' does NOT have an implementation`);

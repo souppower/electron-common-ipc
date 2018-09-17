@@ -18,7 +18,7 @@ export let CreateIpcBusClientRenderer: IpcBusClient.CreateFunction = (options: a
     return ipcBusClient;
 };
 
-export function CreateIpcBusService(client: IpcBusClient, serviceName: string, serviceImpl: any = undefined): IpcBusService {
+export function CreateIpcBusService(client: IpcBusClient, serviceName: string, serviceImpl: any): IpcBusService {
     return new IpcBusServiceImpl(client, serviceName, serviceImpl);
 }
 
