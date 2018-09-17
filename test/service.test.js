@@ -11,15 +11,15 @@ const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 function TestService() {
   EventEmitter.call(this);
   this.getArg0 = function () {
-    console.log(`Service.getArg0() is called`);
+    console.log(`Service1.getArg0() is called`);
     return 0;
   }
   this.getArg1 = function (arg1) {
-    console.log(`Service.getArg1(${arg1}) is called`);
+    console.log(`Service1.getArg1(${arg1}) is called`);
     return arg1;
   }
   this.getArg2 = function (arg1, arg2) {
-    console.log(`Service.getArg2(${arg1}, ${arg2}) is called`);
+    console.log(`Service1.getArg2(${arg1}, ${arg2}) is called`);
     return { arg1, arg2 };
   }
   this.triggerEvent = function () {
@@ -37,6 +37,22 @@ function TestService2() {
   }
 }
 util.inherits(TestService2, TestService);
+
+
+function TestService3() {
+  this.getArg0 = function () {
+    console.log(`Service3.getArg0() is called`);
+    return 0;
+  }
+  this.getArg1 = function (arg1) {
+    console.log(`Service3.getArg1(${arg1}) is called`);
+    return arg1;
+  }
+  this.getArg2 = function (arg1, arg2) {
+    console.log(`Service3.getArg2(${arg1}, ${arg2}) is called`);
+    return { arg1, arg2 };
+  }
+}
 
 
 const delayService = 500;
@@ -147,12 +163,14 @@ function test(remoteBroker, factory) {
         });
       }
 
-      it('event', (done) => {
-        testServiceProxy.getWrapper().on('MyEvent', () => {
-          done();
+      if (!testServiceInstance instanceof TestService3) {
+        it('event', (done) => {
+          testServiceProxy.getWrapper().on('MyEvent', () => {
+            done();
+          });
+          testServiceInstance.triggerEvent();
         });
-        testServiceInstance.triggerEvent();
-      });
+      }
     });
 
     describe('Call delayed', () => {
@@ -223,3 +241,6 @@ test(true, () => new TestService());
 
 test(false, () => new TestService2());
 test(true, () => new TestService2());
+
+test(false, () => new TestService3());
+test(true, () => new TestService3());

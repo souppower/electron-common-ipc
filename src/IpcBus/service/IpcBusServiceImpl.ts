@@ -5,35 +5,43 @@ import * as IpcBusInterfaces from '../IpcBusInterfaces';
 import * as IpcBusUtils from '../IpcBusUtils';
 
 
-// http://code.fitness/post/2016/01/javascript-enumerate-methods.html
-
-
-
 function hasMethod(obj: any, name: string): PropertyDescriptor | null {
-    if (name !== 'constructor') {
-        const desc = Object.getOwnPropertyDescriptor(obj, name);
-        if (!!desc && (typeof desc.value === 'function')) {
-            return desc;
-        }
+    if (name === 'constructor') {
+        return null;
+    }
+    // Hide private methods, supposed to be pre-fixed by one or several underscores
+    if (name[0] === '_') {
+        return null;
+    }
+    const desc = Object.getOwnPropertyDescriptor(obj, name);
+    if (!!desc && (typeof desc.value === 'function')) {
+        return desc;
     }
     return null;
 }
 
-function getInstanceMethodNames(obj: any, stop?: any): Map<string, PropertyDescriptor> {
+function getInstanceMethodNames(obj: any): Map<string, PropertyDescriptor> {
     let methodNames = new Map<string, PropertyDescriptor>();
 
     Object.getOwnPropertyNames(obj)
-    .forEach(name => {
-        let desc = hasMethod(obj, name);
-        if (desc) {
-            methodNames.set(name, desc);
-        }
-    });
+        .forEach(name => {
+            let desc = hasMethod(obj, name);
+            if (desc) {
+                methodNames.set(name, desc);
+            }
+        });
 
     let proto = Object.getPrototypeOf(obj);
-    while (proto && (proto !== stop)) {
+    while (proto) {
+        if (proto === EventEmitter.prototype) {
+            methodNames.delete('off');
+            break;
+        }
+        else if (proto === Object.prototype) {
+            break;
+        }
         Object.getOwnPropertyNames(proto)
-        .forEach(name => {
+            .forEach(name => {
                 let desc = hasMethod(proto, name);
                 if (desc) {
                     methodNames.set(name, desc);
@@ -51,21 +59,7 @@ export class IpcBusServiceImpl implements IpcBusInterfaces.IpcBusService {
     private _callReceivedLamdba: IpcBusInterfaces.IpcBusListener = (event: IpcBusInterfaces.IpcBusEvent, ...args: any[]) => this._onCallReceived(event, <IpcBusInterfaces.IpcBusServiceCall>args[0]);
     private _prevImplEmit: Function = null;
 
-    private static _hiddenMethods: Set<string> = null;
-
     constructor(private _ipcBusClient: IpcBusInterfaces.IpcBusClient, private _serviceName: string, private _exposedInstance: any) {
-        if (IpcBusServiceImpl._hiddenMethods == null) {
-            IpcBusServiceImpl._hiddenMethods = new Set<string>();
-            for (let prop of Object.keys(EventEmitter.prototype)) {
-                // Do not care of private methods, supposed to be pre-fixed by one or several underscores
-                if (prop[0] !== '_') {
-                    IpcBusServiceImpl._hiddenMethods.add(prop);
-                }
-            }
-            IpcBusServiceImpl._hiddenMethods.add('constructor');
-            IpcBusServiceImpl._hiddenMethods.add('off');
-        }
-
         this._callHandlers = new Map<string, IpcBusInterfaces.IpcBusServiceCallHandler>();
 
         //  Register internal call handlers
@@ -80,27 +74,17 @@ export class IpcBusServiceImpl implements IpcBusInterfaces.IpcBusService {
 
         //  Register call handlers for exposed instance's method
         if (this._exposedInstance) {
-            let methodNames = getInstanceMethodNames(this._exposedInstance, EventEmitter.prototype);
+            let methodNames = getInstanceMethodNames(this._exposedInstance);
             // Register handlers for functions of service's Implementation (except the ones inherited from EventEmitter)
             // Looking in legacy class
             methodNames.forEach((value, methodName) => {
-                if (this._isFunctionVisible(methodName)) {
-                    this.registerCallHandler(methodName,
-                        (event: IpcBusInterfaces.IpcBusEvent, call: IpcBusInterfaces.IpcBusServiceCall) => this._doCall(event, call));
-                }
+                this.registerCallHandler(methodName,
+                    (event: IpcBusInterfaces.IpcBusEvent, call: IpcBusInterfaces.IpcBusServiceCall) => this._doCall(event, call));
             });
         }
         else {
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcService] Service '${this._serviceName}' does NOT have an implementation`);
         }
-    }
-
-    private _isFunctionVisible(memberName: string): boolean {
-        if (IpcBusServiceImpl._hiddenMethods.has(memberName)) {
-            return false;
-        }
-        // Hide private methods, supposed to be pre-fixed by one or several underscores
-        return (memberName[0] !== '_');
     }
 
     start(): void {
