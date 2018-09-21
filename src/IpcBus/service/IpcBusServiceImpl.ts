@@ -5,6 +5,7 @@ import * as IpcBusInterfaces from '../IpcBusInterfaces';
 import * as IpcBusUtils from '../IpcBusUtils';
 
 
+
 function hasMethod(obj: any, name: string): PropertyDescriptor | null {
     if (name === 'constructor') {
         return null;
@@ -34,6 +35,12 @@ function getInstanceMethodNames(obj: any): Map<string, PropertyDescriptor> {
     let proto = Object.getPrototypeOf(obj);
     while (proto) {
         if (proto === EventEmitter.prototype) {
+            // Remove EventEmitter overriden methods
+            for (let prop of Object.keys(EventEmitter.prototype)) {
+                if (prop[0] !== '_') {
+                    methodNames.delete(prop);
+                }
+            }
             methodNames.delete('off');
             break;
         }
@@ -77,9 +84,9 @@ export class IpcBusServiceImpl implements IpcBusInterfaces.IpcBusService {
             let methodNames = getInstanceMethodNames(this._exposedInstance);
             // Register handlers for functions of service's Implementation (except the ones inherited from EventEmitter)
             // Looking in legacy class
-            methodNames.forEach((value, methodName) => {
+            methodNames.forEach((methodDesc, methodName) => {
                 this.registerCallHandler(methodName,
-                    (event: IpcBusInterfaces.IpcBusEvent, call: IpcBusInterfaces.IpcBusServiceCall) => this._doCall(event, call));
+                    (event: IpcBusInterfaces.IpcBusEvent, call: IpcBusInterfaces.IpcBusServiceCall) => this._doCall(methodDesc.value, event, call));
             });
         }
         else {
@@ -165,11 +172,11 @@ export class IpcBusServiceImpl implements IpcBusInterfaces.IpcBusService {
         }
     }
 
-    private _doCall(event: IpcBusInterfaces.IpcBusEvent, call: IpcBusInterfaces.IpcBusServiceCall) {
+    private _doCall(fct: Function, event: IpcBusInterfaces.IpcBusEvent, call: IpcBusInterfaces.IpcBusServiceCall) {
         IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcService] Service '${this._serviceName}' is calling implementation's '${call.handlerName}'`);
         if (event.request) {
             try {
-                const result = this._exposedInstance[call.handlerName](...call.args);
+                const result = fct.apply(this._exposedInstance, call.args);
                 if (result && result['then']) {
                     // result is a valid promise
                     result.then(event.request.resolve, event.request.reject);
