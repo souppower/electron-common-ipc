@@ -2,7 +2,8 @@ import * as net from 'net';
 
 import { IpcPacketBuffer } from 'socket-serializer';
 
-import * as IpcBusInterfaces from '../IpcBusInterfaces';
+import * as IpcBusClientInterfaces from '../IpcBusClientInterfaces';
+import * as IpcBusBrokerInterfaces from '../IpcBusBrokerInterfaces';
 
 import { IpcBusCommand } from '../IpcBusCommand';
 
@@ -10,7 +11,7 @@ import { IpcBusBrokerImpl } from '../IpcBusBrokerImpl';
 
 /** @internal */
 export abstract class IpcBusBrokerLogger extends IpcBusBrokerImpl {
-    constructor(processType: IpcBusInterfaces.IpcBusProcessType, options: IpcBusInterfaces.IpcBusBroker.CreateOptions) {
+    constructor(processType: IpcBusClientInterfaces.IpcBusProcessType, options: IpcBusBrokerInterfaces.IpcBusBroker.CreateOptions) {
         super(processType, options);
     }
 

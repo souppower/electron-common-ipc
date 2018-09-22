@@ -2,7 +2,8 @@ import * as net from 'net';
 
 import { IpcPacketBuffer, BufferListReader } from 'socket-serializer';
 
-import * as IpcBusInterfaces from './IpcBusInterfaces';
+import * as IpcBusClientInterfaces from './IpcBusClientInterfaces';
+import * as IpcBusBrokerInterfaces from './IpcBusBrokerInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
 // import * as util from 'util';
 
@@ -79,9 +80,9 @@ class IpcBusBrokerSocket {
 
 
 /** @internal */
-export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBrokerSocketClient {
-    private _netOptions: IpcBusInterfaces.IpcNetOptions;
-    private _ipcBusBrokerClient: IpcBusInterfaces.IpcBusClient;
+export class IpcBusBrokerImpl implements IpcBusBrokerInterfaces.IpcBusBroker, IpcBusBrokerSocketClient {
+    private _netOptions: IpcBusClientInterfaces.IpcNetOptions;
+    private _ipcBusBrokerClient: IpcBusClientInterfaces.IpcBusClient;
     private _socketClients: Map<number, IpcBusBrokerSocket>;
 
     private _server: net.Server;
@@ -92,12 +93,12 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
     private _subscriptions: IpcBusUtils.ChannelConnectionMap<number, net.Socket>;
     private _wildSubscriptions: Set<string>;
     private _requestChannels: Map<string, net.Socket>;
-    private _ipcBusPeers: Map<string, IpcBusInterfaces.IpcBusPeer>;
+    private _ipcBusPeers: Map<string, IpcBusClientInterfaces.IpcBusPeer>;
 
-    private _queryStateLamdba: IpcBusInterfaces.IpcBusListener = (ipcBusEvent: IpcBusInterfaces.IpcBusEvent, replyChannel: string) => this._onQueryState(ipcBusEvent, replyChannel);
-    private _serviceAvailableLambda: IpcBusInterfaces.IpcBusListener = (ipcBusEvent: IpcBusInterfaces.IpcBusEvent, serviceName: string) => this._onServiceAvailable(ipcBusEvent, serviceName);
+    private _queryStateLamdba: IpcBusClientInterfaces.IpcBusListener = (ipcBusEvent: IpcBusClientInterfaces.IpcBusEvent, replyChannel: string) => this._onQueryState(ipcBusEvent, replyChannel);
+    private _serviceAvailableLambda: IpcBusClientInterfaces.IpcBusListener = (ipcBusEvent: IpcBusClientInterfaces.IpcBusEvent, serviceName: string) => this._onServiceAvailable(ipcBusEvent, serviceName);
 
-    constructor(processType: IpcBusInterfaces.IpcBusProcessType, options: IpcBusInterfaces.IpcBusBroker.CreateOptions) {
+    constructor(processType: IpcBusClientInterfaces.IpcBusProcessType, options: IpcBusBrokerInterfaces.IpcBusBroker.CreateOptions) {
         this._netOptions = options;
 
         this._netBinds = {};
@@ -109,7 +110,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
         this._wildSubscriptions = new Set<string>();
         this._requestChannels = new Map<string, net.Socket>();
         this._socketClients = new Map<number, IpcBusBrokerSocket>();
-        this._ipcBusPeers = new Map<string, IpcBusInterfaces.IpcBusPeer>();
+        this._ipcBusPeers = new Map<string, IpcBusClientInterfaces.IpcBusPeer>();
 
         this._subscriptions.on('channel-added', (channel: string) => {
             if (IpcBusUtils.ContainsWildCards(channel)) {
@@ -139,8 +140,8 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
             this._socketClients.forEach((socket) => {
                 socket.release();
             });
-            this._ipcBusBrokerClient.off(IpcBusInterfaces.IPCBUS_CHANNEL_QUERY_STATE, this._queryStateLamdba);
-            this._ipcBusBrokerClient.off(IpcBusInterfaces.IPCBUS_CHANNEL_SERVICE_AVAILABLE, this._serviceAvailableLambda);
+            this._ipcBusBrokerClient.off(IpcBusClientInterfaces.IPCBUS_CHANNEL_QUERY_STATE, this._queryStateLamdba);
+            this._ipcBusBrokerClient.off(IpcBusClientInterfaces.IPCBUS_CHANNEL_SERVICE_AVAILABLE, this._serviceAvailableLambda);
             this._ipcBusBrokerClient.close();
             server.close();
             server.unref();
@@ -153,7 +154,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
     }
 
     // IpcBusBroker API
-    start(options?: IpcBusInterfaces.IpcBusBroker.StartOptions): Promise<void> {
+    start(options?: IpcBusBrokerInterfaces.IpcBusBroker.StartOptions): Promise<void> {
         options = options || {};
         if (options.timeoutDelay == null) {
             options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
@@ -200,8 +201,8 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
 
                     this._ipcBusBrokerClient.connect({ peerName: `IpcBusBrokerClient` })
                         .then(() => {
-                            this._ipcBusBrokerClient.on(IpcBusInterfaces.IPCBUS_CHANNEL_QUERY_STATE, this._queryStateLamdba);
-                            this._ipcBusBrokerClient.on(IpcBusInterfaces.IPCBUS_CHANNEL_SERVICE_AVAILABLE, this._serviceAvailableLambda);
+                            this._ipcBusBrokerClient.on(IpcBusClientInterfaces.IPCBUS_CHANNEL_QUERY_STATE, this._queryStateLamdba);
+                            this._ipcBusBrokerClient.on(IpcBusClientInterfaces.IPCBUS_CHANNEL_SERVICE_AVAILABLE, this._serviceAvailableLambda);
                             resolve();
                         })
                         .catch((err) => {
@@ -232,7 +233,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
         return p;
     }
 
-    stop(options?: IpcBusInterfaces.IpcBusBroker.StopOptions): Promise<void> {
+    stop(options?: IpcBusBrokerInterfaces.IpcBusBroker.StopOptions): Promise<void> {
         options = options || {};
         if (options.timeoutDelay == null) {
             options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
@@ -418,7 +419,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
         return this._subscriptions.hasChannel(IpcBusUtils.getServiceCallChannel(serviceName));
     }
 
-    protected _onQueryState(ipcBusEvent: IpcBusInterfaces.IpcBusEvent, replyChannel: string) {
+    protected _onQueryState(ipcBusEvent: IpcBusClientInterfaces.IpcBusEvent, replyChannel: string) {
         const queryState = this.queryState();
         if (ipcBusEvent.request) {
             ipcBusEvent.request.resolve(queryState);
@@ -428,7 +429,7 @@ export class IpcBusBrokerImpl implements IpcBusInterfaces.IpcBusBroker, IpcBusBr
         }
     }
 
-    protected _onServiceAvailable(ipcBusEvent: IpcBusInterfaces.IpcBusEvent, serviceName: string) {
+    protected _onServiceAvailable(ipcBusEvent: IpcBusClientInterfaces.IpcBusEvent, serviceName: string) {
         const availability = this.isServiceAvailable(serviceName);
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Service '${serviceName}' availability : ${availability}`);
         if (ipcBusEvent.request) {

@@ -1,4 +1,4 @@
-import { IpcBusPeer } from './IpcBusInterfaces';
+import { IpcBusPeer } from './IpcBusClientInterfaces';
 
 /** @internal */
 export interface IpcBusCommand {

@@ -1,6 +1,9 @@
 import { IpcPacketBuffer } from 'socket-serializer';
 
-import * as IpcBusInterfaces from '../IpcBusInterfaces';
+
+import * as IpcBusClientInterfaces from '../IpcBusClientInterfaces';
+import * as IpcBusBrokerInterfaces from '../IpcBusBrokerInterfaces';
+
 
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusBridgeImpl } from '../IpcBusBridgeImpl';
@@ -8,11 +11,11 @@ import { IpcBusBridgeImpl } from '../IpcBusBridgeImpl';
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
-    constructor(processType: IpcBusInterfaces.IpcBusProcessType, options: IpcBusInterfaces.IpcBusBridge.CreateOptions) {
+    constructor(processType:  IpcBusClientInterfaces.IpcBusProcessType, options: IpcBusBrokerInterfaces.IpcBusBroker.CreateOptions) {
         super(processType, options);
     }
 
-    protected abstract addLog(webContents: Electron.WebContents, peer: IpcBusInterfaces.IpcBusPeer, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): void;
+    protected abstract addLog(webContents: Electron.WebContents, peer: IpcBusClientInterfaces.IpcBusPeer, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): void;
 
     protected _onEventReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
@@ -24,7 +27,7 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
                     connData.peerIds.forEach((peerId) => {
                         let peer = this._ipcBusPeers.get(peerId.peerId);
                         this.addLog(webContents, peer, ipcPacketBuffer, ipcBusCommand, args);
-                    })
+                    });
                 });
                 break;
             }

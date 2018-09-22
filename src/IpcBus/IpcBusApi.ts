@@ -1,12 +1,9 @@
 
-// import * as IpcBusInterfaces from './IpcBusInterfaces';
-import { IpcBusClient, IpcBusProcessType } from './IpcBusInterfaces';
-// import { IpcBusRequestResponse } from './IpcBusInterfaces';
-// export * from './IpcBusInterfaces';
+import { IpcBusClient, IpcBusProcessType } from './IpcBusClientInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
 
-import { IpcBusBroker } from './IpcBusInterfaces';
-import { IpcBusBridge  } from './IpcBusInterfaces';
+import { IpcBusBroker } from './IpcBusBrokerInterfaces';
+import { IpcBusBridge  } from './IpcBusBridgeInterfaces';
 
 import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
 import { IpcBusBrokerJSONLogger } from './loggers/IpcBusBrokerJSONLogger';

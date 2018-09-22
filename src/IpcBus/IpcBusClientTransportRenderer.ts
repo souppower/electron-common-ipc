@@ -5,7 +5,7 @@ import * as assert from 'assert';
 import { IpcPacketBuffer, IpcPacketBufferWrap, BufferListWriter } from 'socket-serializer';
 
 import * as IpcBusUtils from './IpcBusUtils';
-import * as IpcBusInterfaces from './IpcBusInterfaces';
+import * as IpcBusClientInterfaces from './IpcBusClientInterfaces';
 
 import { IpcBusClientTransport } from './IpcBusClientTransport';
 import { IpcBusCommand } from './IpcBusCommand';
@@ -25,7 +25,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
 
     // private _ipcRendererReady: Promise<void>;
 
-    constructor(processType: IpcBusInterfaces.IpcBusProcessType, options: IpcBusInterfaces.IpcBusClient.CreateOptions) {
+    constructor(processType: IpcBusClientInterfaces.IpcBusProcessType, options: IpcBusClientInterfaces.IpcBusClient.CreateOptions) {
         assert(processType === 'renderer', `IpcBusClientTransportRenderer: processType must not be a process ${processType}`);
         super({ type: processType, pid: -1 }, options);
 
@@ -42,7 +42,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
         }
     }
 
-    private _onConnect(eventOrPeer: any, peerOrUndefined: IpcBusInterfaces.IpcBusPeer): void {
+    private _onConnect(eventOrPeer: any, peerOrUndefined: IpcBusClientInterfaces.IpcBusPeer): void {
         // In sandbox mode, 1st parameter is no more the event, but the 2nd argument !!!
         if (peerOrUndefined) {
             this._ipcBusPeer = peerOrUndefined;
@@ -63,7 +63,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
     };
 
     /// IpcBusTrandport API
-    protected ipcConnect(options?: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<void> {
+    protected ipcConnect(options?: IpcBusClientInterfaces.IpcBusClient.ConnectOptions): Promise<void> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
         if (!p) {
@@ -85,7 +85,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
                         }, options.timeoutDelay);
                     }
                     // We wait for the bridge confirmation
-                    this._ipcRenderer.once(IPCBUS_TRANSPORT_RENDERER_CONNECT, (eventOrPeer: any, peerOrUndefined: IpcBusInterfaces.IpcBusPeer) => {
+                    this._ipcRenderer.once(IPCBUS_TRANSPORT_RENDERER_CONNECT, (eventOrPeer: any, peerOrUndefined: IpcBusClientInterfaces.IpcBusPeer) => {
                         if (this._ipcRenderer) {
                             clearTimeout(timer);
                             this._onConnect(eventOrPeer, peerOrUndefined);
@@ -102,7 +102,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
         return p;
     }
 
-    protected ipcClose(options?: IpcBusInterfaces.IpcBusClient.CloseOptions): Promise<void> {
+    protected ipcClose(options?: IpcBusClientInterfaces.IpcBusClient.CloseOptions): Promise<void> {
         if (this._ipcRenderer) {
             this.ipcSend(IpcBusCommand.Kind.Close, '');
             this._reset();

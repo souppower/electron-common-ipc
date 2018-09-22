@@ -1,30 +1,27 @@
 
-// import * as IpcBusInterfaces from './IpcBusInterfaces';
-import { IpcBusClient } from './IpcBusInterfaces';
-// import { IpcBusRequestResponse } from './IpcBusInterfaces';
-// export * from './IpcBusInterfaces';
+import * as IpcBusClientInterfaces from './IpcBusClientInterfaces';
+import * as IpcBusServiceInterfaces from './service/IpcBusServiceInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
 
 import { IpcBusServiceImpl } from './service/IpcBusServiceImpl';
-import { IpcBusService } from './IpcBusInterfaces';
 import { IpcBusServiceProxyImpl } from './service/IpcBusServiceProxyImpl';
-import { IpcBusServiceProxy } from './IpcBusInterfaces';
+
 
 import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
 
-export let CreateIpcBusClientRenderer: IpcBusClient.CreateFunction = (options: any, hostname?: string) => {
+export let CreateIpcBusClientRenderer: IpcBusClientInterfaces.IpcBusClient.CreateFunction = (options: any, hostname?: string) => {
     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-    let ipcBusClient: IpcBusClient = new IpcBusClientTransportRenderer('renderer', localOptions || {});
+    let ipcBusClient: IpcBusClientInterfaces.IpcBusClient = new IpcBusClientTransportRenderer('renderer', localOptions || {});
     return ipcBusClient;
 };
 
-export function CreateIpcBusService(client: IpcBusClient, serviceName: string, serviceImpl: any): IpcBusService {
+export let CreateIpcBusService: IpcBusServiceInterfaces.IpcBusService.CreateFunction = (client: IpcBusClientInterfaces.IpcBusClient, serviceName: string, serviceImpl: any, options?: IpcBusServiceInterfaces.IpcBusService.CreateOptions): IpcBusServiceInterfaces.IpcBusService => {
     return new IpcBusServiceImpl(client, serviceName, serviceImpl);
-}
+};
 
-export function CreateIpcBusServiceProxy(client: IpcBusClient, serviceName: string, callTimeout?: number): IpcBusServiceProxy {
-    return new IpcBusServiceProxyImpl(client, serviceName, callTimeout);
-}
+export let CreateIpcBusServiceProxy: IpcBusServiceInterfaces.IpcBusServiceProxy.CreateFunction = (client: IpcBusClientInterfaces.IpcBusClient, serviceName: string, options?: IpcBusServiceInterfaces.IpcBusServiceProxy.CreateOptions): IpcBusServiceInterfaces.IpcBusServiceProxy => {
+    return new IpcBusServiceProxyImpl(client, serviceName, options);
+};
 
 export function ActivateIpcBusTrace(enable: boolean): void {
     IpcBusUtils.Logger.enable = enable;

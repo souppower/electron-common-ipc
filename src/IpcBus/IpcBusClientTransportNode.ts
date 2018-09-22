@@ -6,7 +6,7 @@ import * as net from 'net';
 import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
 
 import * as IpcBusUtils from './IpcBusUtils';
-import * as IpcBusInterfaces from './IpcBusInterfaces';
+import * as IpcBusClientInterfaces from './IpcBusClientInterfaces';
 
 import { IpcBusClientTransport } from './IpcBusClientTransport';
 import { IpcBusCommand } from './IpcBusCommand';
@@ -27,7 +27,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
     protected _packetIn: IpcPacketBuffer;
     private _bufferListReader: BufferListReader;
 
-    constructor(processType: IpcBusInterfaces.IpcBusProcessType, options: IpcBusInterfaces.IpcBusClient.CreateOptions) {
+    constructor(processType: IpcBusClientInterfaces.IpcBusProcessType, options: IpcBusClientInterfaces.IpcBusClient.CreateOptions) {
         assert((processType === 'browser') || (processType === 'node'), `IpcBusClientTransportNode: processType must not be a process ${processType}`);
 
         super({ type: processType, pid: process.pid }, options);
@@ -93,7 +93,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
     }
 
     /// IpcBusClientTransport API
-    protected ipcConnect(options?: IpcBusInterfaces.IpcBusClient.ConnectOptions): Promise<void> {
+    protected ipcConnect(options?: IpcBusClientInterfaces.IpcBusClient.ConnectOptions): Promise<void> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
         if (!p) {
@@ -180,7 +180,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
         return p;
     }
 
-    protected ipcClose(options?: IpcBusInterfaces.IpcBusClient.CloseOptions): Promise<void> {
+    protected ipcClose(options?: IpcBusClientInterfaces.IpcBusClient.CloseOptions): Promise<void> {
         options = options || {};
         if (options.timeoutDelay == null) {
             options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;

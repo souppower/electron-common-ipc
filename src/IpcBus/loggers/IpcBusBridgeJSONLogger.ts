@@ -5,7 +5,9 @@ import * as winston from 'winston';
 
 import { IpcPacketBuffer } from 'socket-serializer';
 
-import * as IpcBusInterfaces from '../IpcBusInterfaces';
+import * as IpcBusClientInterfaces from '../IpcBusClientInterfaces';
+import * as IpcBusBrokerInterfaces from '../IpcBusBrokerInterfaces';
+
 import { IpcBusCommand } from '../IpcBusCommand';
 
 import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
@@ -15,7 +17,7 @@ import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
 export class IpcBusBridgeJSONLogger extends IpcBusBridgeLogger {
     private _logger: winston.LoggerInstance;
 
-    constructor(logPath: string, processType: IpcBusInterfaces.IpcBusProcessType, options: IpcBusInterfaces.IpcBusBridge.CreateOptions) {
+    constructor(logPath: string, processType:  IpcBusClientInterfaces.IpcBusProcessType, options: IpcBusBrokerInterfaces.IpcBusBroker.CreateOptions) {
         super(processType, options);
 
         !fs.existsSync(logPath) && fs.mkdirSync(logPath);
@@ -29,7 +31,7 @@ export class IpcBusBridgeJSONLogger extends IpcBusBridgeLogger {
         });
     }
 
-    protected addLog(webContents: Electron.WebContents, peer: IpcBusInterfaces.IpcBusPeer, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): any {
+    protected addLog(webContents: Electron.WebContents, peer: IpcBusClientInterfaces.IpcBusPeer, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): any {
         let log: any = { command: ipcBusCommand };
         if (args) {
             for (let i = 0, l = args.length; i < l; ++i) {

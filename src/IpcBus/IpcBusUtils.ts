@@ -1,5 +1,5 @@
 // Constants
-import { IPCBUS_CHANNEL, IpcNetOptions } from './IpcBusInterfaces';
+import { IPCBUS_CHANNEL, IpcNetOptions } from './IpcBusClientInterfaces';
 import { EventEmitter } from 'events';
 
 export const IPC_BUS_TIMEOUT = 2000;

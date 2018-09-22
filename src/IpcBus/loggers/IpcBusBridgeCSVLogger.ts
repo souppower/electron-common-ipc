@@ -5,7 +5,10 @@ const csvWriter = require('csv-write-stream');
 
 import { IpcPacketBuffer } from 'socket-serializer';
 
-import * as IpcBusInterfaces from '../IpcBusInterfaces';
+
+import * as IpcBusClientInterfaces from '../IpcBusClientInterfaces';
+import * as IpcBusBrokerInterfaces from '../IpcBusBrokerInterfaces';
+
 import { IpcBusCommand } from '../IpcBusCommand';
 import { JSON_stringify } from '../IpcBusUtils';
 
@@ -17,7 +20,7 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
     private _logger: any;
     private _line: number;
 
-    constructor(logPath: string, processType: IpcBusInterfaces.IpcBusProcessType, options: IpcBusInterfaces.IpcBusBroker.CreateOptions) {
+    constructor(logPath: string, processType: IpcBusClientInterfaces.IpcBusProcessType, options: IpcBusBrokerInterfaces.IpcBusBroker.CreateOptions) {
         super(processType, options);
 
         this._line = 0;
@@ -41,7 +44,7 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
         this._logger.pipe(fs.createWriteStream(path.join(logPath, 'electron-common-ipcbus-bridge.csv')));
     }
 
-    protected addLog(webContents: Electron.WebContents, peer: IpcBusInterfaces.IpcBusPeer, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): any {
+    protected addLog(webContents: Electron.WebContents, peer: IpcBusClientInterfaces.IpcBusPeer, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): any {
         ++this._line;
         let log: string[] = [
             this._line.toString(),
