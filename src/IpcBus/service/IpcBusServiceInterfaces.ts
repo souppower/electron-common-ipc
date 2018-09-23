@@ -19,7 +19,7 @@ export interface ServiceStatus {
 
 export namespace IpcBusService {
     export interface CreateOptions {
-        level?: number;
+        depth?: number;
     }
     export interface CreateFunction {
         (client: IpcBusClient, serviceName: string, serviceImpl: any, options?: CreateOptions): IpcBusService | null ;
