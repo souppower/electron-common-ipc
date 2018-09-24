@@ -3,7 +3,7 @@ import * as net from 'net';
 import { IpcPacketBuffer, BufferListReader } from 'socket-serializer';
 
 import * as Client from './IpcBusClientInterfaces';
-import * as IpcBusBrokerInterfaces from './IpcBusBrokerInterfaces';
+import * as Broker from './IpcBusBrokerInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
 // import * as util from 'util';
 
@@ -80,7 +80,7 @@ class IpcBusBrokerSocket {
 
 
 /** @internal */
-export class IpcBusBrokerImpl implements IpcBusBrokerInterfaces.IpcBusBroker, IpcBusBrokerSocketClient {
+export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocketClient {
     private _netOptions: Client.IpcNetOptions;
     private _ipcBusBrokerClient: Client.IpcBusClient;
     private _socketClients: Map<number, IpcBusBrokerSocket>;
@@ -98,7 +98,7 @@ export class IpcBusBrokerImpl implements IpcBusBrokerInterfaces.IpcBusBroker, Ip
     private _queryStateLamdba: Client.IpcBusListener = (ipcBusEvent: Client.IpcBusEvent, replyChannel: string) => this._onQueryState(ipcBusEvent, replyChannel);
     private _serviceAvailableLambda: Client.IpcBusListener = (ipcBusEvent: Client.IpcBusEvent, serviceName: string) => this._onServiceAvailable(ipcBusEvent, serviceName);
 
-    constructor(processType: Client.IpcBusProcessType, options: IpcBusBrokerInterfaces.IpcBusBroker.CreateOptions) {
+    constructor(processType: Client.IpcBusProcessType, options: Broker.IpcBusBroker.CreateOptions) {
         this._netOptions = options;
 
         this._netBinds = {};
@@ -154,7 +154,7 @@ export class IpcBusBrokerImpl implements IpcBusBrokerInterfaces.IpcBusBroker, Ip
     }
 
     // IpcBusBroker API
-    start(options?: IpcBusBrokerInterfaces.IpcBusBroker.StartOptions): Promise<void> {
+    start(options?: Broker.IpcBusBroker.StartOptions): Promise<void> {
         options = options || {};
         if (options.timeoutDelay == null) {
             options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
@@ -233,7 +233,7 @@ export class IpcBusBrokerImpl implements IpcBusBrokerInterfaces.IpcBusBroker, Ip
         return p;
     }
 
-    stop(options?: IpcBusBrokerInterfaces.IpcBusBroker.StopOptions): Promise<void> {
+    stop(options?: Broker.IpcBusBroker.StopOptions): Promise<void> {
         options = options || {};
         if (options.timeoutDelay == null) {
             options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;

@@ -6,7 +6,7 @@ import * as winston from 'winston';
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as Client from '../IpcBusClientInterfaces';
-import * as IpcBusBrokerInterfaces from '../IpcBusBrokerInterfaces';
+import * as Broker from '../IpcBusBrokerInterfaces';
 
 import { IpcBusCommand } from '../IpcBusCommand';
 
@@ -17,7 +17,7 @@ import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
 export class IpcBusBridgeJSONLogger extends IpcBusBridgeLogger {
     private _logger: winston.LoggerInstance;
 
-    constructor(logPath: string, processType:  Client.IpcBusProcessType, options: IpcBusBrokerInterfaces.IpcBusBroker.CreateOptions) {
+    constructor(logPath: string, processType:  Client.IpcBusProcessType, options: Broker.IpcBusBroker.CreateOptions) {
         super(processType, options);
 
         !fs.existsSync(logPath) && fs.mkdirSync(logPath);
