@@ -1,7 +1,7 @@
 import { IpcPacketBuffer } from 'socket-serializer';
 
 
-import * as IpcBusClientInterfaces from '../IpcBusClientInterfaces';
+import * as Client from '../IpcBusClientInterfaces';
 import * as IpcBusBrokerInterfaces from '../IpcBusBrokerInterfaces';
 
 
@@ -11,11 +11,11 @@ import { IpcBusBridgeImpl } from '../IpcBusBridgeImpl';
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
-    constructor(processType:  IpcBusClientInterfaces.IpcBusProcessType, options: IpcBusBrokerInterfaces.IpcBusBroker.CreateOptions) {
+    constructor(processType:  Client.IpcBusProcessType, options: IpcBusBrokerInterfaces.IpcBusBroker.CreateOptions) {
         super(processType, options);
     }
 
-    protected abstract addLog(webContents: Electron.WebContents, peer: IpcBusClientInterfaces.IpcBusPeer, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): void;
+    protected abstract addLog(webContents: Electron.WebContents, peer: Client.IpcBusPeer, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): void;
 
     protected _onEventReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {

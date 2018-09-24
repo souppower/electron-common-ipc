@@ -1,7 +1,7 @@
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as IpcBusUtils from './IpcBusUtils';
-import * as IpcBusClientInterfaces from './IpcBusClientInterfaces';
+import * as Client from './IpcBusClientInterfaces';
 import * as IpcBusBridgeInterfaces from './IpcBusBridgeInterfaces';
 
 import { IpcBusCommand } from './IpcBusCommand';
@@ -14,18 +14,18 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
     private _ipcMain: any;
     private _onRendererMessageBind: Function;
 
-    protected _ipcBusPeers: Map<string, IpcBusClientInterfaces.IpcBusPeer>;
+    protected _ipcBusPeers: Map<string, Client.IpcBusPeer>;
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<number, Electron.WebContents>;
     protected _requestChannels: Map<string, any>;
 
-    constructor(processType: IpcBusClientInterfaces.IpcBusProcessType, options: IpcBusBridgeInterfaces.IpcBusBridge.CreateOptions) {
+    constructor(processType: Client.IpcBusProcessType, options: IpcBusBridgeInterfaces.IpcBusBridge.CreateOptions) {
         super(processType, options);
 
         this._ipcMain = require('electron').ipcMain;
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<number, Electron.WebContents>('IPCBus:Bridge');
         this._requestChannels = new Map<string, any>();
-        this._ipcBusPeers = new Map<string, IpcBusClientInterfaces.IpcBusPeer>();
+        this._ipcBusPeers = new Map<string, Client.IpcBusPeer>();
         this._onRendererMessageBind = this._onRendererMessage.bind(this);
     }
 
@@ -95,7 +95,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
         });
     }
 
-    private _completePeerInfo(webContents: Electron.WebContents, ipcBusPeer: IpcBusClientInterfaces.IpcBusPeer): void {
+    private _completePeerInfo(webContents: Electron.WebContents, ipcBusPeer: Client.IpcBusPeer): void {
         let peerName = `${ipcBusPeer.process.type}-${webContents.id}`;
         ipcBusPeer.process.wcid = webContents.id;
         // Hidden function, may disappear

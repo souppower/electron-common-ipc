@@ -1,5 +1,5 @@
 
-import * as IpcBusClientInterfaces from './IpcBusClientInterfaces';
+import * as Client from './IpcBusClientInterfaces';
 import * as IpcBusServiceInterfaces from './service/IpcBusServiceInterfaces';
 import * as IpcBusUtils from './IpcBusUtils';
 
@@ -9,17 +9,17 @@ import { IpcBusServiceProxyImpl } from './service/IpcBusServiceProxyImpl';
 
 import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
 
-export let CreateIpcBusClientRenderer: IpcBusClientInterfaces.IpcBusClient.CreateFunction = (options: any, hostname?: string) => {
+export let CreateIpcBusClientRenderer: Client.IpcBusClient.CreateFunction = (options: any, hostname?: string) => {
     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-    let ipcBusClient: IpcBusClientInterfaces.IpcBusClient = new IpcBusClientTransportRenderer('renderer', localOptions || {});
+    let ipcBusClient: Client.IpcBusClient = new IpcBusClientTransportRenderer('renderer', localOptions || {});
     return ipcBusClient;
 };
 
-export let CreateIpcBusService: IpcBusServiceInterfaces.IpcBusService.CreateFunction = (client: IpcBusClientInterfaces.IpcBusClient, serviceName: string, serviceImpl: any, options?: IpcBusServiceInterfaces.IpcBusService.CreateOptions): IpcBusServiceInterfaces.IpcBusService => {
+export let CreateIpcBusService: IpcBusServiceInterfaces.IpcBusService.CreateFunction = (client: Client.IpcBusClient, serviceName: string, serviceImpl: any, options?: IpcBusServiceInterfaces.IpcBusService.CreateOptions): IpcBusServiceInterfaces.IpcBusService => {
     return new IpcBusServiceImpl(client, serviceName, serviceImpl);
 };
 
-export let CreateIpcBusServiceProxy: IpcBusServiceInterfaces.IpcBusServiceProxy.CreateFunction = (client: IpcBusClientInterfaces.IpcBusClient, serviceName: string, options?: IpcBusServiceInterfaces.IpcBusServiceProxy.CreateOptions): IpcBusServiceInterfaces.IpcBusServiceProxy => {
+export let CreateIpcBusServiceProxy: IpcBusServiceInterfaces.IpcBusServiceProxy.CreateFunction = (client: Client.IpcBusClient, serviceName: string, options?: IpcBusServiceInterfaces.IpcBusServiceProxy.CreateOptions): IpcBusServiceInterfaces.IpcBusServiceProxy => {
     return new IpcBusServiceProxyImpl(client, serviceName, options);
 };
 
