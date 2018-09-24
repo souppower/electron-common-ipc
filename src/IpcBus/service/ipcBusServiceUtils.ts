@@ -4,6 +4,17 @@ export const IPCBUS_SERVICE_WRAPPER_EVENT = 'service-wrapper-event';
 // Special call handlers
 export const IPCBUS_SERVICE_CALL_GETSTATUS: string = '__getServiceStatus';
 
+export interface IpcBusServiceCall {
+    handlerName: string;
+    args: any[];
+}
+
+export interface ServiceStatus {
+    started: boolean;
+    callHandlers: string[];
+    supportEventEmitter: boolean;
+}
+
 // Helper to get a valid service channel namespace
 export function getServiceNamespace(serviceName: string): string {
     return `${Client.IPCBUS_CHANNEL}/ipc-service/${serviceName}`;
