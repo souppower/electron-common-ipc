@@ -232,6 +232,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
         if (msg.eventName === ServiceUtils.IPCBUS_SERVICE_WRAPPER_EVENT) {
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Wrapper '${this._serviceName}' receive event '${msg.args[0]}'`);
             this._wrapper.emit(msg.args[0], ...msg.args[1]);
+            this.emit(msg.args[0], ...msg.args[1]);
         }
         else {
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Service '${this._serviceName}' receive event '${msg.eventName}'`);

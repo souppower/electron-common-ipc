@@ -69,7 +69,7 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
         this._callHandlers = new Map<string, Function>();
 
         //  Register internal call handlers
-        this.registerCallHandler(ServiceUtils.IPCBUS_SERVICE_CALL_GETSTATUS, () => { 
+        this.registerCallHandler(ServiceUtils.IPCBUS_SERVICE_CALL_GETSTATUS, () => {
             return this._getServiceStatus();
         });
         //  Register call handlers for exposed instance's method
@@ -85,6 +85,12 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcService] Service '${this._serviceName}' does NOT have an implementation`);
         }
     }
+
+    // private _addListener(event: string, replyChannel: string) {
+    // }
+
+    // private _removeListener(event: string, replyChannel: string) {
+    // }
 
     private _getServiceStatus(): Service.ServiceStatus {
         let serviceStatus: Service.ServiceStatus = {
