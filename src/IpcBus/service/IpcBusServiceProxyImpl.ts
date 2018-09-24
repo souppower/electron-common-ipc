@@ -2,7 +2,7 @@
 
 import { EventEmitter } from 'events';
 import * as Client from '../IpcBusClientInterfaces';
-import * as IpcBusServiceInterfaces from './IpcBusServiceInterfaces';
+import * as Service from './IpcBusServiceInterfaces';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 
@@ -55,35 +55,35 @@ class CallWrapperEventEmitter extends EventEmitter {
 
 // Implementation of IPC service
 /** @internal */
-export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusServiceInterfaces.IpcBusServiceProxy {
-    private _onServiceReceivedLambda: Client.IpcBusListener = (event: Client.IpcBusEvent, ...args: any[]) => this._onServiceReceived(event, <IpcBusServiceInterfaces.IpcBusServiceEvent>args[0]);
+export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcBusServiceProxy {
+    private _onServiceReceivedLambda: Client.IpcBusListener = (event: Client.IpcBusEvent, ...args: any[]) => this._onServiceReceived(event, <Service.IpcBusServiceEvent>args[0]);
     private _isStarted: boolean;
     private _wrapper: CallWrapperEventEmitter;
     private _ipcBusClient: Client.IpcBusClient;
     private _serviceName: string;
-    private _callTimeout: number;
+    private _options: Service.IpcBusServiceProxy.CreateOptions;
 
     private _pendingCalls: Map<number, Deferred<any>>;
 
-    constructor(ipcBusClient: Client.IpcBusClient, serviceName: string, options?: IpcBusServiceInterfaces.IpcBusServiceProxy.CreateOptions) {
+    constructor(ipcBusClient: Client.IpcBusClient, serviceName: string, options?: Service.IpcBusServiceProxy.CreateOptions) {
         super();
-        options = options || {};
-        options.timeoutDelay = options.timeoutDelay || IpcBusUtils.IPC_BUS_TIMEOUT;
         super.setMaxListeners(0);
-
-        this._pendingCalls = new Map<number, Deferred<any>>();
 
         this._ipcBusClient = ipcBusClient;
         this._serviceName = serviceName;
-        this._callTimeout = options.timeoutDelay;
 
+        options = options || {};
+        options.timeoutDelay = options.timeoutDelay || IpcBusUtils.IPC_BUS_TIMEOUT;
+        this._options = options;
+
+        this._pendingCalls = new Map<number, Deferred<any>>();
         this._wrapper = new CallWrapperEventEmitter();
 
         // Check service availability
         this._isStarted = false;
 
         this.getStatus()
-          .then((serviceStatus: IpcBusServiceInterfaces.ServiceStatus) => {
+          .then((serviceStatus: Service.ServiceStatus) => {
                 this._onServiceStart(serviceStatus);
             })
             // DeprecationWarning: Unhandled promise rejections are deprecated
@@ -95,10 +95,10 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusServic
         this._ipcBusClient.addListener(IpcBusUtils.getServiceEventChannel(this._serviceName), this._onServiceReceivedLambda);
     }
 
-    connect<T>(options?: IpcBusServiceInterfaces.IpcBusServiceProxy.ConnectOptions): Promise<T> {
+    connect<T>(options?: Service.IpcBusServiceProxy.ConnectOptions): Promise<T> {
         options = options || {};
         if (options.timeoutDelay == null) {
-            options.timeoutDelay = this._callTimeout;
+            options.timeoutDelay = this._options.timeoutDelay;
         }
         return new Promise<T>((resolve, reject) => {
             if (this._isStarted) {
@@ -134,8 +134,8 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusServic
         return this._wrapper;
     }
 
-    getStatus(): Promise<IpcBusServiceInterfaces.ServiceStatus> {
-        return this._call<IpcBusServiceInterfaces.ServiceStatus>(IpcBusUtils.IPCBUS_SERVICE_CALL_GETSTATUS);
+    getStatus(): Promise<Service.ServiceStatus> {
+        return this._call<Service.ServiceStatus>(IpcBusUtils.IPCBUS_SERVICE_CALL_GETSTATUS);
     }
 
     private _requestApply<T>(name: string, args?: any[]): Deferred<T> {
@@ -211,7 +211,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusServic
         return this.sendApply(name, args);
     }
 
-    private _updateWrapper(serviceStatus: IpcBusServiceInterfaces.ServiceStatus): void {
+    private _updateWrapper(serviceStatus: Service.ServiceStatus): void {
         for (let i = 0, l = serviceStatus.callHandlers.length; i < l; ++i) {
             let handlerName = serviceStatus.callHandlers[i];
             const requestProc = (...args: any[]) => {
@@ -227,7 +227,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusServic
         }
     }
 
-    private _onServiceReceived(event: Client.IpcBusEvent, msg: IpcBusServiceInterfaces.IpcBusServiceEvent) {
+    private _onServiceReceived(event: Client.IpcBusEvent, msg: Service.IpcBusServiceEvent) {
         if (msg.eventName === IpcBusUtils.IPCBUS_SERVICE_WRAPPER_EVENT) {
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Wrapper '${this._serviceName}' receive event '${msg.args[0]}'`);
             this._wrapper.emit(msg.args[0], ...msg.args[1]);
@@ -236,7 +236,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusServic
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Service '${this._serviceName}' receive event '${msg.eventName}'`);
             switch (msg.eventName) {
                 case Client.IPCBUS_SERVICE_EVENT_START:
-                    this._onServiceStart(msg.args[0] as IpcBusServiceInterfaces.ServiceStatus);
+                    this._onServiceStart(msg.args[0] as Service.ServiceStatus);
                     break;
                 case Client.IPCBUS_SERVICE_EVENT_STOP:
                     this._onServiceStop();
@@ -248,7 +248,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements IpcBusServic
         }
     }
 
-    private _onServiceStart(serviceStatus: IpcBusServiceInterfaces.ServiceStatus) {
+    private _onServiceStart(serviceStatus: Service.ServiceStatus) {
         if (!this._isStarted && serviceStatus.started) {
             this._isStarted = true;
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Service '${this._serviceName}' is STARTED`);

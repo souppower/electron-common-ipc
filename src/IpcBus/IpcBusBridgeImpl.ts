@@ -2,7 +2,7 @@ import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as IpcBusUtils from './IpcBusUtils';
 import * as Client from './IpcBusClientInterfaces';
-import * as IpcBusBridgeInterfaces from './IpcBusBridgeInterfaces';
+import * as Bridge from './IpcBusBridgeInterfaces';
 
 import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusClientTransportNode } from './IpcBusClientTransportNode';
@@ -10,7 +10,7 @@ import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_COMMAND, I
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
-export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBusBridgeInterfaces.IpcBusBridge {
+export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements Bridge.IpcBusBridge {
     private _ipcMain: any;
     private _onRendererMessageBind: Function;
 
@@ -18,7 +18,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<number, Electron.WebContents>;
     protected _requestChannels: Map<string, any>;
 
-    constructor(processType: Client.IpcBusProcessType, options: IpcBusBridgeInterfaces.IpcBusBridge.CreateOptions) {
+    constructor(processType: Client.IpcBusProcessType, options: Bridge.IpcBusBridge.CreateOptions) {
         super(processType, options);
 
         this._ipcMain = require('electron').ipcMain;
@@ -39,7 +39,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
     }
 
     // IpcBusBridge API
-    start(options?: IpcBusBridgeInterfaces.IpcBusBridge.StartOptions): Promise<void> {
+    start(options?: Bridge.IpcBusBridge.StartOptions): Promise<void> {
         options = options || {};
         return this.ipcConnect({ peerName: `IpcBusBridge`, ...options } )
             .then(() => {
@@ -51,7 +51,7 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements IpcBu
             });
     }
 
-    stop(options?: IpcBusBridgeInterfaces.IpcBusBridge.StopOptions): Promise<void> {
+    stop(options?: Bridge.IpcBusBridge.StopOptions): Promise<void> {
         return this.ipcClose(options);
     }
 
