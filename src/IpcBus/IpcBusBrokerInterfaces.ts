@@ -21,5 +21,4 @@ export interface IpcBusBroker {
     start(options?: IpcBusBroker.StartOptions): Promise<void>;
     stop(options?: IpcBusBroker.StopOptions): Promise<void>;
     queryState(): Object;
-    isServiceAvailable(serviceName: string): boolean;
 }

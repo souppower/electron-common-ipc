@@ -96,7 +96,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     private _ipcBusPeers: Map<string, Client.IpcBusPeer>;
 
     private _queryStateLamdba: Client.IpcBusListener = (ipcBusEvent: Client.IpcBusEvent, replyChannel: string) => this._onQueryState(ipcBusEvent, replyChannel);
-    private _serviceAvailableLambda: Client.IpcBusListener = (ipcBusEvent: Client.IpcBusEvent, serviceName: string) => this._onServiceAvailable(ipcBusEvent, serviceName);
 
     constructor(processType: Client.IpcBusProcessType, options: Broker.IpcBusBroker.CreateOptions) {
         this._netOptions = options;
@@ -141,7 +140,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 socket.release();
             });
             this._ipcBusBrokerClient.off(Client.IPCBUS_CHANNEL_QUERY_STATE, this._queryStateLamdba);
-            this._ipcBusBrokerClient.off(Client.IPCBUS_CHANNEL_SERVICE_AVAILABLE, this._serviceAvailableLambda);
             this._ipcBusBrokerClient.close();
             server.close();
             server.unref();
@@ -202,7 +200,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                     this._ipcBusBrokerClient.connect({ peerName: `IpcBusBrokerClient` })
                         .then(() => {
                             this._ipcBusBrokerClient.on(Client.IPCBUS_CHANNEL_QUERY_STATE, this._queryStateLamdba);
-                            this._ipcBusBrokerClient.on(Client.IPCBUS_CHANNEL_SERVICE_AVAILABLE, this._serviceAvailableLambda);
                             resolve();
                         })
                         .catch((err) => {
@@ -415,10 +412,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         return queryStateResult;
     }
 
-    isServiceAvailable(serviceName: string): boolean {
-        return this._subscriptions.hasChannel(IpcBusUtils.getServiceCallChannel(serviceName));
-    }
-
     protected _onQueryState(ipcBusEvent: Client.IpcBusEvent, replyChannel: string) {
         const queryState = this.queryState();
         if (ipcBusEvent.request) {
@@ -428,13 +421,4 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             this._ipcBusBrokerClient.send(replyChannel, queryState);
         }
     }
-
-    protected _onServiceAvailable(ipcBusEvent: Client.IpcBusEvent, serviceName: string) {
-        const availability = this.isServiceAvailable(serviceName);
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Service '${serviceName}' availability : ${availability}`);
-        if (ipcBusEvent.request) {
-            ipcBusEvent.request.resolve(availability);
-        }
-    }
-
 }
