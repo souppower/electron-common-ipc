@@ -28,15 +28,6 @@ export interface IpcBusService {
     sendEvent(eventName: string, ...args: any[]): void;
 }
 
-export interface IpcBusServiceEvent {
-    eventName: string;
-    args: any[];
-}
-
-export interface IpcBusServiceEventHandler {
-    (event: IpcBusServiceEvent): void;
-}
-
 export namespace IpcBusServiceProxy {
     export interface ConnectOptions extends IpcTimeoutOptions {
     }

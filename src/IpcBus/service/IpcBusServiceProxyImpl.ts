@@ -57,7 +57,7 @@ class CallWrapperEventEmitter extends EventEmitter {
 // Implementation of IPC service
 /** @internal */
 export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcBusServiceProxy {
-    private _onServiceReceivedLambda: Client.IpcBusListener = (event: Client.IpcBusEvent, ...args: any[]) => this._onServiceReceived(event, <Service.IpcBusServiceEvent>args[0]);
+    private _onServiceReceivedLambda: Client.IpcBusListener = (event: Client.IpcBusEvent, ...args: any[]) => this._onServiceReceived(event, <ServiceUtils.IpcBusServiceEvent>args[0]);
     private _isStarted: boolean;
     private _wrapper: CallWrapperEventEmitter;
     private _ipcBusClient: Client.IpcBusClient;
@@ -228,7 +228,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
         }
     }
 
-    private _onServiceReceived(event: Client.IpcBusEvent, msg: Service.IpcBusServiceEvent) {
+    private _onServiceReceived(event: Client.IpcBusEvent, msg: ServiceUtils.IpcBusServiceEvent) {
         if (msg.eventName === ServiceUtils.IPCBUS_SERVICE_WRAPPER_EVENT) {
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Wrapper '${this._serviceName}' receive event '${msg.args[0]}'`);
             this._wrapper.emit(msg.args[0], ...msg.args[1]);

@@ -147,7 +147,7 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
     }
 
     sendEvent(name: string, ...args: any[]): void {
-        const eventMsg = { eventName: name, args: args };
+        const eventMsg: ServiceUtils.IpcBusServiceEvent = { eventName: name, args: args };
         this._ipcBusClient.send(ServiceUtils.getServiceEventChannel(this._serviceName), eventMsg);
     }
 
@@ -156,7 +156,7 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
         let callHandler: Function = this._callHandlers.get(call.handlerName);
         try {
             if (!callHandler) {
-                throw `Service '${this._serviceName}' does NOT handle calls to '${call.handlerName}' !`;
+                throw `Function unknown !`;
             }
             else {
                 const result = callHandler.apply(this._exposedInstance, call.args);

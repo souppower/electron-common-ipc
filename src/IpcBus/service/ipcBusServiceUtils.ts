@@ -9,10 +9,13 @@ export interface IpcBusServiceCall {
     args: any[];
 }
 
-export interface ServiceStatus {
-    started: boolean;
-    callHandlers: string[];
-    supportEventEmitter: boolean;
+export interface IpcBusServiceEvent {
+    eventName: string;
+    args: any[];
+}
+
+export interface IpcBusServiceEventHandler {
+    (event: IpcBusServiceEvent): void;
 }
 
 // Helper to get a valid service channel namespace

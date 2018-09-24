@@ -222,6 +222,16 @@ function test(remoteBroker, factory) {
           });
       });
 
+      it('FunctionUnknown', () => {
+        testServiceProxy.call('FunctionUnknown', 1, 'string')
+          .then((value) => {
+            throw 'Should not be resolved !!';
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      });
+
       if (testServiceInstance instanceof TestService2) {
         it('getArg3', () => {
           testServiceProxy.call('getArg3', 1, 'string', { coucou: 'coucou' })
