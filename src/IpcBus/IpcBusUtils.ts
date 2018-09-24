@@ -1,5 +1,5 @@
 // Constants
-import { IPCBUS_CHANNEL, IpcNetOptions } from './IpcBusClientInterfaces';
+import { IpcNetOptions } from './IpcBusClientInterfaces';
 import { EventEmitter } from 'events';
 
 export const IPC_BUS_TIMEOUT = 2000;
@@ -101,25 +101,6 @@ export function JSON_stringify(data: any, maxLen: number): string {
     return output;
 }
 
-
-export const IPCBUS_SERVICE_WRAPPER_EVENT = 'service-wrapper-event';
-// Special call handlers
-export const IPCBUS_SERVICE_CALL_GETSTATUS: string = '__getServiceStatus';
-
-// Helper to get a valid service channel namespace
-export function getServiceNamespace(serviceName: string): string {
-    return `${IPCBUS_CHANNEL}/ipc-service/${serviceName}`;
-}
-
-// Helper to get the call channel related to given service
-export function getServiceCallChannel(serviceName: string): string {
-    return getServiceNamespace(serviceName) + '/call';
-}
-
-// Helper to get the event channel related to given service
-export function getServiceEventChannel(serviceName: string): string {
-    return getServiceNamespace(serviceName) + '/event';
-}
 
 /** @internal */
 export class Logger {

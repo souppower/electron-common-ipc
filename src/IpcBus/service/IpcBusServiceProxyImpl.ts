@@ -3,6 +3,7 @@
 import { EventEmitter } from 'events';
 import * as Client from '../IpcBusClientInterfaces';
 import * as Service from './IpcBusServiceInterfaces';
+import * as ServiceUtils from './IpcBusServiceUtils';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 
@@ -92,7 +93,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
             });
 
         // Register service start/stop/event events
-        this._ipcBusClient.addListener(IpcBusUtils.getServiceEventChannel(this._serviceName), this._onServiceReceivedLambda);
+        this._ipcBusClient.addListener(ServiceUtils.getServiceEventChannel(this._serviceName), this._onServiceReceivedLambda);
     }
 
     connect<T>(options?: Service.IpcBusServiceProxy.ConnectOptions): Promise<T> {
@@ -108,16 +109,16 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
             // Below zero = infinite
             if (options.timeoutDelay >= 0) {
                 timer = setTimeout(() => {
-                    this.removeListener(Client.IPCBUS_SERVICE_EVENT_START, serviceStart);
+                    this.removeListener(Service.IPCBUS_SERVICE_EVENT_START, serviceStart);
                     reject('timeout');
                 }, options.timeoutDelay);
             }
             let serviceStart = () => {
                 clearTimeout(timer);
-                this.removeListener(Client.IPCBUS_SERVICE_EVENT_START, serviceStart);
+                this.removeListener(Service.IPCBUS_SERVICE_EVENT_START, serviceStart);
                 resolve(this.getWrapper<T>());
             };
-            this.on(Client.IPCBUS_SERVICE_EVENT_START, serviceStart);
+            this.on(Service.IPCBUS_SERVICE_EVENT_START, serviceStart);
         });
     }
 
@@ -135,13 +136,13 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
     }
 
     getStatus(): Promise<Service.ServiceStatus> {
-        return this._call<Service.ServiceStatus>(IpcBusUtils.IPCBUS_SERVICE_CALL_GETSTATUS);
+        return this._call<Service.ServiceStatus>(ServiceUtils.IPCBUS_SERVICE_CALL_GETSTATUS);
     }
 
     private _requestApply<T>(name: string, args?: any[]): Deferred<T> {
         let deferred = new Deferred<T>((resolve, reject) => {
             const callMsg = { handlerName: name, args: args };
-            this._ipcBusClient.request(IpcBusUtils.getServiceCallChannel(this._serviceName), -1, callMsg)
+            this._ipcBusClient.request(ServiceUtils.getServiceCallChannel(this._serviceName), -1, callMsg)
                 .then((res: Client.IpcBusRequestResponse) => {
                     IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] resolve call to '${name}' from service '${this._serviceName}' - res: ${JSON.stringify(res)}`);
                     this._pendingCalls.delete(deferred.id);
@@ -189,7 +190,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
     private _sendApply(name: string, args?: any[]): Deferred<void> {
         let deferred = new Deferred<void>((resolve, reject) => {
             const callMsg = { handlerName: name, args: args };
-            this._ipcBusClient.send(IpcBusUtils.getServiceCallChannel(this._serviceName), -1, callMsg);
+            this._ipcBusClient.send(ServiceUtils.getServiceCallChannel(this._serviceName), -1, callMsg);
             this._pendingCalls.delete(deferred.id);
         }, false);
         this._pendingCalls.set(deferred.id, deferred);
@@ -199,7 +200,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
     sendApply(name: string, args?: any[]): void {
         if (this._isStarted) {
             const callMsg = { handlerName: name, args: args };
-            this._ipcBusClient.send(IpcBusUtils.getServiceCallChannel(this._serviceName), -1, callMsg);
+            this._ipcBusClient.send(ServiceUtils.getServiceCallChannel(this._serviceName), -1, callMsg);
         }
         else {
             this._sendApply(name, args);
@@ -228,17 +229,17 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
     }
 
     private _onServiceReceived(event: Client.IpcBusEvent, msg: Service.IpcBusServiceEvent) {
-        if (msg.eventName === IpcBusUtils.IPCBUS_SERVICE_WRAPPER_EVENT) {
+        if (msg.eventName === ServiceUtils.IPCBUS_SERVICE_WRAPPER_EVENT) {
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Wrapper '${this._serviceName}' receive event '${msg.args[0]}'`);
             this._wrapper.emit(msg.args[0], ...msg.args[1]);
         }
         else {
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Service '${this._serviceName}' receive event '${msg.eventName}'`);
             switch (msg.eventName) {
-                case Client.IPCBUS_SERVICE_EVENT_START:
+                case Service.IPCBUS_SERVICE_EVENT_START:
                     this._onServiceStart(msg.args[0] as Service.ServiceStatus);
                     break;
-                case Client.IPCBUS_SERVICE_EVENT_STOP:
+                case Service.IPCBUS_SERVICE_EVENT_STOP:
                     this._onServiceStop();
                     break;
                 default :
@@ -253,7 +254,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
             this._isStarted = true;
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Service '${this._serviceName}' is STARTED`);
             this._updateWrapper(serviceStatus);
-            this.emit(Client.IPCBUS_SERVICE_EVENT_START, serviceStatus);
+            this.emit(Service.IPCBUS_SERVICE_EVENT_START, serviceStatus);
 
             this._pendingCalls.forEach((deferred) => {
                 deferred.execute();
@@ -265,7 +266,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
         if (this._isStarted) {
             this._isStarted = false;
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Service '${this._serviceName}' is STOPPED`);
-            this.emit(Client.IPCBUS_SERVICE_EVENT_STOP);
+            this.emit(Service.IPCBUS_SERVICE_EVENT_STOP);
 
             this._pendingCalls.forEach((deferred) => {
                 deferred.reject(`Service '${this._serviceName}' stopped`);

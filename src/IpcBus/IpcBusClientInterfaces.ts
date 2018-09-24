@@ -3,10 +3,6 @@ import { EventEmitter } from 'events';
 // Special channels
 export const IPCBUS_CHANNEL: string = '/electron-ipc-bus';
 export const IPCBUS_CHANNEL_QUERY_STATE: string = `${IPCBUS_CHANNEL}/queryState`;
-export const IPCBUS_CHANNEL_SERVICE_AVAILABLE = `${IPCBUS_CHANNEL}/serviceAvailable`;
-// Special events
-export const IPCBUS_SERVICE_EVENT_START = 'service-event-start';
-export const IPCBUS_SERVICE_EVENT_STOP = 'service-event-stop';
 
 // Log en vars
 export const ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH';
