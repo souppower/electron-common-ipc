@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 
-import { IpcBusClient, IpcTimeoutOptions } from '../IpcBusClientInterfaces';
+import { IpcBusClient, IpcTimeoutOptions } from '../IpcBusClient';
 
 // Special events
 export const IPCBUS_SERVICE_EVENT_START = 'service-event-start';

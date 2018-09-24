@@ -1,7 +1,7 @@
 import * as uuid from 'uuid';
 import { IpcPacketBuffer } from 'socket-serializer';
 
-import * as Client from './IpcBusClientInterfaces';
+import * as Client from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusClientImpl } from './IpcBusClientImpl';

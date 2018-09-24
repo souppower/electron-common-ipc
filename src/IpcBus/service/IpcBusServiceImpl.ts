@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
-import * as Client from '../IpcBusClientInterfaces';
-import * as Service from './IpcBusServiceInterfaces';
+import * as Client from '../IpcBusClient';
+import * as Service from './IpcBusService';
 import * as ServiceUtils from './IpcBusServiceUtils';
 
 import * as IpcBusUtils from '../IpcBusUtils';

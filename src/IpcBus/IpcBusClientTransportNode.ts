@@ -6,7 +6,7 @@ import * as net from 'net';
 import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
 
 import * as IpcBusUtils from './IpcBusUtils';
-import * as Client from './IpcBusClientInterfaces';
+import * as Client from './IpcBusClient';
 
 import { IpcBusClientTransport } from './IpcBusClientTransport';
 import { IpcBusCommand } from './IpcBusCommand';

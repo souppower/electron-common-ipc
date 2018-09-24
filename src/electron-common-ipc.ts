@@ -1,6 +1,6 @@
-export * from './IpcBus/IpcBusClientInterfaces';
-export * from './IpcBus/IpcBusBridgeInterfaces';
-export * from './IpcBus/IpcBusBrokerInterfaces';
+export * from './IpcBus/IpcBusClient';
+export * from './IpcBus/IpcBusBridge';
+export * from './IpcBus/IpcBusBroker';
 
 export {CreateIpcBusService} from './IpcBus/IpcBusApi-browser';
 export {CreateIpcBusServiceProxy} from './IpcBus/IpcBusApi-browser';

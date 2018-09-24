@@ -1,6 +1,6 @@
 
-import * as Client from './IpcBusClientInterfaces';
-import * as Service from './service/IpcBusServiceInterfaces';
+import * as Client from './IpcBusClient';
+import * as Service from './service/IpcBusService';
 import * as IpcBusUtils from './IpcBusUtils';
 
 import { IpcBusServiceImpl } from './service/IpcBusServiceImpl';

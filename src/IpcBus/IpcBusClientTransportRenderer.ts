@@ -5,7 +5,7 @@ import * as assert from 'assert';
 import { IpcPacketBuffer, IpcPacketBufferWrap, BufferListWriter } from 'socket-serializer';
 
 import * as IpcBusUtils from './IpcBusUtils';
-import * as Client from './IpcBusClientInterfaces';
+import * as Client from './IpcBusClient';
 
 import { IpcBusClientTransport } from './IpcBusClientTransport';
 import { IpcBusCommand } from './IpcBusCommand';

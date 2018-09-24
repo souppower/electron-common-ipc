@@ -1,4 +1,4 @@
-import * as Client from '../IpcBusClientInterfaces';
+import * as Client from '../IpcBusClient';
 
 export const IPCBUS_SERVICE_WRAPPER_EVENT = 'service-wrapper-event';
 // Special call handlers
