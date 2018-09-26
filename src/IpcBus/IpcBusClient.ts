@@ -24,13 +24,13 @@ export interface IpcBusPeer {
 }
 
 export interface IpcBusRequest {
-    resolve(payload: Object | string): void;
+    resolve(payload: any): void;
     reject(err: string): void;
 }
 
 export interface IpcBusRequestResponse {
     event: IpcBusEvent;
-    payload?: Object | string;
+    payload?: any;
     err?: string;
 }
 

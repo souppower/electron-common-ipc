@@ -62,16 +62,24 @@ function getInstanceMethodNames(obj: any): Map<string, PropertyDescriptor> {
 /** @internal */
 export class IpcBusServiceImpl implements Service.IpcBusService {
     private _callHandlers: Map<string, Function>;
+    // private _eventHandlers: Map<string, Set<string>>;
     private _callReceivedLamdba: Client.IpcBusListener = (event: Client.IpcBusEvent, ...args: any[]) => this._onCallReceived(event, <ServiceUtils.IpcBusServiceCall>args[0]);
     private _prevImplEmit: Function = null;
 
     constructor(private _ipcBusClient: Client.IpcBusClient, private _serviceName: string, private _exposedInstance: any, options?: Service.IpcBusService.CreateOptions) {
         this._callHandlers = new Map<string, Function>();
+        // this._eventHandlers = new Map<string, Set<string>>();
 
         //  Register internal call handlers
         this.registerCallHandler(ServiceUtils.IPCBUS_SERVICE_CALL_GETSTATUS, () => {
             return this._getServiceStatus();
         });
+        // this.registerCallHandler(ServiceUtils.IPCBUS_SERVICE_ADD_LISTENER, (event: string, replyChannel: string) => {
+        //     return this._addListener(event, replyChannel);
+        // });
+        // this.registerCallHandler(ServiceUtils.IPCBUS_SERVICE_REMOVE_LISTENER, (event: string, replyChannel: string) => {
+        //     return this._removeListener(event, replyChannel);
+        // });
         //  Register call handlers for exposed instance's method
         if (this._exposedInstance) {
             let methodNames = getInstanceMethodNames(this._exposedInstance);
@@ -87,9 +95,38 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
     }
 
     // private _addListener(event: string, replyChannel: string) {
+    //     let eventHandler = this._eventHandlers.get(event);
+    //     if (eventHandler == null) {
+    //         // Register callback
+    //         // TODO
+    //         this._eventHandlers.set(event, new Set([replyChannel]));
+    //     }
+    //     else {
+    //         eventHandler.add(replyChannel);
+    //     }
     // }
 
     // private _removeListener(event: string, replyChannel: string) {
+    //     let eventHandler = this._eventHandlers.get(event);
+    //     if (eventHandler == null) {
+    //     }
+    //     else {
+    //         eventHandler.delete(replyChannel);
+    //         if (eventHandler.size === 0) {
+    //             this._eventHandlers.delete(event);
+    //             // Unregister callback
+    //             // TODO
+    //         }
+    //     }
+    // }
+
+    // private _broadcastEmit(event: string, ...args: any[]) {
+    //     let eventHandler = this._eventHandlers.get(event);
+    //     if (eventHandler) {
+    //         eventHandler.forEach((replyChannel) => {
+    //             this._ipcBusClient.send(replyChannel, event, args);
+    //         });
+    //     }
     // }
 
     private _getServiceStatus(): Service.ServiceStatus {

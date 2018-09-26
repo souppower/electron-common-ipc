@@ -2,7 +2,11 @@ import * as Client from '../IpcBusClient';
 
 export const IPCBUS_SERVICE_WRAPPER_EVENT = 'service-wrapper-event';
 // Special call handlers
-export const IPCBUS_SERVICE_CALL_GETSTATUS: string = '__getServiceStatus';
+export const IPCBUS_SERVICE_CALL_GETSTATUS = '__getServiceStatus';
+
+
+export const IPCBUS_SERVICE_ADD_LISTENER = '_addListener';
+export const IPCBUS_SERVICE_REMOVE_LISTENER = '_removeListener';
 
 export interface IpcBusServiceCall {
     handlerName: string;
