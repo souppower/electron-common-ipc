@@ -16,7 +16,7 @@ import { IpcBusBridgeCSVLogger } from './loggers/IpcBusBridgeCSVLogger';
 import { IpcBusClientTransportNode } from './IpcBusClientTransportNode';
 import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
 
-import * as ElectronUtils from './ElectronUtils';
+import { GetElectronProcessType } from 'electron-process-type';
 
 export let CreateIpcBusBroker: IpcBusBroker.CreateFunction = (options: any, hostname?: string): IpcBusBroker => {
     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
@@ -25,7 +25,7 @@ export let CreateIpcBusBroker: IpcBusBroker.CreateFunction = (options: any, host
     }
 
     let ipcBusBroker: IpcBusBroker = null;
-    let processType = ElectronUtils.GuessElectronProcessType();
+    let processType = GetElectronProcessType();
     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBroker process type = ${processType} on ${JSON.stringify(options)}`);
     switch (processType) {
         case 'browser':
@@ -59,7 +59,7 @@ export let CreateIpcBusBridge: IpcBusBridge.CreateFunction = (options: any, host
     }
 
     let ipcBusBridge: IpcBusBridge = null;
-    let processType = ElectronUtils.GuessElectronProcessType();
+    let processType = GetElectronProcessType();
     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBridge process type = ${processType} on ${JSON.stringify(options)}`);
     switch (processType) {
         case 'browser':
@@ -88,7 +88,7 @@ export let CreateIpcBusBridge: IpcBusBridge.CreateFunction = (options: any, host
 
 export let CreateIpcBusClient: IpcBusClient.CreateFunction = (options: any, hostname?: string): IpcBusClient => {
     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-    let processType = ElectronUtils.GuessElectronProcessType();
+    let processType = GetElectronProcessType();
     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`CreateIpcBusForProcess process type = ${processType} on ${JSON.stringify(options)}`);
     let ipcBusClient: IpcBusClient = null;
     switch (processType) {
