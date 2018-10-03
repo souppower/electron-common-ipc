@@ -1,7 +1,14 @@
-export * from './IpcBus/IpcBusClient';
-export * from './IpcBus/IpcBusBridge';
-export * from './IpcBus/IpcBusBroker';
-export * from './IpcBus/service/IpcBusService';
+import * as IpcBusUtils from './IpcBus/IpcBusUtils';
 
-export * from './IpcBus/IpcBusApi-browser';
-export * from './IpcBus/IpcBusApi';
+export * from './IpcBus/IpcBusClient-factory';
+export * from './IpcBus/broker/IpcBusBroker-factory';
+export * from './IpcBus/bridge/IpcBusBridge-factory';
+export * from './IpcBus/service/IpcBusService-factory';
+
+export function ActivateIpcBusTrace(enable: boolean): void {
+    IpcBusUtils.Logger.enable = enable;
+}
+
+export function ActivateServiceTrace(enable: boolean): void {
+    IpcBusUtils.Logger.service = enable;
+}

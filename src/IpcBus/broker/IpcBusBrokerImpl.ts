@@ -2,13 +2,13 @@ import * as net from 'net';
 
 import { IpcPacketBuffer, BufferListReader } from 'socket-serializer';
 
-import * as Client from './IpcBusClient';
+import * as Client from '../IpcBusClient';
 import * as Broker from './IpcBusBroker';
-import * as IpcBusUtils from './IpcBusUtils';
+import * as IpcBusUtils from '../IpcBusUtils';
 // import * as util from 'util';
 
-import { IpcBusCommand } from './IpcBusCommand';
-import { IpcBusClientTransportNode } from './IpcBusClientTransportNode';
+import { IpcBusCommand } from '../IpcBusCommand';
+import { IpcBusClientTransportNode } from '../IpcBusClientTransportNode';
 
 interface IpcBusBrokerSocketClient {
     onSocketPacket(socket: net.Socket, ipcPacketBuffer: IpcPacketBuffer): void;

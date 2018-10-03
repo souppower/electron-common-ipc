@@ -3,11 +3,11 @@ import * as net from 'net';
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as Client from '../IpcBusClient';
-import * as Broker from '../IpcBusBroker';
+import * as Broker from './IpcBusBroker';
 
 import { IpcBusCommand } from '../IpcBusCommand';
 
-import { IpcBusBrokerImpl } from '../IpcBusBrokerImpl';
+import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
 
 /** @internal */
 export abstract class IpcBusBrokerLogger extends IpcBusBrokerImpl {

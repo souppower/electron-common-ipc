@@ -1,4 +1,4 @@
-import { IpcTimeoutOptions, IpcNetOptions } from './IpcBusClient';
+import { IpcTimeoutOptions, IpcNetOptions } from '../IpcBusClient';
 
 export namespace IpcBusBroker {
     export interface StartOptions extends IpcTimeoutOptions {

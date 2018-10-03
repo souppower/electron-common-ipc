@@ -1,12 +1,12 @@
 import { IpcPacketBuffer } from 'socket-serializer';
 
-import * as IpcBusUtils from './IpcBusUtils';
-import * as Client from './IpcBusClient';
+import * as IpcBusUtils from '../IpcBusUtils';
+import * as Client from '../IpcBusClient';
 import * as Bridge from './IpcBusBridge';
 
-import { IpcBusCommand } from './IpcBusCommand';
-import { IpcBusClientTransportNode } from './IpcBusClientTransportNode';
-import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_COMMAND, IPCBUS_TRANSPORT_RENDERER_EVENT } from './IpcBusClientTransportRenderer';
+import { IpcBusCommand } from '../IpcBusCommand';
+import { IpcBusClientTransportNode } from '../IpcBusClientTransportNode';
+import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_COMMAND, IPCBUS_TRANSPORT_RENDERER_EVENT } from '../IpcBusClientTransportRenderer';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
