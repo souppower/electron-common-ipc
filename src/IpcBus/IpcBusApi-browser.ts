@@ -1,6 +1,6 @@
 
-import * as Client from './IpcBusClient';
-import * as Service from './service/IpcBusService';
+import { IpcBusClient } from './IpcBusClient';
+import { IpcBusService, IpcBusServiceProxy } from './service/IpcBusService';
 import * as IpcBusUtils from './IpcBusUtils';
 
 import { IpcBusServiceImpl } from './service/IpcBusServiceImpl';
@@ -9,17 +9,17 @@ import { IpcBusServiceProxyImpl } from './service/IpcBusServiceProxyImpl';
 
 import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
 
-export let CreateIpcBusClientRenderer: Client.IpcBusClient.CreateFunction = (options: any, hostname?: string) => {
+export let CreateIpcBusClientRenderer: IpcBusClient.CreateFunction = (options: any, hostname?: string) => {
     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-    let ipcBusClient: Client.IpcBusClient = new IpcBusClientTransportRenderer('renderer', localOptions || {});
+    let ipcBusClient: IpcBusClient = new IpcBusClientTransportRenderer('renderer', localOptions || {});
     return ipcBusClient;
 };
 
-export let CreateIpcBusService: Service.IpcBusService.CreateFunction = (client: Client.IpcBusClient, serviceName: string, serviceImpl: any, options?: Service.IpcBusService.CreateOptions): Service.IpcBusService => {
+export let CreateIpcBusService: IpcBusService.CreateFunction = (client: IpcBusClient, serviceName: string, serviceImpl: any, options?: IpcBusService.CreateOptions): IpcBusService => {
     return new IpcBusServiceImpl(client, serviceName, serviceImpl);
 };
 
-export let CreateIpcBusServiceProxy: Service.IpcBusServiceProxy.CreateFunction = (client: Client.IpcBusClient, serviceName: string, options?: Service.IpcBusServiceProxy.CreateOptions): Service.IpcBusServiceProxy => {
+export let CreateIpcBusServiceProxy: IpcBusServiceProxy.CreateFunction = (client: IpcBusClient, serviceName: string, options?: IpcBusServiceProxy.CreateOptions): IpcBusServiceProxy => {
     return new IpcBusServiceProxyImpl(client, serviceName, options);
 };
 
