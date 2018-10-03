@@ -71,6 +71,8 @@
     "build-declaration-dts-bundle": "dts-bundle --outputAsModuleFolder --name electron-common-ipc --main ./lib/electron-common-ipc.d.ts",
     "build-declaration-dts-bundle-browser": "dts-bundle --outputAsModuleFolder --name electron-common-ipc-browser --main ./lib/electron-common-ipc-browser.d.ts",
     "clean-declaration-dts": "del-cli ./lib/IpcBus/*.d.ts",
+    "build-declaration-dts-bundle2": "dts-bundle-generator --project ./tsconfig/tsconfig-js.json -o ./src/electron-common-ipc.d.ts ./src/electron-common-ipc.ts",
+    "build-declaration-dts-bundle-browser2": "dts-bundle-generator --project ./tsconfig/tsconfig-js.json -o ./src/electron-common-ipc-browser.d.ts ./src/electron-common-ipc-browser.ts",
     "test": "electron-mocha test/*.test.js",
     "tsc": "tsc",
     "tslint": "tslint",

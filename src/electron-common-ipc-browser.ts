@@ -3,13 +3,7 @@
 export * from './IpcBus/IpcBusClient';
 // export * from './IpcBus/IpcBusBridge';
 // export * from './IpcBus/IpcBusBroker';
+export * from './IpcBus/service/IpcBusService';
 
-export {CreateIpcBusService} from './IpcBus/IpcBusApi-browser';
-export {CreateIpcBusServiceProxy} from './IpcBus/IpcBusApi-browser';
-export {ActivateIpcBusTrace} from './IpcBus/IpcBusApi-browser';
-export {ActivateServiceTrace} from './IpcBus/IpcBusApi-browser';
-
-import { IpcBusClient } from './IpcBus/IpcBusClient';
-import { CreateIpcBusClientRenderer } from './IpcBus/IpcBusApi-browser';
-
-export let CreateIpcBusClient: IpcBusClient.CreateFunction = CreateIpcBusClientRenderer;
+export * from './IpcBus/IpcBusApi-browser';
+// export * from './IpcBus/IpcBusApi';
