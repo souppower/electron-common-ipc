@@ -91,6 +91,47 @@ function test(remoteBroker, factory) {
         return testServiceProxy.connect();
       });
 
+      it('service-start service first', (done) => {
+        const testServiceName = 'test-service1';
+
+        const testServiceInstance = factory();
+        const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
+        testService.start();
+
+        // Create the proxy (client-side)
+        const testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
+        if (testServiceProxy.isStarted) {
+          done();
+        }
+        else {
+          testServiceProxy.on(ipcBusModule.IPCBUS_SERVICE_EVENT_START, () => {
+            done();
+          })
+        }
+      });
+
+      it(`service-start proxy first (delay ${delayService} service creation)`, (done) => {
+        const testServiceName = 'test-service1';
+
+        // Create the proxy (client-side)
+        const testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
+        if (testServiceProxy.isStarted) {
+          done();
+        }
+        else {
+          testServiceProxy.on(ipcBusModule.IPCBUS_SERVICE_EVENT_START, () => {
+            done();
+          })
+        }
+
+        // delay the start
+        setTimeout(() => {
+          const testServiceInstance = factory();
+          const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
+          testService.start();
+        }, delayService);
+      });
+
       it(`connect proxy first (delay ${delayService} service creation)`, (done) => {
         const testServiceName = 'test-service2';
 

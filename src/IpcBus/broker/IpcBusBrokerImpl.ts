@@ -197,7 +197,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                         this._server.addListener(key, this._netBinds[key]);
                     }
 
-                    this._ipcBusBrokerClient.connect({ peerName: `IpcBusBrokerClient` })
+                    this._ipcBusBrokerClient.connect({ peerName: `IpcBusBrokerClient`, timeoutDelay: options.timeoutDelay })
                         .then(() => {
                             this._ipcBusBrokerClient.on(Client.IPCBUS_CHANNEL_QUERY_STATE, this._queryStateLamdba);
                             resolve();

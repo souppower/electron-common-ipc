@@ -118,7 +118,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
                 this.removeListener(Service.IPCBUS_SERVICE_EVENT_START, serviceStart);
                 resolve(this.getWrapper<T>());
             };
-            this.on(Service.IPCBUS_SERVICE_EVENT_START, serviceStart);
+            this.addListener(Service.IPCBUS_SERVICE_EVENT_START, serviceStart);
         });
     }
 
