@@ -4,6 +4,21 @@ import { EventEmitter } from 'events';
 
 export const IPC_BUS_TIMEOUT = 2000;
 
+const win32prefix1 = '\\\\.\\pipe';
+const win32prefix2 = '\\\\?\\pipe';
+
+// https://nodejs.org/api/net.html#net_ipc_support
+function CleanPipeName(str: string) {
+    if (process.platform === 'win32') {
+        str = str.replace(/^\//, '');
+        str = str.replace(/\//g, '-');
+        if ((str.lastIndexOf(win32prefix1, 0) === -1) || (str.lastIndexOf(win32prefix2, 0) === -1)) {
+            str = win32prefix1 + '\\' + str;
+        }
+    }
+    return str;
+}
+
 export function CheckCreateOptions(options: IpcNetOptions | string | number, hostName?: string): IpcNetOptions | null {
     // A port number : 59233, 42153
     // A port number + hostname : 59233, '127.0.0.1'
@@ -19,7 +34,7 @@ export function CheckCreateOptions(options: IpcNetOptions | string | number, hos
                 return { port: Number(parts[1]), host: parts[0] };
             }
         }
-        return { path: options };
+        return { path: CleanPipeName(options) };
     }
     // An IpcNetOptions object similar to NodeJS.net.ListenOptions
     else if (typeof options === 'object') {
@@ -28,6 +43,7 @@ export function CheckCreateOptions(options: IpcNetOptions | string | number, hos
             return localOptions;
         }
         if (localOptions.path) {
+            localOptions.path =  CleanPipeName(localOptions.path);
             return localOptions;
         }
     }

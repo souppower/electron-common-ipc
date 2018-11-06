@@ -5,20 +5,20 @@ const ipcBusModule = require('../../lib/electron-common-ipc');
 console.log(`Node Broker instance: start`);
 
 let args = minimist(process.argv.slice(1));
-let timeoutDelay = 2000;
+let timeoutDelay = 10000;
 if (args.busTimeout) {
     timeoutDelay = parseInt(args.busTimeout);
 }
 let ipcBusPath = 0;
 if (args.busPath) {
-    ipcBusPath = parseInt(args.busPath);
+    ipcBusPath = args.busPath;
 }
 
 // Create broker
 let ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);
 // Start broker
 console.log('Remote IpcBusBroker starting...');
-ipcBusBroker.start()
+ipcBusBroker.start({ timeoutDelay })
  .then((msg) => {
     console.log('Remote IpcBusBroker started');
     process.send({ event: 'resolve'});

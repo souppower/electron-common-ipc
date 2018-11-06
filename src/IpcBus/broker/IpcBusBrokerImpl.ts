@@ -224,7 +224,15 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 server.addListener('listening', catchListening);
                 server.addListener('error', catchError);
                 server.addListener('close', catchClose);
-                server.listen({ port: this._netOptions.port, host: this._netOptions.host, path: this._netOptions.path });
+                if (this._netOptions.path) {
+                    server.listen(this._netOptions.path);
+                }
+                else if (this._netOptions.port && this._netOptions.host) {
+                    server.listen(this._netOptions.port, this._netOptions.host);
+                }
+                else  {
+                    server.listen(this._netOptions.port);
+                }
             });
         }
         return p;

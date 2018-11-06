@@ -5,17 +5,17 @@ const expect = chai.expect;
 const ipcBusModule = require('../lib/electron-common-ipc');
 const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 
-function test(remoteBroker) {
+function test(remoteBroker, busPath) {
 
-  describe(`Master Client messages ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
+  describe(`Master Client ${busPath} messages ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
     let ipcClient1;
     let ipcClient2;
     before(() => {
-      return brokersLifeCycle.startBrokers(remoteBroker)
+      return brokersLifeCycle.startBrokers(remoteBroker, busPath)
         .then((ipcBusPath) => {
           ipcClient1 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
           ipcClient2 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
-          return Promise.all([ipcClient1.connect({ peerName: 'client1' }), ipcClient2.connect({ peerName: 'client2' })])
+          return Promise.all([ipcClient1.connect({ peerName: 'client1' }), ipcClient2.connect({ peerName: 'client2' })]);
         })
     });
 
@@ -188,3 +188,5 @@ function test(remoteBroker) {
 
 test(false);
 test(true);
+test(false, brokersLifeCycle.localBusPath);
+test(true, brokersLifeCycle.localBusPath);

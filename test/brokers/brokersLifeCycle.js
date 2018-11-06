@@ -4,18 +4,30 @@ const childProcess = require('child_process');
 const electronApp = require('electron').app;
 const sph = require('socket-port-helpers');
 const path = require('path');
+const minimist = require('minimist');
+
+const trace = false;
 
 let ipcBusBroker;
 let ipcBusBridge;
 
 let processBroker;
 
+//let localBusPath = '\\tr-ipc-bus\\';
+let localBusPath = '/tr-ipc-bus/test';
+
+let args = minimist(process.argv.slice(1));
+let timeoutDelay = 10000;
+if (args.busTimeout) {
+  timeoutDelay = parseInt(args.busTimeout);
+}
+
 function _startRemoteBrokers(ipcBusPath) {
   return new Promise((resolve, reject) => {
     const args = [
       path.join(__dirname, './brokerNodeInstance.js'),
       `--busPath=${ipcBusPath}`,
-      `--inspect`
+      // `--inspect`
       // `--busTimeout=${timeoutDelay}`
     ];
     let options = { env: {} };
@@ -25,12 +37,12 @@ function _startRemoteBrokers(ipcBusPath) {
     options.env['ELECTRON_RUN_AS_NODE'] = '1';
     options['stdio'] = ['pipe', 'pipe', 'pipe', 'ipc'];
     processBroker = childProcess.spawn(process.argv[0], args, options);
-    processBroker.stdout.addListener('data', data => { console.log('<Bus Broker Node> ' + data.toString()); });
-    processBroker.stderr.addListener('data', data => { console.log('<Bus Broker Node> ' + data.toString()); });
+    processBroker.stdout.addListener('data', data => { trace && console.log('<Bus Broker Node> ' + data.toString()); });
+    processBroker.stderr.addListener('data', data => { trace && console.log('<Bus Broker Node> ' + data.toString()); });
     processBroker.on('message', function (msg) {
       switch (msg.event) {
         case 'resolve':
-          console.log('Remote brokers are started');
+          trace && console.log('Remote broker is started');
           resolve();
           break;
         case 'reject':
@@ -42,45 +54,64 @@ function _startRemoteBrokers(ipcBusPath) {
   });
 }
 
-function _startBrokers(remoteBroker) {
-  // https://en.wikipedia.org/wiki/Ephemeral_port
-  let port = 49152;
-  return sph.findFirstFreePort({ portRange: `>=${port}`, log: false })
+function _getBusPath(busPath) {
+  if (busPath == null) {
+    // https://en.wikipedia.org/wiki/Ephemeral_port
+    let port = 49152;
+    return sph.findFirstFreePort({ portRange: `>=${port}`, log: false });
+  }
+  else {
+    return Promise.resolve(busPath);
+  }
+}
+
+function _startBroker(remoteBroker, ipcBusPath) {
+  return Promise.resolve()
+    .then(() => {
+      if (remoteBroker) {
+        return _startRemoteBrokers(ipcBusPath);
+      }
+      else {
+        // Create broker
+        ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);
+        // Start broker
+        trace && console.log('IpcBusBroker starting...');
+        return ipcBusBroker.start({ timeoutDelay })
+      }
+    })
+    .then((msg) => {
+      trace && console.log('IpcBusBroker started');
+    })
+    .catch((err) => {
+      console.log(`IpcBusBroker started failed ${err}`);
+      throw err;
+    })
+}
+
+function _startBridge(ipcBusPath) {
+  // Create bridge
+  trace && console.log('IpcBusBridge starting...');
+  ipcBusBridge = ipcBusModule.CreateIpcBusBridge(ipcBusPath);
+  // Start bridge
+  return ipcBusBridge.start({ timeoutDelay })
+    .then((msg) => {
+      trace && console.log('IpcBusBridge started');
+    })
+    .catch((err) => {
+      console.log(`IpcBusBridge started failed ${err}`);
+      throw err;
+    });
+}
+
+function _startBrokers(remoteBroker, busPath) {
+  return _getBusPath(busPath)
     .then((ipcBusPath) => {
-      return Promise.resolve()
+      return _startBroker(remoteBroker, ipcBusPath)
         .then(() => {
-          if (remoteBroker) {
-            return _startRemoteBrokers(ipcBusPath);
-          }
-          else {
-            // Create broker
-            ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);
-            // Start broker
-            console.log('IpcBusBroker starting...');
-            return ipcBusBroker.start()
-          }
+          return _startBridge(ipcBusPath);
         })
-        .then((msg) => {
-          console.log('IpcBusBroker started');
-        })
-        .catch((err) => {
-          console.log(`IpcBusBroker started failed ${err}`);
-          throw err;
-        })
-        .then((msg) => {
-          // Create bridge
-          console.log('IpcBusBridge starting...');
-          ipcBusBridge = ipcBusModule.CreateIpcBusBridge(ipcBusPath);
-          // Start bridge
-          return ipcBusBridge.start()
-            .then((msg) => {
-              console.log('IpcBusBridge started');
-              return port;
-            })
-            .catch((err) => {
-              console.log(`IpcBusBridge started failed ${err}`);
-              throw err;
-            });
+        .then(() => {
+          return ipcBusPath;
         });
     });
 }
@@ -104,18 +135,18 @@ function _stopRemoteBroker() {
 }
 
 function _stopBrokers(remoteBroker) {
-  console.log('IpcBusBridge stopping...');
+  trace && console.log('IpcBusBridge stopping...');
   return ipcBusBridge.stop()
     .then(() => {
       ipcBusBridge = null;
-      console.log('IpcBusBridge stopped');
+      trace && console.log('IpcBusBridge stopped');
     })
     .catch((err) => {
       console.log(`IpcBusBridge stopped failed ${err}`);
       throw err;
     })
     .then(() => {
-      console.log('IpcBusBroker stopping...');
+      trace && console.log('IpcBusBroker stopping...');
       if (remoteBroker) {
         return _stopRemoteBroker();
       }
@@ -125,7 +156,7 @@ function _stopBrokers(remoteBroker) {
     })
     .then(() => {
       ipcBusBroker = null;
-      console.log('IpcBusBroker stopped');
+      trace && console.log('IpcBusBroker stopped');
     })
     .catch((err) => {
       console.log(`IpcBusBroker stopped failed ${err}`);
@@ -133,14 +164,14 @@ function _stopBrokers(remoteBroker) {
     });
 }
 
-function startBrokers(remoteBroker) {
+function startBrokers(remoteBroker, busPath) {
   if (electronApp.isReady()) {
-    return _startBrokers(remoteBroker)
+    return _startBrokers(remoteBroker, busPath)
   }
 
   return new Promise((resolve, reject) => {
     electronApp.on('ready', () => {
-      _startBrokers(remoteBroker)
+      _startBrokers(remoteBroker, busPath)
         .then(() => {
           resolve();
         })
@@ -172,3 +203,5 @@ function stopBrokers(remoteBroker) {
 
 exports.startBrokers = startBrokers;
 exports.stopBrokers = stopBrokers;
+exports.timeoutDelay = timeoutDelay;
+exports.localBusPath = localBusPath;

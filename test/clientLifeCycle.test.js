@@ -6,12 +6,12 @@ const ipcBusModule = require('../lib/electron-common-ipc');
 const electronApp = require('electron').app;
 const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 
-function test(remoteBroker) {
-  describe(`Client ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
+function test(remoteBroker, busPath) {
+  describe(`Client ${busPath} ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
     let ipcBusPath;
 
     before(async () => {
-      return brokersLifeCycle.startBrokers(remoteBroker)
+      return brokersLifeCycle.startBrokers(remoteBroker, busPath)
         .then((port) => {
           ipcBusPath = port;
         });
@@ -22,18 +22,18 @@ function test(remoteBroker) {
     });
 
     let ipcBusClient;
-    it('start client', async () => {
+    it(`start client ${busPath}`, async () => {
       ipcBusClient = ipcBusModule.CreateIpcBusClient(ipcBusPath);
       return ipcBusClient.connect({ peerName: 'client' })
     });
 
-    it('stop client', async () => {
+    it(`stop client ${busPath}`, async () => {
       return ipcBusClient.close();
     });
 
   });
 
-  describe(`Client without closing it ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
+  describe(`Client ${busPath} without closing it ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
     let ipcBusPath;
 
     before(async () => {
@@ -48,7 +48,7 @@ function test(remoteBroker) {
     });
 
     let ipcBusClient;
-    it('start client', async () => {
+    it(`start client ${busPath}`, async () => {
       ipcBusClient = ipcBusModule.CreateIpcBusClient(ipcBusPath);
       return ipcBusClient.connect({ peerName: 'client' })
     });
@@ -57,3 +57,5 @@ function test(remoteBroker) {
 
 test(false);
 test(true);
+test(false, brokersLifeCycle.localBusPath);
+test(true, brokersLifeCycle.localBusPath);

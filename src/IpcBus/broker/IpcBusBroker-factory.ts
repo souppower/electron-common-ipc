@@ -1,4 +1,4 @@
-import { GetElectronProcessType } from 'electron-process-type';
+import { GetElectronProcessType } from 'electron-process-type/lib/v2';
 
 import { IpcBusProcessType } from '../IpcBusClient';
 import * as IpcBusUtils from '../IpcBusUtils';
@@ -18,7 +18,7 @@ export let CreateIpcBusBroker: IpcBusBroker.CreateFunction = (options: any, host
     let processType = GetElectronProcessType();
     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBroker process type = ${processType} on ${JSON.stringify(options)}`);
     switch (processType) {
-        case 'browser':
+        case 'main':
         case 'node':
             let logPath = process.env['ELECTRON_IPC_BROKER_LOG_JSON'];
             if (logPath) {

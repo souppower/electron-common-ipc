@@ -3,11 +3,18 @@ const child_process = require('child_process');
 const assert = chai.assert;
 const expect = chai.expect;
 const path = require('path');
+const minimist = require('minimist');
 
 const ipcBusModule = require('../lib/electron-common-ipc');
 const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 
-function test(remoteBroker) {
+let args = minimist(process.argv.slice(1));
+let timeoutDelay = 10000;
+if (args.busTimeout) {
+    timeoutDelay = parseInt(args.busTimeout);
+}
+
+function test(remoteBroker, busPath) {
 
   let nodeChildProcess;
 
@@ -52,7 +59,7 @@ function test(remoteBroker) {
   describe(`Node Client messages ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
     let ipcClient1;
     before(() => {
-      return brokersLifeCycle.startBrokers(remoteBroker)
+      return brokersLifeCycle.startBrokers(remoteBroker, busPath)
         .then((ipcBusPath) => {
           ipcClient1 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
           return Promise.all([ipcClient1.connect({ peerName: 'client1' })])
@@ -60,7 +67,12 @@ function test(remoteBroker) {
               return new Promise((resolve, reject) => {
                 let options = { stdio: ['pipe', 'pipe', 'pipe', 'ipc'] };
                 // nodeChildProcess = child_process.fork(path.join(__dirname, 'nodeClient.js'), ['--inspect-brk=9229', `--busPath=${ipcBusPath}`], options);
-                nodeChildProcess = child_process.fork(path.join(__dirname, 'nodeClient.js'), ['--debug', `--busPath=${ipcBusPath}`], options);
+                nodeChildProcess = child_process.fork(path.join(__dirname, 'nodeClient.js'), [
+                  '--inspect-brk=9229', 
+                  `--busPath=${ipcBusPath}`, 
+                  `busTimeout=${timeoutDelay}`
+                ], 
+                options);
                 nodeChildProcess.addListener('close', onClose);
                 nodeChildProcess.addListener('disconnect', onDisconnect);
                 nodeChildProcess.addListener('error', onError);

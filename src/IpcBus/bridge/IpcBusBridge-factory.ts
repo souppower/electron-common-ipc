@@ -1,4 +1,4 @@
-import { GetElectronProcessType } from 'electron-process-type';
+import { GetElectronProcessType } from 'electron-process-type/lib/v2';
 
 import { IpcBusProcessType } from '../IpcBusClient';
 import * as IpcBusUtils from '../IpcBusUtils';
@@ -18,7 +18,7 @@ export let CreateIpcBusBridge: IpcBusBridge.CreateFunction = (options: any, host
     let processType = GetElectronProcessType();
     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBridge process type = ${processType} on ${JSON.stringify(options)}`);
     switch (processType) {
-        case 'browser':
+        case 'main':
             let logPath = process.env['ELECTRON_IPC_BRIDGE_LOG_JSON'];
             if (logPath) {
                 ipcBusBridge = new IpcBusBridgeJSONLogger(logPath, processType as IpcBusProcessType, localOptions);

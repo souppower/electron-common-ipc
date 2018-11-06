@@ -28,7 +28,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
     private _bufferListReader: BufferListReader;
 
     constructor(processType: Client.IpcBusProcessType, options: Client.IpcBusClient.CreateOptions) {
-        assert((processType === 'browser') || (processType === 'node'), `IpcBusClientTransportNode: processType must not be a process ${processType}`);
+        assert((processType === 'main') || (processType === 'node'), `IpcBusClientTransportNode: processType must not be a process ${processType}`);
 
         super({ type: processType, pid: process.pid }, options);
         this._packetOut = new IpcPacketBufferWrap();
@@ -172,8 +172,11 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
                 if (this._netOptions.path) {
                     socket.connect(this._netOptions.path);
                 }
-                else {
+                else if (this._netOptions.port && this._netOptions.host) {
                     socket.connect(this._netOptions.port, this._netOptions.host);
+                }
+                else  {
+                    socket.connect(this._netOptions.port);
                 }
             });
         }

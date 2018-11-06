@@ -1,11 +1,10 @@
+import { GetElectronProcessType } from 'electron-process-type/lib/v2';
 
 import { IpcBusClient } from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
 
 import { IpcBusClientTransportNode } from './IpcBusClientTransportNode';
 import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
-
-import { GetElectronProcessType } from 'electron-process-type';
 
 export let CreateIpcBusClient: IpcBusClient.CreateFunction = (options: any, hostname?: string): IpcBusClient => {
     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
@@ -17,7 +16,7 @@ export let CreateIpcBusClient: IpcBusClient.CreateFunction = (options: any, host
         case 'renderer':
             ipcBusClient = new IpcBusClientTransportRenderer(processType, localOptions || {});
             break;
-        case 'browser':
+        case 'main':
         case 'node':
             if (localOptions) {
                 ipcBusClient = new IpcBusClientTransportNode(processType, localOptions);

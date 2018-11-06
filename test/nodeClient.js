@@ -1,10 +1,21 @@
+const minimist = require('minimist');
+
 // busPath
-const argv = require('minimist')(process.argv.slice(2));
 console.log(argv);
 
+let args = minimist(process.argv.slice(1));
+let timeoutDelay = 10000;
+if (args.busTimeout) {
+    timeoutDelay = parseInt(args.busTimeout);
+}
+let ipcBusPath = 0;
+if (args.busPath) {
+    ipcBusPath = parseInt(args.busPath);
+}
+
 const ipcBusModule = require('../lib/electron-common-ipc');
-const ipcClient = ipcBusModule.CreateIpcBusClient(argv.busPath);
-ipcClient.connect({ peerName: 'client Node' })
+const ipcClient = ipcBusModule.CreateIpcBusClient(ipcBusPath);
+ipcClient.connect({ peerName: 'client Node', timeoutDelay })
     .then(() => {
         ipcClient.on('test-message', (event, ...args) => {
             console.log(`test-message event=${event}, args=${args}`);

@@ -51,15 +51,17 @@
                 // "--grep=Master",
                 // "--grep=Brokers",
                 // "--grep=Node",
-                "--grep=Service",
-                "${workspaceRoot}/test/*.test.js",
-                "--recursive",
+                // "--grep=Service",
+                // "${workspaceRoot}/test/*.test.js",
+                // "${workspaceRoot}/test/clientLifeCycle.test.js",
+                "${workspaceRoot}/test/masterClientMessage.test.js",
+                // "--recursive",
                 "--reporter", "spec",
                 "--no-timeouts",
-                "--colors",
+                // "--colors",
                 // "--debug",
                 "--inspect-brk=5858",
-                "--debug-brk"
+                // "--debug-brk"
             ],
             "windows": {
                 "env": {
