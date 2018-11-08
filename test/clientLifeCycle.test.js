@@ -8,22 +8,19 @@ const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 
 function test(remoteBroker, busPath) {
   describe(`Client ${busPath} ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
-    let ipcBusPath;
-
-    before(async () => {
-      return brokersLifeCycle.startBrokers(remoteBroker, busPath)
-        .then((port) => {
-          ipcBusPath = port;
-        });
+    let brokers;
+    before(() => {
+      brokers = new brokersLifeCycle.Brokers(remoteBroker, busPath);
+      return brokers.start();
     });
 
-    after(async () => {
-      return brokersLifeCycle.stopBrokers(remoteBroker);
+    after(() => {
+      return brokers.stop();
     });
 
     let ipcBusClient;
-    it(`start client ${busPath}`, async () => {
-      ipcBusClient = ipcBusModule.CreateIpcBusClient(ipcBusPath);
+    it(`start client ${busPath}`, () => {
+      ipcBusClient = ipcBusModule.CreateIpcBusClient(brokers.getBusPath());
       return ipcBusClient.connect({ peerName: 'client' })
     });
 
@@ -34,28 +31,25 @@ function test(remoteBroker, busPath) {
   });
 
   describe(`Client ${busPath} without closing it ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
-    let ipcBusPath;
-
-    before(async () => {
-      return brokersLifeCycle.startBrokers(remoteBroker)
-        .then((port) => {
-          ipcBusPath = port;
-        });
+    let brokers;
+    before(() => {
+      brokers = new brokersLifeCycle.Brokers(remoteBroker, busPath);
+      return brokers.start();
     });
 
-    after(async () => {
-      return brokersLifeCycle.stopBrokers(remoteBroker);
+    after(() => {
+      return brokers.stop();
     });
 
     let ipcBusClient;
-    it(`start client ${busPath}`, async () => {
-      ipcBusClient = ipcBusModule.CreateIpcBusClient(ipcBusPath);
+    it(`start client ${busPath}`, () => {
+      ipcBusClient = ipcBusModule.CreateIpcBusClient(brokers.getBusPath());
       return ipcBusClient.connect({ peerName: 'client' })
     });
   });
 }
 
-test(false);
-test(true);
+// test(false);
+// test(true);
 test(false, brokersLifeCycle.localBusPath);
 test(true, brokersLifeCycle.localBusPath);

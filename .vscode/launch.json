@@ -45,7 +45,7 @@
             "program": "${workspaceRoot}/node_modules/electron-mocha/bin/electron-mocha",
             "port": 5858,
             "protocol": "inspector",
-            "autoAttachChildProcesses": true,
+            // "autoAttachChildProcesses": true,
             "cwd": "${workspaceRoot}/lib",
             "args": [
                 // "--grep=Master",
@@ -53,7 +53,8 @@
                 // "--grep=Node",
                 // "--grep=Service",
                 "${workspaceRoot}/test/*.test.js",
-                // "${workspaceRoot}/test/clientLifeCycle.test.js",
+                // "${workspaceRoot}/test/brokersLifeCycle.test.js",
+                "${workspaceRoot}/test/clientLifeCycle.test.js",
                 // "${workspaceRoot}/test/masterClientMessage.test.js",
                 // "--recursive",
                 "--reporter", "spec",
@@ -61,6 +62,7 @@
                 // "--colors",
                 // "--debug",
                 "--inspect-brk=5858",
+                // "--inspect-brk",
                 // "--debug-brk"
             ],
             "windows": {
