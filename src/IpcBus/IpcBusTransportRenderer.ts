@@ -11,10 +11,12 @@ export function GetIpcBusTransportInWindow(): IpcBusTransportInWindow {
     }
     catch (_) {
     }
-    const windowLocal = window as any;
-    if (windowLocal.IpcBusTransportInWindow) {
-        return windowLocal.IpcBusTransportInWindow;
+    if (window) {
+        const windowLocal = window as any;
+        if (windowLocal.IpcBusTransportInWindow) {
+            return windowLocal.IpcBusTransportInWindow;
+        }
+        // TODO - Use postMessage in frame then
     }
-    // TODO - Use postMessage in frame then
     return null;
 }
