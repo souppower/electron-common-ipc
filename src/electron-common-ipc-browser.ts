@@ -10,6 +10,8 @@ export * from './IpcBus/IpcBusClient-factory-browser';
 export * from './IpcBus/service/IpcBusService';
 export * from './IpcBus/service/IpcBusService-factory';
 
+export * from './IpcBus/IpcBusTransportRendererPreload';
+
 export function ActivateIpcBusTrace(enable: boolean): void {
     IpcBusUtils.Logger.enable = enable;
 }

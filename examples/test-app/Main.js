@@ -462,7 +462,7 @@ function startApp() {
 
     if (testService) {
         // Create the proxy (client-side)
-        const timeServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, 'time', 20000);
+        const timeServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, 'time', { timeoutDelay: 20000 });
         
         // Check service's availability and make a remote call when it is available
         timeServiceProxy.connect({ timeoutDelay: 20000 })

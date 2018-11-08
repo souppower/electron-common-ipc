@@ -1,3 +1,5 @@
+/// <reference types='electron' />
+
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';

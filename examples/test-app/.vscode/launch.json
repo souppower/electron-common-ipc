@@ -29,6 +29,7 @@
             "type": "node",
             "request": "launch",
             // "protocol": "legacy",
+            "port": 50000,
             "protocol": "inspector",
             "program": "${workspaceRoot}/Main.js",
             "stopOnEntry": false,
@@ -37,6 +38,7 @@
             "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
             "runtimeArgs": [
                 "--process-per-site",
+                "--inspect=50000",
                 "--remote-debugging-port=8315"
             ],
             "env": {

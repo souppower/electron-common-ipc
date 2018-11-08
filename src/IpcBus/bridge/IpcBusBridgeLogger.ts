@@ -1,9 +1,9 @@
-import { IpcPacketBuffer } from 'socket-serializer';
+/// <reference types='electron' />
 
+import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as Client from '../IpcBusClient';
 import * as Broker from '../broker/IpcBusBroker';
-
 
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';

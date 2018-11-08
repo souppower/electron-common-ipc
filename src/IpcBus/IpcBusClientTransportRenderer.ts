@@ -1,11 +1,11 @@
-/// <reference types='electron' />
-
 import * as assert from 'assert';
 
 import { IpcPacketBuffer, IpcPacketBufferWrap, BufferListWriter } from 'socket-serializer';
 
 import * as IpcBusUtils from './IpcBusUtils';
 import * as Client from './IpcBusClient';
+
+import { GetIpcBusTransportInWindow, IpcBusTransportInWindow } from './IpcBusTransportRenderer';
 
 import { IpcBusClientTransport } from './IpcBusClientTransport';
 import { IpcBusCommand } from './IpcBusCommand';
@@ -17,7 +17,7 @@ export const IPCBUS_TRANSPORT_RENDERER_EVENT = 'IpcBusRenderer:Event';
 // Implementation for renderer process
 /** @internal */
 export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
-    private _ipcRenderer: any;
+    private _ipcTransportInWindow: IpcBusTransportInWindow;
     private _onIpcEventReceived: Function;
     private _promiseConnected: Promise<void>;
     private _packetOut: IpcPacketBufferWrap;
@@ -35,10 +35,10 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
 
     protected _reset() {
         this._promiseConnected = null;
-        if (this._ipcRenderer) {
-            this._ipcRenderer.removeAllListeners(IPCBUS_TRANSPORT_RENDERER_CONNECT);
-            this._ipcRenderer.removeAllListeners(IPCBUS_TRANSPORT_RENDERER_EVENT);
-            this._ipcRenderer = null;
+        if (this._ipcTransportInWindow) {
+            this._ipcTransportInWindow.removeAllListeners(IPCBUS_TRANSPORT_RENDERER_CONNECT);
+            this._ipcTransportInWindow.removeAllListeners(IPCBUS_TRANSPORT_RENDERER_EVENT);
+            this._ipcTransportInWindow = null;
         }
     }
 
@@ -59,7 +59,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
                 this._onEventReceived(ipcBusCommand, this._packetIn);
             };
         }
-        this._ipcRenderer.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+        this._ipcTransportInWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
     };
 
     /// IpcBusTrandport API
@@ -73,7 +73,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
             }
             p = this._promiseConnected = new Promise<void>((resolve, reject) => {
                 // this._ipcRendererReady.then(() => {
-                    this._ipcRenderer = require('electron').ipcRenderer;
+                    this._ipcTransportInWindow = GetIpcBusTransportInWindow();
                     // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
                     let timer: NodeJS.Timer;
                     // Below zero = infinite
@@ -85,8 +85,8 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
                         }, options.timeoutDelay);
                     }
                     // We wait for the bridge confirmation
-                    this._ipcRenderer.once(IPCBUS_TRANSPORT_RENDERER_CONNECT, (eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer) => {
-                        if (this._ipcRenderer) {
+                    this._ipcTransportInWindow.once(IPCBUS_TRANSPORT_RENDERER_CONNECT, (eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer) => {
+                        if (this._ipcTransportInWindow) {
                             clearTimeout(timer);
                             this._onConnect(eventOrPeer, peerOrUndefined);
                             resolve();
@@ -103,7 +103,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
     }
 
     protected ipcClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        if (this._ipcRenderer) {
+        if (this._ipcTransportInWindow) {
             this.ipcSend(IpcBusCommand.Kind.Close, '');
             this._reset();
         }
@@ -113,7 +113,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
     // We serialize in renderer process to save master CPU.
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     protected ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        if (this._ipcRenderer) {
+        if (this._ipcTransportInWindow) {
             let bufferWriter = new BufferListWriter();
             if (args) {
                 this._packetOut.writeArray(bufferWriter, [ipcBusCommand, args]);
@@ -121,7 +121,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
             else {
                 this._packetOut.writeArray(bufferWriter, [ipcBusCommand]);
             }
-            this._ipcRenderer.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, bufferWriter.buffer);
+            this._ipcTransportInWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, bufferWriter.buffer);
         }
     }
 }
