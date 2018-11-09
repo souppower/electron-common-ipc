@@ -11,7 +11,6 @@ export * from './IpcBus/service/IpcBusService';
 export * from './IpcBus/service/IpcBusService-factory';
 
 export * from './IpcBus/IpcBusTransportRendererPreload';
-export * from './IpcBus/IpcBusTransportRenderer';
 
 export function ActivateIpcBusTrace(enable: boolean): void {
     IpcBusUtils.Logger.enable = enable;
@@ -20,3 +19,6 @@ export function ActivateIpcBusTrace(enable: boolean): void {
 export function ActivateServiceTrace(enable: boolean): void {
     IpcBusUtils.Logger.service = enable;
 }
+
+import { PreloadElectronCommonIpc } from './IpcBus/IpcBusTransportRendererPreload';
+PreloadElectronCommonIpc();

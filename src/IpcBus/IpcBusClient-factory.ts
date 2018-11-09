@@ -4,7 +4,7 @@ import { IpcBusClient } from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
 
 import { IpcBusClientTransportNode } from './IpcBusClientTransportNode';
-import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
+// import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
 
 export let CreateIpcBusClient: IpcBusClient.CreateFunction = (options: any, hostname?: string): IpcBusClient => {
     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
@@ -14,7 +14,7 @@ export let CreateIpcBusClient: IpcBusClient.CreateFunction = (options: any, host
     switch (processType) {
         // This case 'renderer' is not reachable as IpcBusApi-browser is used in a browser (see browserify 'browser' field in package.json)
         case 'renderer':
-            ipcBusClient = new IpcBusClientTransportRenderer(processType, localOptions || {});
+            // ipcBusClient = new IpcBusClientTransportRenderer(processType, localOptions || {});
             break;
         case 'main':
         case 'node':

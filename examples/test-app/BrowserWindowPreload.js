@@ -4,7 +4,7 @@
 'use strict';
 
 const electronCommonIpc = require('electron-common-ipc');
-electronCommonIpc.PreloadIpcBusTransport();
+electronCommonIpc.PreloadElectronCommonIpc();
 electronCommonIpc.ActivateIpcBusTrace(true);
 window.ipcBus = electronCommonIpc.CreateIpcBusClient();
 

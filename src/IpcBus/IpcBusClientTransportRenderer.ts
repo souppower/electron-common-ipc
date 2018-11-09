@@ -1,11 +1,10 @@
 import * as assert from 'assert';
+import { EventEmitter } from 'events';
 
 import { IpcPacketBuffer, IpcPacketBufferWrap, BufferListWriter } from 'socket-serializer';
 
 import * as IpcBusUtils from './IpcBusUtils';
 import * as Client from './IpcBusClient';
-
-import { GetIpcBusTransportInWindow, IpcBusTransportInWindow } from './IpcBusTransportRenderer';
 
 import { IpcBusClientTransport } from './IpcBusClientTransport';
 import { IpcBusCommand } from './IpcBusCommand';
@@ -13,6 +12,10 @@ import { IpcBusCommand } from './IpcBusCommand';
 export const IPCBUS_TRANSPORT_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
 export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'IpcBusRenderer:Command';
 export const IPCBUS_TRANSPORT_RENDERER_EVENT = 'IpcBusRenderer:Event';
+
+export interface IpcBusTransportInWindow extends EventEmitter {
+    send(channel: string, ...args: any[]): void;
+}
 
 // Implementation for renderer process
 /** @internal */
@@ -25,9 +28,11 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
 
     // private _ipcRendererReady: Promise<void>;
 
-    constructor(processType: Client.IpcBusProcessType, options: Client.IpcBusClient.CreateOptions) {
+    constructor(processType: Client.IpcBusProcessType, options: Client.IpcBusClient.CreateOptions, ipcTransportInWindow: IpcBusTransportInWindow) {
         assert(processType === 'renderer', `IpcBusClientTransportRenderer: processType must not be a process ${processType}`);
         super({ type: processType, pid: -1 }, options);
+
+        this._ipcTransportInWindow = ipcTransportInWindow;
 
         this._packetOut = new IpcPacketBufferWrap();
         this._packetIn = new IpcPacketBuffer();
@@ -73,7 +78,6 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
             }
             p = this._promiseConnected = new Promise<void>((resolve, reject) => {
                 // this._ipcRendererReady.then(() => {
-                    this._ipcTransportInWindow = GetIpcBusTransportInWindow();
                     // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
                     let timer: NodeJS.Timer;
                     // Below zero = infinite
