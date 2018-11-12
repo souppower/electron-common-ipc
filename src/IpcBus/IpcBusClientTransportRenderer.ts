@@ -25,6 +25,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
     private _promiseConnected: Promise<void>;
     private _packetOut: IpcPacketBufferWrap;
     private _packetIn: IpcPacketBuffer;
+    private _connected: boolean;
 
     // private _ipcRendererReady: Promise<void>;
 
@@ -40,10 +41,10 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
 
     protected _reset() {
         this._promiseConnected = null;
-        if (this._ipcTransportInWindow) {
+        if (this._connected) {
             this._ipcTransportInWindow.removeAllListeners(IPCBUS_TRANSPORT_RENDERER_CONNECT);
             this._ipcTransportInWindow.removeAllListeners(IPCBUS_TRANSPORT_RENDERER_EVENT);
-            this._ipcTransportInWindow = null;
+            this._connected = false;
         }
     }
 
@@ -89,6 +90,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
                         }, options.timeoutDelay);
                     }
                     // We wait for the bridge confirmation
+                    this._connected = true;
                     this._ipcTransportInWindow.once(IPCBUS_TRANSPORT_RENDERER_CONNECT, (eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer) => {
                         if (this._ipcTransportInWindow) {
                             clearTimeout(timer);
@@ -107,7 +109,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
     }
 
     protected ipcClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        if (this._ipcTransportInWindow) {
+        if (this._connected) {
             this.ipcSend(IpcBusCommand.Kind.Close, '');
             this._reset();
         }
@@ -117,7 +119,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
     // We serialize in renderer process to save master CPU.
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     protected ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        if (this._ipcTransportInWindow) {
+        if (this._connected) {
             let bufferWriter = new BufferListWriter();
             if (args) {
                 this._packetOut.writeArray(bufferWriter, [ipcBusCommand, args]);

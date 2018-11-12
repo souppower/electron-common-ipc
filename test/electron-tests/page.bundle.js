@@ -235,10 +235,10 @@ class IpcBusClientTransportRenderer extends IpcBusClientTransport_1.IpcBusClient
     }
     _reset() {
         this._promiseConnected = null;
-        if (this._ipcTransportInWindow) {
+        if (this._connected) {
             this._ipcTransportInWindow.removeAllListeners(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT);
             this._ipcTransportInWindow.removeAllListeners(exports.IPCBUS_TRANSPORT_RENDERER_EVENT);
-            this._ipcTransportInWindow = null;
+            this._connected = false;
         }
     }
     _onConnect(eventOrPeer, peerOrUndefined) {
@@ -277,6 +277,7 @@ class IpcBusClientTransportRenderer extends IpcBusClientTransport_1.IpcBusClient
                         reject('timeout');
                     }, options.timeoutDelay);
                 }
+                this._connected = true;
                 this._ipcTransportInWindow.once(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, (eventOrPeer, peerOrUndefined) => {
                     if (this._ipcTransportInWindow) {
                         clearTimeout(timer);
@@ -293,14 +294,14 @@ class IpcBusClientTransportRenderer extends IpcBusClientTransport_1.IpcBusClient
         return p;
     }
     ipcClose(options) {
-        if (this._ipcTransportInWindow) {
+        if (this._connected) {
             this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Close, '');
             this._reset();
         }
         return Promise.resolve();
     }
     ipcPostCommand(ipcBusCommand, args) {
-        if (this._ipcTransportInWindow) {
+        if (this._connected) {
             let bufferWriter = new socket_serializer_1.BufferListWriter();
             if (args) {
                 this._packetOut.writeArray(bufferWriter, [ipcBusCommand, args]);
@@ -352,11 +353,13 @@ function PreloadElectronCommonIpc() {
                     let ipcBusClient = new IpcBusClientTransportRenderer_1.IpcBusClientTransportRenderer('renderer', localOptions || {}, electron.ipcRenderer);
                     return ipcBusClient;
                 };
+                return true;
             }
         }
     }
     catch (_) {
     }
+    return false;
 }
 exports.PreloadElectronCommonIpc = PreloadElectronCommonIpc;
 function IsElectronCommonIpcAvailable() {
@@ -1119,7 +1122,7 @@ __export(require("./IpcBus/IpcBusClient"));
 __export(require("./IpcBus/IpcBusClient-factory-browser"));
 __export(require("./IpcBus/service/IpcBusService"));
 __export(require("./IpcBus/service/IpcBusService-factory"));
-__export(require("./IpcBus/IpcBusTransportRendererPreload"));
+__export(require("./IpcBus/IpcBusRendererPreload"));
 function ActivateIpcBusTrace(enable) {
     IpcBusUtils.Logger.enable = enable;
 }
@@ -1128,10 +1131,10 @@ function ActivateServiceTrace(enable) {
     IpcBusUtils.Logger.service = enable;
 }
 exports.ActivateServiceTrace = ActivateServiceTrace;
-const IpcBusTransportRendererPreload_1 = require("./IpcBus/IpcBusTransportRendererPreload");
-IpcBusTransportRendererPreload_1.PreloadElectronCommonIpc();
+const IpcBusRendererPreload_1 = require("./IpcBus/IpcBusRendererPreload");
+IpcBusRendererPreload_1.PreloadElectronCommonIpc();
 
-},{"./IpcBus/IpcBusClient":2,"./IpcBus/IpcBusClient-factory-browser":1,"./IpcBus/IpcBusTransportRendererPreload":7,"./IpcBus/IpcBusUtils":8,"./IpcBus/service/IpcBusService":10,"./IpcBus/service/IpcBusService-factory":9}],15:[function(require,module,exports){
+},{"./IpcBus/IpcBusClient":2,"./IpcBus/IpcBusClient-factory-browser":1,"./IpcBus/IpcBusRendererPreload":7,"./IpcBus/IpcBusUtils":8,"./IpcBus/service/IpcBusService":10,"./IpcBus/service/IpcBusService-factory":9}],15:[function(require,module,exports){
 (function (global){
 'use strict';
 

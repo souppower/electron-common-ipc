@@ -7,7 +7,7 @@ import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
 // Then ipcbus is supported in sandbox or nodeIntegration=false process
 
 // By default this function is always trigerred in index-browser in order to offer an access to ipcBus
-export function PreloadElectronCommonIpc() {
+export function PreloadElectronCommonIpc(): boolean {
     try {
         const windowLocal = window as any;
         if (windowLocal.CreateIpcBusClient == null) {
@@ -18,12 +18,17 @@ export function PreloadElectronCommonIpc() {
                     let ipcBusClient: IpcBusClient = new IpcBusClientTransportRenderer('renderer', localOptions || {}, electron.ipcRenderer);
                     return ipcBusClient;
                 };
+                return true;
             }
         }
     }
     catch (_) {
     }
     // TODO - Register frame support in topframe : postMessage stuff
+    // run this code if in an iframe
+    // if (window.self !== window.top) {
+    // }
+    return false;
 }
 
 export function IsElectronCommonIpcAvailable(): boolean {

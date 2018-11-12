@@ -117,6 +117,30 @@ electronApp.on('ready', function () {
 });
 ```
 
+# Initialization
+If you are using the bus in a renderer process (page), you must take care of the context :
+- sandbox
+- nodeIntegration
+
+In order to have bus working in all contexts you can register the bus in the preload file of your BrowserWindow
+
+```ts
+let win = new BrowserWindow({ webPreferences { preload: 'preload-ipc.bundle.js' } })
+```
+
+preload-ipc.js
+```js
+const electronCommonIpc = require('electron-common-ipc');
+electronCommonIpc.PreloadElectronCommonIpc();
+```
+
+You have to bundle your file :
+```BatchFile
+browserify -o ./preload-ipc.bundle.js -x electron ./preload-ipc.js
+```
+
+***Bus in frame in not yet supported.***
+
 # Common options
 Some interfaces are sharing the same kind of options.
 In order to be consistent in term of behavior and naming we have common interfaces for options.
