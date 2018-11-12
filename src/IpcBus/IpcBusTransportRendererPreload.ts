@@ -29,7 +29,7 @@ export function PreloadElectronCommonIpc() {
 export function IsElectronCommonIpcAvailable(): boolean {
     try {
         const windowLocal = window as any;
-        return windowLocal.CreateIpcBusClient;
+        return (windowLocal.CreateIpcBusClient != null);
     }
     catch (_) {
     }

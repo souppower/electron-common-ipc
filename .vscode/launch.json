@@ -87,6 +87,45 @@
                 "!${workspaceRoot}/build/**/node_modules/**/*.js"
             ],
             "trace": false
+        },
+        {
+            "name": "Launch Electron Test App",
+            "type": "node",
+            "request": "launch",
+            "protocol": "inspector",
+            "port": 5828,
+            // "program": "${workspaceRoot}/test/electron-tests/app.js",
+            "stopOnEntry": false,
+            "args": [],
+            "cwd": "${workspaceRoot}/test/electron-tests/",
+            "preLaunchTask": null,
+            "windows": {
+                "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe"
+            },
+            "osx": {
+                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron"
+            },
+            "linux": {
+                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron"
+            },
+            "outputCapture": "std",
+            "runtimeArgs": [
+                "${workspaceRoot}/test/electron-tests/app.js",
+                "--remote-debugging-port=8315",
+                "--inspect-brk=5828",
+                // "--disable-sandbox",
+                // "--enable-sandbox",
+            ],
+            "env": {
+                "NODE_ENV": "development",
+            },
+            "console": "internalConsole",
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/lib/**/*.js"
+            ],
+            "trace": false
         }
+
     ]
 }

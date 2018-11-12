@@ -1,6 +1,6 @@
 {
   "name": "electron-common-ipc",
-  "version": "4.10.1",
+  "version": "4.11.0",
   "description": "A safe IPC bus for applications built on Node or Electron.",
   "repository": {
     "type": "git",
@@ -47,6 +47,7 @@
     "@types/node": "^0.0.3",
     "@types/uuid": "3.0.0",
     "@types/winston": "^2.3.9",
+    "browserify": "^16.2.3",
     "chai": "^4.1.2",
     "del": "^2.2.2",
     "del-cli": "^0.2.1",
@@ -73,6 +74,9 @@
     "clean-declaration-dts": "del-cli ./lib/IpcBus/*.d.ts",
     "build-declaration-dts-bundle2": "dts-bundle-generator --project ./tsconfig/tsconfig-js.json -o ./src/electron-common-ipc.d.ts ./src/electron-common-ipc.ts",
     "build-declaration-dts-bundle-browser2": "dts-bundle-generator --project ./tsconfig/tsconfig-js.json -o ./src/electron-common-ipc-browser.d.ts ./src/electron-common-ipc-browser.ts",
+    "browserify-test": "npm run browserify-test-preload && npm run browserify-test-js",
+    "browserify-test-preload": "browserify -o ./test/electron-tests/page-preload.bundle.js -x electron ./test/electron-tests/page-preload.js",
+    "browserify-test-js": "browserify -o ./test/electron-tests/page.bundle.js -x electron ./test/electron-tests/page.js",
     "test": "electron-mocha --no-timeouts --reporter spec test/*.test.js",
     "tsc": "tsc",
     "tslint": "tslint",
