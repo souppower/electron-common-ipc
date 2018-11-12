@@ -42,8 +42,8 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
     protected _reset() {
         this._promiseConnected = null;
         if (this._connected) {
-            this._ipcTransportInWindow.removeAllListeners(IPCBUS_TRANSPORT_RENDERER_CONNECT);
-            this._ipcTransportInWindow.removeAllListeners(IPCBUS_TRANSPORT_RENDERER_EVENT);
+            // this._ipcTransportInWindow.removeAllListeners(IPCBUS_TRANSPORT_RENDERER_CONNECT);
+            this._ipcTransportInWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             this._connected = false;
         }
     }
@@ -81,26 +81,30 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
                 // this._ipcRendererReady.then(() => {
                     // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
                     let timer: NodeJS.Timer;
+
+                    let onIpcConnect = (eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer) => {
+                        if (this._connected) {
+                            clearTimeout(timer);
+                            this._onConnect(eventOrPeer, peerOrUndefined);
+                            resolve();
+                        }
+                        else {
+                            reject('cancelled');
+                        }
+                    };
+
                     // Below zero = infinite
                     if (options.timeoutDelay >= 0) {
                         timer = setTimeout(() => {
                             timer = null;
+                            this._ipcTransportInWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
                             this._reset();
                             reject('timeout');
                         }, options.timeoutDelay);
                     }
                     // We wait for the bridge confirmation
                     this._connected = true;
-                    this._ipcTransportInWindow.once(IPCBUS_TRANSPORT_RENDERER_CONNECT, (eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer) => {
-                        if (this._ipcTransportInWindow) {
-                            clearTimeout(timer);
-                            this._onConnect(eventOrPeer, peerOrUndefined);
-                            resolve();
-                        }
-                        else {
-                            this._reset();
-                        }
-                    });
+                    this._ipcTransportInWindow.once(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
                     this.ipcSend(IpcBusCommand.Kind.Connect, '', undefined, [options.peerName]);
                 // });
             });

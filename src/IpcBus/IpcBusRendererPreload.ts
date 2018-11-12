@@ -27,6 +27,9 @@ export function PreloadElectronCommonIpc(): boolean {
     // TODO - Register frame support in topframe : postMessage stuff
     // run this code if in an iframe
     // if (window.self !== window.top) {
+        // var messageEventHandler = function(event){
+        // }
+        // window.addEventListener('message', messageEventHandler,false);
     // }
     return false;
 }
