@@ -15,7 +15,16 @@ function Decode(message: any): any {
 
 export class IpcBusBridgeTransportInFrame {
     constructor() {
+        this._handleMessage = this._handleMessage.bind(this);
+        window.addEventListener('message', this._handleMessage);
+    }
 
+    private _handleMessage(message: any) {
+        try {
+            let data = Decode(message);
+        }
+        catch (_) {
+        }
     }
 }
 
@@ -43,5 +52,6 @@ export class IpcBusTransportInFrame extends EventEmitter implements IpcBusTransp
     }
 
     send(channel: string, ...args: any[]): void {
+        this._messageChannel.port1.postMessage(Encode({channel, args}));
     }
 }
