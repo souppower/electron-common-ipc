@@ -147,8 +147,8 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements Bridg
         // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
         if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
             webContents.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
-                // ipcBusCommand.peer may be changed, the original buffer content is no more up-to-date, we have to rebuild it
-                this.ipcPostCommand(ipcBusCommand, args);
+            // ipcBusCommand.peer may be changed, the original buffer content is no more up-to-date, we have to rebuild it
+            this.ipcPostCommand(ipcBusCommand, args);
         }
         else {
             webContents.on('did-finish-load', () => {

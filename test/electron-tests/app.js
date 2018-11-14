@@ -11,10 +11,10 @@ function createWindow(page, title, webPreferences) {
     // Create the browser window.
     let win = new BrowserWindow({ x, y, width: 800, height: 200, webPreferences })
     win.loadFile(path.join(__dirname, page))
+    win.setTitle(`${page} - ${JSON.stringify(webPreferences)}`)
 
     // Open the DevTools.
-    win.webContents.openDevTools()
-    win.setTitle(`${page} - ${JSON.stringify(webPreferences)}`)
+    // win.webContents.openDevTools()
 
     // Emitted when the window is closed.
     win.on('closed', () => {
@@ -34,20 +34,20 @@ function createWindow(page, title, webPreferences) {
 
 function createWindows() {
     done = true
-    createWindow('page.html', '{}', {})
-    createWindow('page.html', 'nodeIntegration: false', { nodeIntegration: false })
-    createWindow('page.html', 'nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true })
-    createWindow('page.html', 'sandbox: true', { nodeIntegration: false, sandbox: true })
+    // createWindow('page.html', '{}', {})
+    // createWindow('page.html', 'nodeIntegration: false', { nodeIntegration: false })
+    // createWindow('page.html', 'nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true })
+    // createWindow('page.html', 'sandbox: true', { nodeIntegration: false, sandbox: true })
 
-    createWindow('page.html', '{}', { preload: path.join(__dirname, 'page-preload.bundle.js') })
-    createWindow('page.html', 'nodeIntegration: false', { nodeIntegration: false, preload: path.join(__dirname, 'page-preload.bundle.js') })
-    createWindow('page.html', 'nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
-    createWindow('page.html', 'sandbox: true', { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
+    // createWindow('page.html', '{}', { preload: path.join(__dirname, 'page-preload.bundle.js') })
+    // createWindow('page.html', 'nodeIntegration: false', { nodeIntegration: false, preload: path.join(__dirname, 'page-preload.bundle.js') })
+    // createWindow('page.html', 'nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
+    // createWindow('page.html', 'sandbox: true', { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
 
-    createWindow('page-frameset.html', '{}', {})
-    createWindow('page-frameset.html', 'nodeIntegration: false', { nodeIntegration: false })
-    createWindow('page-frameset.html', 'nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true })
-    createWindow('page-frameset.html', 'sandbox: true', { nodeIntegration: false, sandbox: true })
+    // createWindow('page-frameset.html', '{}', {})
+    // createWindow('page-frameset.html', 'nodeIntegration: false', { nodeIntegration: false })
+    // createWindow('page-frameset.html', 'nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true })
+    // createWindow('page-frameset.html', 'sandbox: true', { nodeIntegration: false, sandbox: true })
 
     createWindow('page-frameset.html', '{}', { preload: path.join(__dirname, 'page-preload.bundle.js') })
     createWindow('page-frameset.html', 'nodeIntegration: false', { nodeIntegration: false, preload: path.join(__dirname, 'page-preload.bundle.js') })

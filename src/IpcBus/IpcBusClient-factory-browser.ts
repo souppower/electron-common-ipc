@@ -6,8 +6,8 @@ import { IpcBusClient } from './IpcBusClient';
 
 export let CreateIpcBusClient: IpcBusClient.CreateFunction = (options: any, hostname?: string) => {
     const windowLocal = window as any;
-    if (windowLocal.CreateIpcBusClient) {
-        return windowLocal.CreateIpcBusClient(options, hostname);
+    if (windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.CreateIpcBusClient) {
+        return windowLocal.ElectronCommonIpc.CreateIpcBusClient(options, hostname);
     }
     return null;
 

@@ -11,6 +11,7 @@ export * from './IpcBus/service/IpcBusService';
 export * from './IpcBus/service/IpcBusService-factory';
 
 export * from './IpcBus/IpcBusRendererPreload';
+export * from './IpcBus/CrossFrameEventEmitter';
 
 export function ActivateIpcBusTrace(enable: boolean): void {
     IpcBusUtils.Logger.enable = enable;
@@ -20,5 +21,5 @@ export function ActivateServiceTrace(enable: boolean): void {
     IpcBusUtils.Logger.service = enable;
 }
 
-import { PreloadElectronCommonIpc } from './IpcBus/IpcBusRendererPreload';
-PreloadElectronCommonIpc();
+import { PreloadElectronCommonIpcAutomatic } from './IpcBus/IpcBusRendererPreload';
+PreloadElectronCommonIpcAutomatic();

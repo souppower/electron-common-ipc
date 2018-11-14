@@ -1,6 +1,6 @@
 {
   "name": "electron-common-ipc",
-  "version": "4.11.0",
+  "version": "4.12.0",
   "description": "A safe IPC bus for applications built on Node or Electron.",
   "repository": {
     "type": "git",
@@ -40,7 +40,6 @@
     "csv-write-stream": "^2.0.0",
     "electron-process-type": "^2.4.0",
     "socket-serializer": "^3.2.0",
-    "uuid": "3.0.1",
     "winston": "^2.4.1"
   },
   "devDependencies": {
@@ -61,7 +60,8 @@
     "socket-port-helpers": "^1.0.0",
     "tslint": "^4.1.1",
     "tslint-microsoft-contrib": "^4.0.1",
-    "typescript": "^3.1.1"
+    "typescript": "^3.1.1",
+    "uuid": "^3.0.1"
   },
   "scripts": {
     "clean": "del-cli ./lib ./build ./dist",

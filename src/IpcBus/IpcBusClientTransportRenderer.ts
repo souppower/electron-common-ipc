@@ -48,24 +48,33 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
         }
     }
 
-    private _onConnect(eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer): void {
+    private _onConnect(eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer): boolean {
         // In sandbox mode, 1st parameter is no more the event, but the 2nd argument !!!
         if (peerOrUndefined) {
-            this._ipcBusPeer = peerOrUndefined;
-            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] Activate Standard listening for #${this._ipcBusPeer.name}`);
-            this._onIpcEventReceived = (eventEmitter: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) => {
-                this._packetIn.decodeFromBuffer(buffer);
-                this._onEventReceived(ipcBusCommand, this._packetIn);
-            };
-        } else {
-            this._ipcBusPeer = eventOrPeer;
-            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
-            this._onIpcEventReceived = (ipcBusCommand: IpcBusCommand, buffer: Buffer) => {
-                this._packetIn.decodeFromBuffer(buffer);
-                this._onEventReceived(ipcBusCommand, this._packetIn);
-            };
+            if ((peerOrUndefined as Client.IpcBusPeer).id === this._ipcBusPeer.id) {
+                this._ipcBusPeer = peerOrUndefined;
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] Activate Standard listening for #${this._ipcBusPeer.name}`);
+                this._onIpcEventReceived = (eventEmitter: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) => {
+                    this._packetIn.decodeFromBuffer(buffer);
+                    this._onEventReceived(ipcBusCommand, this._packetIn);
+                };
+                this._ipcTransportInWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+                return true;
+            }
         }
-        this._ipcTransportInWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+        else {
+            if ((eventOrPeer as Client.IpcBusPeer).id === this._ipcBusPeer.id) {
+                this._ipcBusPeer = eventOrPeer;
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
+                this._onIpcEventReceived = (ipcBusCommand: IpcBusCommand, buffer: Buffer) => {
+                    this._packetIn.decodeFromBuffer(buffer);
+                    this._onEventReceived(ipcBusCommand, this._packetIn);
+                };
+                this._ipcTransportInWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+                return true;
+            }
+        }
+        return false;
     };
 
     /// IpcBusTrandport API
@@ -84,11 +93,14 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
 
                     let onIpcConnect = (eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer) => {
                         if (this._connected) {
-                            clearTimeout(timer);
-                            this._onConnect(eventOrPeer, peerOrUndefined);
-                            resolve();
+                            if (this._onConnect(eventOrPeer, peerOrUndefined)) {
+                                this._ipcTransportInWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                                clearTimeout(timer);
+                                resolve();
+                            }
                         }
                         else {
+                            this._ipcTransportInWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
                             reject('cancelled');
                         }
                     };
@@ -104,7 +116,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
                     }
                     // We wait for the bridge confirmation
                     this._connected = true;
-                    this._ipcTransportInWindow.once(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                    this._ipcTransportInWindow.addListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
                     this.ipcSend(IpcBusCommand.Kind.Connect, '', undefined, [options.peerName]);
                 // });
             });
