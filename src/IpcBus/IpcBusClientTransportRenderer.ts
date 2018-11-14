@@ -43,7 +43,9 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
         this._promiseConnected = null;
         if (this._connected) {
             // this._ipcTransportInWindow.removeAllListeners(IPCBUS_TRANSPORT_RENDERER_CONNECT);
-            this._ipcTransportInWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+            if (this._onIpcEventReceived) {
+                this._ipcTransportInWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+            }
             this._connected = false;
         }
     }

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <script src='./page.bundle.js'></script>
+  <script>
+    window.addEventListener('load', () => {
+      document.getElementById('content1').src = "./page-frame.html?id=" + GetWindowId();
+    });
+  </script>
+</head>
+<body>
+  <iframe id="content1" title="Inline Frame" width="300" height="200"></iframe>
+</body>
+</html>

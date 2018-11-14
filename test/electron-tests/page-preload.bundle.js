@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
 const IpcBusClientTransportRenderer_1 = require("./IpcBusClientTransportRenderer");
+const trace = true;
 class CrossFrameEventEmitter extends events_1.EventEmitter {
     constructor(target, origin) {
         super();
@@ -24,6 +25,7 @@ class CrossFrameEventEmitter extends events_1.EventEmitter {
         }
     }
     send(channel, ...args) {
+        trace && console.log(`send ${channel} - ${args}`);
         let packet = this._encode(channel, args);
         this._postMessage(packet);
     }
@@ -36,11 +38,15 @@ class CrossFrameEventEmitter extends events_1.EventEmitter {
             target.detachEvent('onmessage', this._messageHandler);
         }
     }
+    _eventHandler(channel, ...args) {
+        trace && console.log(`emit ${channel} - ${args}`);
+        this.emit(channel, ...args);
+    }
     _messageHandler(event) {
         let packet = this._decode(event.data);
         if (packet) {
             let args = packet.args || [];
-            this.emit(packet.channel, ...args);
+            this._eventHandler(packet.channel, args);
         }
     }
     _decode(data) {
@@ -73,17 +79,16 @@ class IpcBusFrameBridge extends CrossFrameEventEmitter {
         this._ipcBusTransportWindow.on(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
         this._ipcBusTransportWindow.on(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
     }
-    _messageHandler(event) {
-        let packet = this._decode(event.data);
-        if (packet) {
-            let args = packet.args || [];
-            this._ipcBusTransportWindow.send(packet.channel, ...args);
-        }
+    _eventHandler(channel, ...args) {
+        trace && console.log(`_messageHandler ${channel} ${args}`);
+        this._ipcBusTransportWindow.send(channel, ...args);
     }
     _messageTransportHandlerEvent(...args) {
+        trace && console.log(`_messageTransportHandlerEvent ${args}`);
         this.send(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_EVENT, ...args);
     }
     _messageTransportHandlerConnect(...args) {
+        trace && console.log(`_messageTransportHandlerConnect ${args}`);
         this.send(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, ...args);
     }
 }
@@ -327,7 +332,9 @@ class IpcBusClientTransportRenderer extends IpcBusClientTransport_1.IpcBusClient
     _reset() {
         this._promiseConnected = null;
         if (this._connected) {
-            this._ipcTransportInWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+            if (this._onIpcEventReceived) {
+                this._ipcTransportInWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+            }
             this._connected = false;
         }
     }
@@ -446,7 +453,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusUtils = require("./IpcBusUtils");
 const IpcBusClientTransportRenderer_1 = require("./IpcBusClientTransportRenderer");
 const CrossFrameEventEmitter_1 = require("./CrossFrameEventEmitter");
-const trace = true;
+const trace = false;
 function PreloadElectronCommonIpcAutomatic() {
     return _PreloadElectronCommonIpc('Implicit');
 }

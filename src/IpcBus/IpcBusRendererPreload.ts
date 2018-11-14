@@ -4,7 +4,7 @@ import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
 import { CrossFrameEventEmitter, IpcBusFrameBridge } from './CrossFrameEventEmitter';
 
-const trace = true;
+const trace = false;
 
 // This function could be called in advance in the preload file of the BrowserWindow
 // Then ipcbus is supported in sandbox or nodeIntegration=false process

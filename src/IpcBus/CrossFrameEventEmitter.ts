@@ -2,6 +2,8 @@ import { EventEmitter } from 'events';
 import { IpcBusTransportInWindow } from './IpcBusClientTransportRenderer';
 import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_EVENT } from './IpcBusClientTransportRenderer';
 
+const trace = true;
+
 export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransportInWindow {
     private _target: Window;
     private _origin: string;
@@ -36,6 +38,7 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransp
     // Get the channel and arguments and send it to the target
     // Channel is the event that the other side will be listening for
     send(channel: string, ...args: any[]): void {
+        trace && console.log(`send ${channel} - ${args}`);
         let packet = this._encode(channel, args);
         this._postMessage(packet);
     }
@@ -53,11 +56,16 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransp
     }
 
     // Unpacks and emits
+    protected _eventHandler(channel: string, ...args: any[]) {
+        trace && console.log(`emit ${channel} - ${args}`);
+        this.emit(channel, ...args);
+    }
+
     protected _messageHandler(event: MessageEvent) {
         let packet = this._decode(event.data);
         if (packet) {
             let args = packet.args || [];
-            this.emit(packet.channel, ...args);
+            this._eventHandler(packet.channel, args);
         }
     }
 
@@ -104,19 +112,18 @@ export class IpcBusFrameBridge extends CrossFrameEventEmitter {
     }
 
     // Unpacks and emits
-    protected _messageHandler(event: MessageEvent) {
-        let packet = this._decode(event.data);
-        if (packet) {
-            let args = packet.args || [];
-            this._ipcBusTransportWindow.send(packet.channel, ...args);
-        }
+    protected _eventHandler(channel: string, ...args: any[]) {
+        trace && console.log(`_eventHandler ${channel} ${args}`);
+        this._ipcBusTransportWindow.send(channel, ...args);
     }
 
     protected _messageTransportHandlerEvent(...args: any[]) {
+        trace && console.log(`_messageTransportHandlerEvent ${args}`);
         this.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ...args);
     }
 
     protected _messageTransportHandlerConnect(...args: any[]) {
+        trace && console.log(`_messageTransportHandlerConnect ${args}`);
         this.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ...args);
     }
 }

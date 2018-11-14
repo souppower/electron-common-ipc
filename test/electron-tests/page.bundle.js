@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
 const IpcBusClientTransportRenderer_1 = require("./IpcBusClientTransportRenderer");
+const trace = true;
 class CrossFrameEventEmitter extends events_1.EventEmitter {
     constructor(target, origin) {
         super();
@@ -24,6 +25,7 @@ class CrossFrameEventEmitter extends events_1.EventEmitter {
         }
     }
     send(channel, ...args) {
+        trace && console.log(`send ${channel} - ${args}`);
         let packet = this._encode(channel, args);
         this._postMessage(packet);
     }
@@ -36,11 +38,15 @@ class CrossFrameEventEmitter extends events_1.EventEmitter {
             target.detachEvent('onmessage', this._messageHandler);
         }
     }
+    _eventHandler(channel, ...args) {
+        trace && console.log(`emit ${channel} - ${args}`);
+        this.emit(channel, ...args);
+    }
     _messageHandler(event) {
         let packet = this._decode(event.data);
         if (packet) {
             let args = packet.args || [];
-            this.emit(packet.channel, ...args);
+            this._eventHandler(packet.channel, args);
         }
     }
     _decode(data) {
@@ -73,17 +79,16 @@ class IpcBusFrameBridge extends CrossFrameEventEmitter {
         this._ipcBusTransportWindow.on(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
         this._ipcBusTransportWindow.on(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
     }
-    _messageHandler(event) {
-        let packet = this._decode(event.data);
-        if (packet) {
-            let args = packet.args || [];
-            this._ipcBusTransportWindow.send(packet.channel, ...args);
-        }
+    _eventHandler(channel, ...args) {
+        trace && console.log(`_messageHandler ${channel} ${args}`);
+        this._ipcBusTransportWindow.send(channel, ...args);
     }
     _messageTransportHandlerEvent(...args) {
+        trace && console.log(`_messageTransportHandlerEvent ${args}`);
         this.send(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_EVENT, ...args);
     }
     _messageTransportHandlerConnect(...args) {
+        trace && console.log(`_messageTransportHandlerConnect ${args}`);
         this.send(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, ...args);
     }
 }
@@ -327,7 +332,9 @@ class IpcBusClientTransportRenderer extends IpcBusClientTransport_1.IpcBusClient
     _reset() {
         this._promiseConnected = null;
         if (this._connected) {
-            this._ipcTransportInWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+            if (this._onIpcEventReceived) {
+                this._ipcTransportInWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+            }
             this._connected = false;
         }
     }
@@ -446,7 +453,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusUtils = require("./IpcBusUtils");
 const IpcBusClientTransportRenderer_1 = require("./IpcBusClientTransportRenderer");
 const CrossFrameEventEmitter_1 = require("./CrossFrameEventEmitter");
-const trace = true;
+const trace = false;
 function PreloadElectronCommonIpcAutomatic() {
     return _PreloadElectronCommonIpc('Implicit');
 }
@@ -6527,7 +6534,19 @@ const uuid = require('uuid');
 
 let window_id = uuid.v1();
 window.GetWindowId = () => {
+    // console.log(`GetWindowId=${window_id}`);
     return window_id;
+}
+
+function GetQueryStringParams(sParam) {
+    var sPageURL = window.location.search.substring(1);
+    var sURLVariables = sPageURL.split('&');
+    for (var i = 0; i < sURLVariables.length; i++) {
+        var sParameterName = sURLVariables[i].split('=');
+        if (sParameterName[0] == sParam) {
+            return sParameterName[1];
+        }
+    }
 }
 
 window.addEventListener('load', () => {
@@ -6542,36 +6561,52 @@ window.addEventListener('load', () => {
     }
 
     if (window.self === window.top) {
-        console.log('Create FrameSet CrossFrameEventEmitter');
+        // console.log('Create Parent CrossFrameEventEmitter');
         let crossFrameEE = new electronCommonIpcModule.CrossFrameEventEmitter(window);
-        crossFrameEE.on('test-frameset', (...args) => {
-            console.log(`FrameSet receive message : ${args}`);
-            console.log('it works !!');
+        crossFrameEE.on('test-parent', (...args) => {
+            console.log(`crossFrameEE - Parent receive message : ${args}`);
         });
         setTimeout(() => {
-            console.log('FrameSet send message');
+            console.log('Parent send message');
             crossFrameEE.send('test-frame', 'hello frame');
-        },
-        200);
+        }, 100);
+        let ipcBus = electronCommonIpcModule.CreateIpcBusClient({ peerName: `client-parent-${window_id}` });
+        ipcBus.connect()
+        .then(() => {
+            ipcBus.on(`test-parent-${window_id}`, (...args) => {
+                console.log(`ipcBus - Parent receive message : ${args}`);
+            });
+            setTimeout(() => {
+                console.log('ipcBus - Parent send message');
+                ipcBus.send(`test-frame-${window_id}`, 'hello frame');
+            }, 100);
+        });
     }
     else {
-        window_id = window.location.search;
-        console.log('Create Frame CrossFrameEventEmitter');
+        window_id = GetQueryStringParams('id');
+        // console.log('Create Frame CrossFrameEventEmitter');
         let crossFrameEE = new electronCommonIpcModule.CrossFrameEventEmitter(window.parent);
         crossFrameEE.on('test-frame', (...args) => {
-            console.log(`Frame receive message : ${args}`);
-            console.log('it works !!');
+            console.log(`crossFrameEE - Frame receive message : ${args}`);
         });
         setTimeout(() => {
             console.log('Frame send message');
-            crossFrameEE.send('test-frameset', 'hello frameset');
-        },
-        200);
+            crossFrameEE.send('test-parent', 'hello parent');
+        }, 200);
 
-        let ipcBus = electronCommonIpcModule.CreateIpcBusClient({peerName: window.href});
-        console.log(ipcBus);
+        let ipcBus = electronCommonIpcModule.CreateIpcBusClient({ peerName: `client-frame-${window_id}` });
+        ipcBus.connect()
+        .then(() => {
+            ipcBus.on(`test-frame-${window_id}`, (...args) => {
+                console.log(`ipcBus - Frame receive message : ${args}`);
+            });
+            setTimeout(() => {
+                console.log('ipcBus - Frame send message');
+                ipcBus.send(`test-parent-${window_id}`, 'hello parent');
+            }, 200);
+        });
     }
-    console.log(`id=${window_id}`);
+    // console.log(`id=${window_id}`);
 
 })
 
