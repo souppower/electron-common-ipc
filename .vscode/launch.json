@@ -23,7 +23,7 @@
             "runtimeExecutable": "${workspaceRoot}/examples/test-app/node_modules/electron/dist/electron.exe",
             "runtimeArgs": [
                 // "--enable-sandbox",
-                "--inspect=50000",
+                "--inspect-brk=50000",
                 "--remote-debugging-port=8315"
             ],
             "autoAttachChildren": true,

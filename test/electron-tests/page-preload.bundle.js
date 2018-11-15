@@ -1,6 +1,7 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const uuid = require("uuid");
 const events_1 = require("events");
 const IpcBusClientTransportRenderer_1 = require("./IpcBusClientTransportRenderer");
 const trace = true;
@@ -9,47 +10,46 @@ class CrossFrameEventEmitter extends events_1.EventEmitter {
         super();
         this._target = target;
         this._origin = origin || '*';
+        this._uuid = uuid.v4();
+        this._messageChannel = new MessageChannel();
         this._messageHandler = this._messageHandler.bind(this);
         this._listen();
     }
-    _postMessage(packet) {
-        return this._target.postMessage(packet, this._origin);
-    }
     _listen() {
-        let target = this._target;
-        if (target.addEventListener) {
-            target.addEventListener('message', this._messageHandler);
-        }
-        else if (target.attachEvent) {
-            target.attachEvent('onmessage', this._messageHandler);
-        }
+        trace && console.log(`CFEE ${this._uuid} - init`);
+        this._messageChannel.port1.addEventListener('message', this._messageHandler);
+        this._messageChannel.port1.start();
+        let packet = CrossFrameEventEmitter.encode(this._uuid, 'init', []);
+        this._target.postMessage(packet, this._origin, [this._messageChannel.port2]);
     }
     send(channel, ...args) {
-        trace && console.log(`send ${channel} - ${args}`);
-        let packet = this._encode(channel, args);
-        this._postMessage(packet);
+        trace && console.log(`CFEE ${this._uuid} - send ${channel} - ${args}`);
+        let packet = CrossFrameEventEmitter.encode(this._uuid, channel, args);
+        this._messageChannel.port1.postMessage(packet);
     }
     stopListening() {
-        let target = this._target;
-        if (target.removeEventListener) {
-            target.removeEventListener('message', this._messageHandler);
-        }
-        else if (target.detachEvent) {
-            target.detachEvent('onmessage', this._messageHandler);
-        }
+        trace && console.log(`CFEE ${this._uuid} - exit`);
+        let packet = CrossFrameEventEmitter.encode(this._uuid, 'exit', []);
+        this._target.postMessage(packet, this._origin);
+        this._messageChannel.port1.close();
     }
     _eventHandler(channel, ...args) {
-        trace && console.log(`emit ${channel} - ${args}`);
+        trace && console.log(`CFEE ${this._uuid} - emit ${channel} - ${args}`);
         this.emit(channel, ...args);
     }
     _messageHandler(event) {
-        let packet = this._decode(event.data);
+        trace && console.log(`CFEE ${this._uuid} - messageHandler ${JSON.stringify(event)}`);
+        let packet = CrossFrameEventEmitter.decode(event.data);
         if (packet) {
-            let args = packet.args || [];
-            this._eventHandler(packet.channel, args);
+            if (Array.isArray(packet.args)) {
+                this._eventHandler(packet.channel, ...packet.args);
+            }
+            else {
+                this._eventHandler(packet.channel);
+            }
         }
     }
-    _decode(data) {
+    static decode(data) {
         try {
             let packet = data['_electron_common_ipc_'];
             if (packet) {
@@ -60,41 +60,106 @@ class CrossFrameEventEmitter extends events_1.EventEmitter {
         }
         return null;
     }
-    _encode(channel, args) {
+    static encode(uuid, channel, args) {
         return {
             '_electron_common_ipc_': {
-                channel: channel,
+                uuid,
+                channel,
                 args: args
             }
         };
     }
 }
 exports.CrossFrameEventEmitter = CrossFrameEventEmitter;
-class IpcBusFrameBridge extends CrossFrameEventEmitter {
-    constructor(ipcBusTransportWindow, target, origin) {
-        super(target, origin);
+class CrossFrameEventDispatcher {
+    constructor(target) {
+        this._target = target;
+        this._uuid = uuid.v4();
+        this._ports = new Map();
+        this._lifecycleHandler = this._lifecycleHandler.bind(this);
+        this._messageHandler = this._messageHandler.bind(this);
+        this._listen();
+    }
+    _listen() {
+        trace && console.log(`CFEDisp ${this._uuid} - listen`);
+        let target = this._target;
+        if (target.addEventListener) {
+            target.addEventListener('message', this._lifecycleHandler);
+        }
+        else if (target.attachEvent) {
+            target.attachEvent('onmessage', this._lifecycleHandler);
+        }
+    }
+    _lifecycleHandler(event) {
+        let packet = CrossFrameEventEmitter.decode(event.data);
+        trace && console.log(`CFEDisp ${this._uuid} - lifecycle - ${JSON.stringify(packet)}`);
+        if (packet) {
+            if (packet.channel === 'init') {
+                trace && console.log(`CFEDisp ${this._uuid} - lifecycle - init ${packet.uuid}`);
+                let port = event.ports[0];
+                this._ports.set(packet.uuid, port);
+                port.addEventListener('message', this._messageHandler);
+                port.start();
+            }
+            else if (packet.channel === 'exit') {
+                trace && console.log(`CFEDisp ${this._uuid} - lifecycle - exit ${packet.uuid}`);
+                this._ports.delete(packet.uuid);
+            }
+        }
+    }
+    _messageHandler(event) {
+        trace && console.log(`CFEDisp ${this._uuid} - messageHandler ${JSON.stringify(event)}`);
+        let packet = CrossFrameEventEmitter.decode(event.data);
+        if (packet) {
+            trace && console.log(`CFEDisp ${this._uuid} - messageHandler - ${packet}`);
+            this._ports.forEach((port, uuid) => {
+                if (uuid !== packet.uuid) {
+                    port.postMessage(event.data);
+                }
+            });
+        }
+    }
+}
+exports.CrossFrameEventDispatcher = CrossFrameEventDispatcher;
+class IpcBusFrameBridge extends CrossFrameEventDispatcher {
+    constructor(ipcBusTransportWindow, target) {
+        super(target);
         this._ipcBusTransportWindow = ipcBusTransportWindow;
         this._messageTransportHandlerEvent = this._messageTransportHandlerEvent.bind(this);
         this._messageTransportHandlerConnect = this._messageTransportHandlerConnect.bind(this);
         this._ipcBusTransportWindow.on(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
         this._ipcBusTransportWindow.on(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
     }
-    _eventHandler(channel, ...args) {
-        trace && console.log(`_messageHandler ${channel} ${args}`);
-        this._ipcBusTransportWindow.send(channel, ...args);
+    _messageHandler(event) {
+        let packet = CrossFrameEventEmitter.decode(event.data);
+        trace && console.log(`IpcBusFrameBridge - messageHandler - ${JSON.stringify(packet)}`);
+        if (packet) {
+            if (Array.isArray(packet.args)) {
+                this._ipcBusTransportWindow.send(packet.channel, ...packet.args);
+            }
+            else {
+                this._ipcBusTransportWindow.send(packet.channel);
+            }
+        }
     }
     _messageTransportHandlerEvent(...args) {
         trace && console.log(`_messageTransportHandlerEvent ${args}`);
-        this.send(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_EVENT, ...args);
+        let packet = CrossFrameEventEmitter.encode('dispatcher', IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_EVENT, args);
+        this._ports.forEach((port) => {
+            port.postMessage(packet);
+        });
     }
     _messageTransportHandlerConnect(...args) {
         trace && console.log(`_messageTransportHandlerConnect ${args}`);
-        this.send(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, ...args);
+        let packet = CrossFrameEventEmitter.encode('dispatcher', IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_EVENT, args);
+        this._ports.forEach((port) => {
+            port.postMessage(packet);
+        });
     }
 }
 exports.IpcBusFrameBridge = IpcBusFrameBridge;
 
-},{"./IpcBusClientTransportRenderer":6,"events":22}],2:[function(require,module,exports){
+},{"./IpcBusClientTransportRenderer":6,"events":22,"uuid":36}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateIpcBusClient = (options, hostname) => {
@@ -453,7 +518,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusUtils = require("./IpcBusUtils");
 const IpcBusClientTransportRenderer_1 = require("./IpcBusClientTransportRenderer");
 const CrossFrameEventEmitter_1 = require("./CrossFrameEventEmitter");
-const trace = false;
+const trace = true;
 function PreloadElectronCommonIpcAutomatic() {
     return _PreloadElectronCommonIpc('Implicit');
 }
@@ -465,51 +530,45 @@ exports.PreloadElectronCommonIpc = PreloadElectronCommonIpc;
 function _PreloadElectronCommonIpc(context) {
     const windowLocal = window;
     try {
-        windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
-        if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
-            const electron = require('electron');
-            if (electron && electron.ipcRenderer) {
-                trace && console.log(`${context} - Inject ElectronCommonIpc.CreateIpcBusClient`);
-                windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
-                    let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-                    let ipcBusClient = new IpcBusClientTransportRenderer_1.IpcBusClientTransportRenderer('renderer', localOptions || {}, electron.ipcRenderer);
-                    return ipcBusClient;
-                };
+        if (windowLocal.ElectronCommonIpc == null) {
+            if (windowLocal.self === windowLocal.top) {
+                const electron = require('electron');
+                if (electron && electron.ipcRenderer) {
+                    windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
+                    trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
+                    windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
+                        let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
+                        let ipcBusClient = new IpcBusClientTransportRenderer_1.IpcBusClientTransportRenderer('renderer', localOptions || {}, electron.ipcRenderer);
+                        return ipcBusClient;
+                    };
+                    trace && console.log(`${context} - ElectronCommonIpc.FrameBridge`);
+                    windowLocal.ElectronCommonIpc.FrameBridge = new CrossFrameEventEmitter_1.IpcBusFrameBridge(electron.ipcRenderer, window);
+                    windowLocal.ElectronCommonIpc.Dispatch = new CrossFrameEventEmitter_1.CrossFrameEventDispatcher(window);
+                    return true;
+                }
             }
         }
         else {
-            trace && console.log(`${context} - Already ElectronCommonIpc.CreateIpcBusClient`);
+            trace && console.log(`${context} - ElectronCommonIpc`);
+            return true;
         }
     }
     catch (_) {
     }
     try {
-        windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
-        if (windowLocal.self === windowLocal.top) {
-            if (windowLocal.ElectronCommonIpc.FrameBridge == null) {
-                const electron = require('electron');
-                if (electron && electron.ipcRenderer) {
-                    trace && console.log(`${context} - Inject ElectronCommonIpc.FrameBridge`);
-                    windowLocal.ElectronCommonIpc.FrameBridge = new CrossFrameEventEmitter_1.IpcBusFrameBridge(electron.ipcRenderer, window);
-                }
-            }
-            else {
-                trace && console.log(`${context} - FrameSet ElectronCommonIpc.FrameBridge`);
-            }
-            return true;
-        }
-        else {
-            if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
+        if (windowLocal.ElectronCommonIpc == null) {
+            if (windowLocal.self !== windowLocal.top) {
+                windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
                 let crossFrameEE = new CrossFrameEventEmitter_1.CrossFrameEventEmitter(window.parent);
                 windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
-                    trace && console.log(`${context} - Inject Frame ElectronCommonIpc.CreateIpcBusClient`);
+                    trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
                     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
                     let ipcBusClient = new IpcBusClientTransportRenderer_1.IpcBusClientTransportRenderer('renderer', localOptions || {}, crossFrameEE);
                     return ipcBusClient;
                 };
             }
             else {
-                trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
+                trace && console.log(`${context} - Frame ElectronCommonIpc`);
             }
             return true;
         }

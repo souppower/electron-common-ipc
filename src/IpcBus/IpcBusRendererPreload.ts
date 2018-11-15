@@ -2,9 +2,9 @@ import { IpcBusClient } from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
 
 import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
-import { CrossFrameEventEmitter, IpcBusFrameBridge } from './CrossFrameEventEmitter';
+import { CrossFrameEventEmitter, CrossFrameEventDispatcher, IpcBusFrameBridge } from './CrossFrameEventEmitter';
 
-const trace = false;
+const trace = true;
 
 // This function could be called in advance in the preload file of the BrowserWindow
 // Then ipcbus is supported in sandbox or nodeIntegration=false process
@@ -19,56 +19,50 @@ export function PreloadElectronCommonIpc(): boolean {
     return _PreloadElectronCommonIpc('Explicit');
 }
 
-
 function _PreloadElectronCommonIpc(context: string): boolean {
     const windowLocal = window as any;
+    // console.log(`window.href - ${window.location.href}`);
     try {
-        windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
-        if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
-            const electron = require('electron');
-            if (electron && electron.ipcRenderer) {
-                trace && console.log(`${context} - Inject ElectronCommonIpc.CreateIpcBusClient`);
-                windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options: any, hostname?: string) => {
-                    let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-                    let ipcBusClient: IpcBusClient = new IpcBusClientTransportRenderer('renderer', localOptions || {}, electron.ipcRenderer);
-                    return ipcBusClient;
-                };
+        if (windowLocal.ElectronCommonIpc == null) {
+            if (windowLocal.self === windowLocal.top) {
+                const electron = require('electron');
+                if (electron && electron.ipcRenderer) {
+                    windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
+                    trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
+                    windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options: any, hostname?: string) => {
+                        let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
+                        let ipcBusClient: IpcBusClient = new IpcBusClientTransportRenderer('renderer', localOptions || {}, electron.ipcRenderer);
+                        return ipcBusClient;
+                    };
+                    trace && console.log(`${context} - ElectronCommonIpc.FrameBridge`);
+                    windowLocal.ElectronCommonIpc.FrameBridge = new IpcBusFrameBridge(electron.ipcRenderer, window);
+                    windowLocal.ElectronCommonIpc.Dispatch = new CrossFrameEventDispatcher(window);
+                    return true;
+                }
             }
         }
         else {
-            trace && console.log(`${context} - Already ElectronCommonIpc.CreateIpcBusClient`);
+            trace && console.log(`${context} - ElectronCommonIpc`);
+            return true;
         }
-}
+    }
     catch (_) {
     }
 
     try {
-        windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
-        if (windowLocal.self === windowLocal.top) {
-            if (windowLocal.ElectronCommonIpc.FrameBridge == null) {
-                const electron = require('electron');
-                if (electron && electron.ipcRenderer) {
-                    trace && console.log(`${context} - Inject ElectronCommonIpc.FrameBridge`);
-                    windowLocal.ElectronCommonIpc.FrameBridge = new IpcBusFrameBridge(electron.ipcRenderer, window);
-                }
-            }
-            else {
-                trace && console.log(`${context} - FrameSet ElectronCommonIpc.FrameBridge`);
-            }
-            return true;
-        }
-        else {
-            if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
+        if (windowLocal.ElectronCommonIpc == null) {
+            if (windowLocal.self !== windowLocal.top) {
+                windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
                 let crossFrameEE = new CrossFrameEventEmitter(window.parent);
                 windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options: any, hostname?: string) => {
-                    trace && console.log(`${context} - Inject Frame ElectronCommonIpc.CreateIpcBusClient`);
+                    trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
                     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
                     let ipcBusClient: IpcBusClient = new IpcBusClientTransportRenderer('renderer', localOptions || {}, crossFrameEE);
                     return ipcBusClient;
                 };
             }
             else {
-                trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
+                trace && console.log(`${context} - Frame ElectronCommonIpc`);
             }
             return true;
         }
