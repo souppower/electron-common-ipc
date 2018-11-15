@@ -149,7 +149,87 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 }
 exports.IpcBusFrameBridge = IpcBusFrameBridge;
 
-},{"./CrossFrameMessage":2,"./IpcBusClientTransportRenderer":7,"events":23,"uuid":37}],2:[function(require,module,exports){
+},{"./CrossFrameMessage":3,"./IpcBusClientTransportRenderer":8,"events":24,"uuid":38}],2:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const uuid = require("uuid");
+const events_1 = require("events");
+const IpcBusClientTransportRenderer_1 = require("./IpcBusClientTransportRenderer");
+const CrossFrameMessage_1 = require("./CrossFrameMessage");
+const trace = true;
+class CrossFrameEventEmitter extends events_1.EventEmitter {
+    constructor(target, origin) {
+        super();
+        this._target = target;
+        this._origin = origin || '*';
+        this._uuid = uuid.v4();
+        this._messageHandler = this._messageHandler.bind(this);
+        this._listen();
+    }
+    _postMessage(packet) {
+        return this._target.postMessage(packet, this._origin);
+    }
+    _listen() {
+        let target = this._target;
+        if (target.addEventListener) {
+            target.addEventListener('message', this._messageHandler);
+        }
+        else if (target.attachEvent) {
+            target.attachEvent('onmessage', this._messageHandler);
+        }
+    }
+    send(channel, ...args) {
+        trace && console.log(`send ${channel} - ${args}`);
+        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode(false, this._uuid, channel, args);
+        this._postMessage(packet);
+    }
+    stopListening() {
+        let target = this._target;
+        if (target.removeEventListener) {
+            target.removeEventListener('message', this._messageHandler);
+        }
+        else if (target.detachEvent) {
+            target.detachEvent('onmessage', this._messageHandler);
+        }
+    }
+    _eventHandler(channel, ...args) {
+        trace && console.log(`emit ${channel} - ${args}`);
+        this.emit(channel, ...args);
+    }
+    _messageHandler(event) {
+        let packet = CrossFrameMessage_1.CrossFrameMessage.Decode(false, event.data);
+        if (packet) {
+            let args = packet.args || [];
+            this._eventHandler(packet.channel, ...args);
+        }
+    }
+}
+exports.CrossFrameEventEmitter = CrossFrameEventEmitter;
+class IpcBusFrameBridge extends CrossFrameEventEmitter {
+    constructor(ipcBusTransportWindow, target, origin) {
+        super(target, origin);
+        this._ipcBusTransportWindow = ipcBusTransportWindow;
+        this._messageTransportHandlerEvent = this._messageTransportHandlerEvent.bind(this);
+        this._messageTransportHandlerConnect = this._messageTransportHandlerConnect.bind(this);
+        this._ipcBusTransportWindow.on(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
+        this._ipcBusTransportWindow.on(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
+    }
+    _eventHandler(channel, ...args) {
+        trace && console.log(`_eventHandler ${channel} ${args}`);
+        this._ipcBusTransportWindow.send(channel, ...args);
+    }
+    _messageTransportHandlerEvent(...args) {
+        trace && console.log(`_messageTransportHandlerEvent ${args}`);
+        this.send(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_EVENT, ...args);
+    }
+    _messageTransportHandlerConnect(...args) {
+        trace && console.log(`_messageTransportHandlerConnect ${args}`);
+        this.send(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, ...args);
+    }
+}
+exports.IpcBusFrameBridge = IpcBusFrameBridge;
+
+},{"./CrossFrameMessage":3,"./IpcBusClientTransportRenderer":8,"events":24,"uuid":38}],3:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -187,7 +267,7 @@ var CrossFrameMessage;
 })(CrossFrameMessage = exports.CrossFrameMessage || (exports.CrossFrameMessage = {}));
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":22}],3:[function(require,module,exports){
+},{"buffer":23}],4:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateIpcBusClient = (options, hostname) => {
@@ -198,7 +278,7 @@ exports.CreateIpcBusClient = (options, hostname) => {
     return null;
 };
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IPCBUS_CHANNEL = '/electron-ipc-bus';
@@ -206,7 +286,7 @@ exports.IPCBUS_CHANNEL_QUERY_STATE = `${exports.IPCBUS_CHANNEL}/queryState`;
 exports.ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH';
 exports.ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH';
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
@@ -280,7 +360,7 @@ class IpcBusClientImpl extends events_1.EventEmitter {
 }
 exports.IpcBusClientImpl = IpcBusClientImpl;
 
-},{"./IpcBusCommand":8,"events":23}],6:[function(require,module,exports){
+},{"./IpcBusCommand":9,"events":24}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const uuid = require("uuid");
@@ -403,7 +483,7 @@ class IpcBusClientTransport extends IpcBusClientImpl_1.IpcBusClientImpl {
 }
 exports.IpcBusClientTransport = IpcBusClientTransport;
 
-},{"./IpcBusClient":4,"./IpcBusClientImpl":5,"./IpcBusCommand":8,"./IpcBusUtils":10,"uuid":37}],7:[function(require,module,exports){
+},{"./IpcBusClient":5,"./IpcBusClientImpl":6,"./IpcBusCommand":9,"./IpcBusUtils":11,"uuid":38}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert = require("assert");
@@ -518,7 +598,7 @@ class IpcBusClientTransportRenderer extends IpcBusClientTransport_1.IpcBusClient
 }
 exports.IpcBusClientTransportRenderer = IpcBusClientTransportRenderer;
 
-},{"./IpcBusClientTransport":6,"./IpcBusCommand":8,"./IpcBusUtils":10,"assert":17,"socket-serializer":36}],8:[function(require,module,exports){
+},{"./IpcBusClientTransport":7,"./IpcBusCommand":9,"./IpcBusUtils":11,"assert":18,"socket-serializer":37}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var IpcBusCommand;
@@ -540,12 +620,12 @@ var IpcBusCommand;
     ;
 })(IpcBusCommand = exports.IpcBusCommand || (exports.IpcBusCommand = {}));
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusUtils = require("./IpcBusUtils");
 const IpcBusClientTransportRenderer_1 = require("./IpcBusClientTransportRenderer");
-const CrossFrameEventEmitter_1 = require("./CrossFrameEventEmitter");
+const CrossFrameEventEmitter1_1 = require("./CrossFrameEventEmitter1");
 const trace = true;
 function PreloadElectronCommonIpcAutomatic() {
     return _PreloadElectronCommonIpc('Implicit');
@@ -570,7 +650,7 @@ function _PreloadElectronCommonIpc(context) {
                         let ipcBusClient = new IpcBusClientTransportRenderer_1.IpcBusClientTransportRenderer('renderer', localOptions || {}, electron.ipcRenderer);
                         return ipcBusClient;
                     };
-                    windowLocal.ElectronCommonIpc.FrameBridge = new CrossFrameEventEmitter_1.IpcBusFrameBridge(electron.ipcRenderer, window);
+                    windowLocal.ElectronCommonIpc.FrameBridge = new CrossFrameEventEmitter1_1.IpcBusFrameBridge(electron.ipcRenderer, window);
                     return true;
                 }
             }
@@ -586,7 +666,7 @@ function _PreloadElectronCommonIpc(context) {
         if (windowLocal.ElectronCommonIpc == null) {
             if (windowLocal.self !== windowLocal.top) {
                 windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
-                let crossFrameEE = new CrossFrameEventEmitter_1.CrossFrameEventEmitter(window.parent);
+                let crossFrameEE = new CrossFrameEventEmitter1_1.CrossFrameEventEmitter(window.parent);
                 trace && console.log(`${context} - Frame ElectronCommonIpc`);
                 windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
                     trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
@@ -616,7 +696,7 @@ function IsElectronCommonIpcAvailable() {
 }
 exports.IsElectronCommonIpcAvailable = IsElectronCommonIpcAvailable;
 
-},{"./CrossFrameEventEmitter":1,"./IpcBusClientTransportRenderer":7,"./IpcBusUtils":10,"electron":"electron"}],10:[function(require,module,exports){
+},{"./CrossFrameEventEmitter1":2,"./IpcBusClientTransportRenderer":8,"./IpcBusUtils":11,"electron":"electron"}],11:[function(require,module,exports){
 (function (Buffer,process){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -943,7 +1023,7 @@ exports.ChannelConnectionMap = ChannelConnectionMap;
 ;
 
 }).call(this,{"isBuffer":require("../../node_modules/is-buffer/index.js")},require('_process'))
-},{"../../node_modules/is-buffer/index.js":25,"_process":26,"events":23}],11:[function(require,module,exports){
+},{"../../node_modules/is-buffer/index.js":26,"_process":27,"events":24}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusServiceImpl_1 = require("./IpcBusServiceImpl");
@@ -955,13 +1035,13 @@ exports.CreateIpcBusServiceProxy = (client, serviceName, options) => {
     return new IpcBusServiceProxyImpl_1.IpcBusServiceProxyImpl(client, serviceName, options);
 };
 
-},{"./IpcBusServiceImpl":13,"./IpcBusServiceProxyImpl":14}],12:[function(require,module,exports){
+},{"./IpcBusServiceImpl":14,"./IpcBusServiceProxyImpl":15}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IPCBUS_SERVICE_EVENT_START = 'service-event-start';
 exports.IPCBUS_SERVICE_EVENT_STOP = 'service-event-stop';
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
@@ -1112,7 +1192,7 @@ class IpcBusServiceImpl {
 }
 exports.IpcBusServiceImpl = IpcBusServiceImpl;
 
-},{"../IpcBusUtils":10,"./IpcBusService":12,"./IpcBusServiceUtils":15,"events":23}],14:[function(require,module,exports){
+},{"../IpcBusUtils":11,"./IpcBusService":13,"./IpcBusServiceUtils":16,"events":24}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
@@ -1333,7 +1413,7 @@ class IpcBusServiceProxyImpl extends events_1.EventEmitter {
 }
 exports.IpcBusServiceProxyImpl = IpcBusServiceProxyImpl;
 
-},{"../IpcBusUtils":10,"./IpcBusService":12,"./IpcBusServiceUtils":15,"events":23}],15:[function(require,module,exports){
+},{"../IpcBusUtils":11,"./IpcBusService":13,"./IpcBusServiceUtils":16,"events":24}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Client = require("../IpcBusClient");
@@ -1354,7 +1434,7 @@ function getServiceEventChannel(serviceName) {
 }
 exports.getServiceEventChannel = getServiceEventChannel;
 
-},{"../IpcBusClient":4}],16:[function(require,module,exports){
+},{"../IpcBusClient":5}],17:[function(require,module,exports){
 "use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
@@ -1378,7 +1458,7 @@ exports.ActivateServiceTrace = ActivateServiceTrace;
 const IpcBusRendererPreload_1 = require("./IpcBus/IpcBusRendererPreload");
 IpcBusRendererPreload_1.PreloadElectronCommonIpcAutomatic();
 
-},{"./IpcBus/CrossFrameEventEmitter":1,"./IpcBus/IpcBusClient":4,"./IpcBus/IpcBusClient-factory-browser":3,"./IpcBus/IpcBusRendererPreload":9,"./IpcBus/IpcBusUtils":10,"./IpcBus/service/IpcBusService":12,"./IpcBus/service/IpcBusService-factory":11}],17:[function(require,module,exports){
+},{"./IpcBus/CrossFrameEventEmitter":1,"./IpcBus/IpcBusClient":5,"./IpcBus/IpcBusClient-factory-browser":4,"./IpcBus/IpcBusRendererPreload":10,"./IpcBus/IpcBusUtils":11,"./IpcBus/service/IpcBusService":13,"./IpcBus/service/IpcBusService-factory":12}],18:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -1872,7 +1952,7 @@ var objectKeys = Object.keys || function (obj) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"util/":20}],18:[function(require,module,exports){
+},{"util/":21}],19:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -1897,14 +1977,14 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -2494,7 +2574,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":19,"_process":26,"inherits":18}],21:[function(require,module,exports){
+},{"./support/isBuffer":20,"_process":27,"inherits":19}],22:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -2647,7 +2727,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -4426,7 +4506,7 @@ function numberIsNaN (obj) {
   return obj !== obj // eslint-disable-line no-self-compare
 }
 
-},{"base64-js":21,"ieee754":24}],23:[function(require,module,exports){
+},{"base64-js":22,"ieee754":25}],24:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -4951,7 +5031,7 @@ function functionBindPolyfill(context) {
   };
 }
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -5037,7 +5117,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 /*!
  * Determine if an object is a Buffer
  *
@@ -5060,7 +5140,7 @@ function isSlowBuffer (obj) {
   return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0))
 }
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -5246,7 +5326,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const buffer_1 = require("buffer");
@@ -5401,7 +5481,7 @@ class BufferListReader extends reader_1.ReaderBase {
 }
 exports.BufferListReader = BufferListReader;
 
-},{"./reader":34,"buffer":22}],28:[function(require,module,exports){
+},{"./reader":35,"buffer":23}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const buffer_1 = require("buffer");
@@ -5485,7 +5565,7 @@ class BufferListWriter extends BufferListWriterBase {
 }
 exports.BufferListWriter = BufferListWriter;
 
-},{"./writer":35,"buffer":22}],29:[function(require,module,exports){
+},{"./writer":36,"buffer":23}],30:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5563,7 +5643,7 @@ class BufferReader extends reader_1.ReaderBase {
 exports.BufferReader = BufferReader;
 
 }).call(this,require("buffer").Buffer)
-},{"./reader":34,"buffer":22}],30:[function(require,module,exports){
+},{"./reader":35,"buffer":23}],31:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5628,7 +5708,7 @@ class BufferWriter extends writer_1.WriterBase {
 exports.BufferWriter = BufferWriter;
 
 }).call(this,require("buffer").Buffer)
-},{"./writer":35,"buffer":22}],31:[function(require,module,exports){
+},{"./writer":36,"buffer":23}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
@@ -5663,7 +5743,7 @@ class IpcPacketParser {
 }
 exports.IpcPacketParser = IpcPacketParser;
 
-},{"./bufferListWriter":28,"./bufferReader":29,"./ipcPacketBufferWrap":33}],32:[function(require,module,exports){
+},{"./bufferListWriter":29,"./bufferReader":30,"./ipcPacketBufferWrap":34}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
@@ -5780,7 +5860,7 @@ class IpcPacketBuffer extends ipcPacketBufferWrap_1.IpcPacketBufferWrap {
 }
 exports.IpcPacketBuffer = IpcPacketBuffer;
 
-},{"./bufferListWriter":28,"./bufferReader":29,"./ipcPacketBufferWrap":33}],33:[function(require,module,exports){
+},{"./bufferListWriter":29,"./bufferReader":30,"./ipcPacketBufferWrap":34}],34:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -6330,7 +6410,7 @@ class IpcPacketBufferWrap {
 exports.IpcPacketBufferWrap = IpcPacketBufferWrap;
 
 }).call(this,require("buffer").Buffer)
-},{"./bufferListWriter":28,"./bufferWriter":30,"buffer":22}],34:[function(require,module,exports){
+},{"./bufferListWriter":29,"./bufferWriter":31,"buffer":23}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Reader;
@@ -6369,7 +6449,7 @@ class ReaderBase {
 }
 exports.ReaderBase = ReaderBase;
 
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class WriterBase {
@@ -6385,7 +6465,7 @@ class WriterBase {
 }
 exports.WriterBase = WriterBase;
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ipcPacketBuffer_1 = require("./code/ipcPacketBuffer");
@@ -6408,7 +6488,7 @@ var ipcPacket_1 = require("./code/ipcPacket");
 exports.IpcPacketSerializer = ipcPacket_1.IpcPacketSerializer;
 exports.IpcPacketParser = ipcPacket_1.IpcPacketParser;
 
-},{"./code/bufferListReader":27,"./code/bufferListWriter":28,"./code/bufferReader":29,"./code/bufferWriter":30,"./code/ipcPacket":31,"./code/ipcPacketBuffer":32,"./code/ipcPacketBufferWrap":33,"./code/reader":34}],37:[function(require,module,exports){
+},{"./code/bufferListReader":28,"./code/bufferListWriter":29,"./code/bufferReader":30,"./code/bufferWriter":31,"./code/ipcPacket":32,"./code/ipcPacketBuffer":33,"./code/ipcPacketBufferWrap":34,"./code/reader":35}],38:[function(require,module,exports){
 var v1 = require('./v1');
 var v4 = require('./v4');
 
@@ -6418,7 +6498,7 @@ uuid.v4 = v4;
 
 module.exports = uuid;
 
-},{"./v1":40,"./v4":41}],38:[function(require,module,exports){
+},{"./v1":41,"./v4":42}],39:[function(require,module,exports){
 /**
  * Convert array of 16 byte values to UUID string format of the form:
  * XXXXXXXX-XXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
@@ -6443,7 +6523,7 @@ function bytesToUuid(buf, offset) {
 
 module.exports = bytesToUuid;
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 (function (global){
 // Unique ID creation requires a high quality random # generator.  In the
 // browser this is a little complicated due to unknown quality of Math.random()
@@ -6480,7 +6560,7 @@ if (!rng) {
 module.exports = rng;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 // Unique ID creation requires a high quality random # generator.  We feature
 // detect to determine the best RNG source, normalizing to a function that
 // returns 128-bits of randomness, since that's what's usually required
@@ -6585,7 +6665,7 @@ function v1(options, buf, offset) {
 
 module.exports = v1;
 
-},{"./lib/bytesToUuid":38,"./lib/rng":39}],41:[function(require,module,exports){
+},{"./lib/bytesToUuid":39,"./lib/rng":40}],42:[function(require,module,exports){
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -6616,7 +6696,7 @@ function v4(options, buf, offset) {
 
 module.exports = v4;
 
-},{"./lib/bytesToUuid":38,"./lib/rng":39}],42:[function(require,module,exports){
+},{"./lib/bytesToUuid":39,"./lib/rng":40}],43:[function(require,module,exports){
 const uuid = require('uuid');
 
 let window_id = uuid.v1();
@@ -6697,4 +6777,4 @@ window.addEventListener('load', () => {
 
 })
 
-},{"../..":16,"uuid":37}]},{},[42]);
+},{"../..":17,"uuid":38}]},{},[43]);

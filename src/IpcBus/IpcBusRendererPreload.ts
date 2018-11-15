@@ -2,7 +2,7 @@ import { IpcBusClient } from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
 
 import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
-import { CrossFrameEventEmitter, IpcBusFrameBridge } from './CrossFrameEventEmitter';
+import { CrossFrameEventEmitter, IpcBusFrameBridge } from './CrossFrameEventEmitter1';
 // import { CrossFrameEventDispatcher } from './CrossFrameEventEmitter';
 
 const trace = true;

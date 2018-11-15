@@ -35,10 +35,10 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransp
     protected _listen() {
         let target = this._target as any;
         if (target.addEventListener) {
-            target.addEventListener('message', this._messageHandler)
+            target.addEventListener('message', this._messageHandler);
         }
         else if (target.attachEvent) {
-            target.attachEvent('onmessage', this._messageHandler)
+            target.attachEvent('onmessage', this._messageHandler);
         }
     }
 
@@ -49,7 +49,6 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransp
         let packet = CrossFrameMessage.Encode(false, this._uuid, channel, args);
         this._postMessage(packet);
     }
-
 
     // Cleans up event listeners
     stopListening() {
@@ -72,7 +71,7 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransp
         let packet = CrossFrameMessage.Decode(false, event.data);
         if (packet) {
             let args = packet.args || [];
-            this._eventHandler(packet.channel, args);
+            this._eventHandler(packet.channel, ...args);
         }
     }
 }
