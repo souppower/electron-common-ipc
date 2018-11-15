@@ -121,7 +121,7 @@ export function JSON_stringify(data: any, maxLen: number): string {
 
 /** @internal */
 export class Logger {
-    static enable: boolean = false;
+    static enable: boolean = true;
     static service: boolean = false;
 
     static info(msg: string) {

@@ -1,17 +1,24 @@
+import * as uuid from 'uuid';
 import { EventEmitter } from 'events';
+
 import { IpcBusTransportInWindow } from './IpcBusClientTransportRenderer';
 import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_EVENT } from './IpcBusClientTransportRenderer';
+
+import { CrossFrameMessage } from './CrossFrameMessage';
 
 const trace = true;
 
 export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransportInWindow {
     private _target: Window;
     private _origin: string;
+    private _uuid: string;
 
     constructor(target: Window, origin?: string) {
         super();
         this._target = target;
         this._origin = origin || '*';
+
+        this._uuid = uuid.v4();
 
         // Callback
         this._messageHandler = this._messageHandler.bind(this);
@@ -39,7 +46,7 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransp
     // Channel is the event that the other side will be listening for
     send(channel: string, ...args: any[]): void {
         trace && console.log(`send ${channel} - ${args}`);
-        let packet = this._encode(channel, args);
+        let packet = CrossFrameMessage.Encode(false, this._uuid, channel, args);
         this._postMessage(packet);
     }
 
@@ -62,36 +69,11 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransp
     }
 
     protected _messageHandler(event: MessageEvent) {
-        let packet = this._decode(event.data);
+        let packet = CrossFrameMessage.Decode(false, event.data);
         if (packet) {
             let args = packet.args || [];
             this._eventHandler(packet.channel, args);
         }
-    }
-
-    // Takes a message data string and deserialises it
-    protected _decode(data: any): any {
-        // We don't control all message events, they won't always be JSON
-        try {
-            let packet = data['_electron_common_ipc_'];
-            if (packet) {
-                return packet;
-            }
-        }
-        catch (e) {
-        }
-        return null;
-    }
-
-    // Takes a channel and the arguments to emit with and serialises it
-    // for transmission
-    protected _encode(channel: string, args: any[]): any {
-        return {
-            '_electron_common_ipc_': {
-                channel: channel,
-                args: args
-            }
-        };
     }
 }
 

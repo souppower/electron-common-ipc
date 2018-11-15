@@ -1,20 +1,16 @@
 import * as uuid from 'uuid';
-
 import { EventEmitter } from 'events';
+
 import { IpcBusTransportInWindow } from './IpcBusClientTransportRenderer';
 import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_EVENT } from './IpcBusClientTransportRenderer';
+
+import { CrossFrameMessage } from './CrossFrameMessage';
 
 const trace = true;
 
 // function isInWorker(): boolean {
 //     return  typeof Worker === 'undefined' && typeof Window === 'undefined';
 // }
-
-interface CrossFrameMessage {
-    uuid: string;
-    channel: string;
-    args?: any[];
-}
 
 export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransportInWindow {
     private _target: Window;
@@ -35,6 +31,15 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransp
         this._messageHandler = this._messageHandler.bind(this);
 
         this._listen();
+
+        if (trace) {
+            this.on('newListener', (event: string) => {
+                trace && console.log(`CFEE ${this._uuid} - newListener ${event}`);
+            });
+            this.on('removeListener', (event: string) => {
+                trace && console.log(`CFEE ${this._uuid} - removeListener ${event}`);
+            });
+        }
     }
 
     // Listens in a cross-browser fashion. When postmessage isn't available
@@ -43,35 +48,36 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransp
         trace && console.log(`CFEE ${this._uuid} - init`);
         this._messageChannel.port1.addEventListener('message', this._messageHandler);
         this._messageChannel.port1.start();
-        let packet = CrossFrameEventEmitter.encode(this._uuid, 'init', []);
+        let packet = CrossFrameMessage.Encode(true, this._uuid, 'init', []);
         this._target.postMessage(packet, this._origin, [this._messageChannel.port2]);
     }
 
     // Get the channel and arguments and send it to the target
     // Channel is the event that the other side will be listening for
     send(channel: string, ...args: any[]): void {
-        trace && console.log(`CFEE ${this._uuid} - send ${channel} - ${args}`);
-        let packet = CrossFrameEventEmitter.encode(this._uuid, channel, args);
+        trace && console.log(`CFEE ${this._uuid} - send: ${channel} - ${JSON.stringify(args)}`);
+        let packet = CrossFrameMessage.Encode(true, this._uuid, channel, args);
         this._messageChannel.port1.postMessage(packet);
     }
 
     // Cleans up event listeners
-    stopListening() {
+    close() {
         trace && console.log(`CFEE ${this._uuid} - exit`);
-        let packet = CrossFrameEventEmitter.encode(this._uuid, 'exit', []);
+        let packet = CrossFrameMessage.Encode(true, this._uuid, 'exit', []);
         this._target.postMessage(packet, this._origin);
         this._messageChannel.port1.close();
     }
 
     // Unpacks and emits
     protected _eventHandler(channel: string, ...args: any[]) {
-        trace && console.log(`CFEE ${this._uuid} - emit ${channel} - ${args}`);
+        trace && console.log(`CFEE ${this._uuid} - emit: ${channel} - ${JSON.stringify(args)}`);
+        trace && console.log(`CFEE ${this._uuid} - emit: ${this.listenerCount(channel)}`);
         this.emit(channel, ...args);
     }
 
     protected _messageHandler(event: MessageEvent) {
-        trace && console.log(`CFEE ${this._uuid} - messageHandler ${JSON.stringify(event)}`);
-        let packet = CrossFrameEventEmitter.decode(event.data);
+        trace && console.log(`CFEE ${this._uuid} - messageHandler: ${JSON.stringify(event)}`);
+        let packet = CrossFrameMessage.Decode(true, event.data);
         if (packet) {
             if (Array.isArray(packet.args)) {
                 this._eventHandler(packet.channel, ...packet.args);
@@ -80,32 +86,6 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransp
                 this._eventHandler(packet.channel);
             }
         }
-    }
-
-    // Takes a message data string and deserialises it
-    static decode(data: any): CrossFrameMessage {
-        // We don't control all message events, they won't always be JSON
-        try {
-            let packet = data['_electron_common_ipc_'];
-            if (packet) {
-                return packet;
-            }
-        }
-        catch (e) {
-        }
-        return null;
-    }
-
-    // Takes a channel and the arguments to emit with and serialises it
-    // for transmission
-    static encode(uuid: string, channel: string, args: any[]): any {
-        return {
-            '_electron_common_ipc_': {
-                uuid,
-                channel,
-                args: args
-            }
-        };
     }
 }
 
@@ -140,7 +120,7 @@ export class CrossFrameEventDispatcher {
     }
 
     protected _lifecycleHandler(event: MessageEvent) {
-        let packet = CrossFrameEventEmitter.decode(event.data);
+        let packet = CrossFrameMessage.Decode(true,event.data);
         trace && console.log(`CFEDisp ${this._uuid} - lifecycle - ${JSON.stringify(packet)}`);
         if (packet) {
             if (packet.channel === 'init') {
@@ -161,10 +141,11 @@ export class CrossFrameEventDispatcher {
     // Unpacks and emits
     protected _messageHandler(event: MessageEvent) {
         trace && console.log(`CFEDisp ${this._uuid} - messageHandler ${JSON.stringify(event)}`);
-        let packet = CrossFrameEventEmitter.decode(event.data);
+        let packet = CrossFrameMessage.Decode(true, event.data);
         if (packet) {
             trace && console.log(`CFEDisp ${this._uuid} - messageHandler - ${packet}`);
             this._ports.forEach((port, uuid) => {
+                // Prevent Echo
                 if (uuid !== packet.uuid) {
                     port.postMessage(event.data);
                 }
@@ -190,7 +171,7 @@ export class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 
     // Unpacks and emits
     protected _messageHandler(event: MessageEvent) {
-        let packet = CrossFrameEventEmitter.decode(event.data);
+        let packet = CrossFrameMessage.Decode(true,event.data);
         trace && console.log(`IpcBusFrameBridge - messageHandler - ${JSON.stringify(packet)}`);
         if (packet) {
             if (Array.isArray(packet.args)) {
@@ -203,20 +184,20 @@ export class IpcBusFrameBridge extends CrossFrameEventDispatcher {
     }
 
     protected _messageTransportHandlerEvent(...args: any[]) {
-        trace && console.log(`_messageTransportHandlerEvent ${args}`);
-        let packet = CrossFrameEventEmitter.encode('dispatcher', IPCBUS_TRANSPORT_RENDERER_EVENT, args);
+        trace && console.log(`_messageTransportHandlerEvent ${JSON.stringify(args)}`);
+        let packet = CrossFrameMessage.Encode(true, 'dispatcher', IPCBUS_TRANSPORT_RENDERER_EVENT, args);
         this._ports.forEach((port) => {
-             port.postMessage(packet);
+            port.postMessage(packet);
         });
     }
 
     protected _messageTransportHandlerConnect(...args: any[]) {
-        trace && console.log(`_messageTransportHandlerConnect ${args}`);
-        let packet = CrossFrameEventEmitter.encode('dispatcher', IPCBUS_TRANSPORT_RENDERER_EVENT, args);
+        trace && console.log(`_messageTransportHandlerConnect ${JSON.stringify(args)}`);
+        let packet = CrossFrameMessage.Encode(true, 'dispatcher', IPCBUS_TRANSPORT_RENDERER_CONNECT, args);
         this._ports.forEach((port) => {
             port.postMessage(packet);
-       });
-   }
+        });
+    }
 }
 
 

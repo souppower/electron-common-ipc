@@ -65,7 +65,7 @@
   },
   "scripts": {
     "clean": "del-cli ./lib ./build ./dist",
-    "build": "npm run build-js && npm run build-declaration",
+    "build": "npm run build-js && npm run build-declaration && npm run browserify-test",
     "build-js": "tsc -p ./tsconfig/tsconfig-js.json",
     "build-declaration": "npm run build-declaration-ts && npm run build-declaration-dts-bundle && npm run build-declaration-dts-bundle-browser && npm run clean-declaration-dts",
     "build-declaration-ts": "tsc -p ./tsconfig/tsconfig-declaration.json",
