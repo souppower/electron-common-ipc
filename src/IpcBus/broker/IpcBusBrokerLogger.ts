@@ -11,8 +11,8 @@ import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
 
 /** @internal */
 export abstract class IpcBusBrokerLogger extends IpcBusBrokerImpl {
-    constructor(processType: Client.IpcBusProcessType, options: Broker.IpcBusBroker.CreateOptions) {
-        super(processType, options);
+    constructor(contextType: Client.IpcBusContextType, options: Broker.IpcBusBroker.CreateOptions) {
+        super(contextType, options);
     }
 
     protected abstract addLog(socket: net.Socket, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): void;

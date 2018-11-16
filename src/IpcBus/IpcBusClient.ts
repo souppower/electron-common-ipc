@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { ElectronProcessType } from 'electron-process-type/lib/v2';
 
 // Special channels
 export const IPCBUS_CHANNEL: string = '/electron-ipc-bus';
@@ -8,10 +9,10 @@ export const IPCBUS_CHANNEL_QUERY_STATE: string = `${IPCBUS_CHANNEL}/queryState`
 export const ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH';
 export const ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH';
 
-export type IpcBusProcessType = 'browser' | 'renderer' | 'node' | 'native' | string;
+export type IpcBusContextType = 'renderer-frame' | 'native' | ElectronProcessType | string;
 
-export interface IpcBusProcess {
-    type: IpcBusProcessType;
+export interface IpcBusContext {
+    type: IpcBusContextType;
     pid: number;    // Process Id
     rid?: number;   // Renderer Id
     wcid?: number;  // WebContent Id
@@ -20,7 +21,7 @@ export interface IpcBusProcess {
 export interface IpcBusPeer {
     id: string;
     name: string;
-    process: IpcBusProcess;
+    context: IpcBusContext;
 }
 
 export interface IpcBusRequest {

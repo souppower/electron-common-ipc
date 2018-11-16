@@ -20,8 +20,8 @@ export class IpcBusBrokerCSVLogger extends IpcBusBrokerLogger {
     private _logger: any;
     private _line: number;
 
-    constructor(logPath: string, processType: Client.IpcBusProcessType, options: Broker.IpcBusBroker.CreateOptions) {
-        super(processType, options);
+    constructor(logPath: string, contextType: Client.IpcBusContextType, options: Broker.IpcBusBroker.CreateOptions) {
+        super(contextType, options);
 
         this._line = 0;
 
@@ -32,7 +32,7 @@ export class IpcBusBrokerCSVLogger extends IpcBusBrokerLogger {
             'kind',
             'size',
             'peer id',
-            'peer process',
+            'peer context',
             'socket',
             'arg0',
             'arg1',
@@ -51,7 +51,7 @@ export class IpcBusBrokerCSVLogger extends IpcBusBrokerLogger {
             ipcBusCommand.kind,
             packet.packetSize.toString(),
             ipcBusCommand.peer.id,
-            JSON.stringify(ipcBusCommand.peer.process),
+            JSON.stringify(ipcBusCommand.peer.context),
             socket.remotePort.toString()
         ];
         if (args) {

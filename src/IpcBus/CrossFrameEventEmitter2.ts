@@ -6,7 +6,8 @@ import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_EVENT } fr
 
 import { CrossFrameMessage } from './CrossFrameMessage';
 
-const trace = true;
+// const trace = true;
+const trace = false;
 
 // function isInWorker(): boolean {
 //     return  typeof Worker === 'undefined' && typeof Window === 'undefined';
@@ -30,7 +31,7 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransp
         // Callback
         this._messageHandler = this._messageHandler.bind(this);
 
-        this._listen();
+        this._start();
 
         if (trace) {
             this.on('newListener', (event: string) => {
@@ -44,7 +45,7 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransp
 
     // Listens in a cross-browser fashion. When postmessage isn't available
     // we'll either have to change listen or fake message events somehow.
-    protected _listen() {
+    protected _start() {
         trace && console.log(`CFEE ${this._uuid} - init`);
         this._messageChannel.port1.addEventListener('message', this._messageHandler);
         this._messageChannel.port1.start();

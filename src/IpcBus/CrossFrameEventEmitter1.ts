@@ -46,7 +46,7 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransp
     // Channel is the event that the other side will be listening for
     send(channel: string, ...args: any[]): void {
         trace && console.log(`send ${channel} - ${args}`);
-        let packet = CrossFrameMessage.Encode(false, this._uuid, channel, args);
+        let packet = CrossFrameMessage.Encode(true, this._uuid, channel, args);
         this._postMessage(packet);
     }
 
@@ -68,7 +68,7 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransp
     }
 
     protected _messageHandler(event: MessageEvent) {
-        let packet = CrossFrameMessage.Decode(false, event.data);
+        let packet = CrossFrameMessage.Decode(true, event.data);
         if (packet) {
             let args = packet.args || [];
             this._eventHandler(packet.channel, ...args);

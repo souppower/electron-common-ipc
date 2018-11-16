@@ -2,10 +2,10 @@ import { IpcBusClient } from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
 
 import { IpcBusClientTransportRenderer } from './IpcBusClientTransportRenderer';
-import { CrossFrameEventEmitter, IpcBusFrameBridge } from './CrossFrameEventEmitter1';
+import { CrossFrameEventEmitter, IpcBusFrameBridge } from './CrossFrameEventEmitter2';
 // import { CrossFrameEventDispatcher } from './CrossFrameEventEmitter';
 
-const trace = true;
+const trace = false; // true;
 
 // This function could be called in advance in the preload file of the BrowserWindow
 // Then ipcbus is supported in sandbox or nodeIntegration=false process
@@ -59,7 +59,7 @@ function _PreloadElectronCommonIpc(context: string): boolean {
                 windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options: any, hostname?: string) => {
                     trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
                     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-                    let ipcBusClient: IpcBusClient = new IpcBusClientTransportRenderer('renderer', localOptions || {}, crossFrameEE);
+                    let ipcBusClient: IpcBusClient = new IpcBusClientTransportRenderer('renderer-frame', localOptions || {}, crossFrameEE);
                     return ipcBusClient;
                 };
             }

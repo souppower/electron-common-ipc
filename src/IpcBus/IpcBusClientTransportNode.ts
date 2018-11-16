@@ -25,10 +25,10 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
     protected _packetIn: IpcPacketBuffer;
     private _bufferListReader: BufferListReader;
 
-    constructor(processType: Client.IpcBusProcessType, options: Client.IpcBusClient.CreateOptions) {
-        assert((processType === 'main') || (processType === 'node'), `IpcBusClientTransportNode: processType must not be a process ${processType}`);
+    constructor(contextType: Client.IpcBusContextType, options: Client.IpcBusClient.CreateOptions) {
+        assert((contextType === 'main') || (contextType === 'node'), `IpcBusClientTransportNode: contextType must not be a ${contextType}`);
 
-        super({ type: processType, pid: process.pid }, options);
+        super({ type: contextType, pid: process.pid }, options);
         this._packetOut = new IpcPacketBufferWrap();
 
         this._bufferListReader = new BufferListReader();
@@ -100,7 +100,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
                 options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
             }
             p = this._promiseConnected = new Promise<void>((resolve, reject) => {
-                this._ipcBusPeer.name = options.peerName || `${this._ipcBusPeer.process.type}_${this._ipcBusPeer.process.pid}`;
+                this._ipcBusPeer.name = options.peerName || `${this._ipcBusPeer.context.type}_${this._ipcBusPeer.context.pid}`;
                 this._socketBuffer = options.socketBuffer;
 
                 let timer: NodeJS.Timer = null;

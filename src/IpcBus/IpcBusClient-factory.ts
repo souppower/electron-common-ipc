@@ -8,18 +8,18 @@ import { IpcBusClientTransportNode } from './IpcBusClientTransportNode';
 
 export let CreateIpcBusClient: IpcBusClient.CreateFunction = (options: any, hostname?: string): IpcBusClient => {
     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-    let processType = GetElectronProcessType();
-    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`CreateIpcBusForProcess process type = ${processType} on ${JSON.stringify(options)}`);
+    let electronProcessType = GetElectronProcessType();
+    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`CreateIpcBusForProcess process type = ${electronProcessType} on ${JSON.stringify(options)}`);
     let ipcBusClient: IpcBusClient = null;
-    switch (processType) {
+    switch (electronProcessType) {
         // This case 'renderer' is not reachable as IpcBusApi-browser is used in a browser (see browserify 'browser' field in package.json)
         case 'renderer':
-            // ipcBusClient = new IpcBusClientTransportRenderer(processType, localOptions || {});
+            // ipcBusClient = new IpcBusClientTransportRenderer(electronProcessType, localOptions || {});
             break;
         case 'main':
         case 'node':
             if (localOptions) {
-                ipcBusClient = new IpcBusClientTransportNode(processType, localOptions);
+                ipcBusClient = new IpcBusClientTransportNode(electronProcessType, localOptions);
             }
             break;
     }

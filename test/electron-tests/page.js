@@ -28,9 +28,10 @@ window.addEventListener('load', () => {
         console.log(`IsElectronCommonIpcAvailable=${result}`);
     }
 
+    const electronCommonIpcModuleCFEE = require('../../lib/IpcBus/CrossFrameEventEmitter2');
     if (window.self === window.top) {
         // console.log('Create Parent CrossFrameEventEmitter');
-        // let crossFrameEE = new electronCommonIpcModule.CrossFrameEventEmitter(window);
+        // let crossFrameEE = new electronCommonIpcModuleCFEE.CrossFrameEventEmitter(window);
         // crossFrameEE.on('test-parent', (...args) => {
         //     console.log(`crossFrameEE - Parent receive message : ${args}`);
         // });
@@ -53,7 +54,7 @@ window.addEventListener('load', () => {
     else {
         window_id = GetQueryStringParams('id');
         // console.log('Create Frame CrossFrameEventEmitter');
-        // let crossFrameEE = new electronCommonIpcModule.CrossFrameEventEmitter(window.parent);
+        // let crossFrameEE = new electronCommonIpcModuleCFEE.CrossFrameEventEmitter(window.parent);
         // crossFrameEE.on('test-frame', (...args) => {
         //     console.log(`crossFrameEE - Frame receive message : ${args}`);
         // });

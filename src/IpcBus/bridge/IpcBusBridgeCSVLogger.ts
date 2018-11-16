@@ -22,8 +22,8 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
     private _logger: any;
     private _line: number;
 
-    constructor(logPath: string, processType: Client.IpcBusProcessType, options: Broker.IpcBusBroker.CreateOptions) {
-        super(processType, options);
+    constructor(logPath: string, contextType: Client.IpcBusContextType, options: Broker.IpcBusBroker.CreateOptions) {
+        super(contextType, options);
 
         this._line = 0;
 
@@ -34,7 +34,7 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
             'kind',
             'size',
             'peer id',
-            'peer process',
+            'peer context',
             'webContent',
             'from peer id',
             'arg0', 'arg1',
@@ -52,7 +52,7 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
             this._line.toString(),
             ipcBusCommand.kind,
             ipcPacketBuffer.packetSize.toString(),
-            peer.id, JSON.stringify(peer.process),
+            peer.id, JSON.stringify(peer.context),
             `${webContents.getTitle()}\n${webContents.getURL()}`
         ];
         if (peer.id !== ipcBusCommand.peer.id) {

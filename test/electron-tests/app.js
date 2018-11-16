@@ -3,8 +3,8 @@ const path = require('path')
 
 const brokersLifeCycle = require('../brokers/brokersLifeCycle');
 
-const ipcBusModule = require('../../lib/electron-common-ipc');
-ipcBusModule.ActivateIpcBusTrace(true);
+// const ipcBusModule = require('../../lib/electron-common-ipc');
+// ipcBusModule.ActivateIpcBusTrace(true);
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.

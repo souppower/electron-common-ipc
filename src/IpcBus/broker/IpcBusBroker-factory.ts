@@ -1,6 +1,6 @@
 import { GetElectronProcessType } from 'electron-process-type/lib/v2';
 
-import { IpcBusProcessType } from '../IpcBusClient';
+import { IpcBusContextType } from '../IpcBusClient';
 import * as IpcBusUtils from '../IpcBusUtils';
 
 import { IpcBusBroker } from './IpcBusBroker';
@@ -15,22 +15,22 @@ export let CreateIpcBusBroker: IpcBusBroker.CreateFunction = (options: any, host
     }
 
     let ipcBusBroker: IpcBusBroker = null;
-    let processType = GetElectronProcessType();
-    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBroker process type = ${processType} on ${JSON.stringify(options)}`);
-    switch (processType) {
+    let electronProcessType = GetElectronProcessType();
+    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBroker process type = ${electronProcessType} on ${JSON.stringify(options)}`);
+    switch (electronProcessType) {
         case 'main':
         case 'node':
             let logPath = process.env['ELECTRON_IPC_BROKER_LOG_JSON'];
             if (logPath) {
-                ipcBusBroker = new IpcBusBrokerJSONLogger(logPath, processType as IpcBusProcessType, localOptions);
+                ipcBusBroker = new IpcBusBrokerJSONLogger(logPath, electronProcessType as IpcBusContextType, localOptions);
             }
             else {
                 let logPath = process.env['ELECTRON_IPC_BROKER_LOG_CSV'];
                 if (logPath) {
-                    ipcBusBroker = new IpcBusBrokerCSVLogger(logPath, processType as IpcBusProcessType, localOptions);
+                    ipcBusBroker = new IpcBusBrokerCSVLogger(logPath, electronProcessType as IpcBusContextType, localOptions);
                 }
                 else {
-                    ipcBusBroker = new IpcBusBrokerImpl(processType as IpcBusProcessType, localOptions);
+                    ipcBusBroker = new IpcBusBrokerImpl(electronProcessType as IpcBusContextType, localOptions);
                 }
             }
             break;

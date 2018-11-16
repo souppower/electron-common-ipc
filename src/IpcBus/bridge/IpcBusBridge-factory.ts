@@ -1,6 +1,6 @@
 import { GetElectronProcessType } from 'electron-process-type/lib/v2';
 
-import { IpcBusProcessType } from '../IpcBusClient';
+import { IpcBusContextType } from '../IpcBusClient';
 import * as IpcBusUtils from '../IpcBusUtils';
 
 import { IpcBusBridge  } from './IpcBusBridge';
@@ -15,21 +15,21 @@ export let CreateIpcBusBridge: IpcBusBridge.CreateFunction = (options: any, host
     }
 
     let ipcBusBridge: IpcBusBridge = null;
-    let processType = GetElectronProcessType();
-    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBridge process type = ${processType} on ${JSON.stringify(options)}`);
-    switch (processType) {
+    let electronProcessType = GetElectronProcessType();
+    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBridge process type = ${electronProcessType} on ${JSON.stringify(options)}`);
+    switch (electronProcessType) {
         case 'main':
             let logPath = process.env['ELECTRON_IPC_BRIDGE_LOG_JSON'];
             if (logPath) {
-                ipcBusBridge = new IpcBusBridgeJSONLogger(logPath, processType as IpcBusProcessType, localOptions);
+                ipcBusBridge = new IpcBusBridgeJSONLogger(logPath, electronProcessType as IpcBusContextType, localOptions);
             }
             else {
                 let logPath = process.env['ELECTRON_IPC_BRIDGE_LOG_CSV'];
                 if (logPath) {
-                    ipcBusBridge = new IpcBusBridgeCSVLogger(logPath, processType as IpcBusProcessType, localOptions);
+                    ipcBusBridge = new IpcBusBridgeCSVLogger(logPath, electronProcessType as IpcBusContextType, localOptions);
                 }
                 else {
-                    ipcBusBridge = new IpcBusBridgeImpl(processType as IpcBusProcessType, localOptions);
+                    ipcBusBridge = new IpcBusBridgeImpl(electronProcessType as IpcBusContextType, localOptions);
                 }
             }
             break;

@@ -97,7 +97,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
     private _queryStateLamdba: Client.IpcBusListener = (ipcBusEvent: Client.IpcBusEvent, replyChannel: string) => this._onQueryState(ipcBusEvent, replyChannel);
 
-    constructor(processType: Client.IpcBusProcessType, options: Broker.IpcBusBroker.CreateOptions) {
+    constructor(contextType: Client.IpcBusContextType, options: Broker.IpcBusBroker.CreateOptions) {
         this._netOptions = options;
 
         this._netBinds = {};
@@ -125,7 +125,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             }
         });
 
-        this._ipcBusBrokerClient = new IpcBusClientTransportNode(processType, { port: this._netOptions.port, host: this._netOptions.host, path: this._netOptions.path });
+        this._ipcBusBrokerClient = new IpcBusClientTransportNode(contextType, { port: this._netOptions.port, host: this._netOptions.host, path: this._netOptions.path });
     }
 
     private _reset() {
