@@ -6,7 +6,7 @@ const ipcBusModule = require('../lib/electron-common-ipc');
 const electronApp = require('electron').app;
 const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 
-function test(remoteBroker, busPath) {
+function test1(remoteBroker, busPath) {
   describe(`Client ${busPath} ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
     let brokers;
     before(() => {
@@ -15,7 +15,8 @@ function test(remoteBroker, busPath) {
     });
 
     after(() => {
-      return brokers.stop();
+      return brokers.stop()
+      .catch(() => {})
     });
 
     let ipcBusClient;
@@ -29,8 +30,10 @@ function test(remoteBroker, busPath) {
     });
 
   });
+}
 
-  describe(`Client ${busPath} without closing it ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
+function test2(remoteBroker, busPath) {
+    describe(`Client ${busPath} without closing it ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
     let brokers;
     before(() => {
       brokers = new brokersLifeCycle.Brokers(remoteBroker, busPath);
@@ -38,7 +41,8 @@ function test(remoteBroker, busPath) {
     });
 
     after(() => {
-      return brokers.stop();
+      return brokers.stop()
+      .catch(() => {})
     });
 
     let ipcBusClient;
@@ -49,7 +53,11 @@ function test(remoteBroker, busPath) {
   });
 }
 
-// test(false);
-// test(true);
-test(false, brokersLifeCycle.localBusPath);
-test(true, brokersLifeCycle.localBusPath);
+test1(false);
+test2(false);
+test1(true);
+test2(true);
+test1(false, brokersLifeCycle.getLocalBusPath());
+test2(false, brokersLifeCycle.getLocalBusPath());
+test1(true, brokersLifeCycle.getLocalBusPath());
+test2(true, brokersLifeCycle.getLocalBusPath());

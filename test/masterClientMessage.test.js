@@ -4,15 +4,19 @@ const expect = chai.expect;
 
 const ipcBusModule = require('../lib/electron-common-ipc');
 const brokersLifeCycle = require('./brokers/brokersLifeCycle');
+ipcBusModule.ActivateIpcBusTrace(true);
 
 function test(remoteBroker, busPath) {
 
   describe(`Master Client ${busPath} messages ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
     let ipcClient1;
     let ipcClient2;
+    let brokers;
     before(() => {
-      return brokersLifeCycle.startBrokers(remoteBroker, busPath)
-        .then((ipcBusPath) => {
+      brokers = new brokersLifeCycle.Brokers(remoteBroker, busPath);
+      return brokers.start()
+      .then(() => {
+          let ipcBusPath = brokers.getBusPath();
           ipcClient1 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
           ipcClient2 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
           return Promise.all([ipcClient1.connect({ peerName: 'client1' }), ipcClient2.connect({ peerName: 'client2' })]);
@@ -22,8 +26,9 @@ function test(remoteBroker, busPath) {
     after(() => {
       return Promise.all([ipcClient1.close(), ipcClient2.close()])
         .then(() => {
-          return brokersLifeCycle.stopBrokers(remoteBroker);
-        });
+          return brokers.stop();
+        })
+        .catch(() => {});
     });
 
     function Equal(a1, a2) {
@@ -188,5 +193,5 @@ function test(remoteBroker, busPath) {
 
 test(false);
 test(true);
-test(false, brokersLifeCycle.localBusPath);
-test(true, brokersLifeCycle.localBusPath);
+test(false, brokersLifeCycle.getLocalBusPath());
+test(true, brokersLifeCycle.getLocalBusPath());

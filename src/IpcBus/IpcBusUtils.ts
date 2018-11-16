@@ -264,6 +264,7 @@ export class ChannelConnectionMap<T1 extends string | number, T2> extends EventE
     }
 
     private _release(channel: string, connKey: T1, peerId: string, all: boolean): number {
+        Logger.enable && this._info(`_release (${all}): channel=${channel}, connKey = ${connKey}`);
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`Release '${channel}': '${channel}' is unknown`);
@@ -279,12 +280,11 @@ export class ChannelConnectionMap<T1 extends string | number, T2> extends EventE
     }
 
     releaseAll(channel: string, connKey: T1, peerId: string): number {
-        Logger.enable && this._info(`releaseAll: connKey = ${connKey}`);
         return this._release(channel, connKey, peerId, true);
     }
 
     releasePeerId(connKey: T1, peerId: string) {
-        Logger.enable && this._info(`releasePeerId: peerId = ${peerId}`);
+        Logger.enable && this._info(`releasePeerId: connKey = ${connKey}, peerId = ${peerId}`);
 
         // ForEach is supposed to support deletion during the iteration !
         this._channelsMap.forEach((connsMap, channel) => {

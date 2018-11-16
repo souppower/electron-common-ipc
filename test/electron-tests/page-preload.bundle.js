@@ -5,7 +5,7 @@ const uuid = require("uuid");
 const events_1 = require("events");
 const IpcBusClientTransportRenderer_1 = require("./IpcBusClientTransportRenderer");
 const CrossFrameMessage_1 = require("./CrossFrameMessage");
-const trace = true;
+const trace = false;
 class CrossFrameEventEmitter extends events_1.EventEmitter {
     constructor(target, origin) {
         super();
@@ -541,7 +541,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusUtils = require("./IpcBusUtils");
 const IpcBusClientTransportRenderer_1 = require("./IpcBusClientTransportRenderer");
 const CrossFrameEventEmitter2_1 = require("./CrossFrameEventEmitter2");
-const trace = true;
+const trace = false;
 function PreloadElectronCommonIpcAutomatic() {
     return _PreloadElectronCommonIpc('Implicit');
 }
@@ -824,6 +824,7 @@ class ChannelConnectionMap extends events_1.EventEmitter {
         }
     }
     _release(channel, connKey, peerId, all) {
+        Logger.enable && this._info(`_release (${all}): channel=${channel}, connKey = ${connKey}`);
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`Release '${channel}': '${channel}' is unknown`);
@@ -837,11 +838,10 @@ class ChannelConnectionMap extends events_1.EventEmitter {
         return this._release(channel, connKey, peerId, false);
     }
     releaseAll(channel, connKey, peerId) {
-        Logger.enable && this._info(`releaseAll: connKey = ${connKey}`);
         return this._release(channel, connKey, peerId, true);
     }
     releasePeerId(connKey, peerId) {
-        Logger.enable && this._info(`releasePeerId: peerId = ${peerId}`);
+        Logger.enable && this._info(`releasePeerId: connKey = ${connKey}, peerId = ${peerId}`);
         this._channelsMap.forEach((connsMap, channel) => {
             this._releaseConnData(channel, connKey, connsMap, peerId, true);
         });

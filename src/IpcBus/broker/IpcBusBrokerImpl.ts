@@ -303,13 +303,13 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     }
 
     protected _onServerClose(): void {
-        let msg = `[IPCBus:Broker] _server close`;
+        let msg = `[IPCBus:Broker] server close`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(msg);
         this._reset();
     }
 
     protected _onServerError(err: any) {
-        let msg = `[IPCBus:Broker] _server error ${err}`;
+        let msg = `[IPCBus:Broker] server error ${err}`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
         this._reset();
     }
@@ -323,7 +323,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         this._onSocketConnected(socket);
     }
 
-    // protected _onServerData(packet: IpcPacketBuffer, socket: net.Socket, _server: net.Server): void {
+    // protected _onServerData(packet: IpcPacketBuffer, socket: net.Socket, server: net.Server): void {
     onSocketPacket(socket: net.Socket, packet: IpcPacketBuffer): void {
         let ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
         switch (ipcBusCommand.kind) {

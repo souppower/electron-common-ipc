@@ -10,6 +10,12 @@ const trace = false;
 
 //let localBusPath = '\\tr-ipc-bus\\';
 let localBusPath = '/tr-ipc-bus/test';
+let localBusPathCount = 0;
+
+function getLocalBusPath() {
+  ++localBusPathCount;
+  return `${localBusPath}/${localBusPathCount}`;
+}
 
 let args = minimist(process.argv.slice(1));
 let timeoutDelay = 10000;
@@ -91,7 +97,7 @@ Brokers = (function () {
         const args = [
           path.join(__dirname, './brokerNodeInstance.js'),
           `--busPath=${busPath}`,
-          // `--inspect`
+          // `--inspect-brk=9000`,
           // `--busTimeout=${timeoutDelay}`
         ];
         let options = { env: {} };
@@ -210,4 +216,4 @@ Brokers = (function () {
 
 exports.Brokers = Brokers;
 exports.timeoutDelay = timeoutDelay;
-exports.localBusPath = localBusPath;
+exports.getLocalBusPath = getLocalBusPath;

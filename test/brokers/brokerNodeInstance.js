@@ -48,6 +48,7 @@ process.on('message', (message) => {
         })
         .catch((err) => {
             console.log(`Remote IpcBusBroker stopped failed ${err}`);
+            ipcBusBroker = null;
             process.exit(0);
         });
     }
