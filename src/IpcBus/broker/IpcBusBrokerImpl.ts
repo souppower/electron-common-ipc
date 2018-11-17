@@ -361,6 +361,12 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
 
             case IpcBusCommand.Kind.SendMessage:
+                // IpcBusUtils.Logger.enable && console.log(`[IPCBus:Broker] SendMessage ${ipcBusCommand.channel}`);
+                // if (IpcBusUtils.Logger.enable) {
+                //     if (!this._subscriptions.hasChannel(ipcBusCommand.channel)) {
+                //         console.log(`[IPCBus:Broker] SendMessage NoChannel !! ${ipcBusCommand.channel}`);
+                //     }
+                // }
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.write(packet.buffer);
                 });
