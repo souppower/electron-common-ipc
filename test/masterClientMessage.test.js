@@ -4,7 +4,7 @@ const expect = chai.expect;
 
 const ipcBusModule = require('../lib/electron-common-ipc');
 const brokersLifeCycle = require('./brokers/brokersLifeCycle');
-ipcBusModule.ActivateIpcBusTrace(true);
+// ipcBusModule.ActivateIpcBusTrace(true);
 
 function test(remoteBroker, busPath) {
 
@@ -15,7 +15,7 @@ function test(remoteBroker, busPath) {
     before(() => {
       brokers = new brokersLifeCycle.Brokers(remoteBroker, busPath);
       return brokers.start()
-      .then(() => {
+        .then(() => {
           let ipcBusPath = brokers.getBusPath();
           ipcClient1 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
           ipcClient2 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
@@ -28,7 +28,7 @@ function test(remoteBroker, busPath) {
         .then(() => {
           return brokers.stop();
         })
-        .catch(() => {});
+        .catch(() => { });
     });
 
     function Equal(a1, a2) {
@@ -58,8 +58,11 @@ function test(remoteBroker, busPath) {
             assert(comparator(args[0], param));
             done();
           });
-          console.time(msg);
-          ipcClient1.send('test-message', param);
+          // We have to wait a bit for having broker aware of the new listener
+          setTimeout(() => {
+            console.time(msg);
+            ipcClient1.send('test-message', param);
+          }, 200);
         });
       }
       {
@@ -71,13 +74,16 @@ function test(remoteBroker, busPath) {
               event.request.resolve(args[0]);
             }
           });
-          console.time(msg);
-          ipcClient1.request('test-request', 2000, param)
-            .then((result) => {
-              console.timeEnd(msg);
-              assert(comparator(result.payload, param));
-              done();
-            })
+          // We have to wait a bit for having broker aware of the new listener
+          setTimeout(() => {
+            console.time(msg);
+            ipcClient1.request('test-request', 2000, param)
+              .then((result) => {
+                console.timeEnd(msg);
+                assert(comparator(result.payload, param));
+                done();
+              })
+          }, 200);
         });
       }
     }
