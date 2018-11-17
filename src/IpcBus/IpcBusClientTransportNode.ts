@@ -126,7 +126,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
 
                 let socket = new net.Socket();
                 let socketLocalBinds: { [key: string]: Function } = {};
-                let catchOpen = (conn: any) => {
+                let catchConnect = (conn: any) => {
                     clearTimeout(timer);
                     for (let key in socketLocalBinds) {
                         socket.removeListener(key, socketLocalBinds[key]);
@@ -163,7 +163,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
                 };
                 socketLocalBinds['error'] = catchError.bind(this);
                 socketLocalBinds['close'] = catchClose.bind(this);
-                socketLocalBinds['connect'] = catchOpen.bind(this);
+                socketLocalBinds['connect'] = catchConnect.bind(this);
                 for (let key in socketLocalBinds) {
                     socket.addListener(key, socketLocalBinds[key]);
                 }

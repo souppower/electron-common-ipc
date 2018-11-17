@@ -57,25 +57,29 @@ function TestService3() {
 
 const delayService = 500;
 
-function test(remoteBroker, factory) {
+function test(remoteBroker, busPath, factory) {
 
   describe(`Service ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
     let ipcBusPath;
     let ipcBusClient;
+    let brokers;
 
     before(() => {
-      return brokersLifeCycle.startBrokers(remoteBroker)
-        .then((port) => {
-          ipcBusPath = port;
-        })
+      brokers = new brokersLifeCycle.Brokers(remoteBroker, busPath);
+      return brokers.start()
         .then(() => {
+          let ipcBusPath = brokers.getBusPath();
           ipcBusClient = ipcBusModule.CreateIpcBusClient(ipcBusPath);
           return ipcBusClient.connect({ peerName: 'client' });
         });
     });
 
     after(() => {
-      return brokersLifeCycle.stopBrokers(remoteBroker);
+      return Promise.all([ipcBusClient.close()])
+        .then(() => {
+          return brokers.stop();
+        })
+        .catch(() => { });
     });
 
     describe('Creation', () => {
@@ -287,11 +291,11 @@ function test(remoteBroker, factory) {
   });
 }
 
-test(false, () => new TestService());
-test(true, () => new TestService());
+test(false, undefined, () => new TestService());
+test(true, undefined, () => new TestService());
 
-test(false, () => new TestService2());
-test(true, () => new TestService2());
+test(false, undefined, () => new TestService2());
+test(true, undefined, () => new TestService2());
 
-test(false, () => new TestService3());
-test(true, () => new TestService3());
+test(false, undefined, () => new TestService3());
+test(true, undefined, () => new TestService3());
