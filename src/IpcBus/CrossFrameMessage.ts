@@ -1,4 +1,4 @@
-import { BijectiveJSON } from 'socket-serializer';
+import { JSONParser } from 'json-helpers';
 
 export interface CrossFrameMessage {
     uuid: string;
@@ -13,10 +13,10 @@ export interface CrossFrameWrap {
 export namespace CrossFrameMessage {
     export const CrossFrameKeyId = '__cross-frame-message__';
 
-    export function Decode(json: boolean, data: any): CrossFrameMessage {
+    export function Decode(data: any): CrossFrameMessage {
         // We don't control all message events, they won't always be JSON
         try {
-            let wrap: CrossFrameWrap = json ? BijectiveJSON.parse(data) : data;
+            let wrap: CrossFrameWrap = JSONParser.parse(data);
             let packet = wrap[CrossFrameKeyId];
             if (packet) {
                 return packet;
@@ -29,7 +29,7 @@ export namespace CrossFrameMessage {
 
     // Takes a channel and the arguments to emit with and serialises it
     // for transmission
-    export function Encode(json: boolean, uuid: string, channel: string, args: any[]): any {
+    export function Encode(uuid: string, channel: string, args: any[]): any {
         let wrap: CrossFrameWrap = {
             [CrossFrameKeyId]: {
                 uuid,
@@ -37,6 +37,6 @@ export namespace CrossFrameMessage {
                 args: args
             }
         };
-        return json ? BijectiveJSON.stringify(wrap) : wrap;
+        return JSONParser.stringify(wrap);
     }
 }

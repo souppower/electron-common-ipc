@@ -28,17 +28,17 @@ class CrossFrameEventEmitter extends events_1.EventEmitter {
         trace && console.log(`CFEE ${this._uuid} - init`);
         this._messageChannel.port1.addEventListener('message', this._messageHandler);
         this._messageChannel.port1.start();
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode(true, this._uuid, 'init', []);
+        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode(this._uuid, 'init', []);
         this._target.postMessage(packet, this._origin, [this._messageChannel.port2]);
     }
     send(channel, ...args) {
         trace && console.log(`CFEE ${this._uuid} - send: ${channel} - ${JSON.stringify(args)}`);
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode(true, this._uuid, channel, args);
+        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode(this._uuid, channel, args);
         this._messageChannel.port1.postMessage(packet);
     }
     close() {
         trace && console.log(`CFEE ${this._uuid} - exit`);
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode(true, this._uuid, 'exit', []);
+        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode(this._uuid, 'exit', []);
         this._target.postMessage(packet, this._origin);
         this._messageChannel.port1.close();
     }
@@ -49,7 +49,7 @@ class CrossFrameEventEmitter extends events_1.EventEmitter {
     }
     _messageHandler(event) {
         trace && console.log(`CFEE ${this._uuid} - messageHandler: ${JSON.stringify(event)}`);
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Decode(true, event.data);
+        let packet = CrossFrameMessage_1.CrossFrameMessage.Decode(event.data);
         if (packet) {
             if (Array.isArray(packet.args)) {
                 this._eventHandler(packet.channel, ...packet.args);
@@ -81,7 +81,7 @@ class CrossFrameEventDispatcher {
         }
     }
     _lifecycleHandler(event) {
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Decode(true, event.data);
+        let packet = CrossFrameMessage_1.CrossFrameMessage.Decode(event.data);
         trace && console.log(`CFEDisp ${this._uuid} - lifecycle - ${JSON.stringify(packet)}`);
         if (packet) {
             if (packet.channel === 'init') {
@@ -99,7 +99,7 @@ class CrossFrameEventDispatcher {
     }
     _messageHandler(event) {
         trace && console.log(`CFEDisp ${this._uuid} - messageHandler ${JSON.stringify(event)}`);
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Decode(true, event.data);
+        let packet = CrossFrameMessage_1.CrossFrameMessage.Decode(event.data);
         if (packet) {
             trace && console.log(`CFEDisp ${this._uuid} - messageHandler - ${packet}`);
             this._ports.forEach((port, uuid) => {
@@ -121,7 +121,7 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
         this._ipcBusTransportWindow.on(IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
     }
     _messageHandler(event) {
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Decode(true, event.data);
+        let packet = CrossFrameMessage_1.CrossFrameMessage.Decode(event.data);
         trace && console.log(`IpcBusFrameBridge - messageHandler - ${JSON.stringify(packet)}`);
         if (packet) {
             if (Array.isArray(packet.args)) {
@@ -134,14 +134,14 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
     }
     _messageTransportHandlerEvent(...args) {
         trace && console.log(`_messageTransportHandlerEvent ${JSON.stringify(args)}`);
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode(true, 'dispatcher', IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_EVENT, args);
+        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_EVENT, args);
         this._ports.forEach((port) => {
             port.postMessage(packet);
         });
     }
     _messageTransportHandlerConnect(...args) {
         trace && console.log(`_messageTransportHandlerConnect ${JSON.stringify(args)}`);
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode(true, 'dispatcher', IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, args);
+        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusClientTransportRenderer_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, args);
         this._ports.forEach((port) => {
             port.postMessage(packet);
         });
@@ -149,16 +149,16 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 }
 exports.IpcBusFrameBridge = IpcBusFrameBridge;
 
-},{"./CrossFrameMessage":2,"./IpcBusClientTransportRenderer":7,"events":23,"uuid":38}],2:[function(require,module,exports){
+},{"./CrossFrameMessage":2,"./IpcBusClientTransportRenderer":7,"events":23,"uuid":39}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const socket_serializer_1 = require("socket-serializer");
+const json_helpers_1 = require("json-helpers");
 var CrossFrameMessage;
 (function (CrossFrameMessage) {
     CrossFrameMessage.CrossFrameKeyId = '__cross-frame-message__';
-    function Decode(json, data) {
+    function Decode(data) {
         try {
-            let wrap = json ? socket_serializer_1.BijectiveJSON.parse(data) : data;
+            let wrap = json_helpers_1.JSONParser.parse(data);
             let packet = wrap[CrossFrameMessage.CrossFrameKeyId];
             if (packet) {
                 return packet;
@@ -169,7 +169,7 @@ var CrossFrameMessage;
         return null;
     }
     CrossFrameMessage.Decode = Decode;
-    function Encode(json, uuid, channel, args) {
+    function Encode(uuid, channel, args) {
         let wrap = {
             [CrossFrameMessage.CrossFrameKeyId]: {
                 uuid,
@@ -177,12 +177,12 @@ var CrossFrameMessage;
                 args: args
             }
         };
-        return json ? socket_serializer_1.BijectiveJSON.stringify(wrap) : wrap;
+        return json_helpers_1.JSONParser.stringify(wrap);
     }
     CrossFrameMessage.Encode = Encode;
 })(CrossFrameMessage = exports.CrossFrameMessage || (exports.CrossFrameMessage = {}));
 
-},{"socket-serializer":37}],3:[function(require,module,exports){
+},{"json-helpers":26}],3:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateIpcBusClient = (options, hostname) => {
@@ -398,7 +398,7 @@ class IpcBusClientTransport extends IpcBusClientImpl_1.IpcBusClientImpl {
 }
 exports.IpcBusClientTransport = IpcBusClientTransport;
 
-},{"./IpcBusClient":4,"./IpcBusClientImpl":5,"./IpcBusCommand":8,"./IpcBusUtils":10,"uuid":38}],7:[function(require,module,exports){
+},{"./IpcBusClient":4,"./IpcBusClientImpl":5,"./IpcBusCommand":8,"./IpcBusUtils":10,"uuid":39}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert = require("assert");
@@ -513,7 +513,7 @@ class IpcBusClientTransportRenderer extends IpcBusClientTransport_1.IpcBusClient
 }
 exports.IpcBusClientTransportRenderer = IpcBusClientTransportRenderer;
 
-},{"./IpcBusClientTransport":6,"./IpcBusCommand":8,"./IpcBusUtils":10,"assert":17,"socket-serializer":37}],8:[function(require,module,exports){
+},{"./IpcBusClientTransport":6,"./IpcBusCommand":8,"./IpcBusUtils":10,"assert":17,"socket-serializer":38}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var IpcBusCommand;
@@ -938,7 +938,7 @@ exports.ChannelConnectionMap = ChannelConnectionMap;
 ;
 
 }).call(this,{"isBuffer":require("../../node_modules/is-buffer/index.js")},require('_process'))
-},{"../../node_modules/is-buffer/index.js":25,"_process":26,"events":23}],11:[function(require,module,exports){
+},{"../../node_modules/is-buffer/index.js":25,"_process":28,"events":23}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusServiceImpl_1 = require("./IpcBusServiceImpl");
@@ -2488,7 +2488,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":19,"_process":26,"inherits":18}],21:[function(require,module,exports){
+},{"./support/isBuffer":19,"_process":28,"inherits":18}],21:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -5055,6 +5055,61 @@ function isSlowBuffer (obj) {
 }
 
 },{}],26:[function(require,module,exports){
+"use strict";
+function __export(m) {
+    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+}
+Object.defineProperty(exports, "__esModule", { value: true });
+__export(require("./json-parser"));
+
+},{"./json-parser":27}],27:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const buffer_1 = require("buffer");
+var JSONParser;
+(function (JSONParser) {
+    const JSON_TOKEN_UNDEFINED = '_/undefined/_';
+    function stringify(value, replacer, space) {
+        let previousDateToJSON = Date.prototype.toJSON;
+        Date.prototype.toJSON = function (key) {
+            return { type: 'Date', data: this.valueOf() };
+        };
+        try {
+            let result = JSON.stringify(value, (k, v) => {
+                if (typeof v === 'undefined') {
+                    return JSON_TOKEN_UNDEFINED;
+                }
+                return replacer ? replacer(k, v) : v;
+            });
+            Date.prototype.toJSON = previousDateToJSON;
+            return result;
+        }
+        catch (err) {
+            Date.prototype.toJSON = previousDateToJSON;
+            throw err;
+        }
+    }
+    JSONParser.stringify = stringify;
+    function parse(text, reviver) {
+        return JSON.parse(text, (k, v) => {
+            if (v) {
+                if (v === JSON_TOKEN_UNDEFINED) {
+                    return undefined;
+                }
+                if (v.data && (v.type === 'Buffer')) {
+                    return buffer_1.Buffer.from(v.data);
+                }
+                if (v.data && (v.type === 'Date')) {
+                    return new Date(v.data);
+                }
+            }
+            return reviver ? reviver(k, v) : v;
+        });
+    }
+    JSONParser.parse = parse;
+})(JSONParser = exports.JSONParser || (exports.JSONParser = {}));
+
+},{"buffer":22}],28:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -5240,37 +5295,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],27:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const buffer_1 = require("buffer");
-var BijectiveJSON;
-(function (BijectiveJSON) {
-    BijectiveJSON.JSON_TOKEN_UNDEFINED = '_/undefined/_';
-    function stringify(value, replacer, space) {
-        return JSON.stringify(value, (k, v) => {
-            if (typeof v === 'undefined') {
-                return BijectiveJSON.JSON_TOKEN_UNDEFINED;
-            }
-            return replacer ? replacer(k, v) : v;
-        });
-    }
-    BijectiveJSON.stringify = stringify;
-    function parse(text, reviver) {
-        return JSON.parse(text, (k, v) => {
-            if (v === BijectiveJSON.JSON_TOKEN_UNDEFINED) {
-                return undefined;
-            }
-            if (v && v.data && (v.type === 'Buffer')) {
-                return buffer_1.Buffer.from(v.data);
-            }
-            return reviver ? reviver(k, v) : v;
-        });
-    }
-    BijectiveJSON.parse = parse;
-})(BijectiveJSON = exports.BijectiveJSON || (exports.BijectiveJSON = {}));
-
-},{"buffer":22}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const buffer_1 = require("buffer");
@@ -5425,7 +5450,7 @@ class BufferListReader extends reader_1.ReaderBase {
 }
 exports.BufferListReader = BufferListReader;
 
-},{"./reader":35,"buffer":22}],29:[function(require,module,exports){
+},{"./reader":36,"buffer":22}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const buffer_1 = require("buffer");
@@ -5509,7 +5534,7 @@ class BufferListWriter extends BufferListWriterBase {
 }
 exports.BufferListWriter = BufferListWriter;
 
-},{"./writer":36,"buffer":22}],30:[function(require,module,exports){
+},{"./writer":37,"buffer":22}],31:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5587,7 +5612,7 @@ class BufferReader extends reader_1.ReaderBase {
 exports.BufferReader = BufferReader;
 
 }).call(this,require("buffer").Buffer)
-},{"./reader":35,"buffer":22}],31:[function(require,module,exports){
+},{"./reader":36,"buffer":22}],32:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5652,7 +5677,7 @@ class BufferWriter extends writer_1.WriterBase {
 exports.BufferWriter = BufferWriter;
 
 }).call(this,require("buffer").Buffer)
-},{"./writer":36,"buffer":22}],32:[function(require,module,exports){
+},{"./writer":37,"buffer":22}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
@@ -5687,7 +5712,7 @@ class IpcPacketParser {
 }
 exports.IpcPacketParser = IpcPacketParser;
 
-},{"./bufferListWriter":29,"./bufferReader":30,"./ipcPacketBufferWrap":34}],33:[function(require,module,exports){
+},{"./bufferListWriter":30,"./bufferReader":31,"./ipcPacketBufferWrap":35}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
@@ -5804,13 +5829,13 @@ class IpcPacketBuffer extends ipcPacketBufferWrap_1.IpcPacketBufferWrap {
 }
 exports.IpcPacketBuffer = IpcPacketBuffer;
 
-},{"./bufferListWriter":29,"./bufferReader":30,"./ipcPacketBufferWrap":34}],34:[function(require,module,exports){
+},{"./bufferListWriter":30,"./bufferReader":31,"./ipcPacketBufferWrap":35}],35:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const bufferListWriter_1 = require("./bufferListWriter");
 const bufferWriter_1 = require("./bufferWriter");
-const bijective_json_1 = require("./bijective-json");
+const json_helpers_1 = require("json-helpers");
 const headerSeparator = '['.charCodeAt(0);
 const footerSeparator = ']'.charCodeAt(0);
 const FooterLength = 1;
@@ -6152,7 +6177,7 @@ class IpcPacketBufferWrap {
             this.writeFixedSize(bufferWriter, BufferType.Null);
         }
         else {
-            let stringifycation = bijective_json_1.BijectiveJSON.stringify(dataObject);
+            let stringifycation = json_helpers_1.JSONParser.stringify(dataObject);
             let buffer = Buffer.from(stringifycation, 'utf8');
             this.setTypeAndContentSize(BufferType.ObjectSTRINGIFY, buffer.length);
             this.writeHeader(bufferWriter);
@@ -6230,7 +6255,7 @@ class IpcPacketBufferWrap {
     }
     _readObjectSTRINGIFY2(depth, bufferReader) {
         let data = bufferReader.readString('utf8', this._contentSize);
-        return bijective_json_1.BijectiveJSON.parse(data);
+        return json_helpers_1.JSONParser.parse(data);
     }
     _readObjectDirect(depth, bufferReader) {
         let context;
@@ -6355,7 +6380,7 @@ class IpcPacketBufferWrap {
 exports.IpcPacketBufferWrap = IpcPacketBufferWrap;
 
 }).call(this,require("buffer").Buffer)
-},{"./bijective-json":27,"./bufferListWriter":29,"./bufferWriter":31,"buffer":22}],35:[function(require,module,exports){
+},{"./bufferListWriter":30,"./bufferWriter":32,"buffer":22,"json-helpers":26}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Reader;
@@ -6394,7 +6419,7 @@ class ReaderBase {
 }
 exports.ReaderBase = ReaderBase;
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class WriterBase {
@@ -6410,7 +6435,7 @@ class WriterBase {
 }
 exports.WriterBase = WriterBase;
 
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ipcPacketBuffer_1 = require("./code/ipcPacketBuffer");
@@ -6432,10 +6457,8 @@ exports.BufferListReader = bufferListReader_1.BufferListReader;
 var ipcPacket_1 = require("./code/ipcPacket");
 exports.IpcPacketSerializer = ipcPacket_1.IpcPacketSerializer;
 exports.IpcPacketParser = ipcPacket_1.IpcPacketParser;
-var bijective_json_1 = require("./code/bijective-json");
-exports.BijectiveJSON = bijective_json_1.BijectiveJSON;
 
-},{"./code/bijective-json":27,"./code/bufferListReader":28,"./code/bufferListWriter":29,"./code/bufferReader":30,"./code/bufferWriter":31,"./code/ipcPacket":32,"./code/ipcPacketBuffer":33,"./code/ipcPacketBufferWrap":34,"./code/reader":35}],38:[function(require,module,exports){
+},{"./code/bufferListReader":29,"./code/bufferListWriter":30,"./code/bufferReader":31,"./code/bufferWriter":32,"./code/ipcPacket":33,"./code/ipcPacketBuffer":34,"./code/ipcPacketBufferWrap":35,"./code/reader":36}],39:[function(require,module,exports){
 var v1 = require('./v1');
 var v4 = require('./v4');
 
@@ -6445,7 +6468,7 @@ uuid.v4 = v4;
 
 module.exports = uuid;
 
-},{"./v1":41,"./v4":42}],39:[function(require,module,exports){
+},{"./v1":42,"./v4":43}],40:[function(require,module,exports){
 /**
  * Convert array of 16 byte values to UUID string format of the form:
  * XXXXXXXX-XXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
@@ -6470,7 +6493,7 @@ function bytesToUuid(buf, offset) {
 
 module.exports = bytesToUuid;
 
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 (function (global){
 // Unique ID creation requires a high quality random # generator.  In the
 // browser this is a little complicated due to unknown quality of Math.random()
@@ -6507,7 +6530,7 @@ if (!rng) {
 module.exports = rng;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 // Unique ID creation requires a high quality random # generator.  We feature
 // detect to determine the best RNG source, normalizing to a function that
 // returns 128-bits of randomness, since that's what's usually required
@@ -6612,7 +6635,7 @@ function v1(options, buf, offset) {
 
 module.exports = v1;
 
-},{"./lib/bytesToUuid":39,"./lib/rng":40}],42:[function(require,module,exports){
+},{"./lib/bytesToUuid":40,"./lib/rng":41}],43:[function(require,module,exports){
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -6643,10 +6666,10 @@ function v4(options, buf, offset) {
 
 module.exports = v4;
 
-},{"./lib/bytesToUuid":39,"./lib/rng":40}],43:[function(require,module,exports){
+},{"./lib/bytesToUuid":40,"./lib/rng":41}],44:[function(require,module,exports){
 const electronCommonIpcModule = require('../..');
 electronCommonIpcModule.PreloadElectronCommonIpc();
 
 console.log(`IsElectronCommonIpcAvailable=${electronCommonIpcModule.IsElectronCommonIpcAvailable()}`);
 
-},{"../..":16}]},{},[43]);
+},{"../..":16}]},{},[44]);

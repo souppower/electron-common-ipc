@@ -39,7 +39,8 @@
   "dependencies": {
     "csv-write-stream": "^2.0.0",
     "electron-process-type": "^2.4.0",
-    "socket-serializer": "^3.3.0",
+    "json-helpers": "^1.0.0",
+    "socket-serializer": "^3.4.0",
     "winston": "^2.4.1"
   },
   "devDependencies": {
