@@ -50,7 +50,7 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
         }
     }
 
-    private _onConnect(eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer): boolean {
+    protected _onConnect(eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer): boolean {
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] _onConnect`);
         // In sandbox mode, 1st parameter is no more the event, but the 2nd argument !!!
         if (peerOrUndefined) {

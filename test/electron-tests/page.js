@@ -53,6 +53,8 @@ window.addEventListener('load', () => {
     }
     else {
         window_id = GetQueryStringParams('id');
+        console.log(`window.name = ${window.name} - ${window.id}`);
+        
         // console.log('Create Frame CrossFrameEventEmitter');
         // let crossFrameEE = new electronCommonIpcModuleCFEE.CrossFrameEventEmitter(window.parent);
         // crossFrameEE.on('test-frame', (...args) => {

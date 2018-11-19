@@ -63,11 +63,17 @@ function createWindows() {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+let brokers;
 app.on('ready', () => {
-    brokersLifeCycle.startBrokers()
+    brokers = new brokersLifeCycle.Brokers()
+    brokers.start()
     .then(() => {
         createWindows();
     });
+});
+
+app.on('quit', () => {
+    brokers.stop()
 });
 
 // Quit when all windows are closed.
