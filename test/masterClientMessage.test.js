@@ -6,6 +6,22 @@ const ipcBusModule = require('../lib/electron-common-ipc');
 const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 // ipcBusModule.ActivateIpcBusTrace(true);
 
+function Equal(a1, a2) {
+  return (a1 === a2);
+}
+
+function ArrayEqual(a1, a2) {
+  return (a1.length === a2.length) && (a1.join(':') === a2.join(':'));
+}
+
+function ObjectEqual(a1, a2) {
+  return JSON.stringify(a1) === JSON.stringify(a2);
+}
+
+function BufferEqual(a1, a2) {
+  return Buffer.compare(a1, a2) === 0;
+}
+
 function test(remoteBroker, busPath) {
 
   describe(`Master Client ${busPath} messages ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
@@ -30,23 +46,6 @@ function test(remoteBroker, busPath) {
         })
         .catch(() => { });
     });
-
-    function Equal(a1, a2) {
-      return (a1 === a2);
-    }
-
-    function ArrayEqual(a1, a2) {
-      return (a1.length === a2.length) && (a1.join(':') === a2.join(':'));
-    }
-
-    function ObjectEqual(a1, a2) {
-      return JSON.stringify(a1) === JSON.stringify(a2);
-    }
-
-    function BufferEqual(a1, a2) {
-      return Buffer.compare(a1, a2) === 0;
-    }
-
 
     function testSerialization(param, comparator) {
       {

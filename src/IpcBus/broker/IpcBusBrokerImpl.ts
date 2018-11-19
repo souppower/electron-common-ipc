@@ -128,7 +128,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         this._ipcBusBrokerClient = new IpcBusClientTransportNode(contextType, { port: this._netOptions.port, host: this._netOptions.host, path: this._netOptions.path });
     }
 
-    private _reset() {
+    private _reset(closeServer: boolean) {
         if (this._server) {
             let server = this._server;
             this._server = null;
@@ -162,6 +162,8 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         if (!p) {
             p = this._promiseStarted = new Promise<void>((resolve, reject) => {
                 let server = net.createServer();
+                server.unref();
+
                 let timer: NodeJS.Timer = null;
                 let fctReject: (msg: string) => void;
 
@@ -203,7 +205,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                             resolve();
                         })
                         .catch((err) => {
-                            this._reset();
+                            this._reset(true);
                             let msg = `[IPCBus:Broker] error = ${err}`;
                             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                             reject(msg);
@@ -217,7 +219,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                     server.removeListener('listening', catchListening);
                     server.removeListener('error', catchError);
                     server.removeListener('close', catchClose);
-                    this._reset();
+                    this._reset(false);
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                     reject(msg);
                 };
@@ -263,7 +265,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                     }, options.timeoutDelay);
                 }
                 server.addListener('close', catchClose);
-                this._reset();
+                this._reset(true);
             }
             else {
                 resolve();
@@ -287,7 +289,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     }
 
     onSocketError(socket: net.Socket, err: string): void {
-        // Not closing _server
+        // Not closing server
         if (this._server) {
             this._socketClients.delete(socket.remotePort);
             this._socketCleanUp(socket);
@@ -295,7 +297,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     }
 
     onSocketClose(socket: net.Socket): void {
-        // Not closing _server
+        // Not closing server
         if (this._server) {
             this._socketClients.delete(socket.remotePort);
             this._socketCleanUp(socket);
@@ -305,13 +307,13 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     protected _onServerClose(): void {
         let msg = `[IPCBus:Broker] server close`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(msg);
-        this._reset();
+        this._reset(false);
     }
 
     protected _onServerError(err: any) {
         let msg = `[IPCBus:Broker] server error ${err}`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
-        this._reset();
+        this._reset(true);
     }
 
     protected _onServerConnection(socket: net.Socket, _server: net.Server): void {

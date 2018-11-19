@@ -31,13 +31,13 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements Bridg
         this._onRendererMessageBind = this._onRendererMessage.bind(this);
     }
 
-    protected _reset() {
+    protected _reset(endSocket: boolean) {
         if (this._ipcMain.listenerCount(IPCBUS_TRANSPORT_RENDERER_COMMAND) > 0) {
             this._ipcBusPeers.clear();
             this._requestChannels.clear();
             this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessageBind);
         }
-        super._reset();
+        super._reset(endSocket);
     }
 
     // IpcBusBridge API

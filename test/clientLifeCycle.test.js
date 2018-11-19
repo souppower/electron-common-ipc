@@ -16,7 +16,7 @@ function test1(remoteBroker, busPath) {
 
     after(() => {
       return brokers.stop()
-      .catch(() => {})
+        .catch(() => { })
     });
 
     let ipcBusClient;
@@ -33,7 +33,7 @@ function test1(remoteBroker, busPath) {
 }
 
 function test2(remoteBroker, busPath) {
-    describe(`Client ${busPath} without closing it ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
+  describe(`Client ${busPath} without closing it ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
     let brokers;
     before(() => {
       brokers = new brokersLifeCycle.Brokers(remoteBroker, busPath);
@@ -42,7 +42,7 @@ function test2(remoteBroker, busPath) {
 
     after(() => {
       return brokers.stop()
-      .catch(() => {})
+        .catch(() => { })
     });
 
     let ipcBusClient;

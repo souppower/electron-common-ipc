@@ -41,25 +41,29 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
         this._netBinds['end'] = this._onSocketEnd.bind(this);
     }
 
+    // https://nodejs.org/api/net.html#net_event_error_1
     protected _onSocketError(err: any) {
-        let msg = `[IPCBus:Node] server error ${err}`;
+        let msg = `[IPCBus:Node] socket error ${err}`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
-        this._socket.destroy();
-        this._reset();
+        // this._socket.destroy();
+        // this._reset();
     }
 
+    // https://nodejs.org/api/net.html#net_event_close_1
     protected _onSocketClose() {
-        let msg = `[IPCBus:Node] server close`;
+        let msg = `[IPCBus:Node] socket close`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(msg);
-        this._reset();
+        this._reset(false);
     }
 
+    // https://nodejs.org/api/net.html#net_event_end
     protected _onSocketEnd() {
-        let msg = `[IPCBus:Node] server end`;
+        let msg = `[IPCBus:Node] socket end`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(msg);
-        this._reset();
+        this._reset(false);
     }
 
+    // https://nodejs.org/api/net.html#net_event_data
     protected _onSocketData(buffer: Buffer) {
         this._bufferListReader.appendBuffer(buffer);
         while (this._packetIn.decodeFromReader(this._bufferListReader)) {
@@ -75,7 +79,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
         }
     }
 
-    protected _reset() {
+    protected _reset(endSocket: boolean) {
         this._promiseConnected = null;
         this._socketWriter = null;
         if (this._socket) {
@@ -84,9 +88,9 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
             for (let key in this._netBinds) {
                 socket.removeListener(key, this._netBinds[key]);
             }
-
-            socket.end();
-            socket.unref();
+            if (endSocket) {
+                socket.end();
+            }
         }
     }
 
@@ -115,49 +119,54 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
                 }
 
                 let catchError = (err: any) => {
-                    let msg = `[IPCBus:Node] error = ${err} on ${JSON.stringify(this._netOptions)}`;
+                    let msg = `[IPCBus:Node] socket error = ${err} on ${JSON.stringify(this._netOptions)}`;
                     fctReject(msg);
                 };
 
                 let catchClose = () => {
-                    let msg = `[IPCBus:Node] server close`;
+                    let msg = `[IPCBus:Node] socket close`;
                     fctReject(msg);
                 };
 
                 let socket = new net.Socket();
+                socket.unref();
                 let socketLocalBinds: { [key: string]: Function } = {};
                 let catchConnect = (conn: any) => {
+                    // timeout or error has been already trigerred
+                    if (timer == null) {
+                        socket.destroy();
+                    }
+                    else {
+                        clearTimeout(timer);
+                        for (let key in socketLocalBinds) {
+                            socket.removeListener(key, socketLocalBinds[key]);
+                        }
+                        this._socket = socket;
+                        for (let key in this._netBinds) {
+                            this._socket.addListener(key, this._netBinds[key]);
+                        }
+
+                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Node] connected on ${JSON.stringify(this._netOptions)}`);
+                        if ((this._socketBuffer == null) || (this._socketBuffer === 0)) {
+                            this._socketWriter = new SocketWriter(this._socket);
+                        }
+                        else if (this._socketBuffer < 0) {
+                            this._socketWriter = new DelayedSocketWriter(this._socket);
+                        }
+                        else if (this._socketBuffer > 0) {
+                            this._socketWriter = new BufferedSocketWriter(this._socket, this._socketBuffer);
+                        }
+                        this.ipcSend(IpcBusCommand.Kind.Connect, '');
+                        resolve();
+                    }
+                };
+
+                fctReject = (msg: string) => {
                     clearTimeout(timer);
                     for (let key in socketLocalBinds) {
                         socket.removeListener(key, socketLocalBinds[key]);
                     }
-                    this._socket = socket;
-                    for (let key in this._netBinds) {
-                        this._socket.addListener(key, this._netBinds[key]);
-                    }
-
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Node] connected on ${JSON.stringify(this._netOptions)}`);
-                    if ((this._socketBuffer == null) || (this._socketBuffer === 0)) {
-                        this._socketWriter = new SocketWriter(this._socket);
-                    }
-                    else if (this._socketBuffer < 0) {
-                        this._socketWriter = new DelayedSocketWriter(this._socket);
-                    }
-                    else if (this._socketBuffer > 0) {
-                        this._socketWriter = new BufferedSocketWriter(this._socket, this._socketBuffer);
-                    }
-                    this.ipcSend(IpcBusCommand.Kind.Connect, '');
-                    resolve();
-                };
-
-                fctReject = (msg: string) => {
-                    if (timer) {
-                        clearTimeout(timer);
-                    }
-                    for (let key in socketLocalBinds) {
-                        socket.removeListener(key, socketLocalBinds[key]);
-                    }
-                    this._reset();
+                    this._reset(false);
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                     reject(msg);
                 };
@@ -214,7 +223,7 @@ export class IpcBusClientTransportNode extends IpcBusClientTransport {
                     socket.addListener(key, socketLocalBinds[key]);
                 }
                 this.ipcSend(IpcBusCommand.Kind.Close, '');
-                this._reset();
+                this._reset(true);
             }
             else {
                 resolve();
