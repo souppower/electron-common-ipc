@@ -5,7 +5,7 @@ const uuid = require("uuid");
 const events_1 = require("events");
 const IpcBusClientTransportRenderer_1 = require("./IpcBusClientTransportRenderer");
 const CrossFrameMessage_1 = require("./CrossFrameMessage");
-const trace = true;
+const trace = false;
 class CrossFrameEventEmitter extends events_1.EventEmitter {
     constructor(target, origin) {
         super();
@@ -53,8 +53,7 @@ class CrossFrameEventEmitter extends events_1.EventEmitter {
         this._messageChannel.port1.postMessage(packet);
     }
     _eventHandler(channel, ...args) {
-        trace && console.log(`CFEE ${this._uuid} - emit: ${channel} - ${JSON.stringify(args)}`);
-        trace && console.log(`CFEE ${this._uuid} - emit: ${this.listenerCount(channel)}`);
+        trace && console.log(`CFEE ${this._uuid} - emit: ${channel} - ${JSON.stringify(args)} => ${this.listenerCount(channel)}`);
         this.emit(channel, ...args);
     }
     _messageHandler(event) {
@@ -1047,9 +1046,9 @@ class IpcBusServiceImpl {
         this._ipcBusClient = _ipcBusClient;
         this._serviceName = _serviceName;
         this._exposedInstance = _exposedInstance;
-        this._callReceivedLamdba = (event, ...args) => this._onCallReceived(event, args[0]);
         this._prevImplEmit = null;
         this._callHandlers = new Map();
+        this._onCallReceived = this._onCallReceived.bind(this);
         this.registerCallHandler(ServiceUtils.IPCBUS_SERVICE_CALL_GETSTATUS, () => {
             return this._getServiceStatus();
         });
@@ -1081,7 +1080,7 @@ class IpcBusServiceImpl {
             };
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcService] Service '${this._serviceName}' will send events emitted by its implementation`);
         }
-        this._ipcBusClient.addListener(ServiceUtils.getServiceCallChannel(this._serviceName), this._callReceivedLamdba);
+        this._ipcBusClient.addListener(ServiceUtils.getServiceCallChannel(this._serviceName), this._onCallReceived);
         this.sendEvent(Service.IPCBUS_SERVICE_EVENT_START, this._getServiceStatus());
         IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcService] Service '${this._serviceName}' is STARTED`);
     }
@@ -1091,7 +1090,7 @@ class IpcBusServiceImpl {
             this._prevImplEmit = null;
         }
         this.sendEvent(Service.IPCBUS_SERVICE_EVENT_STOP, {});
-        this._ipcBusClient.removeListener(ServiceUtils.getServiceCallChannel(this._serviceName), this._callReceivedLamdba);
+        this._ipcBusClient.removeListener(ServiceUtils.getServiceCallChannel(this._serviceName), this._onCallReceived);
         IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcService] Service '${this._serviceName}' is STOPPED`);
     }
     registerCallHandler(name, handler) {
@@ -1180,7 +1179,6 @@ class CallWrapperEventEmitter extends events_1.EventEmitter {
 class IpcBusServiceProxyImpl extends events_1.EventEmitter {
     constructor(ipcBusClient, serviceName, options) {
         super();
-        this._onServiceReceivedLambda = (event, ...args) => this._onServiceReceived(event, args[0]);
         super.setMaxListeners(0);
         this._ipcBusClient = ipcBusClient;
         this._serviceName = serviceName;
@@ -1197,7 +1195,8 @@ class IpcBusServiceProxyImpl extends events_1.EventEmitter {
             .catch((err) => {
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] first status to '${this._serviceName}' - err: ${err}`);
         });
-        this._ipcBusClient.addListener(ServiceUtils.getServiceEventChannel(this._serviceName), this._onServiceReceivedLambda);
+        this._onServiceReceived = this._onServiceReceived.bind(this);
+        this._ipcBusClient.addListener(ServiceUtils.getServiceEventChannel(this._serviceName), this._onServiceReceived);
     }
     connect(options) {
         options = options || {};

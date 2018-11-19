@@ -64,12 +64,14 @@ function getInstanceMethodNames(obj: any): Map<string, PropertyDescriptor> {
 export class IpcBusServiceImpl implements Service.IpcBusService {
     private _callHandlers: Map<string, Function>;
     // private _eventHandlers: Map<string, Set<string>>;
-    private _callReceivedLamdba: Client.IpcBusListener = (event: Client.IpcBusEvent, ...args: any[]) => this._onCallReceived(event, <ServiceUtils.IpcBusServiceCall>args[0]);
     private _prevImplEmit: Function = null;
 
     constructor(private _ipcBusClient: Client.IpcBusClient, private _serviceName: string, private _exposedInstance: any, options?: Service.IpcBusService.CreateOptions) {
         this._callHandlers = new Map<string, Function>();
         // this._eventHandlers = new Map<string, Set<string>>();
+
+        // Callback
+        this._onCallReceived = this._onCallReceived.bind(this);
 
         //  Register internal call handlers
         this.registerCallHandler(ServiceUtils.IPCBUS_SERVICE_CALL_GETSTATUS, () => {
@@ -156,7 +158,7 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
         }
 
         // Listening to call messages
-        this._ipcBusClient.addListener(ServiceUtils.getServiceCallChannel(this._serviceName), this._callReceivedLamdba);
+        this._ipcBusClient.addListener(ServiceUtils.getServiceCallChannel(this._serviceName), this._onCallReceived);
 
         // The service is started, send available call handlers to clients
         this.sendEvent(Service.IPCBUS_SERVICE_EVENT_START, this._getServiceStatus());
@@ -175,7 +177,7 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
         this.sendEvent(Service.IPCBUS_SERVICE_EVENT_STOP, {});
 
         // No more listening to call messages
-        this._ipcBusClient.removeListener(ServiceUtils.getServiceCallChannel(this._serviceName), this._callReceivedLamdba);
+        this._ipcBusClient.removeListener(ServiceUtils.getServiceCallChannel(this._serviceName), this._onCallReceived);
 
         IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcService] Service '${this._serviceName}' is STOPPED`);
     }
