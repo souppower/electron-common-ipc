@@ -5,14 +5,13 @@ const uuid = require("uuid");
 const events_1 = require("events");
 const IpcBusClientTransportRenderer_1 = require("./IpcBusClientTransportRenderer");
 const CrossFrameMessage_1 = require("./CrossFrameMessage");
-const trace = false;
+const trace = true;
 class CrossFrameEventEmitter extends events_1.EventEmitter {
     constructor(target, origin) {
         super();
         this._target = target;
         this._origin = origin || '*';
         this._uuid = uuid.v4();
-        this._messageChannel = new MessageChannel();
         this._messageHandler = this._messageHandler.bind(this);
         this._start();
         if (trace) {
@@ -23,24 +22,35 @@ class CrossFrameEventEmitter extends events_1.EventEmitter {
                 trace && console.log(`CFEE ${this._uuid} - removeListener ${event}`);
             });
         }
+        window.addEventListener('unload', () => {
+            trace && console.log(`CFEE ${this._uuid} - unload event`);
+            this.close();
+        });
     }
     _start() {
-        trace && console.log(`CFEE ${this._uuid} - init`);
-        this._messageChannel.port1.addEventListener('message', this._messageHandler);
-        this._messageChannel.port1.start();
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode(this._uuid, 'init', []);
-        this._target.postMessage(packet, this._origin, [this._messageChannel.port2]);
+        if (this._messageChannel == null) {
+            trace && console.log(`CFEE ${this._uuid} - init`);
+            this._messageChannel = new MessageChannel();
+            this._messageChannel.port1.addEventListener('message', this._messageHandler);
+            this._messageChannel.port1.start();
+            let packet = CrossFrameMessage_1.CrossFrameMessage.Encode(this._uuid, 'init', []);
+            this._target.postMessage(packet, this._origin, [this._messageChannel.port2]);
+        }
+    }
+    close() {
+        if (this._messageChannel == null) {
+            trace && console.log(`CFEE ${this._uuid} - exit`);
+            let packet = CrossFrameMessage_1.CrossFrameMessage.Encode(this._uuid, 'exit', []);
+            this._target.postMessage(packet, this._origin);
+            this._messageChannel.port1.removeEventListener('message', this._messageHandler);
+            this._messageChannel.port1.close();
+            this._messageChannel = null;
+        }
     }
     send(channel, ...args) {
         trace && console.log(`CFEE ${this._uuid} - send: ${channel} - ${JSON.stringify(args)}`);
         let packet = CrossFrameMessage_1.CrossFrameMessage.Encode(this._uuid, channel, args);
         this._messageChannel.port1.postMessage(packet);
-    }
-    close() {
-        trace && console.log(`CFEE ${this._uuid} - exit`);
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode(this._uuid, 'exit', []);
-        this._target.postMessage(packet, this._origin);
-        this._messageChannel.port1.close();
     }
     _eventHandler(channel, ...args) {
         trace && console.log(`CFEE ${this._uuid} - emit: ${channel} - ${JSON.stringify(args)}`);
@@ -86,14 +96,22 @@ class CrossFrameEventDispatcher {
         if (packet) {
             if (packet.channel === 'init') {
                 trace && console.log(`CFEDisp ${this._uuid} - lifecycle - init ${packet.uuid}`);
-                let port = event.ports[0];
-                this._ports.set(packet.uuid, port);
-                port.addEventListener('message', this._messageHandler);
-                port.start();
+                let port = this._ports.get(packet.uuid);
+                if (port == null) {
+                    port = event.ports[0];
+                    this._ports.set(packet.uuid, port);
+                    port.addEventListener('message', this._messageHandler);
+                    port.start();
+                }
             }
             else if (packet.channel === 'exit') {
                 trace && console.log(`CFEDisp ${this._uuid} - lifecycle - exit ${packet.uuid}`);
-                this._ports.delete(packet.uuid);
+                let port = this._ports.get(packet.uuid);
+                if (port) {
+                    this._ports.delete(packet.uuid);
+                    port.removeEventListener('message', this._messageHandler);
+                    port.close();
+                }
             }
         }
     }
