@@ -81,7 +81,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         return replyChannel.substr(replyChannelPrefix.length, v1IdPattern.length);
     }
 
-    ipcCallback(callback: (channel: string, ipcBusPeer: Client.IpcBusPeer, args: any[]) => void): void {
+    ipcCallback(callback: (channel: string, ipcBusPeer: Client.IpcBusPeer, ...args: any[]) => void): void {
         this._ipcCallback = callback;
     }
 

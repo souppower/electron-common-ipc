@@ -10,5 +10,5 @@ export interface IpcBusTransport {
     ipcRequest(channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse>
     ipcSend(kind: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void;
 
-    ipcCallback(callback: (channel: string, ipcBusPeer: Client.IpcBusPeer, args: any[]) => void): void;
+    ipcCallback(callback: (channel: string, ipcBusPeer: Client.IpcBusPeer, ...args: any[]) => void): void;
 }

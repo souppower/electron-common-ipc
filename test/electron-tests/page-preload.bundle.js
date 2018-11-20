@@ -228,8 +228,8 @@ class IpcBusClientImpl extends events_1.EventEmitter {
         super();
         super.setMaxListeners(0);
         this._transport = ipcBusClientTransport;
-        this._transport.ipcCallback((channel, ipcBusPeer, args) => {
-            super.emit(channel, ipcBusPeer, ...args);
+        this._transport.ipcCallback((channel, ipcBusEvent, ...args) => {
+            super.emit(channel, ipcBusEvent, ...args);
         });
     }
     get peer() {
@@ -247,9 +247,6 @@ class IpcBusClientImpl extends events_1.EventEmitter {
     }
     request(channel, timeoutDelay, ...args) {
         return this._transport.ipcRequest(channel, timeoutDelay, args);
-    }
-    native_emit(event, ...args) {
-        return super.emit(event, ...args);
     }
     emit(event, ...args) {
         this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.SendMessage, event, undefined, args);

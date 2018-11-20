@@ -14,8 +14,8 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         super();
         super.setMaxListeners(0);
         this._transport = ipcBusClientTransport;
-        this._transport.ipcCallback((channel, ipcBusPeer, args) => {
-            super.emit(channel, ipcBusPeer, ...args);
+        this._transport.ipcCallback((channel, ipcBusEvent, ...args) => {
+            super.emit(channel, ipcBusEvent, ...args);
         });
     }
 
@@ -38,11 +38,6 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
 
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<Client.IpcBusRequestResponse> {
         return this._transport.ipcRequest(channel, timeoutDelay, args);
-    }
-
-    // EventEmitter API
-    protected native_emit(event: string | symbol, ...args: any[]): boolean {
-        return super.emit(event, ...args);
     }
 
     emit(event: string, ...args: any[]): boolean {

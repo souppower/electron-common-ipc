@@ -2,13 +2,10 @@ import * as net from 'net';
 
 import { IpcPacketBuffer, BufferListReader } from 'socket-serializer';
 
-// Use the official API 'CreateIpcBusClient'
-import { CreateIpcBusClient } from '../IpcBusClient-factory';
-
 import * as Client from '../IpcBusClient';
 import * as Broker from './IpcBusBroker';
 import * as IpcBusUtils from '../IpcBusUtils';
-// import * as util from 'util';
+import { IpcBusTransportNet } from '../IpcBusTransportNet';
 
 import { IpcBusCommand } from '../IpcBusCommand';
 
@@ -84,7 +81,7 @@ class IpcBusBrokerSocket {
 /** @internal */
 export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocketClient {
     private _netOptions: Client.IpcNetOptions;
-    private _ipcBusBrokerClient: Client.IpcBusClient;
+    private _ipcBusBrokerClient: IpcBusTransportNet;
     private _socketClients: Map<number, IpcBusBrokerSocket>;
 
     private _server: net.Server;
@@ -96,8 +93,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     private _wildSubscriptions: Set<string>;
     private _requestChannels: Map<string, net.Socket>;
     private _ipcBusPeers: Map<string, Client.IpcBusPeer>;
-
-    private _queryStateLamdba: Client.IpcBusListener = (ipcBusEvent: Client.IpcBusEvent, replyChannel: string) => this._onQueryState(ipcBusEvent, replyChannel);
 
     constructor(contextType: Client.IpcBusProcessType, options: Broker.IpcBusBroker.CreateOptions) {
         this._netOptions = options;
@@ -127,7 +122,15 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             }
         });
 
-        this._ipcBusBrokerClient = CreateIpcBusClient({ port: this._netOptions.port, host: this._netOptions.host, path: this._netOptions.path });
+        this._ipcBusBrokerClient = new IpcBusTransportNet(contextType, { port: this._netOptions.port, host: this._netOptions.host, path: this._netOptions.path });
+        this._ipcBusBrokerClient.ipcCallback((channel, ipcBusEvent, replyChannel) => {
+            if (channel === Client.IPCBUS_CHANNEL_QUERY_STATE) {
+                if (replyChannel != null) {
+                    const queryState = this.queryState();
+                    this._ipcBusBrokerClient.ipcSend(IpcBusCommand.Kind.SendMessage, replyChannel, undefined, [queryState]);
+                }
+            }
+        });
     }
 
     private _reset(closeServer: boolean) {
@@ -141,8 +144,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             this._socketClients.forEach((socket) => {
                 socket.release();
             });
-            this._ipcBusBrokerClient.off(Client.IPCBUS_CHANNEL_QUERY_STATE, this._queryStateLamdba);
-            this._ipcBusBrokerClient.close();
+            this._ipcBusBrokerClient.ipcClose();
             server.close();
             server.unref();
         }
@@ -201,9 +203,8 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                         this._server.addListener(key, this._netBinds[key]);
                     }
 
-                    this._ipcBusBrokerClient.connect({ peerName: `IpcBusBrokerClient`, timeoutDelay: options.timeoutDelay })
+                    this._ipcBusBrokerClient.ipcConnect({ timeoutDelay: options.timeoutDelay })
                         .then(() => {
-                            this._ipcBusBrokerClient.on(Client.IPCBUS_CHANNEL_QUERY_STATE, this._queryStateLamdba);
                             resolve();
                         })
                         .catch((err) => {
@@ -430,13 +431,10 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         return queryStateResult;
     }
 
-    protected _onQueryState(ipcBusEvent: Client.IpcBusEvent, replyChannel: string) {
+    protected _onQueryState(ipcBusEvent: Client.IpcBusEvent) {
         const queryState = this.queryState();
         if (ipcBusEvent.request) {
             ipcBusEvent.request.resolve(queryState);
-        }
-        else if (replyChannel != null) {
-            this._ipcBusBrokerClient.send(replyChannel, queryState);
         }
     }
 }
