@@ -1,7 +1,7 @@
 import * as IpcBusUtils from './IpcBusUtils';
 
-import { IpcBusClientRenderer } from './IpcBusClientRenderer';
-import { IpcBusClientRendererFrame } from './IpcBusClientRendererFrame';
+import { Create as CreateIpcBusClientRenderer } from './IpcBusClientRenderer';
+import { Create as CreateIpcBusClientRendererFrame } from './IpcBusClientRendererFrame';
 
 import { CrossFrameEventEmitter, IpcBusFrameBridge } from './CrossFrameEventEmitter2';
 // import { CrossFrameEventDispatcher } from './CrossFrameEventEmitter';
@@ -34,7 +34,7 @@ function _PreloadElectronCommonIpc(context: string): boolean {
                     windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options: any, hostname?: string) => {
                         trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
                         let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-                        let ipcBusClient = new IpcBusClientRenderer(localOptions || {}, electron.ipcRenderer);
+                        let ipcBusClient = CreateIpcBusClientRenderer(localOptions || {}, electron.ipcRenderer);
                         return ipcBusClient;
                     };
                     windowLocal.ElectronCommonIpc.FrameBridge = new IpcBusFrameBridge(electron.ipcRenderer, window);
@@ -60,7 +60,7 @@ function _PreloadElectronCommonIpc(context: string): boolean {
                 windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options: any, hostname?: string) => {
                     trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
                     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-                    let ipcBusClient = new IpcBusClientRendererFrame(localOptions || {}, crossFrameEE);
+                    let ipcBusClient = CreateIpcBusClientRendererFrame(localOptions || {}, crossFrameEE);
                     return ipcBusClient;
                 };
             }

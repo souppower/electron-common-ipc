@@ -1,8 +1,8 @@
 import * as uuid from 'uuid';
 import { EventEmitter } from 'events';
 
-import { IpcBusTransportWindow } from './IpcBusClientTransportWindow';
-import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_EVENT } from './IpcBusClientTransportWindow';
+import { IpcWindow } from './IpcBusTransportWindow';
+import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_EVENT } from './IpcBusTransportWindow';
 
 import { CrossFrameMessage } from './CrossFrameMessage';
 
@@ -13,7 +13,7 @@ const trace = false;
 //     return  typeof Worker === 'undefined' && typeof Window === 'undefined';
 // }
 
-export class CrossFrameEventEmitter extends EventEmitter implements IpcBusTransportWindow {
+export class CrossFrameEventEmitter extends EventEmitter implements IpcWindow {
     private _target: Window;
     private _origin: string;
     private _uuid: string;

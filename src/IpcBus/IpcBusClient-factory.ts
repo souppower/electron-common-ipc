@@ -3,8 +3,8 @@ import { GetElectronProcessType } from 'electron-process-type/lib/v2';
 import { IpcBusClient } from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
 
-import { IpcBusClientNode } from './IpcBusClientNode';
-import { IpcBusClientMain } from './IpcBusClientMain';
+import { Create as CreateIpcBusClientNode } from './IpcBusClientNode';
+import { Create as CreateIpcBusClientMain } from './IpcBusClientMain';
 // import { IpcBusClientRenderer } from './IpcBusClientRenderer';
 
 export let CreateIpcBusClient: IpcBusClient.CreateFunction = (options: any, hostname?: string): IpcBusClient => {
@@ -19,12 +19,12 @@ export let CreateIpcBusClient: IpcBusClient.CreateFunction = (options: any, host
             break;
         case 'main':
             if (localOptions) {
-                ipcBusClient = new IpcBusClientMain(localOptions);
+                ipcBusClient = CreateIpcBusClientMain(localOptions);
             }
             break;
         case 'node':
             if (localOptions) {
-                ipcBusClient = new IpcBusClientNode(localOptions);
+                ipcBusClient = CreateIpcBusClientNode(localOptions);
             }
             break;
     }

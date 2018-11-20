@@ -7,8 +7,8 @@ import * as Client from '../IpcBusClient';
 import * as Bridge from './IpcBusBridge';
 
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusClientNode } from '../IpcBusClientNode';
-import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_COMMAND, IPCBUS_TRANSPORT_RENDERER_EVENT } from '../IpcBusClientTransportWindow';
+import { IpcBusTransportNode } from '../IpcBusTransportNode';
+import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_COMMAND, IPCBUS_TRANSPORT_RENDERER_EVENT } from '../IpcBusTransportWindow';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */

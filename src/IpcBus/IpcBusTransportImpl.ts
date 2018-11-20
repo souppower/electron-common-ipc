@@ -4,8 +4,7 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as Client from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommand } from './IpcBusCommand';
-import { IpcBusClientImpl } from './IpcBusClientImpl';
-import { IpcBusClientTransport } from './IpcBusClientTransport';
+import { IpcBusTransport } from './IpcBusTransport';
 
 const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
 const v1IdPattern = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
@@ -51,17 +50,16 @@ class DeferredRequest {
 }
 
 /** @internal */
-export abstract class IpcBusClientTransportImpl extends IpcBusClientImpl implements IpcBusClientTransport {
+export abstract class IpcBusTransportImpl implements IpcBusTransport {
     protected _ipcBusPeer: Client.IpcBusPeer;
     protected readonly _netOptions: Client.IpcNetOptions;
+    protected _ipcCallback: Function;
 
     protected _requestFunctions: Map<string, DeferredRequest>;
     protected _requestNumber: number;
 
     constructor(ipcBusContext: Client.IpcBusProcess, options: Client.IpcBusClient.CreateOptions) {
-        super(options);
-
-        this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusContext };
+         this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusContext };
         this._netOptions = options;
         this._requestFunctions = new Map<string, DeferredRequest>();
         this._requestNumber = 0;
@@ -83,13 +81,17 @@ export abstract class IpcBusClientTransportImpl extends IpcBusClientImpl impleme
         return replyChannel.substr(replyChannelPrefix.length, v1IdPattern.length);
     }
 
+    ipcCallback(callback: (channel: string, ipcBusPeer: Client.IpcBusPeer, args: any[]) => void): void {
+        this._ipcCallback = callback;
+    }
+
     protected _onCommandReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
                 const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
                 let args = ipcPacketBuffer.parseArrayAt(1);
-                this.native_emit(ipcBusCommand.emit || ipcBusCommand.channel, ipcBusEvent, ...args);
+                this._ipcCallback(ipcBusCommand.emit || ipcBusCommand.channel, ipcBusEvent, ...args);
                 break;
             }
             case IpcBusCommand.Kind.RequestMessage: {
@@ -108,7 +110,7 @@ export abstract class IpcBusClientTransportImpl extends IpcBusClientImpl impleme
                     }
                 };
                 let args = ipcPacketBuffer.parseArrayAt(1);
-                this.native_emit(ipcBusCommand.channel, ipcBusEvent, ...args);
+                this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {

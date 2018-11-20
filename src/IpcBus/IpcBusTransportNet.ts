@@ -6,12 +6,12 @@ import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSoc
 import * as IpcBusUtils from './IpcBusUtils';
 import * as Client from './IpcBusClient';
 
-import { IpcBusClientTransportImpl } from './IpcBusClientTransportImpl';
+import { IpcBusTransportImpl } from './IpcBusTransportImpl';
 import { IpcBusCommand } from './IpcBusCommand';
 
 // Implementation for Node process
 /** @internal */
-export class IpcBusClientTransportNet extends IpcBusClientTransportImpl {
+export class IpcBusTransportNet extends IpcBusTransportImpl {
     private _promiseConnected: Promise<void>;
 
     protected _socket: net.Socket;
@@ -26,7 +26,7 @@ export class IpcBusClientTransportNet extends IpcBusClientTransportImpl {
     private _bufferListReader: BufferListReader;
 
     constructor(contextType: Client.IpcBusProcessType, options: Client.IpcBusClient.CreateOptions) {
-        assert((contextType === 'main') || (contextType === 'node'), `IpcBusClientTransportNet: contextType must not be a ${contextType}`);
+        assert((contextType === 'main') || (contextType === 'node'), `IpcBusTransportNet: contextType must not be a ${contextType}`);
 
         super({ type: contextType, pid: process.pid }, options);
         this._packetOut = new IpcPacketBufferWrap();
@@ -94,7 +94,7 @@ export class IpcBusClientTransportNet extends IpcBusClientTransportImpl {
         }
     }
 
-    /// IpcBusClientTransportImpl API
+    /// IpcBusTransportImpl API
     ipcConnect(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;

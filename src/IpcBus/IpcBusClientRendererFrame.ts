@@ -1,12 +1,11 @@
 import * as Client from './IpcBusClient';
 
-import { IpcBusClientTransportWindow, IpcBusTransportWindow } from './IpcBusClientTransportWindow';
+import { IpcBusTransportWindow, IpcWindow } from './IpcBusTransportWindow';
+import { IpcBusClientImpl}  from './IpcBusClientImpl';
 
-// Implementation for renderer-frame process
-/** @internal */
-export class IpcBusClientRendererFrame extends IpcBusClientTransportWindow {
-    constructor(options: Client.IpcBusClient.CreateOptions, ipcTransportWindow: IpcBusTransportWindow) {
-        super('renderer-frame', options, ipcTransportWindow);
-    }
+// Implementation for Renderer frame process
+export function Create(options: Client.IpcBusClient.CreateOptions, ipcWindow: IpcWindow): Client.IpcBusClient {
+    let transport = new IpcBusTransportWindow('renderer-frame', options, ipcWindow);
+    let ipcClient = new IpcBusClientImpl(options, transport);
+    return ipcClient;
 }
-

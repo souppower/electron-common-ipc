@@ -107,6 +107,11 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
                 return resolve(this.getWrapper<T>());
             }
             let timer: NodeJS.Timer;
+            let serviceStart = () => {
+                clearTimeout(timer);
+                this.removeListener(Service.IPCBUS_SERVICE_EVENT_START, serviceStart);
+                resolve(this.getWrapper<T>());
+            };
             // Below zero = infinite
             if (options.timeoutDelay >= 0) {
                 timer = setTimeout(() => {
@@ -114,11 +119,6 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
                     reject('timeout');
                 }, options.timeoutDelay);
             }
-            let serviceStart = () => {
-                clearTimeout(timer);
-                this.removeListener(Service.IPCBUS_SERVICE_EVENT_START, serviceStart);
-                resolve(this.getWrapper<T>());
-            };
             this.addListener(Service.IPCBUS_SERVICE_EVENT_START, serviceStart);
         });
     }
