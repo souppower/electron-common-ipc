@@ -17,7 +17,7 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
 
     protected abstract addLog(webContents: Electron.WebContents, peer: Client.IpcBusPeer, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): void;
 
-    protected _onEventReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+    protected _onCommandReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestMessage: {
@@ -42,7 +42,7 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
                 break;
             }
         }
-        super._onEventReceived(ipcBusCommand, ipcPacketBuffer);
+        super._onCommandReceived(ipcBusCommand, ipcPacketBuffer);
     }
 
     protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) {

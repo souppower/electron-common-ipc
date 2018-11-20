@@ -27,8 +27,6 @@ export class IpcBusClientTransportWindow extends IpcBusClientTransportImpl {
     private _packetIn: IpcPacketBuffer;
     private _connected: boolean;
 
-    // private _ipcRendererReady: Promise<void>;
-
     constructor(contextType: Client.IpcBusProcessType, options: Client.IpcBusClient.CreateOptions, ipcTransportWindow: IpcBusTransportWindow) {
         assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusClientTransportWindow: contextType must not be a ${contextType}`);
         super({ type: contextType, pid: -1 }, options);
@@ -51,15 +49,15 @@ export class IpcBusClientTransportWindow extends IpcBusClientTransportImpl {
     }
 
     protected _onConnect(eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer): boolean {
-        // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] _onConnect`);
+        // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] _onConnect`);
         // In sandbox mode, 1st parameter is no more the event, but directly arguments !!!
         if (peerOrUndefined) {
             if ((peerOrUndefined as Client.IpcBusPeer).id === this._ipcBusPeer.id) {
                 this._ipcBusPeer = peerOrUndefined;
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] Activate Standard listening for #${this._ipcBusPeer.name}`);
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Standard listening for #${this._ipcBusPeer.name}`);
                 this._onIpcEventReceived = (eventEmitter: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) => {
                     this._packetIn.decodeFromBuffer(buffer);
-                    this._onEventReceived(ipcBusCommand, this._packetIn);
+                    this._onCommandReceived(ipcBusCommand, this._packetIn);
                 };
                 this._ipcTransportInWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
                 return true;
@@ -68,10 +66,10 @@ export class IpcBusClientTransportWindow extends IpcBusClientTransportImpl {
         else {
             if ((eventOrPeer as Client.IpcBusPeer).id === this._ipcBusPeer.id) {
                 this._ipcBusPeer = eventOrPeer;
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Renderer] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
                 this._onIpcEventReceived = (ipcBusCommand: IpcBusCommand, buffer: Buffer) => {
                     this._packetIn.decodeFromBuffer(buffer);
-                    this._onEventReceived(ipcBusCommand, this._packetIn);
+                    this._onCommandReceived(ipcBusCommand, this._packetIn);
                 };
                 this._ipcTransportInWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
                 return true;

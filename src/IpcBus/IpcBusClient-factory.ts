@@ -18,11 +18,11 @@ export let CreateIpcBusClient: IpcBusClient.CreateFunction = (options: any, host
             // ipcBusClient = new IpcBusClientRenderer(electronProcessType, localOptions || {});
             break;
         case 'main':
-        if (localOptions) {
-            ipcBusClient = new IpcBusClientMain(localOptions);
-        }
-        break;
-    case 'node':
+            if (localOptions) {
+                ipcBusClient = new IpcBusClientMain(localOptions);
+            }
+            break;
+        case 'node':
             if (localOptions) {
                 ipcBusClient = new IpcBusClientNode(localOptions);
             }

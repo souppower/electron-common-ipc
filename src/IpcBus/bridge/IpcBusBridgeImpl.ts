@@ -68,7 +68,7 @@ export class IpcBusBridgeImpl extends IpcBusClientNode implements Bridge.IpcBusB
         return queryStateResult;
     }
 
-    protected _onEventReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+    protected _onCommandReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestMessage:
