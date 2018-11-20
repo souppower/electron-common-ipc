@@ -78,24 +78,24 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcWindow {
 
 
 export class IpcBusFrameBridge extends CrossFrameEventEmitter {
-    protected _ipcBusTransportWindow: IpcBusTransportWindow;
+    protected _ipcWindow: IpcWindow;
 
-    constructor(ipcBusTransportWindow: IpcBusTransportWindow, target: Window, origin?: string) {
+    constructor(ipcWindow: IpcWindow, target: Window, origin?: string) {
         super(target, origin);
-        this._ipcBusTransportWindow = ipcBusTransportWindow;
+        this._ipcWindow = ipcWindow;
 
         // Callback
         this._messageTransportHandlerEvent = this._messageTransportHandlerEvent.bind(this);
         this._messageTransportHandlerConnect = this._messageTransportHandlerConnect.bind(this);
 
-        this._ipcBusTransportWindow.on(IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
-        this._ipcBusTransportWindow.on(IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
+        this._ipcWindow.on(IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
+        this._ipcWindow.on(IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
     }
 
     // Unpacks and emits
     protected _eventHandler(channel: string, ...args: any[]) {
         trace && console.log(`_eventHandler ${channel} ${args}`);
-        this._ipcBusTransportWindow.send(channel, ...args);
+        this._ipcWindow.send(channel, ...args);
     }
 
     protected _messageTransportHandlerEvent(...args: any[]) {

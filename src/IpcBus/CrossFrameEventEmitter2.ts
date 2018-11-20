@@ -172,18 +172,18 @@ export class CrossFrameEventDispatcher {
 }
 
 export class IpcBusFrameBridge extends CrossFrameEventDispatcher {
-    protected _ipcBusTransportWindow: IpcBusTransportWindow;
+    protected _ipcWindow: IpcWindow;
 
-    constructor(ipcBusTransportWindow: IpcBusTransportWindow, target: Window) {
+    constructor(ipcWindow: IpcWindow, target: Window) {
         super(target);
-        this._ipcBusTransportWindow = ipcBusTransportWindow;
+        this._ipcWindow = ipcWindow;
 
         // Callback
         this._messageTransportHandlerEvent = this._messageTransportHandlerEvent.bind(this);
         this._messageTransportHandlerConnect = this._messageTransportHandlerConnect.bind(this);
 
-        this._ipcBusTransportWindow.on(IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
-        this._ipcBusTransportWindow.on(IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
+        this._ipcWindow.on(IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
+        this._ipcWindow.on(IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
     }
 
     // Unpacks and emits
@@ -192,10 +192,10 @@ export class IpcBusFrameBridge extends CrossFrameEventDispatcher {
         trace && console.log(`IpcBusFrameBridge - messageHandler - ${JSON.stringify(packet)}`);
         if (packet) {
             if (Array.isArray(packet.args)) {
-                this._ipcBusTransportWindow.send(packet.channel, ...packet.args);
+                this._ipcWindow.send(packet.channel, ...packet.args);
             }
             else {
-                this._ipcBusTransportWindow.send(packet.channel);
+                this._ipcWindow.send(packet.channel);
             }
         }
     }
