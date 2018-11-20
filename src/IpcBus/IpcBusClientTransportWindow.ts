@@ -13,14 +13,14 @@ export const IPCBUS_TRANSPORT_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
 export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'IpcBusRenderer:Command';
 export const IPCBUS_TRANSPORT_RENDERER_EVENT = 'IpcBusRenderer:Event';
 
-export interface IpcBusTransportInWindow extends EventEmitter {
+export interface IpcBusTransportWindow extends EventEmitter {
     send(channel: string, ...args: any[]): void;
 }
 
 // Implementation for renderer process
 /** @internal */
-export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
-    private _ipcTransportInWindow: IpcBusTransportInWindow;
+export class IpcBusClientTransportWindow extends IpcBusClientTransport {
+    private _ipcTransportInWindow: IpcBusTransportWindow;
     private _onIpcEventReceived: Function;
     private _promiseConnected: Promise<void>;
     private _packetOut: IpcPacketBufferWrap;
@@ -29,11 +29,11 @@ export class IpcBusClientTransportRenderer extends IpcBusClientTransport {
 
     // private _ipcRendererReady: Promise<void>;
 
-    constructor(contextType: Client.IpcBusContextType, options: Client.IpcBusClient.CreateOptions, ipcTransportInWindow: IpcBusTransportInWindow) {
-        assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusClientTransportRenderer: contextType must not be a ${contextType}`);
+    constructor(contextType: Client.IpcBusProcessType, options: Client.IpcBusClient.CreateOptions, ipcTransportWindow: IpcBusTransportWindow) {
+        assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusClientTransportWindow: contextType must not be a ${contextType}`);
         super({ type: contextType, pid: -1 }, options);
 
-        this._ipcTransportInWindow = ipcTransportInWindow;
+        this._ipcTransportInWindow = ipcTransportWindow;
 
         this._packetOut = new IpcPacketBufferWrap();
         this._packetIn = new IpcPacketBuffer();

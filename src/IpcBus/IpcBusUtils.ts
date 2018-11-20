@@ -11,9 +11,9 @@ const win32prefix2 = '\\\\?\\pipe';
 // https://nodejs.org/api/net.html#net_ipc_support
 function CleanPipeName(str: string) {
     if (process.platform === 'win32') {
-        str = str.replace(/^\//, '');
-        str = str.replace(/\//g, '-');
-        if ((str.lastIndexOf(win32prefix1, 0) === -1) || (str.lastIndexOf(win32prefix2, 0) === -1)) {
+        if ((str.lastIndexOf(win32prefix1, 0) === -1) && (str.lastIndexOf(win32prefix2, 0) === -1)) {
+            str = str.replace(/^\//, '');
+            str = str.replace(/\//g, '-');
             str = win32prefix1 + '\\' + str;
         }
     }

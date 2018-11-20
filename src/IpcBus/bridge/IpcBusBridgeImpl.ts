@@ -7,12 +7,12 @@ import * as Client from '../IpcBusClient';
 import * as Bridge from './IpcBusBridge';
 
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusClientTransportNode } from '../IpcBusClientTransportNode';
-import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_COMMAND, IPCBUS_TRANSPORT_RENDERER_EVENT } from '../IpcBusClientTransportRenderer';
+import { IpcBusClientNode } from '../IpcBusClientNode';
+import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_COMMAND, IPCBUS_TRANSPORT_RENDERER_EVENT } from '../IpcBusClientTransportWindow';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
-export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements Bridge.IpcBusBridge {
+export class IpcBusBridgeImpl extends IpcBusClientNode implements Bridge.IpcBusBridge {
     private _ipcMain: any;
     private _onRendererMessageBind: Function;
 
@@ -20,8 +20,8 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements Bridg
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<number, Electron.WebContents>;
     protected _requestChannels: Map<string, any>;
 
-    constructor(contextType: Client.IpcBusContextType, options: Bridge.IpcBusBridge.CreateOptions) {
-        super(contextType, options);
+    constructor(options: Bridge.IpcBusBridge.CreateOptions) {
+        super(options);
 
         this._ipcMain = require('electron').ipcMain;
 
@@ -98,24 +98,24 @@ export class IpcBusBridgeImpl extends IpcBusClientTransportNode implements Bridg
     }
 
     private _completePeerInfo(webContents: Electron.WebContents, ipcBusPeer: Client.IpcBusPeer): void {
-        let peerName = `${ipcBusPeer.context.type}-${webContents.id}`;
-        ipcBusPeer.context.wcid = webContents.id;
+        let peerName = `${ipcBusPeer.process.type}-${webContents.id}`;
+        ipcBusPeer.process.wcid = webContents.id;
         // Hidden function, may disappear
         try {
-            ipcBusPeer.context.rid = (webContents as any).getProcessId();
-            peerName += `-r${ipcBusPeer.context.rid}`;
+            ipcBusPeer.process.rid = (webContents as any).getProcessId();
+            peerName += `-r${ipcBusPeer.process.rid}`;
         }
         catch (err) {
-            ipcBusPeer.context.rid = -1;
+            ipcBusPeer.process.rid = -1;
         }
         // >= Electron 1.7.1
         try {
-            ipcBusPeer.context.pid = webContents.getOSProcessId();
-            peerName += `_${ipcBusPeer.context.pid}`;
+            ipcBusPeer.process.pid = webContents.getOSProcessId();
+            peerName += `_${ipcBusPeer.process.pid}`;
         }
         catch (err) {
             // For backward we fill pid with webContents id
-            ipcBusPeer.context.pid = webContents.id;
+            ipcBusPeer.process.pid = webContents.id;
         }
         ipcBusPeer.name = peerName;
     }

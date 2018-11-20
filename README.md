@@ -404,7 +404,7 @@ For debugging purpose, each ***IpcBusClient*** is identified by a peer.
 ```js
 type IpcBusProcessType = 'main' | 'renderer' | 'renderer-frame' | 'node';
 
-interface IpcBusContext {
+interface IpcBusProcess {
     type: IpcBusProcessType;
     pid: number;
     rid?: number;
@@ -414,7 +414,7 @@ interface IpcBusContext {
 interface IpcBusPeer {
     id: number;
     name: string;
-    context: IpcBusContext;
+    process: IpcBusProcess;
 }
 ```
 IpcBusPeer contains :
@@ -422,8 +422,8 @@ IpcBusPeer contains :
 - the name of the peer, this name can be changed during the connection (IpcBusClient.connect)
 - the process context of the peer.
 
-IpcBusContext contains :
- - type : type of the context : 'main' | 'renderer' | 'node'
+IpcBusProcess contains :
+ - type : type of the context : 'main' | 'renderer' | 'renderer-frame' | 'node'
  - pid : id of the process which hosts the the peer
  - rid : client id of the renderer process where the peer is hosted (equivalent to the value of --renderer-client-id option in the commandline of the renderer process), only valid for a 'renderer' process
  - wcid : webContents id of the peer, only valid for a 'renderer' process

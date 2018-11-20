@@ -2,13 +2,15 @@ import * as net from 'net';
 
 import { IpcPacketBuffer, BufferListReader } from 'socket-serializer';
 
+// Use the official API 'CreateIpcBusClient'
+import { CreateIpcBusClient } from '../IpcBusClient-factory';
+
 import * as Client from '../IpcBusClient';
 import * as Broker from './IpcBusBroker';
 import * as IpcBusUtils from '../IpcBusUtils';
 // import * as util from 'util';
 
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusClientTransportNode } from '../IpcBusClientTransportNode';
 
 interface IpcBusBrokerSocketClient {
     onSocketPacket(socket: net.Socket, ipcPacketBuffer: IpcPacketBuffer): void;
@@ -97,7 +99,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
     private _queryStateLamdba: Client.IpcBusListener = (ipcBusEvent: Client.IpcBusEvent, replyChannel: string) => this._onQueryState(ipcBusEvent, replyChannel);
 
-    constructor(contextType: Client.IpcBusContextType, options: Broker.IpcBusBroker.CreateOptions) {
+    constructor(contextType: Client.IpcBusProcessType, options: Broker.IpcBusBroker.CreateOptions) {
         this._netOptions = options;
 
         this._netBinds = {};
@@ -125,7 +127,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             }
         });
 
-        this._ipcBusBrokerClient = new IpcBusClientTransportNode(contextType, { port: this._netOptions.port, host: this._netOptions.host, path: this._netOptions.path });
+        this._ipcBusBrokerClient = CreateIpcBusClient({ port: this._netOptions.port, host: this._netOptions.host, path: this._netOptions.path });
     }
 
     private _reset(closeServer: boolean) {

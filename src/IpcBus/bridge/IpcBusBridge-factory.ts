@@ -1,6 +1,5 @@
 import { GetElectronProcessType } from 'electron-process-type/lib/v2';
 
-import { IpcBusContextType } from '../IpcBusClient';
 import * as IpcBusUtils from '../IpcBusUtils';
 
 import { IpcBusBridge  } from './IpcBusBridge';
@@ -21,15 +20,15 @@ export let CreateIpcBusBridge: IpcBusBridge.CreateFunction = (options: any, host
         case 'main':
             let logPath = process.env['ELECTRON_IPC_BRIDGE_LOG_JSON'];
             if (logPath) {
-                ipcBusBridge = new IpcBusBridgeJSONLogger(logPath, electronProcessType as IpcBusContextType, localOptions);
+                ipcBusBridge = new IpcBusBridgeJSONLogger(logPath, localOptions);
             }
             else {
                 let logPath = process.env['ELECTRON_IPC_BRIDGE_LOG_CSV'];
                 if (logPath) {
-                    ipcBusBridge = new IpcBusBridgeCSVLogger(logPath, electronProcessType as IpcBusContextType, localOptions);
+                    ipcBusBridge = new IpcBusBridgeCSVLogger(logPath, localOptions);
                 }
                 else {
-                    ipcBusBridge = new IpcBusBridgeImpl(electronProcessType as IpcBusContextType, localOptions);
+                    ipcBusBridge = new IpcBusBridgeImpl(localOptions);
                 }
             }
             break;

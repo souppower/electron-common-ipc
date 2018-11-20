@@ -9,10 +9,10 @@ export const IPCBUS_CHANNEL_QUERY_STATE: string = `${IPCBUS_CHANNEL}/queryState`
 export const ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH';
 export const ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH';
 
-export type IpcBusContextType = 'renderer-frame' | 'native' | ElectronProcessType | string;
+export type IpcBusProcessType = 'renderer-frame' | 'native' | ElectronProcessType | string;
 
-export interface IpcBusContext {
-    type: IpcBusContextType;
+export interface IpcBusProcess {
+    type: IpcBusProcessType;
     pid: number;    // Process Id
     rid?: number;   // Renderer Id
     wcid?: number;  // WebContent Id
@@ -21,7 +21,7 @@ export interface IpcBusContext {
 export interface IpcBusPeer {
     id: string;
     name: string;
-    context: IpcBusContext;
+    process: IpcBusProcess;
 }
 
 export interface IpcBusRequest {

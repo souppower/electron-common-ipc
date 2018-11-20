@@ -57,10 +57,10 @@ export abstract class IpcBusClientTransport extends IpcBusClientImpl {
     protected _requestFunctions: Map<string, DeferredRequest>;
     protected _requestNumber: number;
 
-    constructor(ipcBusContext: Client.IpcBusContext, options: Client.IpcBusClient.CreateOptions) {
+    constructor(ipcBusContext: Client.IpcBusProcess, options: Client.IpcBusClient.CreateOptions) {
         super(options);
 
-        this._ipcBusPeer = { id: uuid.v1(), name: '', context: ipcBusContext };
+        this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusContext };
         this._netOptions = options;
         this._requestFunctions = new Map<string, DeferredRequest>();
         this._requestNumber = 0;
