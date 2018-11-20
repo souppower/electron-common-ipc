@@ -7,7 +7,7 @@ This bus offers a EventEmitter-like API for exchanging data between any processe
 * Electon to Node, 
 * Electron to Electron.
 
-Node needs a "BusBroker" in charge to commute messages to right listeners
+Node needs a "BusBroker" in charge to commute messages to right listeners  
 Electron needs an additional broker : "BusBridge" in charge to commute messages between renderers (WebPages), Master and Node.
 
 A WebPage is then able to dialog with a node process and vice-versa.
@@ -140,10 +140,10 @@ You have to bundle your file :
 browserify -o ./preload-ipc.bundle.js -x electron ./preload-ipc.js
 ```
 
-***Bus in frame in not yet supported.***
+***Bus in frame is still experimental.***
 
 # Common options
-Some interfaces are sharing the same kind of options.
+Some interfaces are sharing the same kind of options.  
 In order to be consistent in term of behavior and naming we have common interfaces for options.
 
 ```ts
@@ -169,8 +169,8 @@ export interface IpcSocketBufferingOptions {
 - **socketBuffer** > 0 : message is serialized in objects, objects are written only in one shot when reaching a size of **socketBuffer** in bytes.
 
 # IpcBusBroker
-Dispatching of Node messages is managed by a broker. You can have only one single Broker for the whole application.
-The broker can be instanciated in a node process or in the master process (not in renderer processes).
+Dispatching of Node messages is managed by a broker. You can have only one single Broker for the whole application.  
+The broker can be instanciated in a node process or in the master process (not in renderer processes).  
 For performance purpose, it is better to instanciate the broker in an independent node process.
 
 ## Interface
@@ -190,9 +190,7 @@ const ipcBusBroker = ipcBusModule.CreateIpcBusBroker([busPath]);
 ```
 
 The ***require()*** call loads the module and CreateIpcBusBroker setups the broker with the ***busPath***.
-If ***busPath*** is not specified, the framework tries to get it from the command line with switch ***--bus-path***.
- 
-Example with ***busPath*** set by code
+
 
 ```js
 // Socket path
@@ -204,27 +202,17 @@ const ipcBusBroker = ipcBusModule.CreateIpcBusBroker('/my-ipc-bus-path');
 const ipcBusBroker = ipcBusModule.CreateIpcBusBroker(58666);
 ```
 
-Example with ***busPath*** set by command line:
-```Batchfile
-electron.exe --bus-path=58666
-```
-    
-```js
-const ipcBusBroker = ipcBusModule.CreateIpcBusBroker();
-```
-
 ## Methods
 
 ### start(options?: IpcBusBroker.StartOptions) : Promise < string >
 
 ```js
 ipcBusBroker.start() 
-    .then((msg) => console.log(msg))
+    .then(() => console.log('success'))
     .catch((err) => console.log(err))
 ````
 
 Starts the broker dispatcher.
-If succeeded the value of ***msg*** is 'started' (do not rely on it, subject to change). 
 If failed (timeout or any other internal error), ***err*** contains the error message.
 
 ### stop()
@@ -272,9 +260,6 @@ const ipcBusBridge = ipcBusModule.CreateIpcBusBridge([busPath]);
 ```
 
 The ***require()*** call loads the module and CreateIpcBusBridge setups the bridge with the ***busPath***.
-If ***busPath*** is not specified, the framework tries to get it from the command line with switch ***--bus-path***.
- 
-Example with ***busPath*** set by code
 
 ```js
 // Socket path
@@ -286,27 +271,17 @@ const ipcBusBridge = ipcBusModule.CreateIpcBusBridge('/my-ipc-bus-path');
 const ipcBusBridge = ipcBusModule.CreateIpcBusBridge(58666);
 ```
 
-Example with ***busPath*** set by command line:
-```Batchfile
-electron.exe --bus-path=58666
-```
-    
-```js
-const ipcBusBridge = ipcBusModule.CreateIpcBusBridge();
-```
-
 ## Methods
 
 ### start(options?: IpcBusBridge.StartOptions) : Promise < string >
 
 ```js
 ipcBusBridge.start() 
-    .then((msg) => console.log(msg))
+    .then((msg) => console.log('success'))
     .catch((err) => console.log(err))
 ````
 
 Starts the bridge dispatcher.
-If succeeded the value of ***msg*** is 'started' (do not rely on it, subject to change). 
 If failed (timeout or any other internal error), ***err*** contains the error message.
 
 ### stop()
@@ -321,8 +296,6 @@ The ***IpcBusClient*** is an instance of the ***EventEmitter*** class.
 
 When you register a callback to a specified channel. Each time a message is received on this channel, the callback is called.
 The callback must follow the ***IpcBusListener*** signature (see below).
-
-Only one ***IpcBusClient*** per Process/Renderer is created. If you ask for more, the same instance will be returned.
 
 ## Interface
 ```ts
@@ -356,46 +329,24 @@ const ipcBus = ipcBusModule.CreateIpcBusClient([busPath]);
 ````
 
 The ***require()*** call loads the module. CreateIpcBus setups the client with the ***busPath*** that was used to start the broker.
-If ***busPath*** is not specified, the framework tries to get it from the command line with switch ***--bus-path***.
- 
-Example with ***busPath*** set by code:
+
 ```js
 const ipcBus = ipcBusModule.CreateIpcBusClient('/my-ipc-bus-path');
-```
-
-Example with ***busPath*** set by command line:
-```
-electron.exe --bus-path='/my-ipc-bus-path'
-```
-```js    
-const ipcBus = ipcBusModule.CreateIpcBusClient();
 ```
 
 ## Initialization in a Node single process
  
-Example with ***busPath*** set by code:
 ```js
 const ipcBus = ipcBusModule.CreateIpcBusClient('/my-ipc-bus-path');
 ```
-Example with ***busPath*** set by command line:
-```
-electron.exe --bus-path='/my-ipc-bus-path'
-```
-```js 
-const ipcBus = ipcBusModule.CreateIpcBusClient();
-```
+
 ## Initialization in a Renderer process (either sandboxed or not)
 ```js
 const ipcBusModule = require("electron-common-ipc");
 const ipcBus = ipcBusModule.CreateIpcBusClient();
 ```
 
-NOTE: If the renderer is running in sandboxed mode, the above code must be run from the ***BrowserWindow***'s preload script (browserify -o BundledBrowserWindowPreload.js ***-x electron*** BrowserWindowPreload.js). 
-Otherwise, the Electron's ipcRenderer is not accessible and the client cannot work.
-Use the code below to make the client accessible to the the Web page scripts.
-```js
-window.ipcBus = require('electron-common-ipc').CreateIpcBusClient();
-```
+NOTE: There is no notion of port, buspath in a renderer. IpcBusRenderer connects automatically to the instance of the bridge.
 
 ## Property
 
