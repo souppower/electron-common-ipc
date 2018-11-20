@@ -121,6 +121,7 @@ electronApp.on('ready', function () {
 If you are using the bus in a renderer process (page), you must take care of the context :
 - sandbox
 - nodeIntegration
+- cross-frames [experimental]
 
 In order to have bus working in all contexts you can register the bus in the preload file of your BrowserWindow
 

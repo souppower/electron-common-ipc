@@ -701,20 +701,25 @@ function JSON_stringify_array(data, maxLen, output) {
 }
 function JSON_stringify_object(data, maxLen, output) {
     output += '{';
-    let keys = Object.keys(data);
-    for (let i = 0, l = keys.length; i < l; ++i) {
-        if (output.length >= maxLen) {
-            output += '\'__cut__\'';
-            break;
+    if (data) {
+        let keys = Object.keys(data);
+        for (let i = 0, l = keys.length; i < l; ++i) {
+            if (output.length >= maxLen) {
+                output += '\'__cut__\'';
+                break;
+            }
+            let key = keys[i];
+            output += key + ': ';
+            if (output.length >= maxLen) {
+                output += '\'__cut__\'';
+                break;
+            }
+            output += JSON_stringify(data[key], maxLen - output.length);
+            output += ',';
         }
-        let key = keys[i];
-        output += key + ': ';
-        if (output.length >= maxLen) {
-            output += '\'__cut__\'';
-            break;
-        }
-        output += JSON_stringify(data[key], maxLen - output.length);
-        output += ',';
+    }
+    else {
+        output += 'null';
     }
     output += '}';
     return output;
