@@ -6,12 +6,12 @@ import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSoc
 import * as IpcBusUtils from './IpcBusUtils';
 import * as Client from './IpcBusClient';
 
-import { IpcBusClientTransport } from './IpcBusClientTransport';
+import { IpcBusClientTransportImpl } from './IpcBusClientTransportImpl';
 import { IpcBusCommand } from './IpcBusCommand';
 
 // Implementation for Node process
 /** @internal */
-export class IpcBusClientTransportNet extends IpcBusClientTransport {
+export class IpcBusClientTransportNet extends IpcBusClientTransportImpl {
     private _promiseConnected: Promise<void>;
 
     protected _socket: net.Socket;
@@ -94,8 +94,8 @@ export class IpcBusClientTransportNet extends IpcBusClientTransport {
         }
     }
 
-    /// IpcBusClientTransport API
-    protected ipcConnect(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    /// IpcBusClientTransportImpl API
+    ipcConnect(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
         if (!p) {
@@ -190,7 +190,7 @@ export class IpcBusClientTransportNet extends IpcBusClientTransport {
         return p;
     }
 
-    protected ipcClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    ipcClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         options = options || {};
         if (options.timeoutDelay == null) {
             options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
@@ -231,7 +231,7 @@ export class IpcBusClientTransportNet extends IpcBusClientTransport {
         });
     }
 
-    protected ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._socketWriter) {
             if (args) {
                 this._packetOut.writeArray(this._socketWriter, [ipcBusCommand, args]);

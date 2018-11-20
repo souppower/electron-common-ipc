@@ -353,7 +353,7 @@ class DeferredRequest {
     }
     ;
 }
-class IpcBusClientTransport extends IpcBusClientImpl_1.IpcBusClientImpl {
+class IpcBusClientTransportImpl extends IpcBusClientImpl_1.IpcBusClientImpl {
     constructor(ipcBusContext, options) {
         super(options);
         this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusContext };
@@ -435,7 +435,7 @@ class IpcBusClientTransport extends IpcBusClientImpl_1.IpcBusClientImpl {
         this.ipcPostCommand({ kind, channel, peer: this.peer, request: ipcBusCommandRequest }, args);
     }
 }
-exports.IpcBusClientTransport = IpcBusClientTransport;
+exports.IpcBusClientTransportImpl = IpcBusClientTransportImpl;
 
 },{"./IpcBusClient":4,"./IpcBusClientImpl":5,"./IpcBusCommand":10,"./IpcBusUtils":12,"uuid":41}],9:[function(require,module,exports){
 "use strict";
@@ -443,12 +443,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const assert = require("assert");
 const socket_serializer_1 = require("socket-serializer");
 const IpcBusUtils = require("./IpcBusUtils");
-const IpcBusClientTransport_1 = require("./IpcBusClientTransport");
+const IpcBusClientTransportImpl_1 = require("./IpcBusClientTransportImpl");
 const IpcBusCommand_1 = require("./IpcBusCommand");
 exports.IPCBUS_TRANSPORT_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
 exports.IPCBUS_TRANSPORT_RENDERER_COMMAND = 'IpcBusRenderer:Command';
 exports.IPCBUS_TRANSPORT_RENDERER_EVENT = 'IpcBusRenderer:Event';
-class IpcBusClientTransportWindow extends IpcBusClientTransport_1.IpcBusClientTransport {
+class IpcBusClientTransportWindow extends IpcBusClientTransportImpl_1.IpcBusClientTransportImpl {
     constructor(contextType, options, ipcTransportWindow) {
         assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusClientTransportWindow: contextType must not be a ${contextType}`);
         super({ type: contextType, pid: -1 }, options);
@@ -552,7 +552,7 @@ class IpcBusClientTransportWindow extends IpcBusClientTransport_1.IpcBusClientTr
 }
 exports.IpcBusClientTransportWindow = IpcBusClientTransportWindow;
 
-},{"./IpcBusClientTransport":8,"./IpcBusCommand":10,"./IpcBusUtils":12,"assert":19,"socket-serializer":40}],10:[function(require,module,exports){
+},{"./IpcBusClientTransportImpl":8,"./IpcBusCommand":10,"./IpcBusUtils":12,"assert":19,"socket-serializer":40}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var IpcBusCommand;

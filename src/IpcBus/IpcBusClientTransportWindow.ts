@@ -6,7 +6,7 @@ import { IpcPacketBuffer, IpcPacketBufferWrap, BufferListWriter } from 'socket-s
 import * as IpcBusUtils from './IpcBusUtils';
 import * as Client from './IpcBusClient';
 
-import { IpcBusClientTransport } from './IpcBusClientTransport';
+import { IpcBusClientTransportImpl } from './IpcBusClientTransportImpl';
 import { IpcBusCommand } from './IpcBusCommand';
 
 export const IPCBUS_TRANSPORT_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
@@ -19,7 +19,7 @@ export interface IpcBusTransportWindow extends EventEmitter {
 
 // Implementation for renderer process
 /** @internal */
-export class IpcBusClientTransportWindow extends IpcBusClientTransport {
+export class IpcBusClientTransportWindow extends IpcBusClientTransportImpl {
     private _ipcTransportInWindow: IpcBusTransportWindow;
     private _onIpcEventReceived: Function;
     private _promiseConnected: Promise<void>;
@@ -81,7 +81,7 @@ export class IpcBusClientTransportWindow extends IpcBusClientTransport {
     };
 
     /// IpcBusTrandport API
-    protected ipcConnect(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    ipcConnect(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
         if (!p) {
@@ -127,7 +127,7 @@ export class IpcBusClientTransportWindow extends IpcBusClientTransport {
         return p;
     }
 
-    protected ipcClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    ipcClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         if (this._connected) {
             this.ipcSend(IpcBusCommand.Kind.Close, '');
             this._reset();
@@ -137,7 +137,7 @@ export class IpcBusClientTransportWindow extends IpcBusClientTransport {
 
     // We serialize in renderer process to save master CPU.
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
-    protected ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._connected) {
             let bufferWriter = new BufferListWriter();
             if (args) {
