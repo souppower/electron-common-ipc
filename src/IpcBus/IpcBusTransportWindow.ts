@@ -6,32 +6,32 @@ import { IpcPacketBuffer, IpcPacketBufferWrap, BufferListWriter } from 'socket-s
 import * as IpcBusUtils from './IpcBusUtils';
 import * as Client from './IpcBusClient';
 
-import { IpcBusClientTransportImpl } from './IpcBusClientTransportImpl';
+import { IpcBusTransportImpl } from './IpcBusTransportImpl';
 import { IpcBusCommand } from './IpcBusCommand';
 
 export const IPCBUS_TRANSPORT_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
 export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'IpcBusRenderer:Command';
 export const IPCBUS_TRANSPORT_RENDERER_EVENT = 'IpcBusRenderer:Event';
 
-export interface IpcBusTransportWindow extends EventEmitter {
+export interface IpcWindow extends EventEmitter {
     send(channel: string, ...args: any[]): void;
 }
 
 // Implementation for renderer process
 /** @internal */
-export class IpcBusClientTransportWindow extends IpcBusClientTransportImpl {
-    private _ipcTransportInWindow: IpcBusTransportWindow;
+export class IpcBusTransportWindow extends IpcBusTransportImpl {
+    private _ipcWindow: IpcWindow;
     private _onIpcEventReceived: Function;
     private _promiseConnected: Promise<void>;
     private _packetOut: IpcPacketBufferWrap;
     private _packetIn: IpcPacketBuffer;
     private _connected: boolean;
 
-    constructor(contextType: Client.IpcBusProcessType, options: Client.IpcBusClient.CreateOptions, ipcTransportWindow: IpcBusTransportWindow) {
-        assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusClientTransportWindow: contextType must not be a ${contextType}`);
+    constructor(contextType: Client.IpcBusProcessType, options: Client.IpcBusClient.CreateOptions, ipcWindow: IpcWindow) {
+        assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
         super({ type: contextType, pid: -1 }, options);
 
-        this._ipcTransportInWindow = ipcTransportWindow;
+        this._ipcWindow = ipcWindow;
 
         this._packetOut = new IpcPacketBufferWrap();
         this._packetIn = new IpcPacketBuffer();
@@ -40,9 +40,9 @@ export class IpcBusClientTransportWindow extends IpcBusClientTransportImpl {
     protected _reset() {
         this._promiseConnected = null;
         if (this._connected) {
-            // this._ipcTransportInWindow.removeAllListeners(IPCBUS_TRANSPORT_RENDERER_CONNECT);
+            // this._ipcWindow.removeAllListeners(IPCBUS_TRANSPORT_RENDERER_CONNECT);
             if (this._onIpcEventReceived) {
-                this._ipcTransportInWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+                this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             }
             this._connected = false;
         }
@@ -59,7 +59,7 @@ export class IpcBusClientTransportWindow extends IpcBusClientTransportImpl {
                     this._packetIn.decodeFromBuffer(buffer);
                     this._onCommandReceived(ipcBusCommand, this._packetIn);
                 };
-                this._ipcTransportInWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+                this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
                 return true;
             }
         }
@@ -71,7 +71,7 @@ export class IpcBusClientTransportWindow extends IpcBusClientTransportImpl {
                     this._packetIn.decodeFromBuffer(buffer);
                     this._onCommandReceived(ipcBusCommand, this._packetIn);
                 };
-                this._ipcTransportInWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+                this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
                 return true;
             }
         }
@@ -95,13 +95,13 @@ export class IpcBusClientTransportWindow extends IpcBusClientTransportImpl {
                     let onIpcConnect = (eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer) => {
                         if (this._connected) {
                             if (this._onConnect(eventOrPeer, peerOrUndefined)) {
-                                this._ipcTransportInWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                                this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
                                 clearTimeout(timer);
                                 resolve();
                             }
                         }
                         else {
-                            this._ipcTransportInWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                            this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
                             reject('cancelled');
                         }
                     };
@@ -110,14 +110,14 @@ export class IpcBusClientTransportWindow extends IpcBusClientTransportImpl {
                     if (options.timeoutDelay >= 0) {
                         timer = setTimeout(() => {
                             timer = null;
-                            this._ipcTransportInWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                            this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
                             this._reset();
                             reject('timeout');
                         }, options.timeoutDelay);
                     }
                     // We wait for the bridge confirmation
                     this._connected = true;
-                    this._ipcTransportInWindow.addListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                    this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
                     this.ipcSend(IpcBusCommand.Kind.Connect, '', undefined, [options.peerName]);
                 // });
             });
@@ -144,7 +144,7 @@ export class IpcBusClientTransportWindow extends IpcBusClientTransportImpl {
             else {
                 this._packetOut.writeArray(bufferWriter, [ipcBusCommand]);
             }
-            this._ipcTransportInWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, bufferWriter.buffer);
+            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, bufferWriter.buffer);
         }
     }
 }

@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const uuid = require("uuid");
 const events_1 = require("events");
-const IpcBusClientTransportWindow_1 = require("./IpcBusClientTransportWindow");
+const IpcBusTransportWindow_1 = require("./IpcBusTransportWindow");
 const CrossFrameMessage_1 = require("./CrossFrameMessage");
 const trace = false;
 class CrossFrameEventEmitter extends events_1.EventEmitter {
@@ -129,36 +129,36 @@ class CrossFrameEventDispatcher {
 }
 exports.CrossFrameEventDispatcher = CrossFrameEventDispatcher;
 class IpcBusFrameBridge extends CrossFrameEventDispatcher {
-    constructor(ipcBusTransportWindow, target) {
+    constructor(ipcWindow, target) {
         super(target);
-        this._ipcBusTransportWindow = ipcBusTransportWindow;
+        this._ipcWindow = ipcWindow;
         this._messageTransportHandlerEvent = this._messageTransportHandlerEvent.bind(this);
         this._messageTransportHandlerConnect = this._messageTransportHandlerConnect.bind(this);
-        this._ipcBusTransportWindow.on(IpcBusClientTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
-        this._ipcBusTransportWindow.on(IpcBusClientTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
+        this._ipcWindow.on(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
+        this._ipcWindow.on(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
     }
     _messageHandler(event) {
         let packet = CrossFrameMessage_1.CrossFrameMessage.Decode(event.data);
         trace && console.log(`IpcBusFrameBridge - messageHandler - ${JSON.stringify(packet)}`);
         if (packet) {
             if (Array.isArray(packet.args)) {
-                this._ipcBusTransportWindow.send(packet.channel, ...packet.args);
+                this._ipcWindow.send(packet.channel, ...packet.args);
             }
             else {
-                this._ipcBusTransportWindow.send(packet.channel);
+                this._ipcWindow.send(packet.channel);
             }
         }
     }
     _messageTransportHandlerEvent(...args) {
         trace && console.log(`_messageTransportHandlerEvent ${JSON.stringify(args)}`);
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusClientTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_EVENT, args);
+        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_EVENT, args);
         this._ports.forEach((port) => {
             port.postMessage(packet);
         });
     }
     _messageTransportHandlerConnect(...args) {
         trace && console.log(`_messageTransportHandlerConnect ${JSON.stringify(args)}`);
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusClientTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, args);
+        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, args);
         this._ports.forEach((port) => {
             port.postMessage(packet);
         });
@@ -166,7 +166,7 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 }
 exports.IpcBusFrameBridge = IpcBusFrameBridge;
 
-},{"./CrossFrameMessage":2,"./IpcBusClientTransportWindow":9,"events":25,"uuid":41}],2:[function(require,module,exports){
+},{"./CrossFrameMessage":2,"./IpcBusTransportWindow":11,"events":25,"uuid":41}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const json_helpers_1 = require("json-helpers");
@@ -224,38 +224,42 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
 const IpcBusCommand_1 = require("./IpcBusCommand");
 class IpcBusClientImpl extends events_1.EventEmitter {
-    constructor(options) {
+    constructor(options, ipcBusClientTransport) {
         super();
         super.setMaxListeners(0);
+        this._transport = ipcBusClientTransport;
+        this._transport.ipcCallback((channel, ipcBusEvent, ...args) => {
+            super.emit(channel, ipcBusEvent, ...args);
+        });
+    }
+    get peer() {
+        return this._transport.peer;
     }
     connect(options) {
-        return this.ipcConnect(options);
+        return this._transport.ipcConnect(options);
     }
     close(options) {
         super.removeAllListeners();
-        return this.ipcClose(options);
+        return this._transport.ipcClose(options);
     }
     send(channel, ...args) {
-        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.SendMessage, channel, undefined, args);
+        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.SendMessage, channel, undefined, args);
     }
     request(channel, timeoutDelay, ...args) {
-        return this.ipcRequest(channel, timeoutDelay, args);
-    }
-    native_emit(event, ...args) {
-        return super.emit(event, ...args);
+        return this._transport.ipcRequest(channel, timeoutDelay, args);
     }
     emit(event, ...args) {
-        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.SendMessage, event, undefined, args);
+        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.SendMessage, event, undefined, args);
         return true;
     }
     addListener(channel, listener) {
         super.addListener(channel, listener);
-        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.AddChannelListener, channel);
+        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.AddChannelListener, channel);
         return this;
     }
     removeListener(channel, listener) {
         super.removeListener(channel, listener);
-        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RemoveChannelListener, channel);
+        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RemoveChannelListener, channel);
         return this;
     }
     on(channel, listener) {
@@ -263,7 +267,7 @@ class IpcBusClientImpl extends events_1.EventEmitter {
     }
     once(channel, listener) {
         super.once(channel, listener);
-        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.AddChannelListener, channel);
+        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.AddChannelListener, channel);
         return this;
     }
     off(channel, listener) {
@@ -272,56 +276,156 @@ class IpcBusClientImpl extends events_1.EventEmitter {
     removeAllListeners(channel) {
         super.removeAllListeners(channel);
         if (channel) {
-            this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RemoveChannelAllListeners, channel);
+            this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RemoveChannelAllListeners, channel);
         }
         else {
-            this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RemoveListeners, '');
+            this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RemoveListeners, '');
         }
         return this;
     }
     prependListener(channel, listener) {
         super.prependListener(channel, listener);
-        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.AddChannelListener, channel);
+        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.AddChannelListener, channel);
         return this;
     }
     prependOnceListener(channel, listener) {
         super.prependOnceListener(channel, listener);
-        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.AddChannelListener, channel);
+        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.AddChannelListener, channel);
         return this;
     }
 }
 exports.IpcBusClientImpl = IpcBusClientImpl;
 
-},{"./IpcBusCommand":10,"events":25}],6:[function(require,module,exports){
+},{"./IpcBusCommand":8,"events":25}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const IpcBusClientTransportWindow_1 = require("./IpcBusClientTransportWindow");
-class IpcBusClientRenderer extends IpcBusClientTransportWindow_1.IpcBusClientTransportWindow {
-    constructor(options, ipcTransportWindow) {
-        super('renderer', options, ipcTransportWindow);
-    }
+const IpcBusTransportWindow_1 = require("./IpcBusTransportWindow");
+const IpcBusClientImpl_1 = require("./IpcBusClientImpl");
+function Create(options, ipcWindow) {
+    let transport = new IpcBusTransportWindow_1.IpcBusTransportWindow('renderer', options, ipcWindow);
+    let ipcClient = new IpcBusClientImpl_1.IpcBusClientImpl(options, transport);
+    return ipcClient;
 }
-exports.IpcBusClientRenderer = IpcBusClientRenderer;
+exports.Create = Create;
 
-},{"./IpcBusClientTransportWindow":9}],7:[function(require,module,exports){
+},{"./IpcBusClientImpl":5,"./IpcBusTransportWindow":11}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const IpcBusClientTransportWindow_1 = require("./IpcBusClientTransportWindow");
-class IpcBusClientRendererFrame extends IpcBusClientTransportWindow_1.IpcBusClientTransportWindow {
-    constructor(options, ipcTransportWindow) {
-        super('renderer-frame', options, ipcTransportWindow);
-    }
+const IpcBusTransportWindow_1 = require("./IpcBusTransportWindow");
+const IpcBusClientImpl_1 = require("./IpcBusClientImpl");
+function Create(options, ipcWindow) {
+    let transport = new IpcBusTransportWindow_1.IpcBusTransportWindow('renderer-frame', options, ipcWindow);
+    let ipcClient = new IpcBusClientImpl_1.IpcBusClientImpl(options, transport);
+    return ipcClient;
 }
-exports.IpcBusClientRendererFrame = IpcBusClientRendererFrame;
+exports.Create = Create;
 
-},{"./IpcBusClientTransportWindow":9}],8:[function(require,module,exports){
+},{"./IpcBusClientImpl":5,"./IpcBusTransportWindow":11}],8:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var IpcBusCommand;
+(function (IpcBusCommand) {
+    let Kind;
+    (function (Kind) {
+        Kind["Connect"] = "COO";
+        Kind["Disconnect"] = "COD";
+        Kind["Close"] = "COC";
+        Kind["AddChannelListener"] = "LICA";
+        Kind["RemoveChannelListener"] = "LICR";
+        Kind["RemoveChannelAllListeners"] = "LICRA";
+        Kind["RemoveListeners"] = "LIR";
+        Kind["SendMessage"] = "MES";
+        Kind["RequestMessage"] = "RQM";
+        Kind["RequestResponse"] = "RQR";
+        Kind["RequestCancel"] = "RQC";
+    })(Kind = IpcBusCommand.Kind || (IpcBusCommand.Kind = {}));
+    ;
+})(IpcBusCommand = exports.IpcBusCommand || (exports.IpcBusCommand = {}));
+
+},{}],9:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const IpcBusUtils = require("./IpcBusUtils");
+const IpcBusClientRenderer_1 = require("./IpcBusClientRenderer");
+const IpcBusClientRendererFrame_1 = require("./IpcBusClientRendererFrame");
+const CrossFrameEventEmitter2_1 = require("./CrossFrameEventEmitter2");
+const trace = false;
+function PreloadElectronCommonIpcAutomatic() {
+    return _PreloadElectronCommonIpc('Implicit');
+}
+exports.PreloadElectronCommonIpcAutomatic = PreloadElectronCommonIpcAutomatic;
+function PreloadElectronCommonIpc() {
+    return _PreloadElectronCommonIpc('Explicit');
+}
+exports.PreloadElectronCommonIpc = PreloadElectronCommonIpc;
+function _PreloadElectronCommonIpc(context) {
+    const windowLocal = window;
+    try {
+        if (windowLocal.ElectronCommonIpc == null) {
+            if (windowLocal.self === windowLocal.top) {
+                const electron = require('electron');
+                if (electron && electron.ipcRenderer) {
+                    windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
+                    trace && console.log(`${context} - ElectronCommonIpc`);
+                    windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
+                        trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
+                        let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
+                        let ipcBusClient = IpcBusClientRenderer_1.Create(localOptions || {}, electron.ipcRenderer);
+                        return ipcBusClient;
+                    };
+                    windowLocal.ElectronCommonIpc.FrameBridge = new CrossFrameEventEmitter2_1.IpcBusFrameBridge(electron.ipcRenderer, window);
+                    return true;
+                }
+            }
+        }
+        else {
+            trace && console.log(`${context} - ElectronCommonIpc`);
+            return true;
+        }
+    }
+    catch (_) {
+    }
+    try {
+        if (windowLocal.ElectronCommonIpc == null) {
+            if (windowLocal.self !== windowLocal.top) {
+                windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
+                let crossFrameEE = new CrossFrameEventEmitter2_1.CrossFrameEventEmitter(window.parent);
+                trace && console.log(`${context} - Frame ElectronCommonIpc`);
+                windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
+                    trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
+                    let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
+                    let ipcBusClient = IpcBusClientRendererFrame_1.Create(localOptions || {}, crossFrameEE);
+                    return ipcBusClient;
+                };
+            }
+            else {
+                trace && console.log(`${context} - Frame ElectronCommonIpc`);
+            }
+            return true;
+        }
+    }
+    catch (_) {
+    }
+    return false;
+}
+function IsElectronCommonIpcAvailable() {
+    try {
+        const windowLocal = window;
+        return (windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.CreateIpcBusClient) != null;
+    }
+    catch (_) {
+    }
+    return false;
+}
+exports.IsElectronCommonIpcAvailable = IsElectronCommonIpcAvailable;
+
+},{"./CrossFrameEventEmitter2":1,"./IpcBusClientRenderer":6,"./IpcBusClientRendererFrame":7,"./IpcBusUtils":12,"electron":"electron"}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const uuid = require("uuid");
 const Client = require("./IpcBusClient");
 const IpcBusUtils = require("./IpcBusUtils");
 const IpcBusCommand_1 = require("./IpcBusCommand");
-const IpcBusClientImpl_1 = require("./IpcBusClientImpl");
 const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
 const v1IdPattern = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
 class DeferredRequest {
@@ -353,9 +457,8 @@ class DeferredRequest {
     }
     ;
 }
-class IpcBusClientTransportImpl extends IpcBusClientImpl_1.IpcBusClientImpl {
+class IpcBusTransportImpl {
     constructor(ipcBusContext, options) {
-        super(options);
         this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusContext };
         this._netOptions = options;
         this._requestFunctions = new Map();
@@ -371,13 +474,16 @@ class IpcBusClientTransportImpl extends IpcBusClientImpl_1.IpcBusClientImpl {
     extractPeerIdFromReplyChannel(replyChannel) {
         return replyChannel.substr(replyChannelPrefix.length, v1IdPattern.length);
     }
+    ipcCallback(callback) {
+        this._ipcCallback = callback;
+    }
     _onCommandReceived(ipcBusCommand, ipcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage: {
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
                 const ipcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
                 let args = ipcPacketBuffer.parseArrayAt(1);
-                this.native_emit(ipcBusCommand.emit || ipcBusCommand.channel, ipcBusEvent, ...args);
+                this._ipcCallback(ipcBusCommand.emit || ipcBusCommand.channel, ipcBusEvent, ...args);
                 break;
             }
             case IpcBusCommand_1.IpcBusCommand.Kind.RequestMessage: {
@@ -396,7 +502,7 @@ class IpcBusClientTransportImpl extends IpcBusClientImpl_1.IpcBusClientImpl {
                     }
                 };
                 let args = ipcPacketBuffer.parseArrayAt(1);
-                this.native_emit(ipcBusCommand.channel, ipcBusEvent, ...args);
+                this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
                 break;
             }
             case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse: {
@@ -435,24 +541,24 @@ class IpcBusClientTransportImpl extends IpcBusClientImpl_1.IpcBusClientImpl {
         this.ipcPostCommand({ kind, channel, peer: this.peer, request: ipcBusCommandRequest }, args);
     }
 }
-exports.IpcBusClientTransportImpl = IpcBusClientTransportImpl;
+exports.IpcBusTransportImpl = IpcBusTransportImpl;
 
-},{"./IpcBusClient":4,"./IpcBusClientImpl":5,"./IpcBusCommand":10,"./IpcBusUtils":12,"uuid":41}],9:[function(require,module,exports){
+},{"./IpcBusClient":4,"./IpcBusCommand":8,"./IpcBusUtils":12,"uuid":41}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert = require("assert");
 const socket_serializer_1 = require("socket-serializer");
 const IpcBusUtils = require("./IpcBusUtils");
-const IpcBusClientTransportImpl_1 = require("./IpcBusClientTransportImpl");
+const IpcBusTransportImpl_1 = require("./IpcBusTransportImpl");
 const IpcBusCommand_1 = require("./IpcBusCommand");
 exports.IPCBUS_TRANSPORT_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
 exports.IPCBUS_TRANSPORT_RENDERER_COMMAND = 'IpcBusRenderer:Command';
 exports.IPCBUS_TRANSPORT_RENDERER_EVENT = 'IpcBusRenderer:Event';
-class IpcBusClientTransportWindow extends IpcBusClientTransportImpl_1.IpcBusClientTransportImpl {
-    constructor(contextType, options, ipcTransportWindow) {
-        assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusClientTransportWindow: contextType must not be a ${contextType}`);
+class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
+    constructor(contextType, options, ipcWindow) {
+        assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
         super({ type: contextType, pid: -1 }, options);
-        this._ipcTransportInWindow = ipcTransportWindow;
+        this._ipcWindow = ipcWindow;
         this._packetOut = new socket_serializer_1.IpcPacketBufferWrap();
         this._packetIn = new socket_serializer_1.IpcPacketBuffer();
     }
@@ -460,7 +566,7 @@ class IpcBusClientTransportWindow extends IpcBusClientTransportImpl_1.IpcBusClie
         this._promiseConnected = null;
         if (this._connected) {
             if (this._onIpcEventReceived) {
-                this._ipcTransportInWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+                this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             }
             this._connected = false;
         }
@@ -474,7 +580,7 @@ class IpcBusClientTransportWindow extends IpcBusClientTransportImpl_1.IpcBusClie
                     this._packetIn.decodeFromBuffer(buffer);
                     this._onCommandReceived(ipcBusCommand, this._packetIn);
                 };
-                this._ipcTransportInWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+                this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
                 return true;
             }
         }
@@ -486,7 +592,7 @@ class IpcBusClientTransportWindow extends IpcBusClientTransportImpl_1.IpcBusClie
                     this._packetIn.decodeFromBuffer(buffer);
                     this._onCommandReceived(ipcBusCommand, this._packetIn);
                 };
-                this._ipcTransportInWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+                this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
                 return true;
             }
         }
@@ -505,26 +611,26 @@ class IpcBusClientTransportWindow extends IpcBusClientTransportImpl_1.IpcBusClie
                 let onIpcConnect = (eventOrPeer, peerOrUndefined) => {
                     if (this._connected) {
                         if (this._onConnect(eventOrPeer, peerOrUndefined)) {
-                            this._ipcTransportInWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                            this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
                             clearTimeout(timer);
                             resolve();
                         }
                     }
                     else {
-                        this._ipcTransportInWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                        this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
                         reject('cancelled');
                     }
                 };
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
                         timer = null;
-                        this._ipcTransportInWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                        this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
                         this._reset();
                         reject('timeout');
                     }, options.timeoutDelay);
                 }
                 this._connected = true;
-                this._ipcTransportInWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
                 this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Connect, '', undefined, [options.peerName]);
             });
         }
@@ -546,112 +652,13 @@ class IpcBusClientTransportWindow extends IpcBusClientTransportImpl_1.IpcBusClie
             else {
                 this._packetOut.writeArray(bufferWriter, [ipcBusCommand]);
             }
-            this._ipcTransportInWindow.send(exports.IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, bufferWriter.buffer);
+            this._ipcWindow.send(exports.IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, bufferWriter.buffer);
         }
     }
 }
-exports.IpcBusClientTransportWindow = IpcBusClientTransportWindow;
+exports.IpcBusTransportWindow = IpcBusTransportWindow;
 
-},{"./IpcBusClientTransportImpl":8,"./IpcBusCommand":10,"./IpcBusUtils":12,"assert":19,"socket-serializer":40}],10:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var IpcBusCommand;
-(function (IpcBusCommand) {
-    let Kind;
-    (function (Kind) {
-        Kind["Connect"] = "COO";
-        Kind["Disconnect"] = "COD";
-        Kind["Close"] = "COC";
-        Kind["AddChannelListener"] = "LICA";
-        Kind["RemoveChannelListener"] = "LICR";
-        Kind["RemoveChannelAllListeners"] = "LICRA";
-        Kind["RemoveListeners"] = "LIR";
-        Kind["SendMessage"] = "MES";
-        Kind["RequestMessage"] = "RQM";
-        Kind["RequestResponse"] = "RQR";
-        Kind["RequestCancel"] = "RQC";
-    })(Kind = IpcBusCommand.Kind || (IpcBusCommand.Kind = {}));
-    ;
-})(IpcBusCommand = exports.IpcBusCommand || (exports.IpcBusCommand = {}));
-
-},{}],11:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const IpcBusUtils = require("./IpcBusUtils");
-const IpcBusClientRenderer_1 = require("./IpcBusClientRenderer");
-const IpcBusClientRendererFrame_1 = require("./IpcBusClientRendererFrame");
-const CrossFrameEventEmitter2_1 = require("./CrossFrameEventEmitter2");
-const trace = false;
-function PreloadElectronCommonIpcAutomatic() {
-    return _PreloadElectronCommonIpc('Implicit');
-}
-exports.PreloadElectronCommonIpcAutomatic = PreloadElectronCommonIpcAutomatic;
-function PreloadElectronCommonIpc() {
-    return _PreloadElectronCommonIpc('Explicit');
-}
-exports.PreloadElectronCommonIpc = PreloadElectronCommonIpc;
-function _PreloadElectronCommonIpc(context) {
-    const windowLocal = window;
-    try {
-        if (windowLocal.ElectronCommonIpc == null) {
-            if (windowLocal.self === windowLocal.top) {
-                const electron = require('electron');
-                if (electron && electron.ipcRenderer) {
-                    windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
-                    trace && console.log(`${context} - ElectronCommonIpc`);
-                    windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
-                        trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
-                        let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-                        let ipcBusClient = new IpcBusClientRenderer_1.IpcBusClientRenderer(localOptions || {}, electron.ipcRenderer);
-                        return ipcBusClient;
-                    };
-                    windowLocal.ElectronCommonIpc.FrameBridge = new CrossFrameEventEmitter2_1.IpcBusFrameBridge(electron.ipcRenderer, window);
-                    return true;
-                }
-            }
-        }
-        else {
-            trace && console.log(`${context} - ElectronCommonIpc`);
-            return true;
-        }
-    }
-    catch (_) {
-    }
-    try {
-        if (windowLocal.ElectronCommonIpc == null) {
-            if (windowLocal.self !== windowLocal.top) {
-                windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
-                let crossFrameEE = new CrossFrameEventEmitter2_1.CrossFrameEventEmitter(window.parent);
-                trace && console.log(`${context} - Frame ElectronCommonIpc`);
-                windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
-                    trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
-                    let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-                    let ipcBusClient = new IpcBusClientRendererFrame_1.IpcBusClientRendererFrame(localOptions || {}, crossFrameEE);
-                    return ipcBusClient;
-                };
-            }
-            else {
-                trace && console.log(`${context} - Frame ElectronCommonIpc`);
-            }
-            return true;
-        }
-    }
-    catch (_) {
-    }
-    return false;
-}
-function IsElectronCommonIpcAvailable() {
-    try {
-        const windowLocal = window;
-        return (windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.CreateIpcBusClient) != null;
-    }
-    catch (_) {
-    }
-    return false;
-}
-exports.IsElectronCommonIpcAvailable = IsElectronCommonIpcAvailable;
-
-},{"./CrossFrameEventEmitter2":1,"./IpcBusClientRenderer":6,"./IpcBusClientRendererFrame":7,"./IpcBusUtils":12,"electron":"electron"}],12:[function(require,module,exports){
+},{"./IpcBusCommand":8,"./IpcBusTransportImpl":10,"./IpcBusUtils":12,"assert":19,"socket-serializer":40}],12:[function(require,module,exports){
 (function (Buffer,process){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -1222,17 +1229,17 @@ class IpcBusServiceProxyImpl extends events_1.EventEmitter {
                 return resolve(this.getWrapper());
             }
             let timer;
+            let serviceStart = () => {
+                clearTimeout(timer);
+                this.removeListener(Service.IPCBUS_SERVICE_EVENT_START, serviceStart);
+                resolve(this.getWrapper());
+            };
             if (options.timeoutDelay >= 0) {
                 timer = setTimeout(() => {
                     this.removeListener(Service.IPCBUS_SERVICE_EVENT_START, serviceStart);
                     reject('timeout');
                 }, options.timeoutDelay);
             }
-            let serviceStart = () => {
-                clearTimeout(timer);
-                this.removeListener(Service.IPCBUS_SERVICE_EVENT_START, serviceStart);
-                resolve(this.getWrapper());
-            };
             this.addListener(Service.IPCBUS_SERVICE_EVENT_START, serviceStart);
         });
     }
@@ -1417,7 +1424,7 @@ exports.ActivateServiceTrace = ActivateServiceTrace;
 const IpcBusRendererPreload_1 = require("./IpcBus/IpcBusRendererPreload");
 IpcBusRendererPreload_1.PreloadElectronCommonIpcAutomatic();
 
-},{"./IpcBus/IpcBusClient":4,"./IpcBus/IpcBusClient-factory-browser":3,"./IpcBus/IpcBusRendererPreload":11,"./IpcBus/IpcBusUtils":12,"./IpcBus/service/IpcBusService":14,"./IpcBus/service/IpcBusService-factory":13}],19:[function(require,module,exports){
+},{"./IpcBus/IpcBusClient":4,"./IpcBus/IpcBusClient-factory-browser":3,"./IpcBus/IpcBusRendererPreload":9,"./IpcBus/IpcBusUtils":12,"./IpcBus/service/IpcBusService":14,"./IpcBus/service/IpcBusService-factory":13}],19:[function(require,module,exports){
 (function (global){
 'use strict';
 

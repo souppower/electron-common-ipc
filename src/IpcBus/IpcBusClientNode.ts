@@ -1,12 +1,11 @@
 import * as Client from './IpcBusClient';
 
-import { IpcBusClientTransportNet } from './IpcBusClientTransportNet';
+import { IpcBusTransportNet } from './IpcBusTransportNet';
+import { IpcBusClientImpl}  from './IpcBusClientImpl';
 
 // Implementation for Node process
-/** @internal */
-export class IpcBusClientNode extends IpcBusClientTransportNet {
-
-    constructor(options: Client.IpcBusClient.CreateOptions) {
-        super('node', options);
-    }
+export function Create(options: Client.IpcBusClient.CreateOptions): Client.IpcBusClient {
+    let transport = new IpcBusTransportNet('node', options);
+    let ipcClient = new IpcBusClientImpl(options, transport);
+    return ipcClient;
 }

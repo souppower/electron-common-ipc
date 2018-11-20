@@ -7,12 +7,12 @@ import * as Client from '../IpcBusClient';
 import * as Bridge from './IpcBusBridge';
 
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusClientNode } from '../IpcBusClientNode';
-import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_COMMAND, IPCBUS_TRANSPORT_RENDERER_EVENT } from '../IpcBusClientTransportWindow';
+import { IpcBusTransportNet } from '../IpcBusTransportNet';
+import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_COMMAND, IPCBUS_TRANSPORT_RENDERER_EVENT } from '../IpcBusTransportWindow';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
-export class IpcBusBridgeImpl extends IpcBusClientNode implements Bridge.IpcBusBridge {
+export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBusBridge {
     private _ipcMain: any;
     private _onRendererMessageBind: Function;
 
@@ -21,7 +21,7 @@ export class IpcBusBridgeImpl extends IpcBusClientNode implements Bridge.IpcBusB
     protected _requestChannels: Map<string, any>;
 
     constructor(options: Bridge.IpcBusBridge.CreateOptions) {
-        super(options);
+        super('main', options);
 
         this._ipcMain = require('electron').ipcMain;
 
