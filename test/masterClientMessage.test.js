@@ -3,8 +3,9 @@ const assert = chai.assert;
 const expect = chai.expect;
 
 const ipcBusModule = require('../lib/electron-common-ipc');
-const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 // ipcBusModule.ActivateIpcBusTrace(true);
+
+const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 
 function Equal(a1, a2) {
   return (a1 === a2);

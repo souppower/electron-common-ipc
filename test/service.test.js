@@ -5,6 +5,9 @@ const EventEmitter = require('events');
 const util = require('util');
 
 const ipcBusModule = require('../lib/electron-common-ipc');
+// ipcBusModule.ActivateIpcBusTrace(true);
+// ipcBusModule.ActivateServiceTrace(true);
+
 const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 
 
@@ -55,7 +58,7 @@ function TestService3() {
 }
 
 
-const delayService = 500;
+const delayService = 2000;
 
 function test(remoteBroker, busPath, factory) {
 
@@ -83,8 +86,8 @@ function test(remoteBroker, busPath, factory) {
     });
 
     describe('Creation', () => {
-      it('connect service first', () => {
-        const testServiceName = 'test-service1';
+      it('connect service stub first', () => {
+        const testServiceName = 'test-service-creation';
 
         const testServiceInstance = factory();
         const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
@@ -95,8 +98,8 @@ function test(remoteBroker, busPath, factory) {
         return testServiceProxy.connect();
       });
 
-      it('service-start service first', (done) => {
-        const testServiceName = 'test-service1';
+      it('start service stub first and proxy later (event)', (done) => {
+        const testServiceName = 'test-service-connect-event';
 
         const testServiceInstance = factory();
         const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
@@ -114,11 +117,26 @@ function test(remoteBroker, busPath, factory) {
         }
       });
 
-      it(`service-start proxy first (delay ${delayService} service creation)`, (done) => {
-        const testServiceName = 'test-service1';
+      it('start service stub first and proxy later (function)', (done) => {
+        const testServiceName = 'test-service-connect-method';
+
+        const testServiceInstance = factory();
+        const testService = ipcBusModule.CreateIpcBusService(ipcBusClient, testServiceName, testServiceInstance);
+        testService.start();
 
         // Create the proxy (client-side)
         const testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
+        testServiceProxy.connect()
+        .then(() => {
+          done();
+        });
+      });
+
+      it(`start proxy first, delay ${delayService}ms stub service creation (event)`, (done) => {
+        const testServiceName = 'test-service-late-connect-event';
+
+        // Create the proxy (client-side)
+        const testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName, { timeoutDelay: delayService + 100 });
         if (testServiceProxy.isStarted) {
           done();
         }
@@ -136,11 +154,11 @@ function test(remoteBroker, busPath, factory) {
         }, delayService);
       });
 
-      it(`connect proxy first (delay ${delayService} service creation)`, (done) => {
-        const testServiceName = 'test-service2';
+      it(`connect proxy first (delay ${delayService}ms service creation) (function)`, (done) => {
+        const testServiceName = 'test-service-late-connect-function';
 
         // Create the proxy (client-side)
-        const testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
+        const testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName, { timeoutDelay: delayService + 100 });
         testServiceProxy.connect()
           .then(() => {
             done();
@@ -156,7 +174,7 @@ function test(remoteBroker, busPath, factory) {
     });
 
     describe('Call', () => {
-      const testServiceName = 'test-service3';
+      const testServiceName = 'test-service-call';
       let testServiceProxy;
       let testServiceInstance = factory();
       before(() => {
@@ -219,12 +237,12 @@ function test(remoteBroker, busPath, factory) {
     });
 
     describe('Call delayed', () => {
-      const testServiceName = 'test-service4';
+      const testServiceName = 'test-service-call-delayed';
       let testServiceProxy;
       let testServiceInstance = factory();;
       before(() => {
         // Create the proxy (client-side)
-        testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
+        testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName, { timeoutDelay: delayService + 100 });
         testServiceProxy.connect();
 
         // delay the start
