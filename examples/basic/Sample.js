@@ -1,5 +1,7 @@
+const ipcBusModule = require("../..");
+
 // Load modules
-const ipcBusModule = require("electron-ipc-bus");
+// const ipcBusModule = require("electron-ipc-bus");
 const electronApp = require('electron').app;
 
 // Configuration
@@ -29,43 +31,46 @@ electronApp.on('ready', function () {
                         .then((msg) => {
                             // Chatting on channel 'greeting'
                             ipcBusClient1.addListener('greeting', (ipcBusEvent, greetingMsg) => {
+                                // This is a request, we have to reply immediatly using request.resolve or request.reject
                                 if (ipcBusEvent.request) {
-                                    ipcBusEvent.request.resolve('thanks to you, dear #' + ipcBusEvent.sender.name);
+                                    ipcBusEvent.request.resolve(`thanks to you, dear #${ipcBusEvent.sender.name}`);
                                 }
+                                // Else we reply using a contractual channel
                                 else {
-                                    ipcBusClient1.send('greeting-reply', 'thanks to all listeners')
+                                    ipcBusClient1.send('greeting-reply', `${ipcBusClient1.peer.name}: thanks to all listeners`)
                                 }
-                                console.log(ipcBusClient1.peer.name + ' received ' + ipcBusEvent.channel + ':' + greetingMsg);
+                                console.log(ipcBusClient1.peer.name + ' received ' + ipcBusEvent.channel + ': ' + greetingMsg);
                             });
 
                             ipcBusClient2.addListener('greeting', (ipcBusEvent, greetingMsg) => {
                                 if (ipcBusEvent.request) {
-                                    ipcBusEvent.request.resolve('thanks to you, dear #' + ipcBusEvent.sender.name);
+                                    ipcBusEvent.request.resolve(`thanks to you, dear #${ipcBusEvent.sender.name}`);
                                 }
                                 else {
-                                    ipcBusClient2.send('greeting-reply', 'thanks to all listeners')
+                                    ipcBusClient2.send('greeting-reply', `${ipcBusClient2.peer.name}: thanks to all listeners`)
                                 }
-                                console.log(ipcBusClient2.peer.name + ' received ' + ipcBusEvent.channel + ':' + greetingMsg);
+                                console.log(ipcBusClient2.peer.name + ' received ' + ipcBusEvent.channel + ': ' + greetingMsg);
                             });
 
                             ipcBusClient1.addListener('greeting-reply', (ipcBusEvent, greetingReplyMsg) => {
                                 console.log(greetingReplyMsg);
-                                console.log(ipcBusClient1.peer.name + ' received ' + ipcBusEvent.channel + ':' + greetingReplyMsg);
+                                console.log(ipcBusClient1.peer.name + ' received ' + ipcBusEvent.channel + ': ' + greetingReplyMsg);
                             });
 
                             ipcBusClient2.send('greeting', 'hello everyone!');
 
-                            ipcBusClient2.request('greeting', 0, 'hello partner!')
+                            // This call will fail, too short to answer on time !
+                            ipcBusClient2.request('greeting', 0, 'hello partner, please answer immediatly')
                                 .then((ipcBusRequestResponse) => {
-                                    console.log(JSON.stringify(ipcBusRequestResponse.event.sender) + ' replied ' + ipcBusRequestResponse.payload);
+                                    console.log(JSON.stringify(ipcBusRequestResponse.event.sender.name) + ' replied ' + ipcBusRequestResponse.payload);
                                 })
                                 .catch((err) => {
-                                    console.log('I have no friend :-(');
+                                    console.log('Too late, I have no friend :-(');
                                 });
 
                             ipcBusClient1.request('greeting', 1000, 'hello partner, please answer within 1sec!')
                                 .then((ipcBusRequestResponse) => {
-                                    console.log(JSON.stringify(ipcBusRequestResponse.event.sender) + ' replied ' + ipcBusRequestResponse.payload);
+                                    console.log(JSON.stringify(ipcBusRequestResponse.event.sender.name) + ' replied within 1sec1 ' + ipcBusRequestResponse.payload);
                                 })
                                 .catch((err) => {
                                     console.log('I have no friend :-(');

@@ -7,8 +7,8 @@ This bus offers a EventEmitter-like API for exchanging data between any processe
 * Electon to Node, 
 * Electron to Electron.
 
-Node needs a "BusBroker" in charge to commute messages to right listeners  
-Electron needs an additional broker : "BusBridge" in charge to commute messages between renderers (WebPages), Master and Node.
+Node processes need to instanciate a "BusBroker" (Net server) in charge to commute messages to right listeners  
+Electron processes needs an additional broker : "BusBridge" in charge to commute messages between renderers (WebPages), Master and Node.
 
 A WebPage is then able to dialog with a node process and vice-versa.
 
@@ -40,15 +40,14 @@ Dependencies
 
 ```js
 // Load modules
-const ipcBusModule = require("electron-common-ipc");
+const ipcBusModule = require("electron-ipc-bus");
 const electronApp = require('electron').app;
 
 // Configuration
 const ipcBusPath = 50494;
 // const ipcBusPath = '/myfavorite/path';
-// const ipcBusPath = 'localhost:49152';
 
-// In Electron, listen app ready event (not needed in pure Node)
+// Startup
 electronApp.on('ready', function () {
     // Create broker
     const ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);
@@ -57,8 +56,9 @@ electronApp.on('ready', function () {
         .then((msg) => {
             console.log('IpcBusBroker started');
 
-            // In Electron, start bridge ensuring connection between renderer/s and master processes (not needed in pure Node)
+            // Create bridge
             const ipcBusBridge = ipcBusModule.CreateIpcBusBridge(ipcBusPath);
+            // Start bridge
             ipcBusBridge.start()
                 .then((msg) => {
                     console.log('IpcBusBridge started');
@@ -70,43 +70,46 @@ electronApp.on('ready', function () {
                         .then((msg) => {
                             // Chatting on channel 'greeting'
                             ipcBusClient1.addListener('greeting', (ipcBusEvent, greetingMsg) => {
+                                // This is a request, we have to reply immediatly using request.resolve or request.reject
                                 if (ipcBusEvent.request) {
-                                    ipcBusEvent.request.resolve('thanks to you, dear #' + ipcBusEvent.sender.name);
+                                    ipcBusEvent.request.resolve(`thanks to you, dear #${ipcBusEvent.sender.name}`);
                                 }
+                                // Else we reply using a contractual channel
                                 else {
-                                    ipcBusClient1.send('greeting-reply', 'thanks to all listeners')
+                                    ipcBusClient1.send('greeting-reply', `${ipcBusClient1.peer.name}: thanks to all listeners`)
                                 }
-                                console.log(ipcBusClient1.peer.name + ' received ' + ipcBusEvent.channel + ':' + greetingMsg);
+                                console.log(ipcBusClient1.peer.name + ' received ' + ipcBusEvent.channel + ': ' + greetingMsg);
                             });
 
                             ipcBusClient2.addListener('greeting', (ipcBusEvent, greetingMsg) => {
                                 if (ipcBusEvent.request) {
-                                    ipcBusEvent.request.resolve('thanks to you, dear #' + ipcBusEvent.sender.name);
+                                    ipcBusEvent.request.resolve(`thanks to you, dear #${ipcBusEvent.sender.name}`);
                                 }
                                 else {
-                                    ipcBusClient2.send('greeting-reply', 'thanks to all listeners')
+                                    ipcBusClient2.send('greeting-reply', `${ipcBusClient2.peer.name}: thanks to all listeners`)
                                 }
-                                console.log(ipcBusClient2.peer.name + ' received ' + ipcBusEvent.channel + ':' + greetingMsg);
+                                console.log(ipcBusClient2.peer.name + ' received ' + ipcBusEvent.channel + ': ' + greetingMsg);
                             });
 
                             ipcBusClient1.addListener('greeting-reply', (ipcBusEvent, greetingReplyMsg) => {
                                 console.log(greetingReplyMsg);
-                                console.log(ipcBusClient1.peer.name + ' received ' + ipcBusEvent.channel + ':' + greetingReplyMsg);
+                                console.log(ipcBusClient1.peer.name + ' received ' + ipcBusEvent.channel + ': ' + greetingReplyMsg);
                             });
 
                             ipcBusClient2.send('greeting', 'hello everyone!');
 
-                            ipcBusClient2.request('greeting', 0, 'hello partner!')
+                            // This call will fail, too short to answer on time !
+                            ipcBusClient2.request('greeting', 0, 'hello partner, please answer immediatly')
                                 .then((ipcBusRequestResponse) => {
-                                    console.log(JSON.stringify(ipcBusRequestResponse.event.sender) + ' replied ' + ipcBusRequestResponse.payload);
+                                    console.log(JSON.stringify(ipcBusRequestResponse.event.sender.name) + ' replied ' + ipcBusRequestResponse.payload);
                                 })
                                 .catch((err) => {
-                                    console.log('I have no friend :-(');
+                                    console.log('Too late, I have no friend :-(');
                                 });
 
                             ipcBusClient1.request('greeting', 1000, 'hello partner, please answer within 1sec!')
                                 .then((ipcBusRequestResponse) => {
-                                    console.log(JSON.stringify(ipcBusRequestResponse.event.sender) + ' replied ' + ipcBusRequestResponse.payload);
+                                    console.log(JSON.stringify(ipcBusRequestResponse.event.sender.name) + ' replied within 1sec1 ' + ipcBusRequestResponse.payload);
                                 })
                                 .catch((err) => {
                                     console.log('I have no friend :-(');
