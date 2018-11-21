@@ -1,6 +1,5 @@
 import { GetElectronProcessType } from 'electron-process-type/lib/v2';
 
-import { IpcBusProcessType } from '../IpcBusClient';
 import * as IpcBusUtils from '../IpcBusUtils';
 
 import { IpcBusBroker } from './IpcBusBroker';
@@ -22,15 +21,15 @@ export let CreateIpcBusBroker: IpcBusBroker.CreateFunction = (options: any, host
         case 'node':
             let logPath = process.env['ELECTRON_IPC_BROKER_LOG_JSON'];
             if (logPath) {
-                ipcBusBroker = new IpcBusBrokerJSONLogger(logPath, electronProcessType as IpcBusProcessType, localOptions);
+                ipcBusBroker = new IpcBusBrokerJSONLogger(logPath, electronProcessType, localOptions);
             }
             else {
                 let logPath = process.env['ELECTRON_IPC_BROKER_LOG_CSV'];
                 if (logPath) {
-                    ipcBusBroker = new IpcBusBrokerCSVLogger(logPath, electronProcessType as IpcBusProcessType, localOptions);
+                    ipcBusBroker = new IpcBusBrokerCSVLogger(logPath, electronProcessType, localOptions);
                 }
                 else {
-                    ipcBusBroker = new IpcBusBrokerImpl(electronProcessType as IpcBusProcessType, localOptions);
+                    ipcBusBroker = new IpcBusBrokerImpl(electronProcessType, localOptions);
                 }
             }
             break;
