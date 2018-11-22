@@ -16,8 +16,10 @@ function test1(remoteBroker, busPath) {
 
     after(() => {
       return brokers.stop()
-        .catch(() => { })
-    });
+      .catch((err) => { 
+        console.log(`Brokers.stop error ${err}`);
+      })
+  });
 
     let ipcBusClient;
     it(`start client ${busPath}`, () => {
@@ -42,7 +44,9 @@ function test2(remoteBroker, busPath) {
 
     after(() => {
       return brokers.stop()
-        .catch(() => { })
+        .catch((err) => { 
+          console.log(`Brokers.stop error ${err}`);
+        })
     });
 
     let ipcBusClient;
@@ -53,11 +57,11 @@ function test2(remoteBroker, busPath) {
   });
 }
 
-test1(false);
-test2(false);
-test1(true);
-test2(true);
+// test1(false);
+// test2(false);
+// test1(true);
+// test2(true);
 test1(false, brokersLifeCycle.getLocalBusPath());
 test2(false, brokersLifeCycle.getLocalBusPath());
-test1(true, brokersLifeCycle.getLocalBusPath());
-test2(true, brokersLifeCycle.getLocalBusPath());
+// test1(true, brokersLifeCycle.getLocalBusPath());
+// test2(true, brokersLifeCycle.getLocalBusPath());

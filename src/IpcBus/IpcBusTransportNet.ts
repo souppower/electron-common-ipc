@@ -205,6 +205,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
                     for (let key in socketLocalBinds) {
                         socket.removeListener(key, socketLocalBinds[key]);
                     }
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(`[IPCBusTransport:Net] close on ${JSON.stringify(this._netOptions)}`);
                     resolve();
                 };
                 // Below zero = infinite

@@ -183,7 +183,7 @@ Brokers = (function () {
 
     function _stopBrokers() {
       trace && console.log('IpcBusBridge stopping...');
-      return ipcBusBridge.stop()
+      return ipcBusBridge.stop({ timeoutDelay })
         .then(() => {
           ipcBusBridge = null;
           trace && console.log('IpcBusBridge stopped');
@@ -198,7 +198,7 @@ Brokers = (function () {
             return _stopRemoteBroker();
           }
           else {
-            return ipcBusBroker.stop();
+            return ipcBusBroker.stop({ timeoutDelay });
           }
         })
         .then(() => {

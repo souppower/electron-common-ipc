@@ -10,7 +10,7 @@ import { IpcBusTransport } from './IpcBusTransport';
 export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClient {
     protected _transport: IpcBusTransport;
 
-    constructor(options: Client.IpcBusClient.CreateOptions, ipcBusClientTransport: IpcBusTransport) {
+    constructor(ipcBusClientTransport: IpcBusTransport) {
         super();
         super.setMaxListeners(0);
         this._transport = ipcBusClientTransport;

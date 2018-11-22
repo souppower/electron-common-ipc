@@ -224,7 +224,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
 const IpcBusCommand_1 = require("./IpcBusCommand");
 class IpcBusClientImpl extends events_1.EventEmitter {
-    constructor(options, ipcBusClientTransport) {
+    constructor(ipcBusClientTransport) {
         super();
         super.setMaxListeners(0);
         this._transport = ipcBusClientTransport;
@@ -303,7 +303,7 @@ const IpcBusTransportWindow_1 = require("./IpcBusTransportWindow");
 const IpcBusClientImpl_1 = require("./IpcBusClientImpl");
 function Create(contextType, options, ipcWindow) {
     let transport = new IpcBusTransportWindow_1.IpcBusTransportWindow(contextType, options, ipcWindow);
-    let ipcClient = new IpcBusClientImpl_1.IpcBusClientImpl(options, transport);
+    let ipcClient = new IpcBusClientImpl_1.IpcBusClientImpl(transport);
     return ipcClient;
 }
 exports.Create = Create;

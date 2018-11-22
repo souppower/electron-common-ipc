@@ -45,9 +45,9 @@ class IpcBusBrokerSocket {
             for (let key in this._socketBinds) {
                 this._socket.removeListener(key, this._socketBinds[key]);
             }
-            this._socket.end();
-            this._socket.unref();
-            // this._socket.destroy();
+            // this._socket.end();
+            // this._socket.unref();
+            this._socket.destroy();
             this._socket = null;
         }
     }
@@ -82,7 +82,7 @@ class IpcBusBrokerSocket {
 export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocketClient {
     private _netOptions: Client.IpcNetOptions;
     private _ipcBusBrokerClient: IpcBusTransportNet;
-    private _socketClients: Map<number, IpcBusBrokerSocket>;
+    private _socketClients: Map<net.Socket, IpcBusBrokerSocket>;
 
     private _server: net.Server;
     private _netBinds: { [key: string]: Function };
@@ -105,7 +105,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<number, net.Socket>('IPCBus:Broker');
         this._wildSubscriptions = new Set<string>();
         this._requestChannels = new Map<string, net.Socket>();
-        this._socketClients = new Map<number, IpcBusBrokerSocket>();
+        this._socketClients = new Map<net.Socket, IpcBusBrokerSocket>();
         this._ipcBusPeers = new Map<string, Client.IpcBusPeer>();
 
         this._subscriptions.on('channel-added', (channel: string) => {
@@ -266,7 +266,10 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                     server.removeListener('close', catchClose);
                     resolve();
                 };
-
+                let catchConnection = (socket: net.Socket) => {
+                    socket.end();
+                    socket.unref();
+                };
                 // Below zero = infinite
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
@@ -277,6 +280,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                     }, options.timeoutDelay);
                 }
                 server.addListener('close', catchClose);
+                server.addListener('connection', catchConnection);
                 this._reset(true);
             }
             else {
@@ -297,13 +301,13 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     }
 
     protected _onSocketConnected(socket: net.Socket): void {
-        this._socketClients.set(socket.remotePort, new IpcBusBrokerSocket(socket, this));
+        this._socketClients.set(socket, new IpcBusBrokerSocket(socket, this));
     }
 
     onSocketError(socket: net.Socket, err: string): void {
         // Not closing server
         if (this._server) {
-            this._socketClients.delete(socket.remotePort);
+            this._socketClients.delete(socket);
             this._socketCleanUp(socket);
         }
     }
@@ -311,7 +315,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     onSocketClose(socket: net.Socket): void {
         // Not closing server
         if (this._server) {
-            this._socketClients.delete(socket.remotePort);
+            this._socketClients.delete(socket);
             this._socketCleanUp(socket);
         }
     }

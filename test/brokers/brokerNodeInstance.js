@@ -5,7 +5,7 @@ const ipcBusModule = require('../../lib/electron-common-ipc');
 console.log(`Node Broker instance: start`);
 
 let args = minimist(process.argv.slice(1));
-let timeoutDelay = 10000;
+let timeoutDelay = 5000;
 if (args.busTimeout) {
     timeoutDelay = parseInt(args.busTimeout);
 }
@@ -35,7 +35,7 @@ process.on('message', (message) => {
         Promise.resolve()
         .then(() => {
             if (ipcBusBroker) {
-                return ipcBusBroker.stop();
+                return ipcBusBroker.stop({ timeoutDelay });
             }
             else {
                 return Promise.resolve();
