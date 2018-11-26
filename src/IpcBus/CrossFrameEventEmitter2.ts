@@ -61,7 +61,7 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcWindow {
 
     // Cleans up event listeners
     close() {
-        if (this._messageChannel == null) {
+        if (this._messageChannel != null) {
             trace && console.log(`CFEE ${this._uuid} - exit`);
             let packet = CrossFrameMessage.Encode(this._uuid, 'exit', []);
             this._target.postMessage(packet, this._origin);
