@@ -85,7 +85,7 @@ class IpcBusBrokerSocket {
 export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocketClient {
     private _netOptions: Client.IpcNetOptions;
     private _ipcBusBrokerClient: IpcBusTransportNet;
-    private _socketClients: Map<number, IpcBusBrokerSocket>;
+    private _socketClients: Map<net.Socket, IpcBusBrokerSocket>;
 
     private _server: net.Server;
     private _netBinds: { [key: string]: Function };
@@ -108,7 +108,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<number, net.Socket>('IPCBus:Broker');
         this._wildSubscriptions = new Set<string>();
         this._requestChannels = new Map<string, net.Socket>();
-        this._socketClients = new Map<number, IpcBusBrokerSocket>();
+        this._socketClients = new Map<net.Socket, IpcBusBrokerSocket>();
         this._ipcBusPeers = new Map<string, Client.IpcBusPeer>();
 
         this._subscriptions.on('channel-added', (channel: string) => {
@@ -293,7 +293,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         this._subscriptions.releaseConnection(socket.remotePort);
         // ForEach is supposed to support deletion during the iteration !
         this._requestChannels.forEach((socketForRequest, channel) => {
-            if (socketForRequest.remotePort === socket.remotePort) {
+            if (socketForRequest === socket) {
                 this._requestChannels.delete(channel);
             }
         });
@@ -301,13 +301,13 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     }
 
     protected _onSocketConnected(socket: net.Socket): void {
-        this._socketClients.set(socket.remotePort, new IpcBusBrokerSocket(socket, this));
+        this._socketClients.set(socket, new IpcBusBrokerSocket(socket, this));
     }
 
     onSocketError(socket: net.Socket, err: string): void {
         // Not closing server
         if (this._server) {
-            this._socketClients.delete(socket.remotePort);
+            this._socketClients.delete(socket);
             this._socketCleanUp(socket);
         }
     }
@@ -315,7 +315,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     onSocketClose(socket: net.Socket): void {
         // Not closing server
         if (this._server) {
-            this._socketClients.delete(socket.remotePort);
+            this._socketClients.delete(socket);
             this._socketCleanUp(socket);
         }
     }
