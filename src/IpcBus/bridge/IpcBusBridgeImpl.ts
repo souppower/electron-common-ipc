@@ -17,7 +17,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     private _onRendererMessageBind: Function;
 
     protected _ipcBusPeers: Map<string, Client.IpcBusPeer>;
-    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<number, Electron.WebContents>;
+    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<Electron.WebContents>;
     protected _requestChannels: Map<string, any>;
 
     constructor(options: Bridge.IpcBusBridge.CreateOptions) {
@@ -25,7 +25,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
         this._ipcMain = require('electron').ipcMain;
 
-        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<number, Electron.WebContents>('IPCBus:Bridge');
+        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<Electron.WebContents>('IPCBus:Bridge');
         this._requestChannels = new Map<string, any>();
         this._ipcBusPeers = new Map<string, Client.IpcBusPeer>();
         this._onRendererMessageBind = this._onRendererMessage.bind(this);
@@ -87,8 +87,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         }
     }
 
-    private _rendererCleanUp(webContents: Electron.WebContents, webContentsId: number, peerId: string): void {
-        this._subscriptions.releaseConnection(webContentsId);
+    private _rendererCleanUp(webContents: Electron.WebContents): void {
+        this._subscriptions.releaseConnection(webContents);
         // ForEach is supposed to support deletion during the iteration !
         this._requestChannels.forEach((webContentsForRequest, channel) => {
             if (webContentsForRequest === webContents) {
@@ -126,10 +126,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
         this._completePeerInfo(webContents, ipcBusPeer);
 
-        // Have to closure the webContentsId as webContents.id is undefined when destroyed !!!
-        let webContentsId = webContents.id;
         webContents.addListener('destroyed', () => {
-            this._rendererCleanUp(webContents, webContentsId, ipcBusPeer.id);
+            this._rendererCleanUp(webContents);
             // Simulate the close message
             if (this._ipcBusPeers.delete(ipcBusPeer.id)) {
                 this.ipcPostCommand({ kind: IpcBusCommand.Kind.Disconnect, channel: '', peer: ipcBusPeer });
@@ -167,7 +165,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         // We do not close the socket, we just disconnect a peer
         ipcBusCommand.kind = IpcBusCommand.Kind.Disconnect;
 
-        this._rendererCleanUp(webContents, webContents.id, ipcBusPeer.id);
+        this._rendererCleanUp(webContents);
 
         // ipcBusCommand has been changed, the original buffer content is no more up-to-date, we have to rebuild it
         let packetBuffer = new IpcPacketBuffer();
@@ -191,19 +189,19 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 return;
             }
             case IpcBusCommand.Kind.AddChannelListener :
-                this._subscriptions.addRef(ipcBusCommand.channel, webContents.id, webContents, ipcBusCommand.peer.id);
+                this._subscriptions.addRef(ipcBusCommand.channel, webContents, ipcBusCommand.peer.id);
                 break;
 
             case IpcBusCommand.Kind.RemoveChannelAllListeners :
-                this._subscriptions.releaseAll(ipcBusCommand.channel, webContents.id, ipcBusCommand.peer.id);
+                this._subscriptions.releaseAll(ipcBusCommand.channel, webContents, ipcBusCommand.peer.id);
                 break;
 
             case IpcBusCommand.Kind.RemoveChannelListener :
-                this._subscriptions.release(ipcBusCommand.channel, webContents.id, ipcBusCommand.peer.id);
+                this._subscriptions.release(ipcBusCommand.channel, webContents, ipcBusCommand.peer.id);
                 break;
 
             case IpcBusCommand.Kind.RemoveListeners :
-                this._rendererCleanUp(webContents, webContents.id, ipcBusCommand.peer.id);
+                this._rendererCleanUp(webContents);
                 break;
 
             case IpcBusCommand.Kind.RequestMessage :

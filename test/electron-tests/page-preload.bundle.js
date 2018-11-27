@@ -790,6 +790,7 @@ class ChannelConnectionMap extends events_1.EventEmitter {
         super();
         this._name = name;
         this._channelsMap = new Map();
+        this._requestChannels = new Map();
     }
     _info(str) {
         Logger.enable && Logger.info(`[${this._name}] ${str}`);
@@ -800,38 +801,48 @@ class ChannelConnectionMap extends events_1.EventEmitter {
     _error(str) {
         Logger.enable && Logger.error(`[${this._name}] ${str}`);
     }
+    setRequestChannel(channel, conn) {
+        this._requestChannels.set(channel, conn);
+    }
+    getRequestChannel(channel) {
+        return this._requestChannels.get(channel);
+    }
+    clearRequestChannel(channel) {
+        return this._requestChannels.delete(channel);
+    }
     hasChannel(channel) {
         return this._channelsMap.has(channel);
     }
     clear() {
         this._channelsMap.clear();
+        this._requestChannels.clear();
     }
-    addRef(channel, connKey, conn, peerId) {
+    addRef(channel, conn, peerId) {
         let channelAdded = false;
-        Logger.enable && this._info(`AddRef: '${channel}', connKey = ${connKey}`);
+        Logger.enable && this._info(`AddRef: '${channel}, peerId = ${peerId}`);
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             channelAdded = true;
             connsMap = new Map();
             this._channelsMap.set(channel, connsMap);
         }
-        let connData = connsMap.get(connKey);
+        let connData = connsMap.get(conn);
         if (connData == null) {
-            connData = new ChannelConnectionMap.ConnectionData(connKey, conn);
-            connsMap.set(connKey, connData);
+            connData = new ChannelConnectionMap.ConnectionData(conn);
+            connsMap.set(conn, connData);
         }
         connData.addPeerId(peerId);
-        Logger.enable && this._info(`AddRef: '${channel}', connKey = ${connKey}, count = ${connData.peerIds.size}`);
+        Logger.enable && this._info(`AddRef: '${channel}', count = ${connData.peerIds.size}`);
         if (channelAdded) {
             this.emit('channel-added', channel);
         }
         return connsMap.size;
     }
-    _releaseConnData(channel, connKey, connsMap, peerId, all) {
+    _releaseConnData(channel, conn, connsMap, peerId, all) {
         let channelRemoved = false;
-        let connData = connsMap.get(connKey);
+        let connData = connsMap.get(conn);
         if (connData == null) {
-            Logger.enable && this._warn(`Release '${channel}': connKey = ${connKey} is unknown`);
+            Logger.enable && this._warn(`Release '${channel}': conn is unknown`);
             return 0;
         }
         else {
@@ -849,53 +860,53 @@ class ChannelConnectionMap extends events_1.EventEmitter {
                 }
             }
             if (connData.peerIds.size === 0) {
-                connsMap.delete(connKey);
+                connsMap.delete(conn);
                 if (connsMap.size === 0) {
                     channelRemoved = true;
                     this._channelsMap.delete(channel);
                 }
             }
-            Logger.enable && this._info(`Release '${channel}': connKey = ${connKey}, count = ${connData.peerIds.size}`);
+            Logger.enable && this._info(`Release '${channel}': count = ${connData.peerIds.size}`);
             if (channelRemoved) {
                 this.emit('channel-removed', channel);
             }
             return connsMap.size;
         }
     }
-    _release(channel, connKey, peerId, all) {
-        Logger.enable && this._info(`_release (${all}): channel=${channel}, connKey = ${connKey}`);
+    _release(channel, conn, peerId, all) {
+        Logger.enable && this._info(`_release (${all}): channel=${channel}, peerId = ${peerId}`);
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`Release '${channel}': '${channel}' is unknown`);
             return 0;
         }
         else {
-            return this._releaseConnData(channel, connKey, connsMap, peerId, all);
+            return this._releaseConnData(channel, conn, connsMap, peerId, all);
         }
     }
-    release(channel, connKey, peerId) {
-        return this._release(channel, connKey, peerId, false);
+    release(channel, conn, peerId) {
+        return this._release(channel, conn, peerId, false);
     }
-    releaseAll(channel, connKey, peerId) {
-        return this._release(channel, connKey, peerId, true);
+    releaseAll(channel, conn, peerId) {
+        return this._release(channel, conn, peerId, true);
     }
-    releasePeerId(connKey, peerId) {
-        Logger.enable && this._info(`releasePeerId: connKey = ${connKey}, peerId = ${peerId}`);
+    releasePeerId(conn, peerId) {
+        Logger.enable && this._info(`releasePeerId: peerId = ${peerId}`);
         this._channelsMap.forEach((connsMap, channel) => {
-            this._releaseConnData(channel, connKey, connsMap, peerId, true);
+            this._releaseConnData(channel, conn, connsMap, peerId, true);
         });
     }
-    releaseConnection(connKey) {
-        Logger.enable && this._info(`ReleaseConn: connKey = ${connKey}`);
+    releaseConnection(conn) {
+        Logger.enable && this._info(`ReleaseConn: conn = ${conn}`);
         this._channelsMap.forEach((connsMap, channel) => {
-            this._releaseConnData(channel, connKey, connsMap, null, false);
+            this._releaseConnData(channel, conn, connsMap, null, false);
         });
     }
     forEachConnection(callback) {
         let connections = new Map();
         this._channelsMap.forEach((connsMap, channel) => {
             connsMap.forEach((connData, connKey) => {
-                connections.set(connData.connKey, connData);
+                connections.set(connData.conn, connData);
             });
         });
         connections.forEach((connData, connKey) => {
@@ -913,8 +924,8 @@ class ChannelConnectionMap extends events_1.EventEmitter {
             Logger.enable && this._warn(`forEachChannel: Unknown channel '${channel}' !`);
         }
         else {
-            connsMap.forEach((connData, connKey) => {
-                Logger.enable && this._info(`forEachChannel: '${channel}', connKey = ${connKey} (${connData.peerIds.size})`);
+            connsMap.forEach((connData, conn) => {
+                Logger.enable && this._info(`forEachChannel: '${channel}' (${connData.peerIds.size})`);
                 callback(connData, channel);
             });
         }
@@ -926,8 +937,8 @@ class ChannelConnectionMap extends events_1.EventEmitter {
             return;
         }
         this._channelsMap.forEach((connsMap, channel) => {
-            connsMap.forEach((connData, connKey) => {
-                Logger.enable && this._info(`forEach: '${channel}', connKey = ${connKey} (${connData.peerIds.size})`);
+            connsMap.forEach((connData, conn) => {
+                Logger.enable && this._info(`forEach: '${channel}' (${connData.peerIds.size})`);
                 callback(connData, channel);
             });
         });
@@ -936,9 +947,8 @@ class ChannelConnectionMap extends events_1.EventEmitter {
 exports.ChannelConnectionMap = ChannelConnectionMap;
 (function (ChannelConnectionMap) {
     class ConnectionData {
-        constructor(connKey, conn) {
+        constructor(conn) {
             this.peerIds = new Map();
-            this.connKey = connKey;
             this.conn = conn;
         }
         addPeerId(peerId) {
