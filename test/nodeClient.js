@@ -4,7 +4,7 @@ const minimist = require('minimist');
 console.log(argv);
 
 let args = minimist(process.argv.slice(1));
-let timeoutDelay = 10000;
+let timeoutDelay = 30000;
 if (args.busTimeout) {
     timeoutDelay = parseInt(args.busTimeout);
 }

@@ -6,6 +6,8 @@ const ipcBusModule = require('../lib/electron-common-ipc');
 const electronApp = require('electron').app;
 const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 
+let timeoutDelay = brokersLifeCycle.timeoutDelay;
+
 function test1(remoteBroker, busPath) {
   describe(`Client ${busPath} ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
     let brokers;
@@ -22,7 +24,7 @@ function test1(remoteBroker, busPath) {
     let ipcBusClient;
     it(`start client ${busPath}`, () => {
       ipcBusClient = ipcBusModule.CreateIpcBusClient(brokers.getBusPath());
-      return ipcBusClient.connect({ peerName: 'client' })
+      return ipcBusClient.connect({ peerName: 'client', timeoutDelay })
     });
 
     it(`stop client ${busPath}`, async () => {
@@ -48,7 +50,7 @@ function test2(remoteBroker, busPath) {
     let ipcBusClient;
     it(`start client ${busPath}`, () => {
       ipcBusClient = ipcBusModule.CreateIpcBusClient(brokers.getBusPath());
-      return ipcBusClient.connect({ peerName: 'client' })
+      return ipcBusClient.connect({ peerName: 'client', timeoutDelay })
     });
   });
 }

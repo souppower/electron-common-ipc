@@ -179,6 +179,16 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 let timer: NodeJS.Timer = null;
                 let fctReject: (msg: string) => void;
 
+                let removeLocalListeners = () => {
+                    if (timer) {
+                        clearTimeout(timer);
+                        timer = null;
+                    }
+                    server.removeListener('listening', catchListening);
+                    server.removeListener('error', catchError);
+                    server.removeListener('close', catchClose);
+                }
+
                 // Below zero = infinite
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
@@ -199,13 +209,8 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 };
 
                 let catchListening =  (_server: any) => {
-                    clearTimeout(timer);
-                    server.removeListener('listening', catchListening);
-                    server.removeListener('error', catchError);
-                    server.removeListener('close', catchClose);
-
+                    removeLocalListeners();
                     this._server = server;
-
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Listening for incoming connections on ${JSON.stringify(this._netOptions)}`);
                     for (let key in this._netBinds) {
                         this._server.addListener(key, this._netBinds[key]);
@@ -225,12 +230,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 };
 
                 fctReject = (msg: string) => {
-                    if (timer) {
-                        clearTimeout(timer);
-                    }
-                    server.removeListener('listening', catchListening);
-                    server.removeListener('error', catchError);
-                    server.removeListener('close', catchClose);
+                    removeLocalListeners();
                     this._reset(false);
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                     reject(msg);

@@ -18,7 +18,7 @@ function getLocalBusPath() {
 }
 
 let args = minimist(process.argv.slice(1));
-let timeoutDelay = 10000;
+let timeoutDelay = 30000;
 if (args.busTimeout) {
   timeoutDelay = parseInt(args.busTimeout);
 }
@@ -71,7 +71,7 @@ Brokers = (function () {
       if (busPath == null) {
         // https://en.wikipedia.org/wiki/Ephemeral_port
         let port = 49152;
-        return sph.findFirstFreePort({ portRange: `>=${port}`, log: false });
+        return sph.findFirstFreePort({ portRange: `>=${port}`, testDataTransfer: true, log: false });
       }
       else {
         return Promise.resolve(busPath);

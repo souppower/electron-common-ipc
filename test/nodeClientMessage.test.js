@@ -8,11 +8,7 @@ const minimist = require('minimist');
 const ipcBusModule = require('../lib/electron-common-ipc');
 const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 
-let args = minimist(process.argv.slice(1));
-let timeoutDelay = 10000;
-if (args.busTimeout) {
-    timeoutDelay = parseInt(args.busTimeout);
-}
+let timeoutDelay = brokersLifeCycle.timeoutDelay;
 
 function test(remoteBroker, busPath) {
 
@@ -62,7 +58,7 @@ function test(remoteBroker, busPath) {
       return brokersLifeCycle.startBrokers(remoteBroker, busPath)
         .then((ipcBusPath) => {
           ipcClient1 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
-          return Promise.all([ipcClient1.connect({ peerName: 'client1' })])
+          return Promise.all([ipcClient1.connect({ peerName: 'client1', timeoutDelay })])
             .then(() => {
               return new Promise((resolve, reject) => {
                 let options = { stdio: ['pipe', 'pipe', 'pipe', 'ipc'] };

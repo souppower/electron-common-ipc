@@ -7,6 +7,8 @@ const ipcBusModule = require('../lib/electron-common-ipc');
 
 const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 
+let timeoutDelay = brokersLifeCycle.timeoutDelay;
+
 function Equal(a1, a2) {
   return (a1 === a2);
 }
@@ -36,7 +38,7 @@ function test(remoteBroker, busPath) {
           let ipcBusPath = brokers.getBusPath();
           ipcClient1 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
           ipcClient2 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
-          return Promise.all([ipcClient1.connect({ peerName: 'client1' }), ipcClient2.connect({ peerName: 'client2' })]);
+          return Promise.all([ipcClient1.connect({ peerName: 'client1', timeoutDelay }), ipcClient2.connect({ peerName: 'client2', timeoutDelay })]);
         })
     });
 
@@ -50,7 +52,8 @@ function test(remoteBroker, busPath) {
 
     function testSerialization(param, comparator) {
       {
-        let msg = `message with a type ${typeof param} = ${JSON.stringify(param).substr(0, 128)}`;
+        // let msg = `message with a type ${typeof param} = ${JSON.stringify(param).substr(0, 128)}`;
+        let msg = `message with a type ${typeof param}`;
         it(msg, (done) => {
           ipcClient2.removeAllListeners('test-message');
           ipcClient2.on('test-message', (event, ...args) => {
@@ -66,7 +69,8 @@ function test(remoteBroker, busPath) {
         });
       }
       {
-        let msg = `request with a type ${typeof param} = ${JSON.stringify(param).substr(0, 128)}`;
+        // let msg = `request with a type ${typeof param} = ${JSON.stringify(param).substr(0, 128)}`;
+        let msg = `request with a type ${typeof param}`;
         it(msg, (done) => {
           ipcClient2.removeAllListeners('test-request');
           ipcClient2.on('test-request', (event, ...args) => {

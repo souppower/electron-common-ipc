@@ -9,6 +9,7 @@ const ipcBusModule = require('../lib/electron-common-ipc');
 // ipcBusModule.ActivateServiceTrace(true);
 
 const brokersLifeCycle = require('./brokers/brokersLifeCycle');
+let timeoutDelay = brokersLifeCycle.timeoutDelay;
 
 
 function TestService() {
