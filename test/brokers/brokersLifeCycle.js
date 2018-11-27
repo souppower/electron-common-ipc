@@ -74,7 +74,7 @@ Brokers = (function () {
       if (busPath == null) {
         // https://en.wikipedia.org/wiki/Ephemeral_port
         let port = 49152;
-        return sph.findFirstFreePort({ portRange: `>=${port}`, testDataTransfer: true, log: false });
+        return sph.findFirstFreePort({ portRange: `>=${port}`, testConnection: true, log: false });
       }
       else {
         return Promise.resolve(busPath);
