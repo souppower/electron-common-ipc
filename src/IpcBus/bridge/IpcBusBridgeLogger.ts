@@ -32,7 +32,7 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                const webContents = this._requestChannels.get(ipcBusCommand.request.replyChannel);
+                const webContents = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
                 if (webContents) {
                     let args = ipcPacketBuffer.parseArrayAt(1);
                     let peerId = this.extractPeerIdFromReplyChannel(ipcBusCommand.request.replyChannel);

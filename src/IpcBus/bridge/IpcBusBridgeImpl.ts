@@ -18,7 +18,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     protected _ipcBusPeers: Map<string, Client.IpcBusPeer>;
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<Electron.WebContents>;
-    protected _requestChannels: Map<string, any>;
 
     constructor(options: Bridge.IpcBusBridge.CreateOptions) {
         super('main', options);
@@ -26,7 +25,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         this._ipcMain = require('electron').ipcMain;
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<Electron.WebContents>('IPCBus:Bridge');
-        this._requestChannels = new Map<string, any>();
         this._ipcBusPeers = new Map<string, Client.IpcBusPeer>();
         this._onRendererMessageBind = this._onRendererMessage.bind(this);
     }
@@ -34,7 +32,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     protected _reset(endSocket: boolean) {
         if (this._ipcMain.listenerCount(IPCBUS_TRANSPORT_RENDERER_COMMAND) > 0) {
             this._ipcBusPeers.clear();
-            this._requestChannels.clear();
+            this._subscriptions.clear();
             this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessageBind);
         }
         super._reset(endSocket);
@@ -78,9 +76,9 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 break;
 
             case IpcBusCommand.Kind.RequestResponse:
-                const webContents = this._requestChannels.get(ipcBusCommand.request.replyChannel);
+                const webContents = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
                 if (webContents) {
-                    this._requestChannels.delete(ipcBusCommand.request.replyChannel);
+                    this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                     webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, ipcPacketBuffer.buffer);
                 }
                 break;
@@ -89,12 +87,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     private _rendererCleanUp(webContents: Electron.WebContents): void {
         this._subscriptions.releaseConnection(webContents);
-        // ForEach is supposed to support deletion during the iteration !
-        this._requestChannels.forEach((webContentsForRequest, channel) => {
-            if (webContentsForRequest === webContents) {
-                this._requestChannels.delete(channel);
-            }
-        });
     }
 
     private _completePeerInfo(webContents: Electron.WebContents, ipcBusPeer: Client.IpcBusPeer): void {
@@ -205,11 +197,11 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 break;
 
             case IpcBusCommand.Kind.RequestMessage :
-                this._requestChannels.set(ipcBusCommand.request.replyChannel, webContents);
+                this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, webContents);
                 break;
 
             case IpcBusCommand.Kind.RequestCancel :
-                this._requestChannels.delete(ipcBusCommand.request.replyChannel);
+                this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                 break;
 
             default :

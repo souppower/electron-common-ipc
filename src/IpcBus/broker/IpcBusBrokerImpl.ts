@@ -94,7 +94,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
     private _subscriptions: IpcBusUtils.ChannelConnectionMap<net.Socket>;
     private _wildSubscriptions: Set<string>;
-    private _requestChannels: Map<string, net.Socket>;
     private _ipcBusPeers: Map<string, Client.IpcBusPeer>;
 
     constructor(contextType: Client.IpcBusProcessType, options: Broker.IpcBusBroker.CreateOptions) {
@@ -107,7 +106,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<net.Socket>('IPCBus:Broker');
         this._wildSubscriptions = new Set<string>();
-        this._requestChannels = new Map<string, net.Socket>();
         this._socketClients = new Map<net.Socket, IpcBusBrokerSocket>();
         this._ipcBusPeers = new Map<string, Client.IpcBusPeer>();
 
@@ -161,7 +159,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             server.unref();
         }
         this._promiseStarted = null;
-        this._requestChannels.clear();
         this._socketClients.clear();
         this._ipcBusPeers.clear();
         this._subscriptions.clear();
@@ -291,12 +288,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
     protected _socketCleanUp(socket: any): void {
         this._subscriptions.releaseConnection(socket.remotePort);
-        // ForEach is supposed to support deletion during the iteration !
-        this._requestChannels.forEach((socketForRequest, channel) => {
-            if (socketForRequest === socket) {
-                this._requestChannels.delete(channel);
-            }
-        });
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Connection closed !`);
     }
 
@@ -407,7 +398,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
             case IpcBusCommand.Kind.RequestMessage:
                 // Register the replyChannel
-                this._requestChannels.set(ipcBusCommand.request.replyChannel, socket);
+                this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, socket);
 
                 // Request ipcBusCommand to subscribed connections
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
@@ -416,16 +407,16 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
 
             case IpcBusCommand.Kind.RequestResponse: {
-                let replySocket = this._requestChannels.get(ipcBusCommand.request.replyChannel);
+                let replySocket = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
                 if (replySocket) {
-                    this._requestChannels.delete(ipcBusCommand.request.replyChannel);
+                    this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                     replySocket.write(packet.buffer);
                 }
                 break;
             }
 
             case IpcBusCommand.Kind.RequestCancel:
-                this._requestChannels.delete(ipcBusCommand.request.replyChannel);
+                this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                 break;
 
             default:

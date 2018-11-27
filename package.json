@@ -58,7 +58,7 @@
     "electron-mocha": "^6.0.2",
     "expect": "^23.0.0",
     "minimist": "^1.2.0",
-    "mocha": "^4.0.1",
+    "mocha": "^5.2.0",
     "sinon": "^4.0.1",
     "socket-port-helpers": "^1.0.0",
     "tslint": "^4.1.1",

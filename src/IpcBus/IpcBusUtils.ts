@@ -193,9 +193,9 @@ export class ChannelConnectionMap<T1> extends EventEmitter {
         Logger.enable && Logger.warn(`[${this._name}] ${str}`);
     }
 
-    private _error(str: string) {
-        Logger.enable && Logger.error(`[${this._name}] ${str}`);
-    }
+    // private _error(str: string) {
+    //     Logger.enable && Logger.error(`[${this._name}] ${str}`);
+    // }
 
     setRequestChannel(channel: string, conn: T1): void {
         this._requestChannels.set(channel, conn);
@@ -205,7 +205,7 @@ export class ChannelConnectionMap<T1> extends EventEmitter {
         return this._requestChannels.get(channel);
     }
 
-    clearRequestChannel(channel: string): boolean {
+    deleteRequestChannel(channel: string): boolean {
         return this._requestChannels.delete(channel);
     }
 
@@ -316,6 +316,13 @@ export class ChannelConnectionMap<T1> extends EventEmitter {
         Logger.enable && this._info(`ReleaseConn: conn = ${conn}`);
 
         // ForEach is supposed to support deletion during the iteration !
+        this._requestChannels.forEach((connCurrent, channel) => {
+            if (connCurrent === conn) {
+                this._requestChannels.delete(channel);
+            }
+        });
+
+        // ForEach is supposed to support deletion during the iteration !
         this._channelsMap.forEach((connsMap, channel) => {
             this._releaseConnData(channel, conn, connsMap, null, false);
         });
@@ -336,10 +343,10 @@ export class ChannelConnectionMap<T1> extends EventEmitter {
     forEachChannel(channel: string, callback: ChannelConnectionMap.ForEachHandler<T1>) {
         Logger.enable && this._info(`forEachChannel: '${channel}'`);
 
-        if ((callback instanceof Function) === false) {
-            Logger.enable && this._error('forEachChannel: No callback provided !');
-            return;
-        }
+        // if ((callback instanceof Function) === false) {
+        //     Logger.enable && this._error('forEachChannel: No callback provided !');
+        //     return;
+        // }
 
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
@@ -356,10 +363,10 @@ export class ChannelConnectionMap<T1> extends EventEmitter {
     forEach(callback: ChannelConnectionMap.ForEachHandler<T1>) {
         Logger.enable && this._info('forEach');
 
-        if ((callback instanceof Function) === false) {
-            Logger.enable && this._error('forEach: No callback provided !');
-            return;
-        }
+        // if ((callback instanceof Function) === false) {
+        //     Logger.enable && this._error('forEach: No callback provided !');
+        //     return;
+        // }
 
         this._channelsMap.forEach((connsMap, channel: string) => {
             connsMap.forEach((connData, conn) => {
