@@ -18,7 +18,10 @@ function getLocalBusPath() {
 }
 
 let args = minimist(process.argv.slice(1));
-let timeoutDelay = 30000;
+let timeoutDelay = 5000;
+if (process.env['NODE_ENV'] === 'development') {
+  timeoutDelay = 20000;
+}
 if (args.busTimeout) {
   timeoutDelay = parseInt(args.busTimeout);
 }
@@ -183,7 +186,7 @@ Brokers = (function () {
 
     function _stopBrokers() {
       trace && console.log('IpcBusBridge stopping...');
-      return ipcBusBridge.stop()
+      return ipcBusBridge.stop({ timeoutDelay })
         .then(() => {
           ipcBusBridge = null;
           trace && console.log('IpcBusBridge stopped');
@@ -198,7 +201,7 @@ Brokers = (function () {
             return _stopRemoteBroker();
           }
           else {
-            return ipcBusBroker.stop();
+            return ipcBusBroker.stop({ timeoutDelay });
           }
         })
         .then(() => {

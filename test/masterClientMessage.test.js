@@ -43,7 +43,7 @@ function test(remoteBroker, busPath) {
     });
 
     after(() => {
-      return Promise.all([ipcClient1.close(), ipcClient2.close()])
+      return Promise.all([ipcClient1.close({ timeoutDelay }), ipcClient2.close({ timeoutDelay })])
         .then(() => {
           return brokers.stop();
         })

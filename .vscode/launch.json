@@ -82,8 +82,8 @@
                 // "--grep=Service",
                 // "${workspaceRoot}/test/*.test.js",
                 // "${workspaceRoot}/test/brokersLifeCycle.test.js",
-                // "${workspaceRoot}/test/clientLifeCycle.test.js",
-                "${workspaceRoot}/test/masterClientMessage.test.js",
+                "${workspaceRoot}/test/clientLifeCycle.test.js",
+                // "${workspaceRoot}/test/masterClientMessage.test.js",
                 // "${workspaceRoot}/test/service.test.js",
                 // "--recursive",
                 "--reporter", "spec",
@@ -96,17 +96,20 @@
             ],
             "windows": {
                 "env": {
-                    "ELECTRON_PATH": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+                    "ELECTRON_PATH": "${workspaceRoot}/node_modules/.bin/electron.cmd",
+                    "NODE_ENV": "development",
                 }
             },
             "osx": {
                 "env": {
-                    "ELECTRON_PATH": "${workspaceRoot}/node_modules/.bin/electron"
+                    "ELECTRON_PATH": "${workspaceRoot}/node_modules/.bin/electron",
+                    "NODE_ENV": "development",
                 }
             },
             "linux": {
                 "env": {
-                    "ELECTRON_PATH": "${workspaceRoot}/node_modules/.bin/electron"
+                    "ELECTRON_PATH": "${workspaceRoot}/node_modules/.bin/electron",
+                    "NODE_ENV": "development",
                 }
             },
             "outputCapture": "std",

@@ -28,7 +28,7 @@ function test1(remoteBroker, busPath) {
     });
 
     it(`stop client ${busPath}`, async () => {
-      return ipcBusClient.close();
+      return ipcBusClient.close({ timeoutDelay });
     });
 
   });

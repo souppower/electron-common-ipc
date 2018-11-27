@@ -27,6 +27,8 @@ class IpcBusBrokerSocket {
         this._socket = socket;
         this._client = client;
 
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Connect: ${this._socket.remotePort}`);
+
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBuffer();
 
@@ -34,6 +36,7 @@ class IpcBusBrokerSocket {
         this._socketBinds['error'] = this._onSocketError.bind(this);
         this._socketBinds['close'] = this._onSocketClose.bind(this);
         this._socketBinds['data'] = this._onSocketData.bind(this);
+        this._socketBinds['end'] = this._onSocketEnd.bind(this);
 
         for (let key in this._socketBinds) {
             this._socket.addListener(key, this._socketBinds[key]);
@@ -62,19 +65,19 @@ class IpcBusBrokerSocket {
     }
 
     protected _onSocketError(err: any) {
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Error on connection: ${this._socket.remoteAddress} - ${err}`);
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Error on connection: ${this._socket.remotePort} - ${err}`);
         this._client.onSocketError(this._socket, err);
     }
 
     protected _onSocketClose() {
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Close on connection: ${this._socket.remoteAddress}`);
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Close on connection: ${this._socket.remotePort}`);
         this._client.onSocketClose(this._socket);
     }
 
-    // protected _onSocketEnd() {
-    //     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Close on connection: ${socket.remoteAddress}`);
-    //     this._client.onSocketClose(this._socket);
-    // }
+    protected _onSocketEnd() {
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Close on connection: ${this._socket.remotePort}`);
+        // this._client.onSocketClose(this._socket);
+    }
 }
 
 
@@ -148,11 +151,12 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 server.removeListener(key, this._netBinds[key]);
             }
 
+            this._ipcBusBrokerClient.ipcSend(IpcBusCommand.Kind.RemoveChannelListener, Client.IPCBUS_CHANNEL_QUERY_STATE);
+            this._ipcBusBrokerClient.ipcClose();
+
             this._socketClients.forEach((socket) => {
                 socket.release();
             });
-            this._ipcBusBrokerClient.ipcSend(IpcBusCommand.Kind.RemoveChannelListener, Client.IPCBUS_CHANNEL_QUERY_STATE);
-            this._ipcBusBrokerClient.ipcClose();
             server.close();
             server.unref();
         }

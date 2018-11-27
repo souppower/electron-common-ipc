@@ -93,7 +93,7 @@ function test(remoteBroker, busPath) {
     });
 
     after(() => {
-      return Promise.all([ipcClient1.close()])
+      return Promise.all([ipcClient1.close({ timeoutDelay })])
         .then(() => {
           nodeChildProcess.kill('SIGTERM');
           return brokersLifeCycle.stopBrokers(remoteBroker);
