@@ -356,7 +356,7 @@ export class ChannelConnectionMap<T1> extends EventEmitter {
         }
         else {
             connsMap.forEach((connData, conn) => {
-                Logger.enable && this._info(`forEachChannel '${channel}' - ${Array.from(JSON.stringify(connData.peerIds.keys()))} (${connData.peerIds.size})`);
+                Logger.enable && this._info(`forEachChannel '${channel}' - ${JSON.stringify(Array.from(connData.peerIds.keys()))} (${connData.peerIds.size})`);
                 callback(connData, channel);
             });
         }
