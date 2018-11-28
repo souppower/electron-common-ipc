@@ -1,4 +1,5 @@
 const ipcBusModule = require("../..");
+ipcBusModule.ActivateIpcBusTrace(true);
 
 // Load modules
 // const ipcBusModule = require("electron-ipc-bus");

@@ -287,7 +287,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     }
 
     protected _socketCleanUp(socket: any): void {
-        this._subscriptions.releaseConnection(socket.remotePort);
+        this._subscriptions.releaseConnection(socket);
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Connection closed !`);
     }
 

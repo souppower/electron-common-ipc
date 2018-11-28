@@ -816,7 +816,7 @@ class ChannelConnectionMap extends events_1.EventEmitter {
     }
     addRef(channel, conn, peerId) {
         let channelAdded = false;
-        Logger.enable && this._info(`AddRef: '${channel}, peerId = ${peerId}`);
+        Logger.enable && this._info(`AddRef: '${channel}', peerId = ${peerId}`);
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             channelAdded = true;
@@ -825,10 +825,12 @@ class ChannelConnectionMap extends events_1.EventEmitter {
         }
         let connData = connsMap.get(conn);
         if (connData == null) {
-            connData = new ChannelConnectionMap.ConnectionData(conn);
+            connData = new ConnectionData(conn, peerId);
             connsMap.set(conn, connData);
         }
-        connData.addPeerId(peerId);
+        else {
+            connData.addPeerId(peerId);
+        }
         Logger.enable && this._info(`AddRef: '${channel}', count = ${connData.peerIds.size}`);
         if (channelAdded) {
             this.emit('channel-added', channel);
@@ -871,7 +873,7 @@ class ChannelConnectionMap extends events_1.EventEmitter {
         }
     }
     _release(channel, conn, peerId, all) {
-        Logger.enable && this._info(`_release (${all}): channel=${channel}, peerId = ${peerId}`);
+        Logger.enable && this._info(`Release '${channel}' (${all}): peerId = ${peerId}`);
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`Release '${channel}': '${channel}' is unknown`);
@@ -904,26 +906,15 @@ class ChannelConnectionMap extends events_1.EventEmitter {
             this._releaseConnData(channel, conn, connsMap, null, false);
         });
     }
-    forEachConnection(callback) {
-        let connections = new Map();
-        this._channelsMap.forEach((connsMap, channel) => {
-            connsMap.forEach((connData, connKey) => {
-                connections.set(connData.conn, connData);
-            });
-        });
-        connections.forEach((connData, connKey) => {
-            callback(connData, '');
-        });
-    }
     forEachChannel(channel, callback) {
-        Logger.enable && this._info(`forEachChannel: '${channel}'`);
+        Logger.enable && this._info(`forEachChannel '${channel}'`);
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`forEachChannel: Unknown channel '${channel}' !`);
         }
         else {
             connsMap.forEach((connData, conn) => {
-                Logger.enable && this._info(`forEachChannel: '${channel}' (${connData.peerIds.size})`);
+                Logger.enable && this._info(`forEachChannel '${channel}' - ${Array.from(JSON.stringify(connData.peerIds.keys()))} (${connData.peerIds.size})`);
                 callback(connData, channel);
             });
         }
@@ -932,52 +923,54 @@ class ChannelConnectionMap extends events_1.EventEmitter {
         Logger.enable && this._info('forEach');
         this._channelsMap.forEach((connsMap, channel) => {
             connsMap.forEach((connData, conn) => {
-                Logger.enable && this._info(`forEach: '${channel}' (${connData.peerIds.size})`);
+                Logger.enable && this._info(`forEach '${channel}' - ${JSON.stringify(Array.from(connData.peerIds.keys()))} (${connData.peerIds.size})`);
                 callback(connData, channel);
             });
         });
     }
 }
 exports.ChannelConnectionMap = ChannelConnectionMap;
-(function (ChannelConnectionMap) {
-    class ConnectionData {
-        constructor(conn) {
-            this.peerIds = new Map();
-            this.conn = conn;
-        }
-        addPeerId(peerId) {
-            let peerIdRefCount = this.peerIds.get(peerId);
-            if (peerIdRefCount == null) {
-                peerIdRefCount = { peerId, refCount: 1 };
-                this.peerIds.set(peerId, peerIdRefCount);
-            }
-            else {
-                ++peerIdRefCount.refCount;
-            }
-            return peerIdRefCount.refCount;
-        }
-        clearPeerIds() {
-            this.peerIds.clear();
-        }
-        removePeerId(peerId) {
-            return this.peerIds.delete(peerId);
-        }
-        releasePeerId(peerId) {
-            let peerIdRefCount = this.peerIds.get(peerId);
-            if (peerIdRefCount == null) {
-                return null;
-            }
-            else {
-                if (--peerIdRefCount.refCount <= 0) {
-                    this.peerIds.delete(peerId);
-                }
-            }
-            return peerIdRefCount.refCount;
-        }
+class ConnectionData {
+    constructor(conn, peerId) {
+        this.peerIds = new Map();
+        this.conn = conn;
+        let peerIdRefCount = { peerId, refCount: 1 };
+        this.peerIds.set(peerId, peerIdRefCount);
     }
-    ChannelConnectionMap.ConnectionData = ConnectionData;
+    addPeerId(peerId) {
+        let peerIdRefCount = this.peerIds.get(peerId);
+        if (peerIdRefCount == null) {
+            peerIdRefCount = { peerId, refCount: 1 };
+            this.peerIds.set(peerId, peerIdRefCount);
+        }
+        else {
+            ++peerIdRefCount.refCount;
+        }
+        return peerIdRefCount.refCount;
+    }
+    clearPeerIds() {
+        this.peerIds.clear();
+    }
+    removePeerId(peerId) {
+        return this.peerIds.delete(peerId);
+    }
+    releasePeerId(peerId) {
+        let peerIdRefCount = this.peerIds.get(peerId);
+        if (peerIdRefCount == null) {
+            return null;
+        }
+        else {
+            if (--peerIdRefCount.refCount <= 0) {
+                this.peerIds.delete(peerId);
+            }
+        }
+        return peerIdRefCount.refCount;
+    }
+}
+exports.ConnectionData = ConnectionData;
+(function (ConnectionData_1) {
     ;
-})(ChannelConnectionMap = exports.ChannelConnectionMap || (exports.ChannelConnectionMap = {}));
+})(ConnectionData = exports.ConnectionData || (exports.ConnectionData = {}));
 ;
 
 }).call(this,{"isBuffer":require("../../node_modules/is-buffer/index.js")},require('_process'))
