@@ -52,7 +52,7 @@ export class IpcBusBrokerCSVLogger extends IpcBusBrokerLogger {
             packet.packetSize.toString(),
             ipcBusCommand.peer.id,
             JSON.stringify(ipcBusCommand.peer.process),
-            socket.remotePort.toString()
+            socket.remotePort ? socket.remotePort.toString() : ''
         ];
         if (args) {
             for (let i = 0, l = args.length; i < l; ++i) {

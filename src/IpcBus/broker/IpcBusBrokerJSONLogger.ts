@@ -39,7 +39,7 @@ export class IpcBusBrokerJSONLogger extends IpcBusBrokerLogger {
                 log[`arg${i}`] = args[i];
             }
         }
-        log['socket'] = socket.remotePort;
+        log['socket'] = socket.remotePort ? socket.remotePort : '';
         this._logger.info(ipcBusCommand.kind, log);
     }
 }

@@ -6,15 +6,15 @@
   "scripts": {
     "start": "electron .",
     "start-sandboxed": "electron . --enable-sandbox",
-    "build" : "npm run build-ipc",
+    "build": "npm run build-ipc",
     "build-ipc": "npm uninstall electron-ipc-bus && npm install electron-ipc-bus"
   },
   "author": "Thomson Reuters",
   "homepage": "http://www.thomsonreuters.com",
   "devDependencies": {
-    "electron": "1.4.10"
+    "electron": "^3.0.10"
   },
   "dependencies": {
-    "electron-ipc-bus" : "file:../../"
+    "electron-ipc-bus": "file:../../"
   }
 }

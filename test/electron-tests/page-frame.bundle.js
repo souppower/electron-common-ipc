@@ -790,6 +790,7 @@ class ChannelConnectionMap extends events_1.EventEmitter {
         super();
         this._name = name;
         this._channelsMap = new Map();
+        this._requestChannels = new Map();
     }
     _info(str) {
         Logger.enable && Logger.info(`[${this._name}] ${str}`);
@@ -797,41 +798,50 @@ class ChannelConnectionMap extends events_1.EventEmitter {
     _warn(str) {
         Logger.enable && Logger.warn(`[${this._name}] ${str}`);
     }
-    _error(str) {
-        Logger.enable && Logger.error(`[${this._name}] ${str}`);
+    setRequestChannel(channel, conn) {
+        this._requestChannels.set(channel, conn);
+    }
+    getRequestChannel(channel) {
+        return this._requestChannels.get(channel);
+    }
+    deleteRequestChannel(channel) {
+        return this._requestChannels.delete(channel);
     }
     hasChannel(channel) {
         return this._channelsMap.has(channel);
     }
     clear() {
         this._channelsMap.clear();
+        this._requestChannels.clear();
     }
-    addRef(channel, connKey, conn, peerId) {
+    addRef(channel, conn, peerId) {
         let channelAdded = false;
-        Logger.enable && this._info(`AddRef: '${channel}', connKey = ${connKey}`);
+        Logger.enable && this._info(`AddRef: '${channel}', peerId = ${peerId}`);
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             channelAdded = true;
             connsMap = new Map();
             this._channelsMap.set(channel, connsMap);
         }
-        let connData = connsMap.get(connKey);
+        let connData = connsMap.get(conn);
         if (connData == null) {
-            connData = new ChannelConnectionMap.ConnectionData(connKey, conn);
-            connsMap.set(connKey, connData);
+            connData = new ConnectionData(conn, peerId);
+            connsMap.set(conn, connData);
         }
-        connData.addPeerId(peerId);
-        Logger.enable && this._info(`AddRef: '${channel}', connKey = ${connKey}, count = ${connData.peerIds.size}`);
+        else {
+            connData.addPeerId(peerId);
+        }
+        Logger.enable && this._info(`AddRef: '${channel}', count = ${connData.peerIds.size}`);
         if (channelAdded) {
             this.emit('channel-added', channel);
         }
         return connsMap.size;
     }
-    _releaseConnData(channel, connKey, connsMap, peerId, all) {
+    _releaseConnData(channel, conn, connsMap, peerId, all) {
         let channelRemoved = false;
-        let connData = connsMap.get(connKey);
+        let connData = connsMap.get(conn);
         if (connData == null) {
-            Logger.enable && this._warn(`Release '${channel}': connKey = ${connKey} is unknown`);
+            Logger.enable && this._warn(`Release '${channel}': conn is unknown`);
             return 0;
         }
         else {
@@ -849,131 +859,118 @@ class ChannelConnectionMap extends events_1.EventEmitter {
                 }
             }
             if (connData.peerIds.size === 0) {
-                connsMap.delete(connKey);
+                connsMap.delete(conn);
                 if (connsMap.size === 0) {
                     channelRemoved = true;
                     this._channelsMap.delete(channel);
                 }
             }
-            Logger.enable && this._info(`Release '${channel}': connKey = ${connKey}, count = ${connData.peerIds.size}`);
+            Logger.enable && this._info(`Release '${channel}': count = ${connData.peerIds.size}`);
             if (channelRemoved) {
                 this.emit('channel-removed', channel);
             }
             return connsMap.size;
         }
     }
-    _release(channel, connKey, peerId, all) {
-        Logger.enable && this._info(`_release (${all}): channel=${channel}, connKey = ${connKey}`);
+    _release(channel, conn, peerId, all) {
+        Logger.enable && this._info(`Release '${channel}' (${all}): peerId = ${peerId}`);
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`Release '${channel}': '${channel}' is unknown`);
             return 0;
         }
         else {
-            return this._releaseConnData(channel, connKey, connsMap, peerId, all);
+            return this._releaseConnData(channel, conn, connsMap, peerId, all);
         }
     }
-    release(channel, connKey, peerId) {
-        return this._release(channel, connKey, peerId, false);
+    release(channel, conn, peerId) {
+        return this._release(channel, conn, peerId, false);
     }
-    releaseAll(channel, connKey, peerId) {
-        return this._release(channel, connKey, peerId, true);
+    releaseAll(channel, conn, peerId) {
+        return this._release(channel, conn, peerId, true);
     }
-    releasePeerId(connKey, peerId) {
-        Logger.enable && this._info(`releasePeerId: connKey = ${connKey}, peerId = ${peerId}`);
+    releasePeerId(conn, peerId) {
+        Logger.enable && this._info(`releasePeerId: peerId = ${peerId}`);
         this._channelsMap.forEach((connsMap, channel) => {
-            this._releaseConnData(channel, connKey, connsMap, peerId, true);
+            this._releaseConnData(channel, conn, connsMap, peerId, true);
         });
     }
-    releaseConnection(connKey) {
-        Logger.enable && this._info(`ReleaseConn: connKey = ${connKey}`);
-        this._channelsMap.forEach((connsMap, channel) => {
-            this._releaseConnData(channel, connKey, connsMap, null, false);
+    releaseConnection(conn) {
+        Logger.enable && this._info(`ReleaseConn: conn = ${conn}`);
+        this._requestChannels.forEach((connCurrent, channel) => {
+            if (connCurrent === conn) {
+                this._requestChannels.delete(channel);
+            }
         });
-    }
-    forEachConnection(callback) {
-        let connections = new Map();
         this._channelsMap.forEach((connsMap, channel) => {
-            connsMap.forEach((connData, connKey) => {
-                connections.set(connData.connKey, connData);
-            });
-        });
-        connections.forEach((connData, connKey) => {
-            callback(connData, '');
+            this._releaseConnData(channel, conn, connsMap, null, false);
         });
     }
     forEachChannel(channel, callback) {
-        Logger.enable && this._info(`forEachChannel: '${channel}'`);
-        if ((callback instanceof Function) === false) {
-            Logger.enable && this._error('forEachChannel: No callback provided !');
-            return;
-        }
+        Logger.enable && this._info(`forEachChannel '${channel}'`);
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`forEachChannel: Unknown channel '${channel}' !`);
         }
         else {
-            connsMap.forEach((connData, connKey) => {
-                Logger.enable && this._info(`forEachChannel: '${channel}', connKey = ${connKey} (${connData.peerIds.size})`);
+            connsMap.forEach((connData, conn) => {
+                Logger.enable && this._info(`forEachChannel '${channel}' - ${JSON.stringify(Array.from(connData.peerIds.keys()))} (${connData.peerIds.size})`);
                 callback(connData, channel);
             });
         }
     }
     forEach(callback) {
         Logger.enable && this._info('forEach');
-        if ((callback instanceof Function) === false) {
-            Logger.enable && this._error('forEach: No callback provided !');
-            return;
-        }
         this._channelsMap.forEach((connsMap, channel) => {
-            connsMap.forEach((connData, connKey) => {
-                Logger.enable && this._info(`forEach: '${channel}', connKey = ${connKey} (${connData.peerIds.size})`);
+            connsMap.forEach((connData, conn) => {
+                Logger.enable && this._info(`forEach '${channel}' - ${JSON.stringify(Array.from(connData.peerIds.keys()))} (${connData.peerIds.size})`);
                 callback(connData, channel);
             });
         });
     }
 }
 exports.ChannelConnectionMap = ChannelConnectionMap;
-(function (ChannelConnectionMap) {
-    class ConnectionData {
-        constructor(connKey, conn) {
-            this.peerIds = new Map();
-            this.connKey = connKey;
-            this.conn = conn;
-        }
-        addPeerId(peerId) {
-            let peerIdRefCount = this.peerIds.get(peerId);
-            if (peerIdRefCount == null) {
-                peerIdRefCount = { peerId, refCount: 1 };
-                this.peerIds.set(peerId, peerIdRefCount);
-            }
-            else {
-                ++peerIdRefCount.refCount;
-            }
-            return peerIdRefCount.refCount;
-        }
-        clearPeerIds() {
-            this.peerIds.clear();
-        }
-        removePeerId(peerId) {
-            return this.peerIds.delete(peerId);
-        }
-        releasePeerId(peerId) {
-            let peerIdRefCount = this.peerIds.get(peerId);
-            if (peerIdRefCount == null) {
-                return null;
-            }
-            else {
-                if (--peerIdRefCount.refCount <= 0) {
-                    this.peerIds.delete(peerId);
-                }
-            }
-            return peerIdRefCount.refCount;
-        }
+class ConnectionData {
+    constructor(conn, peerId) {
+        this.peerIds = new Map();
+        this.conn = conn;
+        let peerIdRefCount = { peerId, refCount: 1 };
+        this.peerIds.set(peerId, peerIdRefCount);
     }
-    ChannelConnectionMap.ConnectionData = ConnectionData;
+    addPeerId(peerId) {
+        let peerIdRefCount = this.peerIds.get(peerId);
+        if (peerIdRefCount == null) {
+            peerIdRefCount = { peerId, refCount: 1 };
+            this.peerIds.set(peerId, peerIdRefCount);
+        }
+        else {
+            ++peerIdRefCount.refCount;
+        }
+        return peerIdRefCount.refCount;
+    }
+    clearPeerIds() {
+        this.peerIds.clear();
+    }
+    removePeerId(peerId) {
+        return this.peerIds.delete(peerId);
+    }
+    releasePeerId(peerId) {
+        let peerIdRefCount = this.peerIds.get(peerId);
+        if (peerIdRefCount == null) {
+            return null;
+        }
+        else {
+            if (--peerIdRefCount.refCount <= 0) {
+                this.peerIds.delete(peerId);
+            }
+        }
+        return peerIdRefCount.refCount;
+    }
+}
+exports.ConnectionData = ConnectionData;
+(function (ConnectionData_1) {
     ;
-})(ChannelConnectionMap = exports.ChannelConnectionMap || (exports.ChannelConnectionMap = {}));
+})(ConnectionData = exports.ConnectionData || (exports.ConnectionData = {}));
 ;
 
 }).call(this,{"isBuffer":require("../../node_modules/is-buffer/index.js")},require('_process'))
@@ -6510,7 +6507,7 @@ module.exports = uuid;
 },{"./v1":43,"./v4":44}],41:[function(require,module,exports){
 /**
  * Convert array of 16 byte values to UUID string format of the form:
- * XXXXXXXX-XXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+ * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
  */
 var byteToHex = [];
 for (var i = 0; i < 256; ++i) {
@@ -6520,43 +6517,46 @@ for (var i = 0; i < 256; ++i) {
 function bytesToUuid(buf, offset) {
   var i = offset || 0;
   var bth = byteToHex;
-  return  bth[buf[i++]] + bth[buf[i++]] +
-          bth[buf[i++]] + bth[buf[i++]] + '-' +
-          bth[buf[i++]] + bth[buf[i++]] + '-' +
-          bth[buf[i++]] + bth[buf[i++]] + '-' +
-          bth[buf[i++]] + bth[buf[i++]] + '-' +
-          bth[buf[i++]] + bth[buf[i++]] +
-          bth[buf[i++]] + bth[buf[i++]] +
-          bth[buf[i++]] + bth[buf[i++]];
+  // join used to fix memory issue caused by concatenation: https://bugs.chromium.org/p/v8/issues/detail?id=3175#c4
+  return ([bth[buf[i++]], bth[buf[i++]], 
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]],
+	bth[buf[i++]], bth[buf[i++]],
+	bth[buf[i++]], bth[buf[i++]]]).join('');
 }
 
 module.exports = bytesToUuid;
 
 },{}],42:[function(require,module,exports){
-(function (global){
 // Unique ID creation requires a high quality random # generator.  In the
 // browser this is a little complicated due to unknown quality of Math.random()
 // and inconsistent support for the `crypto` API.  We do the best we can via
 // feature-detection
-var rng;
 
-var crypto = global.crypto || global.msCrypto; // for IE 11
-if (crypto && crypto.getRandomValues) {
+// getRandomValues needs to be invoked in a context where "this" is a Crypto
+// implementation. Also, find the complete implementation of crypto on IE11.
+var getRandomValues = (typeof(crypto) != 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto)) ||
+                      (typeof(msCrypto) != 'undefined' && typeof window.msCrypto.getRandomValues == 'function' && msCrypto.getRandomValues.bind(msCrypto));
+
+if (getRandomValues) {
   // WHATWG crypto RNG - http://wiki.whatwg.org/wiki/Crypto
-  var rnds8 = new Uint8Array(16);
-  rng = function whatwgRNG() {
-    crypto.getRandomValues(rnds8);
+  var rnds8 = new Uint8Array(16); // eslint-disable-line no-undef
+
+  module.exports = function whatwgRNG() {
+    getRandomValues(rnds8);
     return rnds8;
   };
-}
-
-if (!rng) {
+} else {
   // Math.random()-based (RNG)
   //
   // If all else fails, use Math.random().  It's fast, but is of unspecified
   // quality.
-  var  rnds = new Array(16);
-  rng = function() {
+  var rnds = new Array(16);
+
+  module.exports = function mathRNG() {
     for (var i = 0, r; i < 16; i++) {
       if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
       rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
@@ -6566,13 +6566,7 @@ if (!rng) {
   };
 }
 
-module.exports = rng;
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],43:[function(require,module,exports){
-// Unique ID creation requires a high quality random # generator.  We feature
-// detect to determine the best RNG source, normalizing to a function that
-// returns 128-bits of randomness, since that's what's usually required
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -6581,20 +6575,12 @@ var bytesToUuid = require('./lib/bytesToUuid');
 // Inspired by https://github.com/LiosK/UUID.js
 // and http://docs.python.org/library/uuid.html
 
-// random #'s we need to init node and clockseq
-var _seedBytes = rng();
-
-// Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
-var _nodeId = [
-  _seedBytes[0] | 0x01,
-  _seedBytes[1], _seedBytes[2], _seedBytes[3], _seedBytes[4], _seedBytes[5]
-];
-
-// Per 4.2.2, randomize (14 bit) clockseq
-var _clockseq = (_seedBytes[6] << 8 | _seedBytes[7]) & 0x3fff;
+var _nodeId;
+var _clockseq;
 
 // Previous uuid creation time
-var _lastMSecs = 0, _lastNSecs = 0;
+var _lastMSecs = 0;
+var _lastNSecs = 0;
 
 // See https://github.com/broofa/node-uuid for API details
 function v1(options, buf, offset) {
@@ -6602,8 +6588,26 @@ function v1(options, buf, offset) {
   var b = buf || [];
 
   options = options || {};
-
+  var node = options.node || _nodeId;
   var clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq;
+
+  // node and clockseq need to be initialized to random values if they're not
+  // specified.  We do this lazily to minimize issues related to insufficient
+  // system entropy.  See #189
+  if (node == null || clockseq == null) {
+    var seedBytes = rng();
+    if (node == null) {
+      // Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
+      node = _nodeId = [
+        seedBytes[0] | 0x01,
+        seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]
+      ];
+    }
+    if (clockseq == null) {
+      // Per 4.2.2, randomize (14 bit) clockseq
+      clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 0x3fff;
+    }
+  }
 
   // UUID timestamps are 100 nano-second units since the Gregorian epoch,
   // (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so
@@ -6664,7 +6668,6 @@ function v1(options, buf, offset) {
   b[i++] = clockseq & 0xff;
 
   // `node`
-  var node = options.node || _nodeId;
   for (var n = 0; n < 6; ++n) {
     b[i + n] = node[n];
   }
@@ -6682,7 +6685,7 @@ function v4(options, buf, offset) {
   var i = buf && offset || 0;
 
   if (typeof(options) == 'string') {
-    buf = options == 'binary' ? new Array(16) : null;
+    buf = options === 'binary' ? new Array(16) : null;
     options = null;
   }
   options = options || {};
