@@ -5,7 +5,7 @@ import { IpcPacketBuffer, BufferListReader } from 'socket-serializer';
 import * as Client from '../IpcBusClient';
 import * as Broker from './IpcBusBroker';
 import * as IpcBusUtils from '../IpcBusUtils';
-import { IpcBusTransportNet } from '../IpcBusTransportNet';
+import { Create as CreateIpcBusClientNet } from '../IpcBusClientNet';
 
 import { IpcBusCommand } from '../IpcBusCommand';
 
@@ -84,7 +84,7 @@ class IpcBusBrokerSocket {
 /** @internal */
 export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocketClient {
     private _netOptions: Client.IpcNetOptions;
-    private _ipcBusBrokerClient: IpcBusTransportNet;
+    private _ipcBusBrokerClient: Client.IpcBusClient;
     private _socketClients: Map<net.Socket, IpcBusBrokerSocket>;
 
     private _server: net.Server;
@@ -99,10 +99,13 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     constructor(contextType: Client.IpcBusProcessType, options: Broker.IpcBusBroker.CreateOptions) {
         this._netOptions = options;
 
+        // Callbacks
         this._netBinds = {};
         this._netBinds['error'] = this._onServerError.bind(this);
         this._netBinds['close'] = this._onServerClose.bind(this);
         this._netBinds['connection'] = this._onServerConnection.bind(this);
+
+        this._onQueryState = this._onQueryState.bind(this);
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<net.Socket>('IPCBus:Broker');
         this._wildSubscriptions = new Set<string>();
@@ -123,12 +126,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             }
         });
 
-        this._ipcBusBrokerClient = new IpcBusTransportNet(contextType, this._netOptions);
-        this._ipcBusBrokerClient.ipcCallback((channel, ipcBusEvent, replyChannel) => {
-            if (channel === Client.IPCBUS_CHANNEL_QUERY_STATE) {
-                this._onQueryState(ipcBusEvent, replyChannel);
-            }
-        });
+        this._ipcBusBrokerClient = CreateIpcBusClientNet(contextType, this._netOptions);
     }
 
     protected _onQueryState(ipcBusEvent: Client.IpcBusEvent, replyChannel: string) {
@@ -137,7 +135,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             ipcBusEvent.request.resolve(queryState);
         }
         else if (replyChannel != null) {
-            this._ipcBusBrokerClient.ipcSend(IpcBusCommand.Kind.SendMessage, replyChannel, undefined, [queryState]);
+            this._ipcBusBrokerClient.send(replyChannel, queryState);
         }
     }
 
@@ -149,8 +147,8 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 server.removeListener(key, this._netBinds[key]);
             }
 
-            this._ipcBusBrokerClient.ipcSend(IpcBusCommand.Kind.RemoveChannelListener, Client.IPCBUS_CHANNEL_QUERY_STATE);
-            this._ipcBusBrokerClient.ipcClose();
+            this._ipcBusBrokerClient.removeListener(Client.IPCBUS_CHANNEL_QUERY_STATE, this._onQueryState);
+            this._ipcBusBrokerClient.close();
 
             this._socketClients.forEach((socket) => {
                 socket.release();
@@ -217,9 +215,9 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                         this._server.addListener(key, this._netBinds[key]);
                     }
 
-                    this._ipcBusBrokerClient.ipcConnect({ timeoutDelay: options.timeoutDelay })
+                    this._ipcBusBrokerClient.connect({ timeoutDelay: options.timeoutDelay })
                         .then(() => {
-                            this._ipcBusBrokerClient.ipcSend(IpcBusCommand.Kind.AddChannelListener, Client.IPCBUS_CHANNEL_QUERY_STATE);
+                            this._ipcBusBrokerClient.addListener(Client.IPCBUS_CHANNEL_QUERY_STATE, this._onQueryState);
                             resolve();
                         })
                         .catch((err) => {
