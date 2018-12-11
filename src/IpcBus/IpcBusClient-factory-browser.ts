@@ -20,3 +20,5 @@ export let CreateIpcBusClient: IpcBusClient.CreateFunction = (options: any, host
     // catch (_) {
     // }
 };
+
+IpcBusClient.Create = CreateIpcBusClient;

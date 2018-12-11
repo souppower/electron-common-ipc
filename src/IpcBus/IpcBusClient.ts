@@ -74,6 +74,8 @@ export namespace IpcBusClient {
         (port: number, hostname?: string): IpcBusClient | null ;
         (path: string): IpcBusClient | null ;
     }
+
+    export let Create: IpcBusClient.CreateFunction;
 }
 
 export interface IpcBusClient extends EventEmitter {

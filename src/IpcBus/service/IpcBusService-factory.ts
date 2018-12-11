@@ -9,6 +9,10 @@ export let CreateIpcBusService: IpcBusService.CreateFunction = (client: IpcBusCl
     return new IpcBusServiceImpl(client, serviceName, serviceImpl);
 };
 
+IpcBusService.Create = CreateIpcBusService;
+
 export let CreateIpcBusServiceProxy: IpcBusServiceProxy.CreateFunction = (client: IpcBusClient, serviceName: string, options?: IpcBusServiceProxy.CreateOptions): IpcBusServiceProxy => {
     return new IpcBusServiceProxyImpl(client, serviceName, options);
 };
+
+IpcBusServiceProxy.Create = CreateIpcBusServiceProxy;

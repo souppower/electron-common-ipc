@@ -15,6 +15,8 @@ export namespace IpcBusBroker {
         (port: number, hostname?: string): IpcBusBroker | null ;
         (path: string): IpcBusBroker | null ;
     }
+
+    export let Create: CreateFunction;
 }
 
 export interface IpcBusBroker {

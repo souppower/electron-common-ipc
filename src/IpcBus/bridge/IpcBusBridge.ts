@@ -15,6 +15,8 @@ export namespace IpcBusBridge {
         (port: number, hostname?: string): IpcBusBridge | null ;
         (path: string): IpcBusBridge | null ;
     }
+
+    export let Create: CreateFunction;
 }
 
 export interface IpcBusBridge {

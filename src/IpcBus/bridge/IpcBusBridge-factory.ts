@@ -40,3 +40,5 @@ export let CreateIpcBusBridge: IpcBusBridge.CreateFunction = (options: any, host
     }
     return ipcBusBridge;
 };
+
+IpcBusBridge.Create = CreateIpcBusBridge;

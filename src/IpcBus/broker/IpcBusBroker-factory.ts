@@ -40,3 +40,5 @@ export let CreateIpcBusBroker: IpcBusBroker.CreateFunction = (options: any, host
     }
     return ipcBusBroker;
 };
+
+IpcBusBroker.Create = CreateIpcBusBroker;

@@ -16,9 +16,12 @@ export namespace IpcBusService {
     export interface CreateOptions {
         depth?: number;
     }
+
     export interface CreateFunction {
         (client: IpcBusClient, serviceName: string, serviceImpl: any, options?: CreateOptions): IpcBusService | null ;
     }
+
+|    export let Create: CreateFunction;
 }
 
 export interface IpcBusService {
@@ -38,6 +41,8 @@ export namespace IpcBusServiceProxy {
     export interface CreateFunction {
         (client: IpcBusClient, serviceName: string, options?: CreateOptions): IpcBusServiceProxy | null ;
     }
+
+    export let Create: CreateFunction;
 }
 
 export interface IpcBusServiceProxy extends EventEmitter {
