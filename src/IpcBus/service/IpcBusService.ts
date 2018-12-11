@@ -18,10 +18,10 @@ export namespace IpcBusService {
     }
 
     export interface CreateFunction {
-        (client: IpcBusClient, serviceName: string, serviceImpl: any, options?: CreateOptions): IpcBusService | null ;
+       (client: IpcBusClient, serviceName: string, serviceImpl: any, options?: CreateOptions): IpcBusService | null ;
     }
 
-|    export let Create: CreateFunction;
+    export let Create: CreateFunction;
 }
 
 export interface IpcBusService {

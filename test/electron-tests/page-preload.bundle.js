@@ -202,6 +202,7 @@ var CrossFrameMessage;
 },{"json-helpers":27}],3:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const IpcBusClient_1 = require("./IpcBusClient");
 exports.CreateIpcBusClient = (options, hostname) => {
     const windowLocal = window;
     if (windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.CreateIpcBusClient) {
@@ -209,14 +210,18 @@ exports.CreateIpcBusClient = (options, hostname) => {
     }
     return null;
 };
+IpcBusClient_1.IpcBusClient.Create = exports.CreateIpcBusClient;
 
-},{}],4:[function(require,module,exports){
+},{"./IpcBusClient":4}],4:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IPCBUS_CHANNEL = '/electron-ipc-bus';
 exports.IPCBUS_CHANNEL_QUERY_STATE = `${exports.IPCBUS_CHANNEL}/queryState`;
 exports.ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH';
 exports.ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH';
+var IpcBusClient;
+(function (IpcBusClient) {
+})(IpcBusClient = exports.IpcBusClient || (exports.IpcBusClient = {}));
 
 },{}],5:[function(require,module,exports){
 "use strict";
@@ -977,20 +982,29 @@ exports.ConnectionData = ConnectionData;
 },{"../../node_modules/is-buffer/index.js":26,"_process":29,"events":24}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const IpcBusService_1 = require("./IpcBusService");
 const IpcBusServiceImpl_1 = require("./IpcBusServiceImpl");
 const IpcBusServiceProxyImpl_1 = require("./IpcBusServiceProxyImpl");
 exports.CreateIpcBusService = (client, serviceName, serviceImpl, options) => {
     return new IpcBusServiceImpl_1.IpcBusServiceImpl(client, serviceName, serviceImpl);
 };
+IpcBusService_1.IpcBusService.Create = exports.CreateIpcBusService;
 exports.CreateIpcBusServiceProxy = (client, serviceName, options) => {
     return new IpcBusServiceProxyImpl_1.IpcBusServiceProxyImpl(client, serviceName, options);
 };
+IpcBusService_1.IpcBusServiceProxy.Create = exports.CreateIpcBusServiceProxy;
 
-},{"./IpcBusServiceImpl":14,"./IpcBusServiceProxyImpl":15}],13:[function(require,module,exports){
+},{"./IpcBusService":13,"./IpcBusServiceImpl":14,"./IpcBusServiceProxyImpl":15}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IPCBUS_SERVICE_EVENT_START = 'service-event-start';
 exports.IPCBUS_SERVICE_EVENT_STOP = 'service-event-stop';
+var IpcBusService;
+(function (IpcBusService) {
+})(IpcBusService = exports.IpcBusService || (exports.IpcBusService = {}));
+var IpcBusServiceProxy;
+(function (IpcBusServiceProxy) {
+})(IpcBusServiceProxy = exports.IpcBusServiceProxy || (exports.IpcBusServiceProxy = {}));
 
 },{}],14:[function(require,module,exports){
 "use strict";
