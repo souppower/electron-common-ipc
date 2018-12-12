@@ -24,7 +24,7 @@ let busPath = GetCmdLineArgValue('bus-path');
 console.log(busPath);
 
 const ipcBusModule = require('electron-common-ipc');
-const ipcBus = ipcBusModule.CreateIpcBusClient(busPath);
+const ipcBus = ipcBusModule.IpcBusClient.Create(busPath);
 // ipcBusModule.ActivateIpcBusTrace(true);
 
 const PerfTests = require('./PerfTests.js');

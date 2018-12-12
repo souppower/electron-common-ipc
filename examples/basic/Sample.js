@@ -12,22 +12,22 @@ const ipcBusPath = 50494;
 // Startup
 electronApp.on('ready', function () {
     // Create broker
-    const ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);
+    const ipcBusBroker = ipcBusModule.IpcBusBroker.Create(ipcBusPath);
     // Start broker
     ipcBusBroker.start()
         .then((msg) => {
             console.log('IpcBusBroker started');
 
             // Create bridge
-            const ipcBusBridge = ipcBusModule.CreateIpcBusBridge(ipcBusPath);
+            const ipcBusBridge = ipcBusModule.IpcBusBridge.Create(ipcBusPath);
             // Start bridge
             ipcBusBridge.start()
                 .then((msg) => {
                     console.log('IpcBusBridge started');
 
                     // Create clients
-                    const ipcBusClient1 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
-                    const ipcBusClient2 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
+                    const ipcBusClient1 = ipcBusModule.IpcBusClient.Create(ipcBusPath);
+                    const ipcBusClient2 = ipcBusModule.IpcBusClient.Create(ipcBusPath);
                     Promise.all([ipcBusClient1.connect({ peerName: 'client1' }), ipcBusClient2.connect({ peerName: 'client2' })])
                         .then((msg) => {
                             // Chatting on channel 'greeting'

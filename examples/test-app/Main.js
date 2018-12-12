@@ -26,7 +26,7 @@ console.log('IPC Bus Path : ' + busPath);
 
 // IPC Bus
 const ipcBusModule = require('electron-common-ipc');
-const ipcBusClient = ipcBusModule.CreateIpcBusClient(busPath);
+const ipcBusClient = ipcBusModule.IpcBusClient.Create(busPath);
 // ipcBusModule.ActivateIpcBusTrace(true);
 // ipcBusModule.ActivateServiceTrace(true);
 
@@ -462,7 +462,7 @@ function startApp() {
 
     if (testService) {
         // Create the proxy (client-side)
-        const timeServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, 'time', { timeoutDelay: 20000 });
+        const timeServiceProxy = ipcBusModule.IpcBusServiceProxy.Create(ipcBusClient, 'time', { timeoutDelay: 20000 });
         
         // Check service's availability and make a remote call when it is available
         timeServiceProxy.connect({ timeoutDelay: 20000 })
@@ -493,7 +493,7 @@ function startApp() {
         const timeServiceImpl = new TimeServiceImpl2();
         
         // Create and start the service (server-side)
-        const timeService = ipcBusModule.CreateIpcBusService(ipcBusClient, 'time', timeServiceImpl);
+        const timeService = ipcBusModule.IpcBusService.Create(ipcBusClient, 'time', timeServiceImpl);
         timeService.start();
         setTimeout(() => {
             console.log('<MAIN Service> Check that event is not published on the bus when the service is stopped');
@@ -510,7 +510,7 @@ function startApp() {
 }
 
 function prepareApp() {
-    ipcBridge = ipcBusModule.CreateIpcBusBridge(busPath);
+    ipcBridge = ipcBusModule.IpcBusBridge.Create(busPath);
     ipcBridge.start()
         .then((msg) => {
             console.log('<MAIN> IPC bridge is ready !');
@@ -527,7 +527,7 @@ electronApp.on('ready', function () {
     console.log('<MAIN> Starting IPC broker ...');
     if (localIpcBroker) {
         // Broker in Master process
-        ipcBroker = ipcBusModule.CreateIpcBusBroker(busPath);
+        ipcBroker = ipcBusModule.IpcBusBroker.Create(busPath);
         ipcBroker.start()
             .then((msg) => {
                 console.log('<MAIN> IPC broker is ready !');

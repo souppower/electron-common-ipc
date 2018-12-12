@@ -50,22 +50,22 @@ const ipcBusPath = 50494;
 // Startup
 electronApp.on('ready', function () {
     // Create broker
-    const ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);
+    const ipcBusBroker = ipcBusModule.IpcBusBroker.Create(ipcBusPath);
     // Start broker
     ipcBusBroker.start()
         .then((msg) => {
             console.log('IpcBusBroker started');
 
             // Create bridge
-            const ipcBusBridge = ipcBusModule.CreateIpcBusBridge(ipcBusPath);
+            const ipcBusBridge = ipcBusModule.IpcBusBridge.Create(ipcBusPath);
             // Start bridge
             ipcBusBridge.start()
                 .then((msg) => {
                     console.log('IpcBusBridge started');
 
                     // Create clients
-                    const ipcBusClient1 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
-                    const ipcBusClient2 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
+                    const ipcBusClient1 = ipcBusModule.IpcBusClient.Create(ipcBusPath);
+                    const ipcBusClient2 = ipcBusModule.IpcBusClient.Create(ipcBusPath);
                     Promise.all([ipcBusClient1.connect({ peerName: 'client1' }), ipcBusClient2.connect({ peerName: 'client2' })])
                         .then((msg) => {
                             // Chatting on channel 'greeting'
@@ -189,20 +189,20 @@ interface IpcBusBroker {
 
 ```js
 const ipcBusModule = require("electron-common-ipc");
-const ipcBusBroker = ipcBusModule.CreateIpcBusBroker([busPath]);
+const ipcBusBroker = ipcBusModule.IpcBusBroker.Create([busPath]);
 ```
 
-The ***require()*** call loads the module and CreateIpcBusBroker setups the broker with the ***busPath***.
+The ***require()*** call loads the module and IpcBusBroker.Create setups the broker with the ***busPath***.
 
 
 ```js
 // Socket path
-const ipcBusBroker = ipcBusModule.CreateIpcBusBroker('/my-ipc-bus-path');
+const ipcBusBroker = ipcBusModule.IpcBusBroker.Create('/my-ipc-bus-path');
 ```
 
 ```js
 // Port number
-const ipcBusBroker = ipcBusModule.CreateIpcBusBroker(58666);
+const ipcBusBroker = ipcBusModule.IpcBusBroker.Create(58666);
 ```
 
 ## Methods
@@ -259,19 +259,19 @@ interface IpcBusBridge {
 
 ```js
 const ipcBusModule = require("electron-common-ipc");
-const ipcBusBridge = ipcBusModule.CreateIpcBusBridge([busPath]);
+const ipcBusBridge = ipcBusModule.IpcBusBridge.Create([busPath]);
 ```
 
-The ***require()*** call loads the module and CreateIpcBusBridge setups the bridge with the ***busPath***.
+The ***require()*** call loads the module and IpcBusBridge.Create setups the bridge with the ***busPath***.
 
 ```js
 // Socket path
-const ipcBusBridge = ipcBusModule.CreateIpcBusBridge('/my-ipc-bus-path');
+const ipcBusBridge = ipcBusModule.IpcBusBridge.Create('/my-ipc-bus-path');
 ```
 
 ```js
 // Port number
-const ipcBusBridge = ipcBusModule.CreateIpcBusBridge(58666);
+const ipcBusBridge = ipcBusModule.IpcBusBridge.Create(58666);
 ```
 
 ## Methods
@@ -328,25 +328,25 @@ interface IpcBusClient extends events.EventEmitter {
 
 ```js
 const ipcBusModule = require("electron-common-ipc");
-const ipcBus = ipcBusModule.CreateIpcBusClient([busPath]);
+const ipcBus = ipcBusModule.IpcBusClient.Create([busPath]);
 ````
 
-The ***require()*** call loads the module. CreateIpcBus setups the client with the ***busPath*** that was used to start the broker.
+The ***require()*** call loads the module. IpcBusClient.Create setups the client with the ***busPath*** that was used to start the broker.
 
 ```js
-const ipcBus = ipcBusModule.CreateIpcBusClient('/my-ipc-bus-path');
+const ipcBus = ipcBusModule.IpcBusClient.Create('/my-ipc-bus-path');
 ```
 
 ## Initialization in a Node single process
  
 ```js
-const ipcBus = ipcBusModule.CreateIpcBusClient('/my-ipc-bus-path');
+const ipcBus = ipcBusModule.IpcBusClient.Create('/my-ipc-bus-path');
 ```
 
 ## Initialization in a Renderer process (either sandboxed or not)
 ```js
 const ipcBusModule = require("electron-common-ipc");
-const ipcBus = ipcBusModule.CreateIpcBusClient();
+const ipcBus = ipcBusModule.IpcBusClient.Create();
 ```
 
 NOTE: There is no notion of port, buspath in a renderer. IpcBusRenderer connects automatically to the instance of the bridge.
@@ -560,7 +560,7 @@ interface IpcBusServiceCallHandler {
 const ipcBusModule = require("electron-common-ipc");
 ...
 // ipcBusClient is a connected instance of IpcBusClient
-const ipcMyService = ipcBusModule.CreateIpcBusService(ipcBusClient, 'myService');
+const ipcMyService = ipcBusModule.IpcBusService.Create(ipcBusClient, 'myService');
 ```
 
 ## Creation (with an outer instance)
@@ -571,7 +571,7 @@ const myOuterServiceInstance = {};
 myOuterServiceInstance.test = () => { return 'This is a test'; };
 ...
 // ipcBusClient is a connected instance of IpcBusClient
-const ipcMyService = ipcBusModule.CreateIpcBusService(ipcBusClient, 'myService', myOuterServiceInstance);
+const ipcMyService = ipcBusModule.IpcBusService.Create(ipcBusClient, 'myService', myOuterServiceInstance);
 ```
 NOTE : This constructor will automatically register all methods of ***myOuterServiceImpl*** as call handlers using ***registerCallHandler()***.
 
@@ -649,7 +649,7 @@ interface IpcBusServiceEventHandler {
 const ipcBusModule = require("electron-common-ipc");
 ...
 // ipcBusClient is a connected instance of IpcBusClient
-const ipcMyServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, 'myService', 2000); // 2000 ms for call timeout (default is 1000 ms)
+const ipcMyServiceProxy = ipcBusModule.IpcBusServiceProxy.Create(ipcBusClient, 'myService', 2000); // 2000 ms for call timeout (default is 1000 ms)
 ```
 
 ## Properties
