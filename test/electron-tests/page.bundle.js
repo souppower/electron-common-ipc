@@ -820,11 +820,9 @@ class ChannelConnectionMap extends events_1.EventEmitter {
         this._requestChannels.clear();
     }
     addRef(channel, conn, peerId) {
-        let channelAdded = false;
         Logger.enable && this._info(`AddRef: '${channel}', peerId = ${peerId}`);
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
-            channelAdded = true;
             connsMap = new Map();
             this._channelsMap.set(channel, connsMap);
         }
@@ -837,13 +835,9 @@ class ChannelConnectionMap extends events_1.EventEmitter {
             connData.addPeerId(peerId);
         }
         Logger.enable && this._info(`AddRef: '${channel}', count = ${connData.peerIds.size}`);
-        if (channelAdded) {
-            this.emit('channel-added', channel);
-        }
         return connsMap.size;
     }
     _releaseConnData(channel, conn, connsMap, peerId, all) {
-        let channelRemoved = false;
         let connData = connsMap.get(conn);
         if (connData == null) {
             Logger.enable && this._warn(`Release '${channel}': conn is unknown`);
@@ -866,14 +860,10 @@ class ChannelConnectionMap extends events_1.EventEmitter {
             if (connData.peerIds.size === 0) {
                 connsMap.delete(conn);
                 if (connsMap.size === 0) {
-                    channelRemoved = true;
                     this._channelsMap.delete(channel);
                 }
             }
             Logger.enable && this._info(`Release '${channel}': count = ${connData.peerIds.size}`);
-            if (channelRemoved) {
-                this.emit('channel-removed', channel);
-            }
             return connsMap.size;
         }
     }

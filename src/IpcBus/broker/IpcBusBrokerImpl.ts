@@ -93,7 +93,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     private _promiseStarted: Promise<void>;
 
     private _subscriptions: IpcBusUtils.ChannelConnectionMap<net.Socket>;
-    private _wildSubscriptions: Set<string>;
+    // private _wildSubscriptions: Set<string>;
     private _ipcBusPeers: Map<string, Client.IpcBusPeer>;
 
     constructor(contextType: Client.IpcBusProcessType, options: Broker.IpcBusBroker.CreateOptions) {
@@ -108,23 +108,23 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         this._onQueryState = this._onQueryState.bind(this);
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<net.Socket>('IPCBus:Broker');
-        this._wildSubscriptions = new Set<string>();
+        // this._wildSubscriptions = new Set<string>();
         this._socketClients = new Map<net.Socket, IpcBusBrokerSocket>();
         this._ipcBusPeers = new Map<string, Client.IpcBusPeer>();
 
-        this._subscriptions.on('channel-added', (channel: string) => {
-            if (IpcBusUtils.ContainsWildCards(channel)) {
-                // Remove '*' suffix
-                this._wildSubscriptions.add(channel.slice(0, -1));
-            }
-        });
+        // this._subscriptions.on('channel-added', (channel: string) => {
+        //     if (IpcBusUtils.ContainsWildCards(channel)) {
+        //         // Remove '*' suffix
+        //         this._wildSubscriptions.add(channel.slice(0, -1));
+        //     }
+        // });
 
-        this._subscriptions.on('channel-removed', (channel: string) => {
-            if (IpcBusUtils.ContainsWildCards(channel)) {
-                // Remove '*' suffix
-                this._wildSubscriptions.delete(channel.slice(0, -1));
-            }
-        });
+        // this._subscriptions.on('channel-removed', (channel: string) => {
+        //     if (IpcBusUtils.ContainsWildCards(channel)) {
+        //         // Remove '*' suffix
+        //         this._wildSubscriptions.delete(channel.slice(0, -1));
+        //     }
+        // });
 
         this._ipcBusBrokerClient = CreateIpcBusClientNet(contextType, this._netOptions);
     }
@@ -377,21 +377,21 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.write(packet.buffer);
                 });
-                if (this._wildSubscriptions.size > 0) {
-                    let args: any[] = null;
-                    let bufferPacket = new IpcPacketBuffer();
-                    this._wildSubscriptions.forEach((wildChannel) => {
-                        if (ipcBusCommand.channel.lastIndexOf(wildChannel, 0) === 0) {
-                            // Re-add '*' suffix
-                            ipcBusCommand.emit = wildChannel + '*';
-                            args = args || packet.parseArrayAt(1);
-                            bufferPacket.serializeArray([ipcBusCommand, args]);
-                            this._subscriptions.forEachChannel(ipcBusCommand.emit, (connData, channel) => {
-                                connData.conn.write(bufferPacket.buffer);
-                            });
-                        }
-                    });
-                }
+                // if (this._wildSubscriptions.size > 0) {
+                //     let args: any[] = null;
+                //     let bufferPacket = new IpcPacketBuffer();
+                //     this._wildSubscriptions.forEach((wildChannel) => {
+                //         if (ipcBusCommand.channel.lastIndexOf(wildChannel, 0) === 0) {
+                //             // Re-add '*' suffix
+                //             ipcBusCommand.emit = wildChannel + '*';
+                //             args = args || packet.parseArrayAt(1);
+                //             bufferPacket.serializeArray([ipcBusCommand, args]);
+                //             this._subscriptions.forEachChannel(ipcBusCommand.emit, (connData, channel) => {
+                //                 connData.conn.write(bufferPacket.buffer);
+                //             });
+                //         }
+                //     });
+                // }
                 break;
 
             case IpcBusCommand.Kind.RequestMessage:
