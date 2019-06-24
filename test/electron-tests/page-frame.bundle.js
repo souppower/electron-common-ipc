@@ -166,7 +166,7 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 }
 exports.IpcBusFrameBridge = IpcBusFrameBridge;
 
-},{"./CrossFrameMessage":2,"./IpcBusTransportWindow":10,"events":24,"uuid":40}],2:[function(require,module,exports){
+},{"./CrossFrameMessage":2,"./IpcBusTransportWindow":10,"events":24,"uuid":41}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const json_helpers_1 = require("json-helpers");
@@ -535,7 +535,7 @@ class IpcBusTransportImpl {
 }
 exports.IpcBusTransportImpl = IpcBusTransportImpl;
 
-},{"./IpcBusClient":4,"./IpcBusCommand":7,"./IpcBusUtils":11,"uuid":40}],10:[function(require,module,exports){
+},{"./IpcBusClient":4,"./IpcBusCommand":7,"./IpcBusUtils":11,"uuid":41}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert = require("assert");
@@ -650,7 +650,7 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
 }
 exports.IpcBusTransportWindow = IpcBusTransportWindow;
 
-},{"./IpcBusCommand":7,"./IpcBusTransportImpl":9,"./IpcBusUtils":11,"assert":18,"socket-serializer":39}],11:[function(require,module,exports){
+},{"./IpcBusCommand":7,"./IpcBusTransportImpl":9,"./IpcBusUtils":11,"assert":18,"socket-serializer":40}],11:[function(require,module,exports){
 (function (Buffer,process){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -969,7 +969,7 @@ exports.ConnectionData = ConnectionData;
 ;
 
 }).call(this,{"isBuffer":require("../../node_modules/is-buffer/index.js")},require('_process'))
-},{"../../node_modules/is-buffer/index.js":26,"_process":29,"events":24}],12:[function(require,module,exports){
+},{"../../node_modules/is-buffer/index.js":26,"_process":30,"events":24}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusService_1 = require("./IpcBusService");
@@ -2528,7 +2528,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":20,"_process":29,"inherits":19}],22:[function(require,module,exports){
+},{"./support/isBuffer":20,"_process":30,"inherits":19}],22:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -5105,51 +5105,49 @@ __export(require("./json-parser"));
 },{"./json-parser":28}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const buffer_1 = require("buffer");
+const tojson_1 = require("./tojson");
 var JSONParser;
 (function (JSONParser) {
-    const JSON_TOKEN_UNDEFINED = '_/undefined/_';
     function stringify(value, replacer, space) {
-        let previousDateToJSON = Date.prototype.toJSON;
-        Date.prototype.toJSON = function (key) {
-            return { type: 'Date', data: this.valueOf() };
-        };
-        try {
-            let result = JSON.stringify(value, (k, v) => {
-                if (typeof v === 'undefined') {
-                    return JSON_TOKEN_UNDEFINED;
-                }
-                return replacer ? replacer(k, v) : v;
-            });
-            Date.prototype.toJSON = previousDateToJSON;
-            return result;
-        }
-        catch (err) {
-            Date.prototype.toJSON = previousDateToJSON;
-            throw err;
-        }
+        const toJSONReplacer = tojson_1.ToJSONReplacer.Get();
+        return toJSONReplacer.stringify(value, replacer, space);
     }
     JSONParser.stringify = stringify;
     function parse(text, reviver) {
-        return JSON.parse(text, (k, v) => {
-            if (v) {
-                if (v === JSON_TOKEN_UNDEFINED) {
-                    return undefined;
-                }
-                if (v.data && (v.type === 'Buffer')) {
-                    return buffer_1.Buffer.from(v.data);
-                }
-                if (v.data && (v.type === 'Date')) {
-                    return new Date(v.data);
-                }
-            }
-            return reviver ? reviver(k, v) : v;
-        });
+        const toJSONReviver = tojson_1.ToJSONReviver.Get();
+        return toJSONReviver.parse(text, reviver);
     }
     JSONParser.parse = parse;
 })(JSONParser = exports.JSONParser || (exports.JSONParser = {}));
+var JSONParserV2;
+(function (JSONParserV2) {
+    function stringify(value, replacer, space) {
+        const toJSONReplacer = tojson_1.ToJSONReplacer.GetV2();
+        return toJSONReplacer.stringify(value, replacer, space);
+    }
+    JSONParserV2.stringify = stringify;
+    function parse(text, reviver) {
+        const toJSONReviver = tojson_1.ToJSONReviver.GetV2();
+        return toJSONReviver.parse(text, reviver);
+    }
+    JSONParserV2.parse = parse;
+})(JSONParserV2 = exports.JSONParserV2 || (exports.JSONParserV2 = {}));
 
-},{"buffer":23}],29:[function(require,module,exports){
+},{"./tojson":29}],29:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var ToJSONConstants;
+(function (ToJSONConstants) {
+    ToJSONConstants.JSON_TOKEN_UNDEFINED = '_/undefined/_';
+})(ToJSONConstants = exports.ToJSONConstants || (exports.ToJSONConstants = {}));
+var ToJSONReplacer;
+(function (ToJSONReplacer) {
+})(ToJSONReplacer = exports.ToJSONReplacer || (exports.ToJSONReplacer = {}));
+var ToJSONReviver;
+(function (ToJSONReviver) {
+})(ToJSONReviver = exports.ToJSONReviver || (exports.ToJSONReviver = {}));
+
+},{}],30:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -5335,7 +5333,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const buffer_1 = require("buffer");
@@ -5345,11 +5343,8 @@ class BufferListReader extends reader_1.ReaderBase {
         super();
         this._contexts = [];
         this._buffers = buffers || [];
-        this._offset = offset || 0;
-        this._length = 0;
-        for (let i = 0, l = this._buffers.length; i < l; ++i) {
-            this._length += this._buffers[i].length;
-        }
+        this._length = this._buffers.reduce((sum, buffer) => sum + buffer.length, 0);
+        this._offset = 0;
         this._curOffset = 0;
         this._curBufferIndex = 0;
         this.seek(offset || 0);
@@ -5490,7 +5485,7 @@ class BufferListReader extends reader_1.ReaderBase {
 }
 exports.BufferListReader = BufferListReader;
 
-},{"./reader":37,"buffer":23}],31:[function(require,module,exports){
+},{"./reader":38,"buffer":23}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const buffer_1 = require("buffer");
@@ -5574,7 +5569,7 @@ class BufferListWriter extends BufferListWriterBase {
 }
 exports.BufferListWriter = BufferListWriter;
 
-},{"./writer":38,"buffer":23}],32:[function(require,module,exports){
+},{"./writer":39,"buffer":23}],33:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5652,7 +5647,7 @@ class BufferReader extends reader_1.ReaderBase {
 exports.BufferReader = BufferReader;
 
 }).call(this,require("buffer").Buffer)
-},{"./reader":37,"buffer":23}],33:[function(require,module,exports){
+},{"./reader":38,"buffer":23}],34:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5717,7 +5712,7 @@ class BufferWriter extends writer_1.WriterBase {
 exports.BufferWriter = BufferWriter;
 
 }).call(this,require("buffer").Buffer)
-},{"./writer":38,"buffer":23}],34:[function(require,module,exports){
+},{"./writer":39,"buffer":23}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
@@ -5752,7 +5747,7 @@ class IpcPacketParser {
 }
 exports.IpcPacketParser = IpcPacketParser;
 
-},{"./bufferListWriter":31,"./bufferReader":32,"./ipcPacketBufferWrap":36}],35:[function(require,module,exports){
+},{"./bufferListWriter":32,"./bufferReader":33,"./ipcPacketBufferWrap":37}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
@@ -5869,7 +5864,7 @@ class IpcPacketBuffer extends ipcPacketBufferWrap_1.IpcPacketBufferWrap {
 }
 exports.IpcPacketBuffer = IpcPacketBuffer;
 
-},{"./bufferListWriter":31,"./bufferReader":32,"./ipcPacketBufferWrap":36}],36:[function(require,module,exports){
+},{"./bufferListWriter":32,"./bufferReader":33,"./ipcPacketBufferWrap":37}],37:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -6359,11 +6354,7 @@ class IpcPacketBufferWrap {
             headerArg.byPass(bufferReader);
             --index;
         }
-        let arg;
-        if (index === 0) {
-            arg = headerArg.read(bufferReader);
-        }
-        return arg;
+        return headerArg.read(bufferReader);
     }
     readArrayAt(bufferReader, index) {
         this._readHeader(bufferReader);
@@ -6420,7 +6411,7 @@ class IpcPacketBufferWrap {
 exports.IpcPacketBufferWrap = IpcPacketBufferWrap;
 
 }).call(this,require("buffer").Buffer)
-},{"./bufferListWriter":31,"./bufferWriter":33,"buffer":23,"json-helpers":27}],37:[function(require,module,exports){
+},{"./bufferListWriter":32,"./bufferWriter":34,"buffer":23,"json-helpers":27}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Reader;
@@ -6459,7 +6450,7 @@ class ReaderBase {
 }
 exports.ReaderBase = ReaderBase;
 
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class WriterBase {
@@ -6475,7 +6466,7 @@ class WriterBase {
 }
 exports.WriterBase = WriterBase;
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ipcPacketBuffer_1 = require("./code/ipcPacketBuffer");
@@ -6498,7 +6489,7 @@ var ipcPacket_1 = require("./code/ipcPacket");
 exports.IpcPacketSerializer = ipcPacket_1.IpcPacketSerializer;
 exports.IpcPacketParser = ipcPacket_1.IpcPacketParser;
 
-},{"./code/bufferListReader":30,"./code/bufferListWriter":31,"./code/bufferReader":32,"./code/bufferWriter":33,"./code/ipcPacket":34,"./code/ipcPacketBuffer":35,"./code/ipcPacketBufferWrap":36,"./code/reader":37}],40:[function(require,module,exports){
+},{"./code/bufferListReader":31,"./code/bufferListWriter":32,"./code/bufferReader":33,"./code/bufferWriter":34,"./code/ipcPacket":35,"./code/ipcPacketBuffer":36,"./code/ipcPacketBufferWrap":37,"./code/reader":38}],41:[function(require,module,exports){
 var v1 = require('./v1');
 var v4 = require('./v4');
 
@@ -6508,7 +6499,7 @@ uuid.v4 = v4;
 
 module.exports = uuid;
 
-},{"./v1":43,"./v4":44}],41:[function(require,module,exports){
+},{"./v1":44,"./v4":45}],42:[function(require,module,exports){
 /**
  * Convert array of 16 byte values to UUID string format of the form:
  * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
@@ -6534,7 +6525,7 @@ function bytesToUuid(buf, offset) {
 
 module.exports = bytesToUuid;
 
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 // Unique ID creation requires a high quality random # generator.  In the
 // browser this is a little complicated due to unknown quality of Math.random()
 // and inconsistent support for the `crypto` API.  We do the best we can via
@@ -6570,7 +6561,7 @@ if (getRandomValues) {
   };
 }
 
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -6681,7 +6672,7 @@ function v1(options, buf, offset) {
 
 module.exports = v1;
 
-},{"./lib/bytesToUuid":41,"./lib/rng":42}],44:[function(require,module,exports){
+},{"./lib/bytesToUuid":42,"./lib/rng":43}],45:[function(require,module,exports){
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -6712,7 +6703,7 @@ function v4(options, buf, offset) {
 
 module.exports = v4;
 
-},{"./lib/bytesToUuid":41,"./lib/rng":42}],45:[function(require,module,exports){
+},{"./lib/bytesToUuid":42,"./lib/rng":43}],46:[function(require,module,exports){
 const uuid = require('uuid');
 
 let window_id = uuid.v1();
@@ -6796,4 +6787,4 @@ window.addEventListener('load', () => {
 
 })
 
-},{"../..":17,"../../lib/IpcBus/CrossFrameEventEmitter2":1,"uuid":40}]},{},[45]);
+},{"../..":17,"../../lib/IpcBus/CrossFrameEventEmitter2":1,"uuid":41}]},{},[46]);
