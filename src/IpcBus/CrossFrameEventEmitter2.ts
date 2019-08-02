@@ -103,6 +103,7 @@ export class CrossFrameEventDispatcher {
     protected _target: Window;
     protected _uuid: string;
     protected _ports: Map<string, MessagePort>;
+    private _started: boolean;
 
     constructor(target: Window) {
         this._target = target;
@@ -113,19 +114,36 @@ export class CrossFrameEventDispatcher {
         this._lifecycleHandler = this._lifecycleHandler.bind(this);
         this._messageHandler = this._messageHandler.bind(this);
 
-        this._listen();
+        this._started = false;
+        this.start();
     }
 
     // Listens in a cross-browser fashion. When postmessage isn't available
     // we'll either have to change listen or fake message events somehow.
-    protected _listen() {
-        trace && console.log(`CFEDisp ${this._uuid} - listen`);
-        let target = this._target as any;
-        if (target.addEventListener) {
-            target.addEventListener('message', this._lifecycleHandler);
+    start() {
+        if (this._started === false) {
+            this._started = true;
+            trace && console.log(`CFEDisp ${this._uuid} - listen`);
+            const target = this._target as any;
+            if (target.addEventListener) {
+                target.addEventListener('message', this._lifecycleHandler);
+            }
+            else if (target.attachEvent) {
+                target.attachEvent('onmessage', this._lifecycleHandler);
+            }
         }
-        else if (target.attachEvent) {
-            target.attachEvent('onmessage', this._lifecycleHandler);
+    }
+
+    stop() {
+        if (this._started) {
+            this._started = false;
+            const target = this._target as any;
+            if (target.addEventListener) {
+                target.removeEventListener('message', this._lifecycleHandler);
+            }
+            else if (target.attachEvent) {
+                target.detachEvent('onmessage', this._lifecycleHandler);
+            }
         }
     }
 

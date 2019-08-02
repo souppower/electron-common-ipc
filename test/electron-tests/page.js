@@ -20,7 +20,7 @@ function GetQueryStringParams(sParam) {
 window.addEventListener('load', () => {
     const electronCommonIpcModule = require('../..');
     {
-        let result = electronCommonIpcModule.PreloadElectronCommonIpc();
+        let result = electronCommonIpcModule.PreloadElectronCommonIpc(true);
         console.log(`PreloadElectronCommonIpc=${result}`);
     }
     {

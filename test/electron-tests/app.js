@@ -44,20 +44,20 @@ function createWindows() {
     // createWindow('page.html', 'nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true })
     // createWindow('page.html', 'sandbox: true', { nodeIntegration: false, sandbox: true })
 
-    // createWindow('page.html', '{}', { preload: path.join(__dirname, 'page-preload.bundle.js') })
-    // createWindow('page.html', 'nodeIntegration: false', { nodeIntegration: false, preload: path.join(__dirname, 'page-preload.bundle.js') })
-    // createWindow('page.html', 'nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
-    // createWindow('page.html', 'sandbox: true', { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
+    // createWindow('page.html', 'preload', { preload: path.join(__dirname, 'page-preload.bundle.js') })
+    // createWindow('page.html', 'preload nodeIntegration: false', { nodeIntegration: false, preload: path.join(__dirname, 'page-preload.bundle.js') })
+    // createWindow('page.html', 'preload nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
+    // createWindow('page.html', 'preload sandbox: true', { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
 
     // createWindow('page-parent.html', '{}', {})
     // createWindow('page-parent.html', 'nodeIntegration: false', { nodeIntegration: false })
     // createWindow('page-parent.html', 'nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true })
     // createWindow('page-parent.html', 'sandbox: true', { nodeIntegration: false, sandbox: true })
 
-    createWindow('page-parent.html', '{}', { preload: path.join(__dirname, 'page-preload.bundle.js') })
-    createWindow('page-parent.html', 'nodeIntegration: false', { nodeIntegration: false, preload: path.join(__dirname, 'page-preload.bundle.js') })
-    createWindow('page-parent.html', 'nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
-    createWindow('page-parent.html', 'sandbox: true', { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
+    createWindow('page-parent.html', 'preload', { preload: path.join(__dirname, 'page-preload.bundle.js') })
+    createWindow('page-parent.html', 'preload nodeIntegration: false', { nodeIntegration: false, preload: path.join(__dirname, 'page-preload.bundle.js') })
+    createWindow('page-parent.html', 'preload nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
+    createWindow('page-parent.html', 'preload sandbox: true', { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
 }
 
 // This method will be called when Electron has finished

@@ -77,16 +77,32 @@ class CrossFrameEventDispatcher {
         this._ports = new Map();
         this._lifecycleHandler = this._lifecycleHandler.bind(this);
         this._messageHandler = this._messageHandler.bind(this);
-        this._listen();
+        this._started = false;
+        this.start();
     }
-    _listen() {
-        trace && console.log(`CFEDisp ${this._uuid} - listen`);
-        let target = this._target;
-        if (target.addEventListener) {
-            target.addEventListener('message', this._lifecycleHandler);
+    start() {
+        if (this._started === false) {
+            this._started = true;
+            trace && console.log(`CFEDisp ${this._uuid} - listen`);
+            const target = this._target;
+            if (target.addEventListener) {
+                target.addEventListener('message', this._lifecycleHandler);
+            }
+            else if (target.attachEvent) {
+                target.attachEvent('onmessage', this._lifecycleHandler);
+            }
         }
-        else if (target.attachEvent) {
-            target.attachEvent('onmessage', this._lifecycleHandler);
+    }
+    stop() {
+        if (this._started) {
+            this._started = false;
+            const target = this._target;
+            if (target.addEventListener) {
+                target.removeEventListener('message', this._lifecycleHandler);
+            }
+            else if (target.attachEvent) {
+                target.detachEvent('onmessage', this._lifecycleHandler);
+            }
         }
     }
     _lifecycleHandler(event) {
@@ -346,28 +362,41 @@ function PreloadElectronCommonIpcAutomatic() {
     return _PreloadElectronCommonIpc('Implicit');
 }
 exports.PreloadElectronCommonIpcAutomatic = PreloadElectronCommonIpcAutomatic;
-function PreloadElectronCommonIpc() {
-    return _PreloadElectronCommonIpc('Explicit');
+function PreloadElectronCommonIpc(iframeSupport = false) {
+    return _PreloadElectronCommonIpc('Explicit', iframeSupport);
 }
 exports.PreloadElectronCommonIpc = PreloadElectronCommonIpc;
-function _PreloadElectronCommonIpc(context) {
+function _PreloadElectronCommonIpc(context, iframeSupport = false) {
     const windowLocal = window;
     try {
-        if (windowLocal.ElectronCommonIpc == null) {
-            if (windowLocal.self === windowLocal.top) {
-                const electron = require('electron');
-                if (electron && electron.ipcRenderer) {
-                    windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
-                    trace && console.log(`${context} - ElectronCommonIpc`);
+        if (windowLocal.self === windowLocal.top) {
+            const electron = require('electron');
+            if (electron && electron.ipcRenderer) {
+                windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
+                trace && console.log(`${context} - ElectronCommonIpc`);
+                if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
                     windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
                         trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
-                        let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-                        let ipcBusClient = IpcBusClientWindow_1.Create('renderer', localOptions || {}, electron.ipcRenderer);
+                        const localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
+                        const ipcBusClient = IpcBusClientWindow_1.Create('renderer', localOptions || {}, electron.ipcRenderer);
                         return ipcBusClient;
                     };
-                    windowLocal.ElectronCommonIpc.FrameBridge = new CrossFrameEventEmitter2_1.IpcBusFrameBridge(electron.ipcRenderer, window);
-                    return true;
                 }
+                const frameBridge = windowLocal.ElectronCommonIpc.FrameBridge;
+                if (iframeSupport) {
+                    if (frameBridge == null) {
+                        windowLocal.ElectronCommonIpc.FrameBridge = new CrossFrameEventEmitter2_1.IpcBusFrameBridge(electron.ipcRenderer, window);
+                    }
+                    else {
+                        frameBridge.start();
+                    }
+                }
+                else {
+                    if (frameBridge) {
+                        frameBridge.stop();
+                    }
+                }
+                return true;
             }
         }
         else {
@@ -378,23 +407,23 @@ function _PreloadElectronCommonIpc(context) {
     catch (_) {
     }
     try {
-        if (windowLocal.ElectronCommonIpc == null) {
-            if (windowLocal.self !== windowLocal.top) {
-                windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
-                let crossFrameEE = new CrossFrameEventEmitter2_1.CrossFrameEventEmitter(window.parent);
+        if (windowLocal.self !== windowLocal.top) {
+            windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
+            if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
+                const crossFrameEE = new CrossFrameEventEmitter2_1.CrossFrameEventEmitter(window.parent);
                 trace && console.log(`${context} - Frame ElectronCommonIpc`);
                 windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
                     trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
-                    let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-                    let ipcBusClient = IpcBusClientWindow_1.Create('renderer-frame', localOptions || {}, crossFrameEE);
+                    const localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
+                    const ipcBusClient = IpcBusClientWindow_1.Create('renderer-frame', localOptions || {}, crossFrameEE);
                     return ipcBusClient;
                 };
             }
-            else {
-                trace && console.log(`${context} - Frame ElectronCommonIpc`);
-            }
-            return true;
         }
+        else {
+            trace && console.log(`${context} - Frame ElectronCommonIpc`);
+        }
+        return true;
     }
     catch (_) {
     }

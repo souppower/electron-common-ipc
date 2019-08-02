@@ -12,6 +12,7 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcWindow {
     private _target: Window;
     private _origin: string;
     private _uuid: string;
+    private _started: boolean;
 
     constructor(target: Window, origin?: string) {
         super();
@@ -23,7 +24,8 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcWindow {
         // Callback
         this._messageHandler = this._messageHandler.bind(this);
 
-        this._listen();
+        this._started = false;
+        this.start();
     }
 
     protected _postMessage(packet: any) {
@@ -32,13 +34,29 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcWindow {
 
     // Listens in a cross-browser fashion. When postmessage isn't available
     // we'll either have to change listen or fake message events somehow.
-    protected _listen() {
-        let target = this._target as any;
-        if (target.addEventListener) {
-            target.addEventListener('message', this._messageHandler);
+    start() {
+        if (this._started === false) {
+            this._started = true;
+            const target = this._target as any;
+            if (target.addEventListener) {
+                target.addEventListener('message', this._messageHandler);
+            }
+            else if (target.attachEvent) {
+                target.attachEvent('onmessage', this._messageHandler);
+            }
         }
-        else if (target.attachEvent) {
-            target.attachEvent('onmessage', this._messageHandler);
+    }
+
+    stop() {
+        if (this._started) {
+            this._started = false;
+            const target = this._target as any;
+            if (target.addEventListener) {
+                target.removeEventListener('message', this._messageHandler);
+            }
+            else if (target.attachEvent) {
+                target.detachEvent('onmessage', this._messageHandler);
+            }
         }
     }
 
