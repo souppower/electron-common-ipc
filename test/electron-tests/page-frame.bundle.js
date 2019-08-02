@@ -182,7 +182,7 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 }
 exports.IpcBusFrameBridge = IpcBusFrameBridge;
 
-},{"./CrossFrameMessage":2,"./IpcBusTransportWindow":10,"events":24,"uuid":49}],2:[function(require,module,exports){
+},{"./CrossFrameMessage":2,"./IpcBusTransportWindow":10,"events":24,"uuid":54}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const json_helpers_1 = require("json-helpers");
@@ -215,7 +215,7 @@ var CrossFrameMessage;
     CrossFrameMessage.Encode = Encode;
 })(CrossFrameMessage = exports.CrossFrameMessage || (exports.CrossFrameMessage = {}));
 
-},{"json-helpers":27}],3:[function(require,module,exports){
+},{"json-helpers":29}],3:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusClient_1 = require("./IpcBusClient");
@@ -373,8 +373,8 @@ function _PreloadElectronCommonIpc(context, iframeSupport = false) {
             const electron = require('electron');
             if (electron && electron.ipcRenderer) {
                 windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
-                trace && console.log(`${context} - ElectronCommonIpc`);
                 if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
+                    trace && console.log(`${context} - ElectronCommonIpc`);
                     windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
                         trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
                         const localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
@@ -390,18 +390,15 @@ function _PreloadElectronCommonIpc(context, iframeSupport = false) {
                     else {
                         frameBridge.start();
                     }
+                    trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - start`);
                 }
                 else {
                     if (frameBridge) {
                         frameBridge.stop();
                     }
+                    trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - stop`);
                 }
-                return true;
             }
-        }
-        else {
-            trace && console.log(`${context} - ElectronCommonIpc`);
-            return true;
         }
     }
     catch (_) {
@@ -410,8 +407,8 @@ function _PreloadElectronCommonIpc(context, iframeSupport = false) {
         if (windowLocal.self !== windowLocal.top) {
             windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
             if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
-                const crossFrameEE = new CrossFrameEventEmitter2_1.CrossFrameEventEmitter(window.parent);
                 trace && console.log(`${context} - Frame ElectronCommonIpc`);
+                const crossFrameEE = new CrossFrameEventEmitter2_1.CrossFrameEventEmitter(window.parent);
                 windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
                     trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
                     const localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
@@ -420,10 +417,6 @@ function _PreloadElectronCommonIpc(context, iframeSupport = false) {
                 };
             }
         }
-        else {
-            trace && console.log(`${context} - Frame ElectronCommonIpc`);
-        }
-        return true;
     }
     catch (_) {
     }
@@ -564,7 +557,7 @@ class IpcBusTransportImpl {
 }
 exports.IpcBusTransportImpl = IpcBusTransportImpl;
 
-},{"./IpcBusClient":4,"./IpcBusCommand":7,"./IpcBusUtils":11,"uuid":49}],10:[function(require,module,exports){
+},{"./IpcBusClient":4,"./IpcBusCommand":7,"./IpcBusUtils":11,"uuid":54}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert = require("assert");
@@ -679,7 +672,7 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
 }
 exports.IpcBusTransportWindow = IpcBusTransportWindow;
 
-},{"./IpcBusCommand":7,"./IpcBusTransportImpl":9,"./IpcBusUtils":11,"assert":18,"socket-serializer":40}],11:[function(require,module,exports){
+},{"./IpcBusCommand":7,"./IpcBusTransportImpl":9,"./IpcBusUtils":11,"assert":18,"socket-serializer":45}],11:[function(require,module,exports){
 (function (Buffer,process){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -998,7 +991,7 @@ exports.ConnectionData = ConnectionData;
 ;
 
 }).call(this,{"isBuffer":require("../../node_modules/is-buffer/index.js")},require('_process'))
-},{"../../node_modules/is-buffer/index.js":26,"_process":30,"events":24}],12:[function(require,module,exports){
+},{"../../node_modules/is-buffer/index.js":26,"_process":35,"events":24}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusService_1 = require("./IpcBusService");
@@ -2557,7 +2550,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":20,"_process":30,"inherits":19}],22:[function(require,module,exports){
+},{"./support/isBuffer":20,"_process":35,"inherits":19}],22:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -5124,14 +5117,83 @@ function isSlowBuffer (obj) {
 }
 
 },{}],27:[function(require,module,exports){
+(function (Buffer){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const json_formatter_1 = require("./json-formatter");
+exports.dateJSONSupport = new json_formatter_1.JSONFormatter('Date', Date, (t) => t.valueOf(), (data) => new Date(data));
+exports.errorJSONSupport = new json_formatter_1.JSONFormatter('Error', Error, (t) => t.message, (data) => new Error(data));
+exports.typeErrorJSONSupport = new json_formatter_1.JSONFormatter('TypeError', TypeError, (t) => t.message, (data) => new TypeError(data));
+exports.bufferJSONSupport = new json_formatter_1.JSONFormatter('Buffer', Buffer, null, (data) => Buffer.from(data));
+exports.bufferJSONSupportBinary = new json_formatter_1.JSONFormatter('Buffer', Buffer, (t) => t.toString('binary'), (data) => Buffer.from(data, 'binary'));
+
+}).call(this,require("buffer").Buffer)
+},{"./json-formatter":28,"buffer":23}],28:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+class JSONFormatter {
+    constructor(objectName, objectConstructor, serialize, unserialize) {
+        this.objectName = objectName;
+        this.objectConstructor = objectConstructor;
+        this.previousToJSON = Object.getOwnPropertyDescriptor(objectConstructor.prototype, 'toJSON');
+        this.unserialize = unserialize;
+        this.serialize = serialize;
+    }
+    create(data) {
+        return this.unserialize(data);
+    }
+    install() {
+        if (this.serialize) {
+            const self = this;
+            try {
+                Object.defineProperty(this.objectConstructor.prototype, 'toJSON', {
+                    value: function () {
+                        return { type: self.objectName, data: self.serialize(this) };
+                    },
+                    configurable: true
+                });
+            }
+            catch (err) {
+            }
+        }
+    }
+    uninstall() {
+        if (this.serialize) {
+            try {
+                if (this.previousToJSON) {
+                    const self = this;
+                    Object.defineProperty(this.objectConstructor.prototype, 'toJSON', self.previousToJSON);
+                }
+                else {
+                    Object.defineProperty(this.objectConstructor.prototype, 'toJSON', {
+                        value: function () {
+                            return this.toString();
+                        },
+                        configurable: true,
+                        enumerable: false
+                    });
+                }
+            }
+            catch (err) {
+            }
+        }
+    }
+}
+exports.JSONFormatter = JSONFormatter;
+
+},{}],29:[function(require,module,exports){
 "use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
 Object.defineProperty(exports, "__esModule", { value: true });
 __export(require("./json-parser"));
+const v1 = require("./tojson-v1");
+v1;
+const v2 = require("./tojson-v2");
+v2;
 
-},{"./json-parser":28}],28:[function(require,module,exports){
+},{"./json-parser":30,"./tojson-v1":32,"./tojson-v2":33}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const tojson_1 = require("./tojson");
@@ -5162,7 +5224,131 @@ var JSONParserV2;
     JSONParserV2.parse = parse;
 })(JSONParserV2 = exports.JSONParserV2 || (exports.JSONParserV2 = {}));
 
-},{"./tojson":29}],29:[function(require,module,exports){
+},{"./tojson":34}],31:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const tojson_1 = require("./tojson");
+class ToJSONReplacerImpl {
+    constructor(jsonFormattersMap) {
+        this._jsonFormattersMap = jsonFormattersMap;
+    }
+    install() {
+        this._jsonFormattersMap.forEach(item => {
+            item.install();
+        });
+    }
+    uninstall() {
+        this._jsonFormattersMap.forEach(item => {
+            item.uninstall();
+        });
+    }
+    replacer(key, value) {
+        if (typeof key === 'undefined') {
+            return tojson_1.ToJSONConstants.JSON_TOKEN_UNDEFINED;
+        }
+        return value;
+    }
+    replacerChain(replacer, key, value) {
+        if (typeof key === 'undefined') {
+            return tojson_1.ToJSONConstants.JSON_TOKEN_UNDEFINED;
+        }
+        return replacer(key, value);
+    }
+    stringify(value, replacer, space) {
+        this.install();
+        try {
+            const replacerCb = replacer ? this.replacerChain.bind(this, replacer) : this.replacer.bind(this);
+            const result = JSON.stringify(value, replacerCb, space);
+            this.uninstall();
+            return result;
+        }
+        catch (err) {
+            this.uninstall();
+            throw err;
+        }
+    }
+}
+exports.ToJSONReplacerImpl = ToJSONReplacerImpl;
+class ToJSONReviverImpl {
+    constructor(jsonFormattersMap) {
+        this._jsonFormattersMap = jsonFormattersMap;
+    }
+    reviver(key, value) {
+        if (value) {
+            if (value === tojson_1.ToJSONConstants.JSON_TOKEN_UNDEFINED) {
+                return undefined;
+            }
+            if ((typeof value.type === 'string') && value.hasOwnProperty('data')) {
+                const format = this._jsonFormattersMap.get(value.type);
+                if (format) {
+                    return format.create(value.data);
+                }
+            }
+        }
+        return value;
+    }
+    reviverChain(reviver, key, value) {
+        if (value) {
+            if (value === tojson_1.ToJSONConstants.JSON_TOKEN_UNDEFINED) {
+                return undefined;
+            }
+            if ((typeof value.type === 'string') && value.hasOwnProperty('data')) {
+                const format = this._jsonFormattersMap.get(value.type);
+                if (format) {
+                    return format.create(value.data);
+                }
+            }
+        }
+        return reviver(key, value);
+    }
+    parse(text, reviver) {
+        const reviverCb = reviver ? this.reviverChain.bind(this, reviver) : this.reviver.bind(this);
+        return JSON.parse(text, reviverCb);
+    }
+}
+exports.ToJSONReviverImpl = ToJSONReviverImpl;
+
+},{"./tojson":34}],32:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const tojson_1 = require("./tojson");
+const tojson_impl_1 = require("./tojson-impl");
+const json_formatter_default_1 = require("./json-formatter-default");
+const jsonFormattersMap = new Map();
+jsonFormattersMap.set(json_formatter_default_1.dateJSONSupport.objectName, json_formatter_default_1.dateJSONSupport);
+jsonFormattersMap.set(json_formatter_default_1.errorJSONSupport.objectName, json_formatter_default_1.errorJSONSupport);
+jsonFormattersMap.set(json_formatter_default_1.typeErrorJSONSupport.objectName, json_formatter_default_1.typeErrorJSONSupport);
+jsonFormattersMap.set(json_formatter_default_1.bufferJSONSupport.objectName, json_formatter_default_1.bufferJSONSupport);
+const jsonReplacer = new tojson_impl_1.ToJSONReplacerImpl(jsonFormattersMap);
+tojson_1.ToJSONReplacer.Get = tojson_1.ToJSONReplacer.GetV1 = () => {
+    return jsonReplacer;
+};
+const jsonReviver = new tojson_impl_1.ToJSONReviverImpl(jsonFormattersMap);
+tojson_1.ToJSONReviver.Get = tojson_1.ToJSONReviver.GetV1 = () => {
+    return jsonReviver;
+};
+
+},{"./json-formatter-default":27,"./tojson":34,"./tojson-impl":31}],33:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const tojson_1 = require("./tojson");
+const tojson_impl_1 = require("./tojson-impl");
+const json_formatter_default_1 = require("./json-formatter-default");
+const jsonFormattersMap = new Map();
+jsonFormattersMap.set(json_formatter_default_1.dateJSONSupport.objectName, json_formatter_default_1.dateJSONSupport);
+jsonFormattersMap.set(json_formatter_default_1.errorJSONSupport.objectName, json_formatter_default_1.errorJSONSupport);
+jsonFormattersMap.set(json_formatter_default_1.typeErrorJSONSupport.objectName, json_formatter_default_1.typeErrorJSONSupport);
+jsonFormattersMap.set(json_formatter_default_1.bufferJSONSupportBinary.objectName, json_formatter_default_1.bufferJSONSupportBinary);
+const jsonReplacer = new tojson_impl_1.ToJSONReplacerImpl(jsonFormattersMap);
+tojson_1.ToJSONReplacer.GetV2 = () => {
+    return jsonReplacer;
+};
+const jsonReviver = new tojson_impl_1.ToJSONReviverImpl(jsonFormattersMap);
+tojson_1.ToJSONReviver.GetV2 = () => {
+    return jsonReviver;
+};
+
+},{"./json-formatter-default":27,"./tojson":34,"./tojson-impl":31}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ToJSONConstants;
@@ -5176,7 +5362,7 @@ var ToJSONReviver;
 (function (ToJSONReviver) {
 })(ToJSONReviver = exports.ToJSONReviver || (exports.ToJSONReviver = {}));
 
-},{}],30:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -5362,7 +5548,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],31:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const buffer_1 = require("buffer");
@@ -5514,7 +5700,7 @@ class BufferListReader extends reader_1.ReaderBase {
 }
 exports.BufferListReader = BufferListReader;
 
-},{"./reader":38,"buffer":23}],32:[function(require,module,exports){
+},{"./reader":43,"buffer":23}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const buffer_1 = require("buffer");
@@ -5598,7 +5784,7 @@ class BufferListWriter extends BufferListWriterBase {
 }
 exports.BufferListWriter = BufferListWriter;
 
-},{"./writer":39,"buffer":23}],33:[function(require,module,exports){
+},{"./writer":44,"buffer":23}],38:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5676,7 +5862,7 @@ class BufferReader extends reader_1.ReaderBase {
 exports.BufferReader = BufferReader;
 
 }).call(this,require("buffer").Buffer)
-},{"./reader":38,"buffer":23}],34:[function(require,module,exports){
+},{"./reader":43,"buffer":23}],39:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5741,7 +5927,7 @@ class BufferWriter extends writer_1.WriterBase {
 exports.BufferWriter = BufferWriter;
 
 }).call(this,require("buffer").Buffer)
-},{"./writer":39,"buffer":23}],35:[function(require,module,exports){
+},{"./writer":44,"buffer":23}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
@@ -5776,7 +5962,7 @@ class IpcPacketParser {
 }
 exports.IpcPacketParser = IpcPacketParser;
 
-},{"./bufferListWriter":32,"./bufferReader":33,"./ipcPacketBufferWrap":37}],36:[function(require,module,exports){
+},{"./bufferListWriter":37,"./bufferReader":38,"./ipcPacketBufferWrap":42}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
@@ -5893,7 +6079,7 @@ class IpcPacketBuffer extends ipcPacketBufferWrap_1.IpcPacketBufferWrap {
 }
 exports.IpcPacketBuffer = IpcPacketBuffer;
 
-},{"./bufferListWriter":32,"./bufferReader":33,"./ipcPacketBufferWrap":37}],37:[function(require,module,exports){
+},{"./bufferListWriter":37,"./bufferReader":38,"./ipcPacketBufferWrap":42}],42:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -6440,7 +6626,7 @@ class IpcPacketBufferWrap {
 exports.IpcPacketBufferWrap = IpcPacketBufferWrap;
 
 }).call(this,require("buffer").Buffer)
-},{"./bufferListWriter":32,"./bufferWriter":34,"buffer":23,"json-helpers":43}],38:[function(require,module,exports){
+},{"./bufferListWriter":37,"./bufferWriter":39,"buffer":23,"json-helpers":48}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Reader;
@@ -6479,7 +6665,7 @@ class ReaderBase {
 }
 exports.ReaderBase = ReaderBase;
 
-},{}],39:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class WriterBase {
@@ -6495,7 +6681,7 @@ class WriterBase {
 }
 exports.WriterBase = WriterBase;
 
-},{}],40:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ipcPacketBuffer_1 = require("./code/ipcPacketBuffer");
@@ -6518,212 +6704,23 @@ var ipcPacket_1 = require("./code/ipcPacket");
 exports.IpcPacketSerializer = ipcPacket_1.IpcPacketSerializer;
 exports.IpcPacketParser = ipcPacket_1.IpcPacketParser;
 
-},{"./code/bufferListReader":31,"./code/bufferListWriter":32,"./code/bufferReader":33,"./code/bufferWriter":34,"./code/ipcPacket":35,"./code/ipcPacketBuffer":36,"./code/ipcPacketBufferWrap":37,"./code/reader":38}],41:[function(require,module,exports){
-(function (Buffer){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const json_formatter_1 = require("./json-formatter");
-exports.dateJSONSupport = new json_formatter_1.JSONFormatter('Date', Date, (t) => t.valueOf(), (data) => new Date(data));
-exports.errorJSONSupport = new json_formatter_1.JSONFormatter('Error', Error, (t) => t.message, (data) => new Error(data));
-exports.typeErrorJSONSupport = new json_formatter_1.JSONFormatter('TypeError', TypeError, (t) => t.message, (data) => new TypeError(data));
-exports.bufferJSONSupport = new json_formatter_1.JSONFormatter('Buffer', Buffer, null, (data) => Buffer.from(data));
-exports.bufferJSONSupportBinary = new json_formatter_1.JSONFormatter('Buffer', Buffer, (t) => t.toString('binary'), (data) => Buffer.from(data, 'binary'));
-
-}).call(this,require("buffer").Buffer)
-},{"./json-formatter":42,"buffer":23}],42:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-class JSONFormatter {
-    constructor(objectName, objectConstructor, serialize, unserialize) {
-        this.objectName = objectName;
-        this.objectConstructor = objectConstructor;
-        this.previousToJSON = Object.getOwnPropertyDescriptor(objectConstructor.prototype, 'toJSON');
-        this.unserialize = unserialize;
-        this.serialize = serialize;
-    }
-    create(data) {
-        return this.unserialize(data);
-    }
-    install() {
-        if (this.serialize) {
-            const self = this;
-            try {
-                Object.defineProperty(this.objectConstructor.prototype, 'toJSON', {
-                    value: function () {
-                        return { type: self.objectName, data: self.serialize(this) };
-                    },
-                    configurable: true
-                });
-            }
-            catch (err) {
-            }
-        }
-    }
-    uninstall() {
-        if (this.serialize) {
-            try {
-                if (this.previousToJSON) {
-                    const self = this;
-                    Object.defineProperty(this.objectConstructor.prototype, 'toJSON', self.previousToJSON);
-                }
-                else {
-                    Object.defineProperty(this.objectConstructor.prototype, 'toJSON', {
-                        value: function () {
-                            return this.toString();
-                        },
-                        configurable: true,
-                        enumerable: false
-                    });
-                }
-            }
-            catch (err) {
-            }
-        }
-    }
-}
-exports.JSONFormatter = JSONFormatter;
-
-},{}],43:[function(require,module,exports){
-"use strict";
-function __export(m) {
-    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
-}
-Object.defineProperty(exports, "__esModule", { value: true });
-__export(require("./json-parser"));
-const v1 = require("./tojson-v1");
-v1;
-const v2 = require("./tojson-v2");
-v2;
-
-},{"./json-parser":44,"./tojson-v1":46,"./tojson-v2":47}],44:[function(require,module,exports){
+},{"./code/bufferListReader":36,"./code/bufferListWriter":37,"./code/bufferReader":38,"./code/bufferWriter":39,"./code/ipcPacket":40,"./code/ipcPacketBuffer":41,"./code/ipcPacketBufferWrap":42,"./code/reader":43}],46:[function(require,module,exports){
+arguments[4][27][0].apply(exports,arguments)
+},{"./json-formatter":47,"buffer":23,"dup":27}],47:[function(require,module,exports){
 arguments[4][28][0].apply(exports,arguments)
-},{"./tojson":48,"dup":28}],45:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const tojson_1 = require("./tojson");
-class ToJSONReplacerImpl {
-    constructor(jsonFormattersMap) {
-        this._jsonFormattersMap = jsonFormattersMap;
-    }
-    install() {
-        this._jsonFormattersMap.forEach(item => {
-            item.install();
-        });
-    }
-    uninstall() {
-        this._jsonFormattersMap.forEach(item => {
-            item.uninstall();
-        });
-    }
-    replacer(key, value) {
-        if (typeof key === 'undefined') {
-            return tojson_1.ToJSONConstants.JSON_TOKEN_UNDEFINED;
-        }
-        return value;
-    }
-    replacerChain(replacer, key, value) {
-        if (typeof key === 'undefined') {
-            return tojson_1.ToJSONConstants.JSON_TOKEN_UNDEFINED;
-        }
-        return replacer(key, value);
-    }
-    stringify(value, replacer, space) {
-        this.install();
-        try {
-            const replacerCb = replacer ? this.replacerChain.bind(this, replacer) : this.replacer.bind(this);
-            const result = JSON.stringify(value, replacerCb, space);
-            this.uninstall();
-            return result;
-        }
-        catch (err) {
-            this.uninstall();
-            throw err;
-        }
-    }
-}
-exports.ToJSONReplacerImpl = ToJSONReplacerImpl;
-class ToJSONReviverImpl {
-    constructor(jsonFormattersMap) {
-        this._jsonFormattersMap = jsonFormattersMap;
-    }
-    reviver(key, value) {
-        if (value) {
-            if (value === tojson_1.ToJSONConstants.JSON_TOKEN_UNDEFINED) {
-                return undefined;
-            }
-            if ((typeof value.type === 'string') && value.hasOwnProperty('data')) {
-                const format = this._jsonFormattersMap.get(value.type);
-                if (format) {
-                    return format.create(value.data);
-                }
-            }
-        }
-        return value;
-    }
-    reviverChain(reviver, key, value) {
-        if (value) {
-            if (value === tojson_1.ToJSONConstants.JSON_TOKEN_UNDEFINED) {
-                return undefined;
-            }
-            if ((typeof value.type === 'string') && value.hasOwnProperty('data')) {
-                const format = this._jsonFormattersMap.get(value.type);
-                if (format) {
-                    return format.create(value.data);
-                }
-            }
-        }
-        return reviver(key, value);
-    }
-    parse(text, reviver) {
-        const reviverCb = reviver ? this.reviverChain.bind(this, reviver) : this.reviver.bind(this);
-        return JSON.parse(text, reviverCb);
-    }
-}
-exports.ToJSONReviverImpl = ToJSONReviverImpl;
-
-},{"./tojson":48}],46:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const tojson_1 = require("./tojson");
-const tojson_impl_1 = require("./tojson-impl");
-const json_formatter_default_1 = require("./json-formatter-default");
-const jsonFormattersMap = new Map();
-jsonFormattersMap.set(json_formatter_default_1.dateJSONSupport.objectName, json_formatter_default_1.dateJSONSupport);
-jsonFormattersMap.set(json_formatter_default_1.errorJSONSupport.objectName, json_formatter_default_1.errorJSONSupport);
-jsonFormattersMap.set(json_formatter_default_1.typeErrorJSONSupport.objectName, json_formatter_default_1.typeErrorJSONSupport);
-jsonFormattersMap.set(json_formatter_default_1.bufferJSONSupport.objectName, json_formatter_default_1.bufferJSONSupport);
-const jsonReplacer = new tojson_impl_1.ToJSONReplacerImpl(jsonFormattersMap);
-tojson_1.ToJSONReplacer.Get = tojson_1.ToJSONReplacer.GetV1 = () => {
-    return jsonReplacer;
-};
-const jsonReviver = new tojson_impl_1.ToJSONReviverImpl(jsonFormattersMap);
-tojson_1.ToJSONReviver.Get = tojson_1.ToJSONReviver.GetV1 = () => {
-    return jsonReviver;
-};
-
-},{"./json-formatter-default":41,"./tojson":48,"./tojson-impl":45}],47:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const tojson_1 = require("./tojson");
-const tojson_impl_1 = require("./tojson-impl");
-const json_formatter_default_1 = require("./json-formatter-default");
-const jsonFormattersMap = new Map();
-jsonFormattersMap.set(json_formatter_default_1.dateJSONSupport.objectName, json_formatter_default_1.dateJSONSupport);
-jsonFormattersMap.set(json_formatter_default_1.errorJSONSupport.objectName, json_formatter_default_1.errorJSONSupport);
-jsonFormattersMap.set(json_formatter_default_1.typeErrorJSONSupport.objectName, json_formatter_default_1.typeErrorJSONSupport);
-jsonFormattersMap.set(json_formatter_default_1.bufferJSONSupportBinary.objectName, json_formatter_default_1.bufferJSONSupportBinary);
-const jsonReplacer = new tojson_impl_1.ToJSONReplacerImpl(jsonFormattersMap);
-tojson_1.ToJSONReplacer.GetV2 = () => {
-    return jsonReplacer;
-};
-const jsonReviver = new tojson_impl_1.ToJSONReviverImpl(jsonFormattersMap);
-tojson_1.ToJSONReviver.GetV2 = () => {
-    return jsonReviver;
-};
-
-},{"./json-formatter-default":41,"./tojson":48,"./tojson-impl":45}],48:[function(require,module,exports){
+},{"dup":28}],48:[function(require,module,exports){
 arguments[4][29][0].apply(exports,arguments)
-},{"dup":29}],49:[function(require,module,exports){
+},{"./json-parser":49,"./tojson-v1":51,"./tojson-v2":52,"dup":29}],49:[function(require,module,exports){
+arguments[4][30][0].apply(exports,arguments)
+},{"./tojson":53,"dup":30}],50:[function(require,module,exports){
+arguments[4][31][0].apply(exports,arguments)
+},{"./tojson":53,"dup":31}],51:[function(require,module,exports){
+arguments[4][32][0].apply(exports,arguments)
+},{"./json-formatter-default":46,"./tojson":53,"./tojson-impl":50,"dup":32}],52:[function(require,module,exports){
+arguments[4][33][0].apply(exports,arguments)
+},{"./json-formatter-default":46,"./tojson":53,"./tojson-impl":50,"dup":33}],53:[function(require,module,exports){
+arguments[4][34][0].apply(exports,arguments)
+},{"dup":34}],54:[function(require,module,exports){
 var v1 = require('./v1');
 var v4 = require('./v4');
 
@@ -6733,7 +6730,7 @@ uuid.v4 = v4;
 
 module.exports = uuid;
 
-},{"./v1":52,"./v4":53}],50:[function(require,module,exports){
+},{"./v1":57,"./v4":58}],55:[function(require,module,exports){
 /**
  * Convert array of 16 byte values to UUID string format of the form:
  * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
@@ -6759,7 +6756,7 @@ function bytesToUuid(buf, offset) {
 
 module.exports = bytesToUuid;
 
-},{}],51:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 // Unique ID creation requires a high quality random # generator.  In the
 // browser this is a little complicated due to unknown quality of Math.random()
 // and inconsistent support for the `crypto` API.  We do the best we can via
@@ -6795,7 +6792,7 @@ if (getRandomValues) {
   };
 }
 
-},{}],52:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -6906,7 +6903,7 @@ function v1(options, buf, offset) {
 
 module.exports = v1;
 
-},{"./lib/bytesToUuid":50,"./lib/rng":51}],53:[function(require,module,exports){
+},{"./lib/bytesToUuid":55,"./lib/rng":56}],58:[function(require,module,exports){
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -6937,7 +6934,7 @@ function v4(options, buf, offset) {
 
 module.exports = v4;
 
-},{"./lib/bytesToUuid":50,"./lib/rng":51}],54:[function(require,module,exports){
+},{"./lib/bytesToUuid":55,"./lib/rng":56}],59:[function(require,module,exports){
 const uuid = require('uuid');
 
 let window_id = uuid.v1();
@@ -7021,4 +7018,4 @@ window.addEventListener('load', () => {
 
 })
 
-},{"../..":17,"../../lib/IpcBus/CrossFrameEventEmitter2":1,"uuid":49}]},{},[54]);
+},{"../..":17,"../../lib/IpcBus/CrossFrameEventEmitter2":1,"uuid":54}]},{},[59]);
