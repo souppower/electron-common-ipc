@@ -73,16 +73,16 @@ exports.CrossFrameEventEmitter = CrossFrameEventEmitter;
 class CrossFrameEventDispatcher {
     constructor(target) {
         this._target = target;
-        this._uuid = uuid.v4();
-        this._ports = new Map();
         this._lifecycleHandler = this._lifecycleHandler.bind(this);
         this._messageHandler = this._messageHandler.bind(this);
         this._started = false;
     }
     start() {
         if (this._started === false) {
+            trace && console.log(`CFEDisp ${this._uuid} - start`);
             this._started = true;
-            trace && console.log(`CFEDisp ${this._uuid} - listen`);
+            this._uuid = uuid.v4();
+            this._ports = new Map();
             const target = this._target;
             if (target.addEventListener) {
                 target.addEventListener('message', this._lifecycleHandler);
@@ -94,6 +94,7 @@ class CrossFrameEventDispatcher {
     }
     stop() {
         if (this._started) {
+            trace && console.log(`CFEDisp ${this._uuid} - stop`);
             this._started = false;
             const target = this._target;
             if (target.addEventListener) {
@@ -102,6 +103,12 @@ class CrossFrameEventDispatcher {
             else if (target.attachEvent) {
                 target.detachEvent('onmessage', this._lifecycleHandler);
             }
+            this._ports.forEach((port) => {
+                port.removeEventListener('message', this._messageHandler);
+                port.close();
+            });
+            this._ports.clear();
+            this._ports = null;
         }
     }
     _lifecycleHandler(event) {

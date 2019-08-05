@@ -56,9 +56,13 @@ window.addEventListener('load', () => {
             ipcBus.on(`test-parent-${window_id}`, (...args) => {
                 console.log(`ipcBus - Parent receive message : ${args}`);
             });
+            ipcBus.on(`test-myself-${window_id}`, (...args) => {
+                console.log(`ipcBus - self receive message : ${args}`);
+            });
             setTimeout(() => {
                 console.log('ipcBus - Parent send message');
                 ipcBus.send(`test-frame-${window_id}`, 'hello frame');
+                ipcBus.send(`test-myself-${window_id}`, 'hello myself');
             }, 100);
         })
         .catch((err) => {

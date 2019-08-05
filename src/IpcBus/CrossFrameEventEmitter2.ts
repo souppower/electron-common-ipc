@@ -107,8 +107,6 @@ export class CrossFrameEventDispatcher {
 
     constructor(target: Window) {
         this._target = target;
-        this._uuid = uuid.v4();
-        this._ports = new Map<string, MessagePort>();
 
         // Callback
         this._lifecycleHandler = this._lifecycleHandler.bind(this);
@@ -121,8 +119,12 @@ export class CrossFrameEventDispatcher {
     // we'll either have to change listen or fake message events somehow.
     start() {
         if (this._started === false) {
+            trace && console.log(`CFEDisp ${this._uuid} - start`);
+
             this._started = true;
-            trace && console.log(`CFEDisp ${this._uuid} - listen`);
+            this._uuid = uuid.v4();
+            this._ports = new Map<string, MessagePort>();
+
             const target = this._target as any;
             if (target.addEventListener) {
                 target.addEventListener('message', this._lifecycleHandler);
@@ -135,7 +137,10 @@ export class CrossFrameEventDispatcher {
 
     stop() {
         if (this._started) {
+            trace && console.log(`CFEDisp ${this._uuid} - stop`);
+
             this._started = false;
+
             const target = this._target as any;
             if (target.addEventListener) {
                 target.removeEventListener('message', this._lifecycleHandler);
@@ -143,6 +148,13 @@ export class CrossFrameEventDispatcher {
             else if (target.attachEvent) {
                 target.detachEvent('onmessage', this._lifecycleHandler);
             }
+
+            this._ports.forEach((port) => {
+                port.removeEventListener('message', this._messageHandler);
+                port.close();
+            });
+            this._ports.clear();
+            this._ports = null;
         }
     }
 

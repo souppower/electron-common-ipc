@@ -44,10 +44,14 @@ function createWindows() {
     // createWindow('page.html', 'nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true })
     // createWindow('page.html', 'sandbox: true', { nodeIntegration: false, sandbox: true })
 
-    // createWindow('page.html', 'preload', { preload: path.join(__dirname, 'page-preload.bundle.js') })
-    // createWindow('page.html', 'preload nodeIntegration: false', { nodeIntegration: false, preload: path.join(__dirname, 'page-preload.bundle.js') })
-    // createWindow('page.html', 'preload nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
-    // createWindow('page.html', 'preload sandbox: true', { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
+    createWindow('page.html', 'preload', 
+        { preload: path.join(__dirname, 'page-preload.bundle.js') })
+    createWindow('page.html', 'preload nodeIntegration: false', 
+        { nodeIntegration: false, preload: path.join(__dirname, 'page-preload.bundle.js') })
+    createWindow('page.html', 'preload nodeIntegration: false, sandbox: true', 
+        { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
+    createWindow('page.html', 'preload sandbox: true', 
+        { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
 
     // createWindow('page-parent.html', '{}', {})
     // createWindow('page-parent.html', 'nodeIntegration: false', { nodeIntegration: false })
