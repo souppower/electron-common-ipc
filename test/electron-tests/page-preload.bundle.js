@@ -156,8 +156,16 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
         this._ipcWindow = ipcWindow;
         this._messageTransportHandlerEvent = this._messageTransportHandlerEvent.bind(this);
         this._messageTransportHandlerConnect = this._messageTransportHandlerConnect.bind(this);
-        this._ipcWindow.on(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
-        this._ipcWindow.on(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
+    }
+    start() {
+        super.start();
+        this._ipcWindow.addListener(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
+        this._ipcWindow.addListener(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
+    }
+    stop() {
+        this._ipcWindow.removeListener(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
+        this._ipcWindow.removeListener(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
+        super.stop();
     }
     _messageHandler(event) {
         const packet = CrossFrameMessage_1.CrossFrameMessage.Decode(event.data);

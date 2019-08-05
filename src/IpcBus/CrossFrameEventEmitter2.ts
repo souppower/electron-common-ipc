@@ -210,9 +210,18 @@ export class IpcBusFrameBridge extends CrossFrameEventDispatcher {
         // Callback
         this._messageTransportHandlerEvent = this._messageTransportHandlerEvent.bind(this);
         this._messageTransportHandlerConnect = this._messageTransportHandlerConnect.bind(this);
+    }
 
-        this._ipcWindow.on(IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
-        this._ipcWindow.on(IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
+    start() {
+        super.start();
+        this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
+        this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
+    }
+
+    stop() {
+        this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
+        this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
+        super.stop();
     }
 
     // Unpacks and emits
