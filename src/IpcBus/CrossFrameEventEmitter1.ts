@@ -64,13 +64,13 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcWindow {
     // Channel is the event that the other side will be listening for
     send(channel: string, ...args: any[]): void {
         trace && console.log(`send ${channel} - ${args}`);
-        let packet = CrossFrameMessage.Encode(this._uuid, channel, args);
+        const packet = CrossFrameMessage.Encode(this._uuid, channel, args);
         this._postMessage(packet);
     }
 
     // Cleans up event listeners
     stopListening() {
-        let target = this._target as any;
+        const target = this._target as any;
         if (target.removeEventListener) {
             target.removeEventListener('message', this._messageHandler)
         }
@@ -86,9 +86,9 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcWindow {
     }
 
     protected _messageHandler(event: MessageEvent) {
-        let packet = CrossFrameMessage.Decode(event.data);
+        const packet = CrossFrameMessage.Decode(event.data);
         if (packet) {
-            let args = packet.args || [];
+            const args = packet.args || [];
             this._eventHandler(packet.channel, ...args);
         }
     }

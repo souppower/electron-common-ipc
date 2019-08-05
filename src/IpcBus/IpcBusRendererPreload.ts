@@ -23,13 +23,14 @@ export function PreloadElectronCommonIpc(iframeSupport: boolean = false): boolea
 function _PreloadElectronCommonIpc(context: string, iframeSupport: boolean = false): boolean {
     const windowLocal = window as any;
     // console.log(`window.href - ${window.location.href}`);
-    try {
-        if (windowLocal.self === windowLocal.top) {
+    if (windowLocal.self === windowLocal.top) {
+        try {
+            // Will work in a preload or with nodeIntegration=true
             const electron = require('electron');
             if (electron && electron.ipcRenderer) {
                 windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
                 if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
-                    trace && console.log(`${context} - ElectronCommonIpc`);
+                    trace && console.log(`inject - ${context} - ElectronCommonIpc.CreateIpcBusClient`);
                     windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options: any, hostname?: string) => {
                         trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
                         const localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
@@ -37,27 +38,25 @@ function _PreloadElectronCommonIpc(context: string, iframeSupport: boolean = fal
                         return ipcBusClient;
                     };
                 }
-                const frameBridge = windowLocal.ElectronCommonIpc.FrameBridge as IpcBusFrameBridge;
-                if (iframeSupport) {
-                    if (frameBridge == null) {
-                        windowLocal.ElectronCommonIpc.FrameBridge = new IpcBusFrameBridge(electron.ipcRenderer, window);
-                    }
-                    else {
-                        frameBridge.start();
-                    }
-                    trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - start`);
+                if (windowLocal.ElectronCommonIpc.FrameBridge == null) {
+                    trace && console.log(`inject - ${context} - ElectronCommonIpc.FrameBridge`);
+                    windowLocal.ElectronCommonIpc.FrameBridge = new IpcBusFrameBridge(electron.ipcRenderer, window);
                 }
-                else {
-                    if (frameBridge) {
-                        frameBridge.stop();
-                    }
-                    trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - stop`);
-                }
-                // windowLocal.ElectronCommonIpc.Dispatch = new CrossFrameEventDispatcher(window);
             }
         }
-    }
-    catch (_) {
+        catch (_) {
+        }
+        const frameBridge = windowLocal.ElectronCommonIpc.FrameBridge as IpcBusFrameBridge;
+        if (frameBridge) {
+            if (iframeSupport) {
+                trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - start`);
+                frameBridge.start();
+            }
+            else {
+                frameBridge.stop();
+                trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - stop`);
+            }
+        }
     }
 
     try {
@@ -77,7 +76,7 @@ function _PreloadElectronCommonIpc(context: string, iframeSupport: boolean = fal
     }
     catch (_) {
     }
-    return false;
+    return IsElectronCommonIpcAvailable();
 }
 
 export function IsElectronCommonIpcAvailable(): boolean {

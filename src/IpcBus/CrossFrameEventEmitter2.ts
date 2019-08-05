@@ -63,7 +63,7 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcWindow {
     close() {
         if (this._messageChannel != null) {
             trace && console.log(`CFEE ${this._uuid} - exit`);
-            let packet = CrossFrameMessage.Encode(this._uuid, 'exit', []);
+            const packet = CrossFrameMessage.Encode(this._uuid, 'exit', []);
             this._target.postMessage(packet, this._origin);
             this._messageChannel.port1.removeEventListener('message', this._messageHandler);
             this._messageChannel.port1.close();
@@ -75,7 +75,7 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcWindow {
     // Channel is the event that the other side will be listening for
     send(channel: string, ...args: any[]): void {
         trace && console.log(`CFEE ${this._uuid} - send: ${channel} - ${JSON.stringify(args)}`);
-        let packet = CrossFrameMessage.Encode(this._uuid, channel, args);
+        const packet = CrossFrameMessage.Encode(this._uuid, channel, args);
         this._messageChannel.port1.postMessage(packet);
     }
 
@@ -87,7 +87,7 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcWindow {
 
     protected _messageHandler(event: MessageEvent) {
         trace && console.log(`CFEE ${this._uuid} - messageHandler: ${JSON.stringify(event)}`);
-        let packet = CrossFrameMessage.Decode(event.data);
+        const packet = CrossFrameMessage.Decode(event.data);
         if (packet) {
             if (Array.isArray(packet.args)) {
                 this._eventHandler(packet.channel, ...packet.args);
@@ -115,7 +115,6 @@ export class CrossFrameEventDispatcher {
         this._messageHandler = this._messageHandler.bind(this);
 
         this._started = false;
-        this.start();
     }
 
     // Listens in a cross-browser fashion. When postmessage isn't available
@@ -148,7 +147,7 @@ export class CrossFrameEventDispatcher {
     }
 
     protected _lifecycleHandler(event: MessageEvent) {
-        let packet = CrossFrameMessage.Decode(event.data);
+        const packet = CrossFrameMessage.Decode(event.data);
         trace && console.log(`CFEDisp ${this._uuid} - lifecycle - ${JSON.stringify(packet)}`);
         if (packet) {
             if (packet.channel === 'init') {
@@ -176,7 +175,7 @@ export class CrossFrameEventDispatcher {
     // Unpacks and emits
     protected _messageHandler(event: MessageEvent) {
         trace && console.log(`CFEDisp ${this._uuid} - messageHandler ${JSON.stringify(event)}`);
-        let packet = CrossFrameMessage.Decode(event.data);
+        const packet = CrossFrameMessage.Decode(event.data);
         if (packet) {
             trace && console.log(`CFEDisp ${this._uuid} - messageHandler - ${packet}`);
             this._ports.forEach((port, uuid) => {
@@ -206,7 +205,7 @@ export class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 
     // Unpacks and emits
     protected _messageHandler(event: MessageEvent) {
-        let packet = CrossFrameMessage.Decode(event.data);
+        const packet = CrossFrameMessage.Decode(event.data);
         trace && console.log(`IpcBusFrameBridge - messageHandler - ${JSON.stringify(packet)}`);
         if (packet) {
             if (Array.isArray(packet.args)) {
@@ -220,7 +219,7 @@ export class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 
     protected _messageTransportHandlerEvent(...args: any[]) {
         trace && console.log(`_messageTransportHandlerEvent ${JSON.stringify(args)}`);
-        let packet = CrossFrameMessage.Encode('dispatcher', IPCBUS_TRANSPORT_RENDERER_EVENT, args);
+        const packet = CrossFrameMessage.Encode('dispatcher', IPCBUS_TRANSPORT_RENDERER_EVENT, args);
         this._ports.forEach((port) => {
             port.postMessage(packet);
         });
@@ -228,7 +227,7 @@ export class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 
     protected _messageTransportHandlerConnect(...args: any[]) {
         trace && console.log(`_messageTransportHandlerConnect ${JSON.stringify(args)}`);
-        let packet = CrossFrameMessage.Encode('dispatcher', IPCBUS_TRANSPORT_RENDERER_CONNECT, args);
+        const packet = CrossFrameMessage.Encode('dispatcher', IPCBUS_TRANSPORT_RENDERER_CONNECT, args);
         this._ports.forEach((port) => {
             port.postMessage(packet);
         });

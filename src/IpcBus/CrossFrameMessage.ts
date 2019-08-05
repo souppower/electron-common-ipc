@@ -16,8 +16,8 @@ export namespace CrossFrameMessage {
     export function Decode(data: any): CrossFrameMessage {
         // We don't control all message events, they won't always be JSON
         try {
-            let wrap: CrossFrameWrap = JSONParser.parse(data);
-            let packet = wrap[CrossFrameKeyId];
+            const wrap: CrossFrameWrap = JSONParser.parse(data);
+            const packet = wrap[CrossFrameKeyId];
             if (packet) {
                 return packet;
             }
@@ -29,8 +29,8 @@ export namespace CrossFrameMessage {
 
     // Takes a channel and the arguments to emit with and serialises it
     // for transmission
-    export function Encode(uuid: string, channel: string, args: any[]): any {
-        let wrap: CrossFrameWrap = {
+    export function Encode(uuid: string, channel: string, args: any[]): string {
+        const wrap: CrossFrameWrap = {
             [CrossFrameKeyId]: {
                 uuid,
                 channel,

@@ -40,7 +40,7 @@ class CrossFrameEventEmitter extends events_1.EventEmitter {
     close() {
         if (this._messageChannel != null) {
             trace && console.log(`CFEE ${this._uuid} - exit`);
-            let packet = CrossFrameMessage_1.CrossFrameMessage.Encode(this._uuid, 'exit', []);
+            const packet = CrossFrameMessage_1.CrossFrameMessage.Encode(this._uuid, 'exit', []);
             this._target.postMessage(packet, this._origin);
             this._messageChannel.port1.removeEventListener('message', this._messageHandler);
             this._messageChannel.port1.close();
@@ -49,7 +49,7 @@ class CrossFrameEventEmitter extends events_1.EventEmitter {
     }
     send(channel, ...args) {
         trace && console.log(`CFEE ${this._uuid} - send: ${channel} - ${JSON.stringify(args)}`);
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode(this._uuid, channel, args);
+        const packet = CrossFrameMessage_1.CrossFrameMessage.Encode(this._uuid, channel, args);
         this._messageChannel.port1.postMessage(packet);
     }
     _eventHandler(channel, ...args) {
@@ -58,7 +58,7 @@ class CrossFrameEventEmitter extends events_1.EventEmitter {
     }
     _messageHandler(event) {
         trace && console.log(`CFEE ${this._uuid} - messageHandler: ${JSON.stringify(event)}`);
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Decode(event.data);
+        const packet = CrossFrameMessage_1.CrossFrameMessage.Decode(event.data);
         if (packet) {
             if (Array.isArray(packet.args)) {
                 this._eventHandler(packet.channel, ...packet.args);
@@ -78,7 +78,6 @@ class CrossFrameEventDispatcher {
         this._lifecycleHandler = this._lifecycleHandler.bind(this);
         this._messageHandler = this._messageHandler.bind(this);
         this._started = false;
-        this.start();
     }
     start() {
         if (this._started === false) {
@@ -106,7 +105,7 @@ class CrossFrameEventDispatcher {
         }
     }
     _lifecycleHandler(event) {
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Decode(event.data);
+        const packet = CrossFrameMessage_1.CrossFrameMessage.Decode(event.data);
         trace && console.log(`CFEDisp ${this._uuid} - lifecycle - ${JSON.stringify(packet)}`);
         if (packet) {
             if (packet.channel === 'init') {
@@ -132,7 +131,7 @@ class CrossFrameEventDispatcher {
     }
     _messageHandler(event) {
         trace && console.log(`CFEDisp ${this._uuid} - messageHandler ${JSON.stringify(event)}`);
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Decode(event.data);
+        const packet = CrossFrameMessage_1.CrossFrameMessage.Decode(event.data);
         if (packet) {
             trace && console.log(`CFEDisp ${this._uuid} - messageHandler - ${packet}`);
             this._ports.forEach((port, uuid) => {
@@ -154,7 +153,7 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
         this._ipcWindow.on(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
     }
     _messageHandler(event) {
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Decode(event.data);
+        const packet = CrossFrameMessage_1.CrossFrameMessage.Decode(event.data);
         trace && console.log(`IpcBusFrameBridge - messageHandler - ${JSON.stringify(packet)}`);
         if (packet) {
             if (Array.isArray(packet.args)) {
@@ -167,14 +166,14 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
     }
     _messageTransportHandlerEvent(...args) {
         trace && console.log(`_messageTransportHandlerEvent ${JSON.stringify(args)}`);
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_EVENT, args);
+        const packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_EVENT, args);
         this._ports.forEach((port) => {
             port.postMessage(packet);
         });
     }
     _messageTransportHandlerConnect(...args) {
         trace && console.log(`_messageTransportHandlerConnect ${JSON.stringify(args)}`);
-        let packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, args);
+        const packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, args);
         this._ports.forEach((port) => {
             port.postMessage(packet);
         });
@@ -191,8 +190,8 @@ var CrossFrameMessage;
     CrossFrameMessage.CrossFrameKeyId = '__cross-frame-message__';
     function Decode(data) {
         try {
-            let wrap = json_helpers_1.JSONParser.parse(data);
-            let packet = wrap[CrossFrameMessage.CrossFrameKeyId];
+            const wrap = json_helpers_1.JSONParser.parse(data);
+            const packet = wrap[CrossFrameMessage.CrossFrameKeyId];
             if (packet) {
                 return packet;
             }
@@ -203,7 +202,7 @@ var CrossFrameMessage;
     }
     CrossFrameMessage.Decode = Decode;
     function Encode(uuid, channel, args) {
-        let wrap = {
+        const wrap = {
             [CrossFrameMessage.CrossFrameKeyId]: {
                 uuid,
                 channel,
@@ -368,13 +367,13 @@ function PreloadElectronCommonIpc(iframeSupport = false) {
 exports.PreloadElectronCommonIpc = PreloadElectronCommonIpc;
 function _PreloadElectronCommonIpc(context, iframeSupport = false) {
     const windowLocal = window;
-    try {
-        if (windowLocal.self === windowLocal.top) {
+    if (windowLocal.self === windowLocal.top) {
+        try {
             const electron = require('electron');
             if (electron && electron.ipcRenderer) {
                 windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
                 if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
-                    trace && console.log(`${context} - ElectronCommonIpc`);
+                    trace && console.log(`inject - ${context} - ElectronCommonIpc.CreateIpcBusClient`);
                     windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
                         trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
                         const localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
@@ -382,26 +381,25 @@ function _PreloadElectronCommonIpc(context, iframeSupport = false) {
                         return ipcBusClient;
                     };
                 }
-                const frameBridge = windowLocal.ElectronCommonIpc.FrameBridge;
-                if (iframeSupport) {
-                    if (frameBridge == null) {
-                        windowLocal.ElectronCommonIpc.FrameBridge = new CrossFrameEventEmitter2_1.IpcBusFrameBridge(electron.ipcRenderer, window);
-                    }
-                    else {
-                        frameBridge.start();
-                    }
-                    trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - start`);
-                }
-                else {
-                    if (frameBridge) {
-                        frameBridge.stop();
-                    }
-                    trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - stop`);
+                if (windowLocal.ElectronCommonIpc.FrameBridge == null) {
+                    trace && console.log(`inject - ${context} - ElectronCommonIpc.FrameBridge`);
+                    windowLocal.ElectronCommonIpc.FrameBridge = new CrossFrameEventEmitter2_1.IpcBusFrameBridge(electron.ipcRenderer, window);
                 }
             }
         }
-    }
-    catch (_) {
+        catch (_) {
+        }
+        const frameBridge = windowLocal.ElectronCommonIpc.FrameBridge;
+        if (frameBridge) {
+            if (iframeSupport) {
+                trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - start`);
+                frameBridge.start();
+            }
+            else {
+                frameBridge.stop();
+                trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - stop`);
+            }
+        }
     }
     try {
         if (windowLocal.self !== windowLocal.top) {
@@ -420,7 +418,7 @@ function _PreloadElectronCommonIpc(context, iframeSupport = false) {
     }
     catch (_) {
     }
-    return false;
+    return IsElectronCommonIpcAvailable();
 }
 function IsElectronCommonIpcAvailable() {
     try {

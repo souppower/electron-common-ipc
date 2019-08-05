@@ -1,30 +1,40 @@
 const uuid = require('uuid');
 
-let window_id = uuid.v1();
-window.GetWindowId = () => {
-    // console.log(`GetWindowId=${window_id}`);
-    return window_id;
-}
-
 function GetQueryStringParams(sParam) {
-    var sPageURL = window.location.search.substring(1);
-    var sURLVariables = sPageURL.split('&');
-    for (var i = 0; i < sURLVariables.length; i++) {
-        var sParameterName = sURLVariables[i].split('=');
+    const sPageURL = window.location.search.substring(1);
+    // console.log(`1 GetQueryStringParams ${sPageURL}`);
+    const sURLVariables = sPageURL.split('&');
+    // console.log(`2 GetQueryStringParams ${sURLVariables}`);
+    for (let i = 0; i < sURLVariables.length; i++) {
+        // console.log(`3 GetQueryStringParams ${sURLVariables[i]}`);
+        const sParameterName = sURLVariables[i].split('=');
+        // console.log(`4 GetQueryStringParams ${sParameterName}`);
         if (sParameterName[0] == sParam) {
+            // console.log(`5 GetQueryStringParams ${sParameterName[1]}`);
             return sParameterName[1];
         }
     }
+    return undefined;
+}
+
+const default_window_id = uuid.v1();
+window.GetWindowId = () => {
+    let window_id = GetQueryStringParams('id');
+    if (!window_id) {
+        window_id = default_window_id;
+    }
+    console.log(`GetWindowId ${window_id}`);
+    return window_id;
 }
 
 window.addEventListener('load', () => {
     const electronCommonIpcModule = require('../..');
     {
-        let result = electronCommonIpcModule.PreloadElectronCommonIpc(true);
+        const result = electronCommonIpcModule.PreloadElectronCommonIpc(true);
         console.log(`PreloadElectronCommonIpc=${result}`);
     }
     {
-        let result = electronCommonIpcModule.IsElectronCommonIpcAvailable();
+        const result = electronCommonIpcModule.IsElectronCommonIpcAvailable();
         console.log(`IsElectronCommonIpcAvailable=${result}`);
     }
 
@@ -39,7 +49,8 @@ window.addEventListener('load', () => {
         //     console.log('Parent send message');
         //     crossFrameEE.send('test-frame', 'hello frame');
         // }, 100);
-        let ipcBus = electronCommonIpcModule.CreateIpcBusClient({ peerName: `client-parent-${window_id}` });
+        const window_id = GetWindowId();
+        const ipcBus = electronCommonIpcModule.CreateIpcBusClient({ peerName: `client-parent-${window_id}` });
         ipcBus.connect()
         .then(() => {
             ipcBus.on(`test-parent-${window_id}`, (...args) => {
@@ -49,11 +60,14 @@ window.addEventListener('load', () => {
                 console.log('ipcBus - Parent send message');
                 ipcBus.send(`test-frame-${window_id}`, 'hello frame');
             }, 100);
+        })
+        .catch((err) => {
+            console.log(`ipcBus - Parent error ${err}`);
         });
     }
     else {
-        window_id = GetQueryStringParams('id');
-        console.log(`window.name = ${window.name} - ${window.id}`);
+        const window_id = GetWindowId();
+        console.log(`window.name = ${window.name} - ${window_id}`);
         
         // console.log('Create Frame CrossFrameEventEmitter');
         // let crossFrameEE = new electronCommonIpcModuleCFEE.CrossFrameEventEmitter(window.parent);
@@ -65,8 +79,8 @@ window.addEventListener('load', () => {
         //     crossFrameEE.send('test-parent', 'hello parent');
         // }, 200);
 
-        let ipcBus = electronCommonIpcModule.CreateIpcBusClient({ peerName: `client-frame-${window_id}` });
-        ipcBus.connect({ timeoutDelay: 4000})
+        const ipcBus = electronCommonIpcModule.CreateIpcBusClient({ peerName: `client-frame-${window_id}` });
+        ipcBus.connect({ timeoutDelay: 8000})
         .then(() => {
             ipcBus.on(`test-frame-${window_id}`, (...args) => {
                 console.log(`ipcBus - Frame receive message : ${args}`);
@@ -75,6 +89,9 @@ window.addEventListener('load', () => {
                 console.log('ipcBus - Frame send message');
                 ipcBus.send(`test-parent-${window_id}`, 'hello parent');
             }, 200);
+        })
+        .catch((err) => {
+            console.log(`ipcBus - Frame error ${err}`);
         });
     }
     // console.log(`id=${window_id}`);

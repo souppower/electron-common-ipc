@@ -6,7 +6,7 @@ import * as IpcBusUtils from './IpcBusUtils';
 import { Create as CreateIpcBusClientNet } from './IpcBusClientNet';
 // import { IpcBusClientRenderer } from './IpcBusClientRenderer';
 
-export let CreateIpcBusClient: IpcBusClient.CreateFunction = (options: any, hostname?: string): IpcBusClient => {
+export const CreateIpcBusClient: IpcBusClient.CreateFunction = (options: any, hostname?: string): IpcBusClient => {
     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
     let electronProcessType = GetElectronProcessType();
     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`CreateIpcBusForProcess process type = ${electronProcessType} on ${JSON.stringify(options)}`);
