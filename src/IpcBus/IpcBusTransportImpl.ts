@@ -29,21 +29,21 @@ class DeferredRequest {
 
     fulFilled(ipcBusCommand: IpcBusCommand, args: any[]) {
         // The channel is not generated one
-        let ipcBusEvent: Client.IpcBusEvent = { channel: this._channel, sender: ipcBusCommand.peer };
+        const ipcBusEvent: Client.IpcBusEvent = { channel: this._channel, sender: ipcBusCommand.peer };
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Peer #${ipcBusEvent.sender.name} replied to request on ${ipcBusCommand.request.replyChannel}`);
         if (ipcBusCommand.request.resolve) {
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] resolve`);
-            let response: Client.IpcBusRequestResponse = { event: ipcBusEvent, payload: args[0] };
+            const response: Client.IpcBusRequestResponse = { event: ipcBusEvent, payload: args[0] };
             this.resolve(response);
         }
         else if (ipcBusCommand.request.reject) {
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] reject`);
-            let response: Client.IpcBusRequestResponse = { event: ipcBusEvent, err: args[0] };
+            const response: Client.IpcBusRequestResponse = { event: ipcBusEvent, err: args[0] };
             this.reject(response);
         }
         else {
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] reject: unknown format`);
-            let response: Client.IpcBusRequestResponse = { event: ipcBusEvent, err: 'unknown format' };
+            const response: Client.IpcBusRequestResponse = { event: ipcBusEvent, err: 'unknown format' };
             this.reject(response);
         }
     };
@@ -90,13 +90,13 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
             case IpcBusCommand.Kind.SendMessage: {
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
                 const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
-                let args = ipcPacketBuffer.parseArrayAt(1);
+                const args = ipcPacketBuffer.parseArrayAt(1);
                 this._ipcCallback(ipcBusCommand.emit || ipcBusCommand.channel, ipcBusEvent, ...args);
                 break;
             }
             case IpcBusCommand.Kind.RequestMessage: {
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-                let ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
+                const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
                 ipcBusEvent.request = {
                     resolve: (payload: Object | string) => {
                         ipcBusCommand.request.resolve = true;
@@ -109,7 +109,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
                         this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
                     }
                 };
-                let args = ipcPacketBuffer.parseArrayAt(1);
+                const args = ipcPacketBuffer.parseArrayAt(1);
                 this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
                 break;
             }
@@ -118,7 +118,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
                 const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
                 if (deferredRequest) {
                     this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
-                    let args = ipcPacketBuffer.parseArrayAt(1);
+                    const args = ipcPacketBuffer.parseArrayAt(1);
                     deferredRequest.fulFilled(ipcBusCommand, args);
                 }
                 break;
@@ -144,7 +144,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
                     // Unregister remotely
                     this.ipcSend(IpcBusCommand.Kind.RequestCancel, channel, ipcBusCommandRequest);
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] reject: timeout`);
-                    let response: Client.IpcBusRequestResponse = { event: { channel: channel, sender: this._ipcBusPeer }, err: 'timeout' };
+                    const response: Client.IpcBusRequestResponse = { event: { channel: channel, sender: this._ipcBusPeer }, err: 'timeout' };
                     deferredRequest.reject(response);
                 }
             }, timeoutDelay);

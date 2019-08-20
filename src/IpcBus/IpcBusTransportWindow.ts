@@ -92,7 +92,7 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
                     // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
                     let timer: NodeJS.Timer;
 
-                    let onIpcConnect = (eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer) => {
+                    const onIpcConnect = (eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer) => {
                         if (this._connected) {
                             if (this._onConnect(eventOrPeer, peerOrUndefined)) {
                                 this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
@@ -137,7 +137,7 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._connected) {
-            let bufferWriter = new BufferListWriter();
+            const bufferWriter = new BufferListWriter();
             if (args) {
                 this._packetOut.writeArray(bufferWriter, [ipcBusCommand, args]);
             }

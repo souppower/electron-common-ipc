@@ -22,11 +22,11 @@ function hasMethod(obj: any, name: string): PropertyDescriptor | null {
 }
 
 function getInstanceMethodNames(obj: any): Map<string, PropertyDescriptor> {
-    let methodNames = new Map<string, PropertyDescriptor>();
+    const methodNames = new Map<string, PropertyDescriptor>();
 
     Object.getOwnPropertyNames(obj)
         .forEach(name => {
-            let desc = hasMethod(obj, name);
+            const desc = hasMethod(obj, name);
             if (desc) {
                 methodNames.set(name, desc);
             }
@@ -49,7 +49,7 @@ function getInstanceMethodNames(obj: any): Map<string, PropertyDescriptor> {
         }
         Object.getOwnPropertyNames(proto)
             .forEach(name => {
-                let desc = hasMethod(proto, name);
+                const desc = hasMethod(proto, name);
                 if (desc) {
                     methodNames.set(name, desc);
                 }
@@ -85,7 +85,7 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
         // });
         //  Register call handlers for exposed instance's method
         if (this._exposedInstance) {
-            let methodNames = getInstanceMethodNames(this._exposedInstance);
+            const methodNames = getInstanceMethodNames(this._exposedInstance);
             // Register handlers for functions of service's Implementation (except the ones inherited from EventEmitter)
             // Looking in legacy class
             methodNames.forEach((methodDesc, methodName) => {
@@ -98,7 +98,7 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
     }
 
     // private _addListener(event: string, replyChannel: string) {
-    //     let eventHandler = this._eventHandlers.get(event);
+    //     const eventHandler = this._eventHandlers.get(event);
     //     if (eventHandler == null) {
     //         // Register callback
     //         // TODO
@@ -110,7 +110,7 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
     // }
 
     // private _removeListener(event: string, replyChannel: string) {
-    //     let eventHandler = this._eventHandlers.get(event);
+    //     const eventHandler = this._eventHandlers.get(event);
     //     if (eventHandler == null) {
     //     }
     //     else {
@@ -124,7 +124,7 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
     // }
 
     // private _broadcastEmit(event: string, ...args: any[]) {
-    //     let eventHandler = this._eventHandlers.get(event);
+    //     const eventHandler = this._eventHandlers.get(event);
     //     if (eventHandler) {
     //         eventHandler.forEach((replyChannel) => {
     //             this._ipcBusClient.send(replyChannel, event, args);
@@ -133,7 +133,7 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
     // }
 
     private _getServiceStatus(): Service.ServiceStatus {
-        let serviceStatus: Service.ServiceStatus = {
+        const serviceStatus: Service.ServiceStatus = {
             started: true,
             callHandlers: this._getCallHandlerNames(),
             supportEventEmitter: (this._prevImplEmit != null)
@@ -199,7 +199,7 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
 
     private _onCallReceived(event: Client.IpcBusEvent, call: ServiceUtils.IpcBusServiceCall) {
         IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcService] Service '${this._serviceName}' is calling implementation's '${call.handlerName}'`);
-        let callHandler: Function = this._callHandlers.get(call.handlerName);
+        const callHandler: Function = this._callHandlers.get(call.handlerName);
         try {
             if (!callHandler) {
                 throw `Function unknown !`;

@@ -34,7 +34,7 @@ export class IpcBusBridgeJSONLogger extends IpcBusBridgeLogger {
     }
 
     protected addLog(webContents: Electron.WebContents, peer: Client.IpcBusPeer, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): any {
-        let log: any = { command: ipcBusCommand };
+        const log: any = { command: ipcBusCommand };
         if (args) {
             for (let i = 0, l = args.length; i < l; ++i) {
                 log[`arg${i}`] = args[i];

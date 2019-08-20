@@ -46,7 +46,7 @@ export class IpcBusBrokerCSVLogger extends IpcBusBrokerLogger {
 
     protected addLog(socket: net.Socket, packet: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): void {
         ++this._line;
-        let log: string[] = [
+        const log: string[] = [
             this._line.toString(),
             ipcBusCommand.kind,
             packet.packetSize.toString(),

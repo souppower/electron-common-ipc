@@ -18,8 +18,8 @@ export abstract class IpcBusBrokerLogger extends IpcBusBrokerImpl {
     protected abstract addLog(socket: net.Socket, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): void;
 
     onSocketPacket(socket: net.Socket, packet: IpcPacketBuffer): void {
-        let ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
-        let args = packet.parseArrayAt(1);
+        const ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
+        const args = packet.parseArrayAt(1);
         this.addLog(socket, packet, ipcBusCommand, args);
 
         super.onSocketPacket(socket, packet);

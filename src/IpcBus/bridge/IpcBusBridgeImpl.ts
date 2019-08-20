@@ -57,7 +57,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     // Not exposed
     queryState(): Object {
-        let queryStateResult: Object[] = [];
+        const queryStateResult: Object[] = [];
         this._subscriptions.forEach((connData, channel) => {
             connData.peerIds.forEach((peerIdRefCount) => {
                 queryStateResult.push({ channel: channel, peer: this._ipcBusPeers.get(peerIdRefCount.peerId), count: peerIdRefCount.refCount });
@@ -113,7 +113,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     }
 
     private _onConnect(webContents: Electron.WebContents, ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
-        let ipcBusPeer = ipcBusCommand.peer;
+        const ipcBusPeer = ipcBusCommand.peer;
         this._ipcBusPeers.set(ipcBusPeer.id, ipcBusPeer);
 
         this._completePeerInfo(webContents, ipcBusPeer);
@@ -126,9 +126,9 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
             }
         });
 
-        let packetBuffer = new IpcPacketBuffer();
+        const packetBuffer = new IpcPacketBuffer();
         packetBuffer.decodeFromBuffer(buffer);
-        let args = packetBuffer.parseArrayAt(1);
+        const args = packetBuffer.parseArrayAt(1);
         ipcBusPeer.name = args[0] || ipcBusPeer.name;
 
         // We get back to the webContents
@@ -151,7 +151,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     }
 
     private _onDisconnect(webContents: Electron.WebContents, ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
-        let ipcBusPeer = ipcBusCommand.peer;
+        const ipcBusPeer = ipcBusCommand.peer;
         this._ipcBusPeers.delete(ipcBusPeer.id);
 
         // We do not close the socket, we just disconnect a peer
@@ -160,9 +160,9 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         this._rendererCleanUp(webContents);
 
         // ipcBusCommand has been changed, the original buffer content is no more up-to-date, we have to rebuild it
-        let packetBuffer = new IpcPacketBuffer();
+        const packetBuffer = new IpcPacketBuffer();
         packetBuffer.decodeFromBuffer(buffer);
-        let args = packetBuffer.parseArrayAt(1);
+        const args = packetBuffer.parseArrayAt(1);
         this.ipcPostCommand(ipcBusCommand, args);
     }
 

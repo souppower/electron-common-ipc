@@ -48,7 +48,7 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
 
     protected addLog(webContents: Electron.WebContents, peer: Client.IpcBusPeer, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): any {
         ++this._line;
-        let log: string[] = [
+        const log: string[] = [
             this._line.toString(),
             ipcBusCommand.kind,
             ipcPacketBuffer.packetSize.toString(),

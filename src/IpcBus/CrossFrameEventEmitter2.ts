@@ -54,7 +54,7 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcWindow {
             this._messageChannel = new MessageChannel();
             this._messageChannel.port1.addEventListener('message', this._messageHandler);
             this._messageChannel.port1.start();
-            let packet = CrossFrameMessage.Encode(this._uuid, 'init', []);
+            const packet = CrossFrameMessage.Encode(this._uuid, 'init', []);
             this._target.postMessage(packet, this._origin, [this._messageChannel.port2]);
         }
     }

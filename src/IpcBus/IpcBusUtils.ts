@@ -29,7 +29,7 @@ export function CheckCreateOptions(options: IpcNetOptions | string | number, hos
     // A 'hostname:port' pattern : 'localhost:8082'
     // A path : '//local-ipc'
     else if (typeof options === 'string') {
-        let parts = options.split(':');
+        const parts = options.split(':');
         if (parts.length === 2) {
             if (Number(parts[1]) >= 0) {
                 return { port: Number(parts[1]), host: parts[0] };
@@ -39,7 +39,7 @@ export function CheckCreateOptions(options: IpcNetOptions | string | number, hos
     }
     // An IpcNetOptions object similar to NodeJS.net.ListenOptions
     else if (typeof options === 'object') {
-        let localOptions: IpcNetOptions = options as Object || {};
+        const localOptions: IpcNetOptions = options as Object || {};
         if (localOptions.port) {
             return localOptions;
         }
@@ -68,13 +68,13 @@ function JSON_stringify_array(data: any[], maxLen: number, output: string): stri
 function JSON_stringify_object(data: any, maxLen: number, output: string): string {
     output += '{';
     if (data) {
-        let keys = Object.keys(data);
+        const keys = Object.keys(data);
         for (let i = 0, l = keys.length; i < l; ++i) {
             if (output.length >= maxLen) {
                 output += '\'__cut__\'';
                 break;
             }
-            let key = keys[i];
+            const key = keys[i];
             output += key + ': ';
             if (output.length >= maxLen) {
                 output += '\'__cut__\'';
@@ -236,7 +236,7 @@ export class ChannelConnectionMap<T1> extends EventEmitter {
             connData = new ConnectionData<T1>(conn, peerId);
             connsMap.set(conn, connData);
             // Logger.enable && this._info(`AddRef: connKey = ${conn} is added`);
-        } 
+        }
         else {
             connData.addPeerId(peerId);
         }
@@ -249,7 +249,7 @@ export class ChannelConnectionMap<T1> extends EventEmitter {
 
     private _releaseConnData(channel: string, conn: T1, connsMap: Map<T1, ConnectionData<T1>>, peerId: string, all: boolean): number {
         // let channelRemoved = false;
-        let connData = connsMap.get(conn);
+        const connData = connsMap.get(conn);
         if (connData == null) {
             Logger.enable && this._warn(`Release '${channel}': conn is unknown`);
             return 0;
@@ -287,7 +287,7 @@ export class ChannelConnectionMap<T1> extends EventEmitter {
 
     private _release(channel: string, conn: T1, peerId: string, all: boolean): number {
         Logger.enable && this._info(`Release '${channel}' (${all}): peerId = ${peerId}`);
-        let connsMap = this._channelsMap.get(channel);
+        const connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`Release '${channel}': '${channel}' is unknown`);
             return 0;
@@ -331,7 +331,7 @@ export class ChannelConnectionMap<T1> extends EventEmitter {
     }
 
     // forEachConnection(callback: ChannelConnectionMap.ForEachHandler<T1>) {
-    //     let connections = new Map<T1, ChannelConnectionMap.ConnectionData<T1>>();
+    //     const connections = new Map<T1, ChannelConnectionMap.ConnectionData<T1>>();
     //     this._channelsMap.forEach((connsMap, channel) => {
     //         connsMap.forEach((connData, connKey) => {
     //             connections.set(connData.conn, connData);
@@ -350,7 +350,7 @@ export class ChannelConnectionMap<T1> extends EventEmitter {
         //     return;
         // }
 
-        let connsMap = this._channelsMap.get(channel);
+        const connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`forEachChannel: Unknown channel '${channel}' !`);
         }
@@ -386,7 +386,7 @@ export class ConnectionData<T1> {
 
     constructor(conn: T1, peerId: string) {
         this.conn = conn;
-        let peerIdRefCount = { peerId, refCount: 1 };
+        const peerIdRefCount = { peerId, refCount: 1 };
         this.peerIds.set(peerId, peerIdRefCount);
     }
 
@@ -412,7 +412,7 @@ export class ConnectionData<T1> {
     }
 
     releasePeerId(peerId: string) {
-        let peerIdRefCount = this.peerIds.get(peerId);
+        const peerIdRefCount = this.peerIds.get(peerId);
         if (peerIdRefCount == null) {
             return null;
             // Logger.enable && this._warn(`Release '${channel}': peerId #${peerId} is unknown`);

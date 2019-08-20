@@ -33,7 +33,7 @@ export class IpcBusBrokerJSONLogger extends IpcBusBrokerLogger {
     }
 
     protected addLog(socket: net.Socket, packet: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): void {
-        let log: any = { packetSize: packet.packetSize, command: ipcBusCommand};
+        const log: any = { packetSize: packet.packetSize, command: ipcBusCommand};
         if (args) {
             for (let i = 0, l = args.length; i < l; ++i) {
                 log[`arg${i}`] = args[i];

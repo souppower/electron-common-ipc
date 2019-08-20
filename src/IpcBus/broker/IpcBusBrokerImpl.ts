@@ -141,7 +141,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
     private _reset(closeServer: boolean) {
         if (this._server) {
-            let server = this._server;
+            const server = this._server;
             this._server = null;
             for (let key in this._netBinds) {
                 server.removeListener(key, this._netBinds[key]);
@@ -172,13 +172,13 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         let p = this._promiseStarted;
         if (!p) {
             p = this._promiseStarted = new Promise<void>((resolve, reject) => {
-                let server = net.createServer();
+                const server = net.createServer();
                 server.unref();
 
                 let timer: NodeJS.Timer = null;
                 let fctReject: (msg: string) => void;
 
-                let removeLocalListeners = () => {
+                const removeLocalListeners = () => {
                     if (timer) {
                         clearTimeout(timer);
                         timer = null;
@@ -186,28 +186,28 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                     server.removeListener('listening', catchListening);
                     server.removeListener('error', catchError);
                     server.removeListener('close', catchClose);
-                }
+                };
 
                 // Below zero = infinite
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
                         timer = null;
-                        let msg = `[IPCBus:Broker] error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._netOptions)}`;
+                        const msg = `[IPCBus:Broker] error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._netOptions)}`;
                         fctReject(msg);
                     }, options.timeoutDelay);
                 }
 
-                let catchError = (err: any) => {
-                    let msg = `[IPCBus:Broker] error = ${err} on ${JSON.stringify(this._netOptions)}`;
+                const catchError = (err: any) => {
+                    const msg = `[IPCBus:Broker] error = ${err} on ${JSON.stringify(this._netOptions)}`;
                     fctReject(msg);
                 };
 
-                let catchClose = () => {
-                    let msg = `[IPCBus:Broker] close on ${JSON.stringify(this._netOptions)}`;
+                const catchClose = () => {
+                    const msg = `[IPCBus:Broker] close on ${JSON.stringify(this._netOptions)}`;
                     fctReject(msg);
                 };
 
-                let catchListening =  (_server: any) => {
+                const catchListening =  (_server: any) => {
                     removeLocalListeners();
                     this._server = server;
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Listening for incoming connections on ${JSON.stringify(this._netOptions)}`);
@@ -222,7 +222,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                         })
                         .catch((err) => {
                             this._reset(true);
-                            let msg = `[IPCBus:Broker] error = ${err}`;
+                            const msg = `[IPCBus:Broker] error = ${err}`;
                             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                             reject(msg);
                         });
@@ -258,9 +258,9 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         }
         return new Promise<void>((resolve, reject) => {
             if (this._server) {
-                let server = this._server;
+                const server = this._server;
                 let timer: NodeJS.Timer;
-                let catchClose = () => {
+                const catchClose = () => {
                     clearTimeout(timer);
                     server.removeListener('close', catchClose);
                     resolve();
@@ -270,7 +270,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
                         server.removeListener('close', catchClose);
-                        let msg = `[IPCBus:Broker] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._netOptions)}`;
+                        const msg = `[IPCBus:Broker] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._netOptions)}`;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                         reject(msg);
                     }, options.timeoutDelay);
@@ -310,13 +310,13 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     }
 
     protected _onServerClose(): void {
-        let msg = `[IPCBus:Broker] server close`;
+        const msg = `[IPCBus:Broker] server close`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(msg);
         this._reset(false);
     }
 
     protected _onServerError(err: any) {
-        let msg = `[IPCBus:Broker] server error ${err}`;
+        const msg = `[IPCBus:Broker] server error ${err}`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
         this._reset(true);
     }
@@ -332,7 +332,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
     // protected _onServerData(packet: IpcPacketBuffer, socket: net.Socket, server: net.Server): void {
     onSocketPacket(socket: net.Socket, packet: IpcPacketBuffer): void {
-        let ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
+        const ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Connect:
                 this._ipcBusPeers.set(ipcBusCommand.peer.id, ipcBusCommand.peer);
@@ -378,8 +378,8 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                     connData.conn.write(packet.buffer);
                 });
                 // if (this._wildSubscriptions.size > 0) {
-                //     let args: any[] = null;
-                //     let bufferPacket = new IpcPacketBuffer();
+                //     const args: any[] = null;
+                //     const bufferPacket = new IpcPacketBuffer();
                 //     this._wildSubscriptions.forEach((wildChannel) => {
                 //         if (ipcBusCommand.channel.lastIndexOf(wildChannel, 0) === 0) {
                 //             // Re-add '*' suffix
@@ -405,7 +405,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
 
             case IpcBusCommand.Kind.RequestResponse: {
-                let replySocket = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
+                const replySocket = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
                 if (replySocket) {
                     this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                     replySocket.write(packet.buffer);
@@ -424,7 +424,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     }
 
     queryState(): Object {
-        let queryStateResult: Object[] = [];
+        const queryStateResult: Object[] = [];
         this._subscriptions.forEach((connData, channel) => {
             connData.peerIds.forEach((peerIdRefCount) => {
                 queryStateResult.push({ channel: channel, peer: this._ipcBusPeers.get(peerIdRefCount.peerId), count: peerIdRefCount.refCount });

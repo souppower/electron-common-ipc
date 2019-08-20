@@ -107,7 +107,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
                 return resolve(this.getWrapper<T>());
             }
             let timer: NodeJS.Timer;
-            let serviceStart = () => {
+            const serviceStart = () => {
                 clearTimeout(timer);
                 this.removeListener(Service.IPCBUS_SERVICE_EVENT_START, serviceStart);
                 resolve(this.getWrapper<T>());
@@ -141,7 +141,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
     }
 
     private _requestApply<T>(name: string, args?: any[]): Deferred<T> {
-        let deferred = new Deferred<T>((resolve, reject) => {
+        const deferred = new Deferred<T>((resolve, reject) => {
             const callMsg = { handlerName: name, args: args };
             this._ipcBusClient.request(ServiceUtils.getServiceCallChannel(this._serviceName), -1, callMsg)
                 .then((res: Client.IpcBusRequestResponse) => {
@@ -160,13 +160,13 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
     }
 
     private _call<T>(name: string, ...args: any[]): Promise<T> {
-        let deferred = this._requestApply<T>(name, args);
+        const deferred = this._requestApply<T>(name, args);
         deferred.execute();
         return deferred.promise;
     }
 
     requestApply<T>(name: string, args?: any[]): Promise<T> {
-        let deferred = this._requestApply<T>(name, args);
+        const deferred = this._requestApply<T>(name, args);
         if (this._isStarted) {
             deferred.execute();
         }
@@ -189,7 +189,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
     }
 
     private _sendApply(name: string, args?: any[]): Deferred<void> {
-        let deferred = new Deferred<void>((resolve, reject) => {
+        const deferred = new Deferred<void>((resolve, reject) => {
             const callMsg = { handlerName: name, args: args };
             this._ipcBusClient.send(ServiceUtils.getServiceCallChannel(this._serviceName), -1, callMsg);
             this._pendingCalls.delete(deferred.id);
@@ -215,7 +215,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
 
     private _updateWrapper(serviceStatus: Service.ServiceStatus): void {
         for (let i = 0, l = serviceStatus.callHandlers.length; i < l; ++i) {
-            let handlerName = serviceStatus.callHandlers[i];
+            const handlerName = serviceStatus.callHandlers[i];
             const requestProc = (...args: any[]) => {
                 return this.requestApply<Object>(handlerName, args);
             };

@@ -13,8 +13,8 @@ export const CreateIpcBusClient: IpcBusClient.CreateFunction = (options: any, ho
 
     // try {
     //     const electron = require('electron');
-    //     let localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-    //     let ipcBusClient: IpcBusClient = new IpcBusClientRenderer('renderer', localOptions || {}, electron.ipcRenderer);
+    //     const localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
+    //     const ipcBusClient: IpcBusClient = new IpcBusClientRenderer('renderer', localOptions || {}, electron.ipcRenderer);
     //     return ipcBusClient;
     // }
     // catch (_) {
