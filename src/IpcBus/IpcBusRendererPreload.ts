@@ -46,21 +46,25 @@ function _PreloadElectronCommonIpc(context: string, iframeSupport: boolean = fal
         }
         catch (_) {
         }
-        const frameBridge = windowLocal.ElectronCommonIpc.FrameBridge as IpcBusFrameBridge;
-        if (frameBridge) {
-            if (iframeSupport) {
-                trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - start`);
-                frameBridge.start();
-            }
-            else {
-                frameBridge.stop();
-                trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - stop`);
+
+        try {
+            const frameBridge = windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.FrameBridge as IpcBusFrameBridge;
+            if (frameBridge) {
+                if (iframeSupport) {
+                    trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - start`);
+                    frameBridge.start();
+                }
+                else {
+                    frameBridge.stop();
+                    trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - stop`);
+                }
             }
         }
+        catch (_) {
+        }
     }
-
-    try {
-        if (windowLocal.self !== windowLocal.top) {
+    else { // if (windowLocal.self !== windowLocal.top) {
+        try {
             windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
             if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
                 trace && console.log(`${context} - Frame ElectronCommonIpc`);
@@ -73,8 +77,8 @@ function _PreloadElectronCommonIpc(context: string, iframeSupport: boolean = fal
                 };
             }
         }
-    }
-    catch (_) {
+        catch (_) {
+        }
     }
     return IsElectronCommonIpcAvailable();
 }
@@ -87,4 +91,4 @@ export function IsElectronCommonIpcAvailable(): boolean {
     catch (_) {
     }
     return false;
- }
+}
