@@ -1,77 +1,86 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
+const child_process = require('child_process');
 
+const { createClient } = require('./createClient.js');
 const brokersLifeCycle = require('../brokers/brokersLifeCycle');
-const RunMochaBrowser = require('./mocha-browser');
 
 // const ipcBusModule = require('../../lib/electron-common-ipc');
 // ipcBusModule.ActivateIpcBusTrace(true);
 
 function createIPCBusNodeClient(busPath, busTimeout) {
     return new Promise((resolve, reject) => {
-        const options = { stdio: ['pipe', 'pipe', 'pipe', 'ipc'] };
-        // nodeChildProcess = child_process.fork(path.join(__dirname, 'nodeClient.js'), ['--inspect-brk=9229', `--busPath=${ipcBusPath}`], options);
-        const nodeChildProcess = child_process.fork(path.join(__dirname, 'node.js'), [
+
+        const args = [
+            path.join(__dirname, 'node.js'),
             // '--inspect-brk=9229',
             `--busPath=${busPath}`,
-            `--busTimeout=${busTimeout}`
-        ],
-            options);
-        nodeChildProcess.addListener('close', onClose);
-        nodeChildProcess.addListener('disconnect', onDisconnect);
-        nodeChildProcess.addListener('error', onError);
-        nodeChildProcess.addListener('exit', onExit);
-        // nodeChildProcess.stdout.addListener('data', onStdOutData);
-        // nodeChildProcess.stdout.addListener('end', onStdOutEnd);
-        nodeChildProcess.stderr.addListener('data', onStdErrData);
-        nodeChildProcess.stderr.addListener('end', onStdErrEnd);
-        nodeChildProcess.addListener('message', (rawmessage, sendHandle) => {
-            const message = JSON.parse(rawmessage);
-            console.log(`ProcessHost, onChildMessage, [pid:${nodeChildProcess.pid}], ${JSON.stringify(message)}.`);
-            if (message.ready) {
-                if (message.resolve) {
-                    resolve(nodeChildProcess);
+            `--busTimeout=${busTimeout}`,
+        ];
+        let options = { env: {} };
+        for (let key of Object.keys(process.env)) {
+            options.env[key] = process.env[key];
+        }
+        options.env['ELECTRON_RUN_AS_NODE'] = '1';
+        options['stdio'] = ['pipe', 'pipe', 'pipe', 'ipc'];
+        const nodeProcess = child_process.spawn(process.argv[0], args, options);
+        nodeProcess.stdout.addListener('data', data => { console.log('<Node> ' + data.toString()); });
+        nodeProcess.stderr.addListener('data', data => { console.log('<Node> ' + data.toString()); });
+        nodeProcess.on('message', (msgStr) => {
+            const msg = JSON.parse(msgStr);
+            if (msg.ready) {
+                if (msg.ready.resolve) {
+                    resolve(nodeProcess);
                 }
-                if (message.reject) {
+                else if (msg.ready.reject) {
                     reject(message.error);
                 }
+            }
+            else if (msg.response) {
+                ipcMain.send('response', response);
             }
         });
     });
 }
 
 function createIPCBusRendererClient(busPath, busTimeout) {
+    const id = 1;
     return new Promise((resolve, reject) => {
         const browserWindow = new BrowserWindow({ 
-            x, y, width: 800, height: 200,
+            width: 800, height: 800,
             show: true,
             webPreferences: { 
                 nodeIntegration: false, 
                 preload: path.join(__dirname, 'renderer-preload.bundle.js') 
             }
         });
-        browserWindow.webContents.on('ready', (msg) => {
+        ipcMain.on(`ready-${id}`, (event, msg) => {
             if (msg.resolve) {
-                resolve(nodeChildProcess);
+                resolve(browserWindow);
             }
-            if (msg.reject) {
+            else if (msg.reject) {
                 reject(message.error);
             }
-
         });
         browserWindow.loadFile(path.join(__dirname, 'renderer.html'));
         const webContents = browserWindow.webContents;
         if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
-            webContents.send('init-window', busPath, busTimeout);
+            webContents.send('init-window', id, busPath, busTimeout);
         }
         else {
             webContents.on('did-finish-load', () => {
-                webContents.send('init-window', busPath, busTimeout);
+                webContents.send('init-window', id, busPath, busTimeout);
             });
         }
     });
-    
 }
+
+function createIPCBusMainClient(busPath, busTimeout) {
+    return createClient('client Main', busPath, busTimeout, (response) => {
+        ipcMain.send('response', response);
+    })
+}
+
 
 function createIPCBusClients() {
     const brokers = new brokersLifeCycle.Brokers()

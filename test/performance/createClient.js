@@ -21,4 +21,4 @@ function createClient(name, busPath, busTimeout, callback) {
         });
 }
 
-module.exports.createClient = createClient;
+exports.createClient = createClient;

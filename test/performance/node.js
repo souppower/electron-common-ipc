@@ -1,16 +1,15 @@
 const minimist = require('minimist');
 
-const createClient = require('./createClient.js')
+const { createClient } = require('./createClient.js');
 
-// busPath
-console.log(argv);
+console.log(process.argv);
 
 const args = minimist(process.argv.slice(1));
-const busTimeout = 30000;
+let busTimeout = 30000;
 if (args.busTimeout) {
     busTimeout = parseInt(args.busTimeout);
 }
-const busPath = 0;
+let busPath = 0;
 if (args.busPath) {
     busPath = parseInt(args.busPath);
 }

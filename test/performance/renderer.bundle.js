@@ -6984,20 +6984,25 @@ function createClient(name, busPath, busTimeout, callback) {
         });
 }
 
-module.exports.createClient = createClient;
+exports.createClient = createClient;
 }).call(this,require('_process'))
 },{"../../lib/electron-common-ipc":17,"_process":36}],61:[function(require,module,exports){
-const createClient = require('./createClient.js')
+const { createClient } = require('./createClient.js');
 
-window.ipcRenderer('init-window', (event, busPath, bustimeOut) => {
-    createClient('client Renderer', busPath, busTimeout)
-        .then(() => {
-            window.ipcRenderer.send(JSON.stringify({ resolve: true }));
-        })
-        .catch((err) => {
-            window.ipcRenderer.send(JSON.stringify({ reject: true, error: err }));
-        });
+window.ipcRenderer.on('init-window', (event, id, busPath, busTimeout) => {
+    console.log(event);
+    console.log(id);
+    console.log(busPath);
+    createClient('client Renderer', busPath, busTimeout, (response) => {
+        window.ipcRenderer.send('response', response);
+    })
+    .then(() => {
+        window.ipcRenderer.send(`ready-${id}`, { resolve: true });
+    })
+    .catch((err) => {
+        window.ipcRenderer.send(`ready-${id}`, { reject: true, error: err });
     });
+});
 
 
 },{"./createClient.js":60}]},{},[61]);
