@@ -1,4 +1,3 @@
-
 ProcessConnector = (function () {
     function ProcessConnector() {
         var _type = arguments[0];

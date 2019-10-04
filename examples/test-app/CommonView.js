@@ -222,6 +222,7 @@ function onIPC_EmitReceived(ipcBusEvent, ipcContent1, ipcContent2, ipcContent3) 
 
 
 function onIPCBus_ReceivedSendNotify(ipcBusEvent, ipcContent) {
+    ipcBusEvent.request = undefined;
     onIPC_Received(ipcBusEvent, ipcContent);
 }
 
