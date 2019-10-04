@@ -95,7 +95,15 @@ function createIPCBusClients() {
                 createIPCBusRendererClient(busPath, busTimeout)
             ])
             .then(([ipcClientTest, nodeProcess, browserWindow]) => {
-                ipcClientTest.startSendTest('string');
+                setTimeout(() => {
+                    ipcClientTest.ipcClient.on('results', (event, results) => {
+                        console.log(results);
+                    });
+                    setTimeout(() => {
+                        ipcClientTest.ipcClient.send('collect-results');
+                    }, 1000);
+                    ipcClientTest.startSendTest('string');
+                }, 1000 * 10);
             });
         });
 }

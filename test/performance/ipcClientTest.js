@@ -1,57 +1,61 @@
 const ipcBusModule = require('../../lib/electron-common-ipc');
 const uuid = require('uuid');
 
+const eventTestSend = 'test-send';
+
 const IpcClientTest = function _IpcClientTest(name, busPath, busTimeout) {
     const _name = name;
     const _busPath = busPath;
     const _busTimeout = busTimeout;
-    const _ipcClient = ipcBusModule.IpcBusClient.Create(_busPath);
     let _results = [];
 
-    this.create = function() {
-        return _ipcClient.connect({ peerName: _name, timeoutDelay: _busTimeout })
+    this.ipcClient = ipcBusModule.IpcBusClient.Create(_busPath);
+
+    this.create = () => {
+        return this.ipcClient.connect({ peerName: _name, timeoutDelay: _busTimeout })
         .then(() => {
-            _ipcClient.on('test-send', (event, msg) => {
+            this.ipcClient.on(eventTestSend, (event, msg) => {
                 // Break echo
-                if (msg.origin.id === _ipcClient.peer.id) {
+                if (msg.sender.id === this.ipcClient.peer.id) {
                     return;
                 }
-                // msg.time_received = process.hrtime();
-                msg.time_received = new Date().now;
-                msg.receiver = _ipcClient.peerName;
-                const response = { event, msg };
-                console.log(`test-send event=${event}, msg=${msg}`);
+                // msg.time_receiver = process.hrtime();
+                msg.time_receiver = Date.now();
+                msg.receiver = this.ipcClient.peer;
+                console.log(`${eventTestSend} event`);
+                console.log(JSON.stringify(msg, null, 4));
                 // callback && callback(response);
-                _results.push(response);
+                _results.push(msg);
             });
-            _ipcClient.on('test-request', (event, msg) => {
+            this.ipcClient.on('test-request', (event, msg) => {
                 // Break echo
-                if (msg.origin.id === _ipcClient.peer.id) {
+                if (msg.sender.id === this.ipcClient.peer.id) {
                     return;
                 }
-                msg.time_received = new Date().now;
-                msg.receiver = _ipcClient.peerName;
-                const response = { event, msg };
-                console.log(`test-request event=${event}, msg=${msg}`);
+                msg.time_receiver = Date.now();
+                msg.receiver = this.ipcClient.peer;
+                console.log(`test-request event`);
+                console.log(JSON.stringify(msg, null, 4));
                 // callback && callback(response);
                 if (event.request) {
-                    event.request.resolve(response);
+                    event.request.resolve(msg);
                 }
             });
-            _ipcClient.on('collect-results', () => {
-                _ipcClient.send('results', _results);
+            this.ipcClient.on('collect-results', () => {
+                console.log(`collect-results event`);
+                this.ipcClient.send('results', _results);
                 _results = [];
             })
-            return _ipcClient;
+            return this.ipcClient;
         });
     }
 
-    this.startRequestTest = function(payload) {
+    this.startRequestTest = (payload) => {
         const id = uuid.v1();
-        const test = { type: 'request', id, origin: _ipcClient.peer, time_origin: new Date().now, payload };
-        _ipcClient.request('test-request', _busTimeout, test)
+        const test = { type: 'request', id, sender: this.ipcClient.peer, time_sender: Date.now(), payload };
+        this.ipcClient.request('test-request', _busTimeout, test)
         .then((response) => {
-            response.time_request = new Date().now;
+            response.time_request = Date.now();
             // response.time_request = process.hrtime();
             _results.push(response);
         })
@@ -59,10 +63,10 @@ const IpcClientTest = function _IpcClientTest(name, busPath, busTimeout) {
         });
     }
 
-    this.startSendTest = function(payload) {
+    this.startSendTest = (payload) => {
         const id = uuid.v1();
-        const test = { type: 'send', id, origin: _ipcClient.peer, time_origin: new Date().now, payload };
-        _ipcClient.send('test-send', test);
+        const test = { type: 'send', id, sender: this.ipcClient.peer, time_sender: Date.now(), payload };
+        this.ipcClient.send(eventTestSend, test);
     }
 }
 
