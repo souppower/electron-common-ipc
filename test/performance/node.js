@@ -1,6 +1,6 @@
 const minimist = require('minimist');
 
-const { createClient } = require('./createClient.js');
+const { IpcClientTest } = require('./ipcClientTest.js');
 
 console.log(process.argv);
 
@@ -14,8 +14,9 @@ if (args.busPath) {
     busPath = parseInt(args.busPath);
 }
 
-createClient('client Node', busPath, busTimeout, (response) => {
-    process.send(JSON.stringify({ response }));
+const ipcClientTest = new IpcClientTest('client Node', busPath, busTimeout);
+ipcClientTest.create()
+.then(() => {
 })
 .then(() => {
     process.send(JSON.stringify({ ready: { resolve: true }}));

@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 const child_process = require('child_process');
 
-const { createClient } = require('./createClient.js');
+const { IpcClientTest } = require('./ipcClientTest');
 const brokersLifeCycle = require('../brokers/brokersLifeCycle');
 
 // const ipcBusModule = require('../../lib/electron-common-ipc');
@@ -76,11 +76,12 @@ function createIPCBusRendererClient(busPath, busTimeout) {
 }
 
 function createIPCBusMainClient(busPath, busTimeout) {
-    return createClient('client Main', busPath, busTimeout, (response) => {
-        ipcMain.send('response', response);
-    })
+    const ipcClientTest = new IpcClientTest('client Main', busPath, busTimeout);
+    return ipcClientTest.create()
+    .then(() => {
+        return ipcClientTest;
+    });
 }
-
 
 function createIPCBusClients() {
     const brokers = new brokersLifeCycle.Brokers()
@@ -89,9 +90,13 @@ function createIPCBusClients() {
             const busPath = brokers.getBusPath();
             const busTimeout = 3000;
             return Promise.all([
+                createIPCBusMainClient(busPath, busTimeout),
                 createIPCBusNodeClient(busPath, busTimeout),
                 createIPCBusRendererClient(busPath, busTimeout)
-            ]);
+            ])
+            .then(([ipcClientTest, nodeProcess, browserWindow]) => {
+                ipcClientTest.startSendTest('string');
+            });
         });
 }
 

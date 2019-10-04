@@ -6960,41 +6960,83 @@ function v4(options, buf, offset) {
 module.exports = v4;
 
 },{"./lib/bytesToUuid":56,"./lib/rng":57}],60:[function(require,module,exports){
-(function (process){
-function createClient(name, busPath, busTimeout, callback) {
-    const ipcBusModule = require('../../lib/electron-common-ipc');
-    const ipcClient = ipcBusModule.IpcBusClient.Create(busPath);
-    return ipcClient.connect({ peerName: 'client Node', timeoutDelay: busTimeout })
+const ipcBusModule = require('../../lib/electron-common-ipc');
+const uuid = require('uuid');
+
+const IpcClientTest = function _IpcClientTest(name, busPath, busTimeout) {
+    const _name = name;
+    const _busPath = busPath;
+    const _busTimeout = busTimeout;
+    const _ipcClient = ipcBusModule.IpcBusClient.Create(_busPath);
+    let _results = [];
+
+    this.create = function() {
+        return _ipcClient.connect({ peerName: _name, timeoutDelay: _busTimeout })
         .then(() => {
-            ipcClient.on('test-message', (event, ...args) => {
-                const hrtime = process.hrtime();
-                const response = { event, args, hrtime };
-                console.log(`test-message event=${event}, args=${args}`);
-                callback(response);
+            _ipcClient.on('test-send', (event, msg) => {
+                // Break echo
+                if (msg.origin.id === _ipcClient.peer.id) {
+                    return;
+                }
+                // msg.time_received = process.hrtime();
+                msg.time_received = new Date().now;
+                msg.receiver = _ipcClient.peerName;
+                const response = { event, msg };
+                console.log(`test-send event=${event}, msg=${msg}`);
+                // callback && callback(response);
+                _results.push(response);
             });
-            ipcClient.on('test-request', (event, ...args) => {
-                const hrtime = process.hrtime();
-                const response = { event, args, hrtime };
-                callback(response);
-                console.log(`test-request event=${event}, args=${args}`);
+            _ipcClient.on('test-request', (event, msg) => {
+                // Break echo
+                if (msg.origin.id === _ipcClient.peer.id) {
+                    return;
+                }
+                msg.time_received = new Date().now;
+                msg.receiver = _ipcClient.peerName;
+                const response = { event, msg };
+                console.log(`test-request event=${event}, msg=${msg}`);
+                // callback && callback(response);
                 if (event.request) {
-                    event.request.resolve(JSON.stringify({ event, args, hrtime }));
+                    event.request.resolve(response);
                 }
             });
+            _ipcClient.on('collect-results', () => {
+                _ipcClient.send('results', _results);
+                _results = [];
+            })
+            return _ipcClient;
         });
+    }
+
+    this.startRequestTest = function(payload) {
+        const id = uuid.v1();
+        const test = { type: 'request', id, origin: _ipcClient.peer, time_origin: new Date().now, payload };
+        _ipcClient.request('test-request', _busTimeout, test)
+        .then((response) => {
+            response.time_request = new Date().now;
+            // response.time_request = process.hrtime();
+            _results.push(response);
+        })
+        .catch((err) => {
+        });
+    }
+
+    this.startSendTest = function(payload) {
+        const id = uuid.v1();
+        const test = { type: 'send', id, origin: _ipcClient.peer, time_origin: new Date().now, payload };
+        _ipcClient.send('test-send', test);
+    }
 }
 
-exports.createClient = createClient;
-}).call(this,require('_process'))
-},{"../../lib/electron-common-ipc":17,"_process":36}],61:[function(require,module,exports){
-const { createClient } = require('./createClient.js');
+exports.IpcClientTest = IpcClientTest;
+
+},{"../../lib/electron-common-ipc":17,"uuid":55}],61:[function(require,module,exports){
+const { IpcClientTest } = require('./ipcClientTest.js');
 
 window.ipcRenderer.on('init-window', (event, id, busPath, busTimeout) => {
-    console.log(event);
-    console.log(id);
-    console.log(busPath);
-    createClient('client Renderer', busPath, busTimeout, (response) => {
-        window.ipcRenderer.send('response', response);
+    const ipcClientTest = new IpcClientTest('client Renderer', busPath, busTimeout);
+    ipcClientTest.create()
+    .then(() => {
     })
     .then(() => {
         window.ipcRenderer.send(`ready-${id}`, { resolve: true });
@@ -7005,4 +7047,4 @@ window.ipcRenderer.on('init-window', (event, id, busPath, busTimeout) => {
 });
 
 
-},{"./createClient.js":60}]},{},[61]);
+},{"./ipcClientTest.js":60}]},{},[61]);

@@ -1,11 +1,9 @@
-const { createClient } = require('./createClient.js');
+const { IpcClientTest } = require('./ipcClientTest.js');
 
 window.ipcRenderer.on('init-window', (event, id, busPath, busTimeout) => {
-    console.log(event);
-    console.log(id);
-    console.log(busPath);
-    createClient('client Renderer', busPath, busTimeout, (response) => {
-        window.ipcRenderer.send('response', response);
+    const ipcClientTest = new IpcClientTest('client Renderer', busPath, busTimeout);
+    ipcClientTest.create()
+    .then(() => {
     })
     .then(() => {
         window.ipcRenderer.send(`ready-${id}`, { resolve: true });
