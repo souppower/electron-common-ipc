@@ -66,7 +66,7 @@ function test(remoteBroker, busPath) {
                 nodeChildProcess = child_process.fork(path.join(__dirname, 'nodeClient.js'), [
                   '--inspect-brk=9229', 
                   `--busPath=${ipcBusPath}`, 
-                  `busTimeout=${timeoutDelay}`
+                  `--busTimeout=${timeoutDelay}`
                 ], 
                 options);
                 nodeChildProcess.addListener('close', onClose);
