@@ -34,13 +34,15 @@ function _PreloadElectronCommonIpc(context: string, iframeSupport: boolean = fal
                     windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options: any, hostname?: string) => {
                         trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
                         const localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-                        const ipcBusClient = CreateIpcBusClientWindow('renderer', localOptions || {}, electron.ipcRenderer);
+                        // 'ipcRenderer as any', ipcRenderer does not cover all EventListener interface !
+                        const ipcBusClient = CreateIpcBusClientWindow('renderer', localOptions || {}, electron.ipcRenderer as any);
                         return ipcBusClient;
                     };
                 }
                 if (windowLocal.ElectronCommonIpc.FrameBridge == null) {
                     trace && console.log(`inject - ${context} - ElectronCommonIpc.FrameBridge`);
-                    windowLocal.ElectronCommonIpc.FrameBridge = new IpcBusFrameBridge(electron.ipcRenderer, window);
+                    // 'ipcRenderer as any', ipcRenderer does not cover all EventListener interface !
+                    windowLocal.ElectronCommonIpc.FrameBridge = new IpcBusFrameBridge(electron.ipcRenderer as any, window);
                 }
             }
         }

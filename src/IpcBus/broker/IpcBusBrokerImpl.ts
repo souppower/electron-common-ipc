@@ -17,7 +17,7 @@ interface IpcBusBrokerSocketClient {
 
 class IpcBusBrokerSocket {
     private _socket: net.Socket;
-    protected _socketBinds: { [key: string]: Function };
+    protected _socketBinds: { [key: string]: (...args: any[]) => void };
 
     private _packetIn: IpcPacketBuffer;
     private _bufferListReader: BufferListReader;
@@ -88,7 +88,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     private _socketClients: Map<net.Socket, IpcBusBrokerSocket>;
 
     private _server: net.Server;
-    private _netBinds: { [key: string]: Function };
+    private _netBinds: { [key: string]: (...args: any[]) => void };
 
     private _promiseStarted: Promise<void>;
 

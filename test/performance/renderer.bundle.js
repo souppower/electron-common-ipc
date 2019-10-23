@@ -196,7 +196,7 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 }
 exports.IpcBusFrameBridge = IpcBusFrameBridge;
 
-},{"./CrossFrameMessage":2,"./IpcBusTransportWindow":10,"events":25,"uuid":55}],2:[function(require,module,exports){
+},{"./CrossFrameMessage":2,"./IpcBusTransportWindow":10,"events":25,"uuid":49}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const json_helpers_1 = require("json-helpers");
@@ -574,7 +574,7 @@ class IpcBusTransportImpl {
 }
 exports.IpcBusTransportImpl = IpcBusTransportImpl;
 
-},{"./IpcBusClient":4,"./IpcBusCommand":7,"./IpcBusUtils":11,"uuid":55}],10:[function(require,module,exports){
+},{"./IpcBusClient":4,"./IpcBusCommand":7,"./IpcBusUtils":11,"uuid":49}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert = require("assert");
@@ -689,7 +689,7 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
 }
 exports.IpcBusTransportWindow = IpcBusTransportWindow;
 
-},{"./IpcBusCommand":7,"./IpcBusTransportImpl":9,"./IpcBusUtils":11,"assert":19,"socket-serializer":46}],11:[function(require,module,exports){
+},{"./IpcBusCommand":7,"./IpcBusTransportImpl":9,"./IpcBusUtils":11,"assert":19,"socket-serializer":47}],11:[function(require,module,exports){
 (function (Buffer,process){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -814,9 +814,9 @@ class Logger {
         console.error(msg);
     }
 }
+exports.Logger = Logger;
 Logger.enable = false;
 Logger.service = false;
-exports.Logger = Logger;
 ;
 function ContainsWildCards(str) {
     return str.charAt(str.length - 1) === '*';
@@ -1008,7 +1008,7 @@ exports.ConnectionData = ConnectionData;
 ;
 
 }).call(this,{"isBuffer":require("../../node_modules/is-buffer/index.js")},require('_process'))
-},{"../../node_modules/is-buffer/index.js":27,"_process":36,"events":25}],12:[function(require,module,exports){
+},{"../../node_modules/is-buffer/index.js":27,"_process":37,"events":25}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusService_1 = require("./IpcBusService");
@@ -1463,6 +1463,8 @@ exports.ActivateServiceTrace = ActivateServiceTrace;
 (function (global){
 'use strict';
 
+var objectAssign = require('object-assign');
+
 // compare and isBuffer taken from https://github.com/feross/buffer/blob/680e9e5e488f22aac27599a57dc844a6315928dd/index.js
 // original notice:
 
@@ -1504,6 +1506,8 @@ function isBuffer(b) {
 }
 
 // based on node assert, original notice:
+// NB: The URL to the CommonJS spec is kept just for tradition.
+//     node-assert has evolved a lot since then, both in API and behavior.
 
 // http://wiki.commonjs.org/wiki/Unit_Testing/1.0
 //
@@ -1944,6 +1948,18 @@ assert.doesNotThrow = function(block, /*optional*/error, /*optional*/message) {
 
 assert.ifError = function(err) { if (err) throw err; };
 
+// Expose a strict only variant of assert
+function strict(value, message) {
+  if (!value) fail(value, true, message, '==', strict);
+}
+assert.strict = objectAssign(strict, assert, {
+  equal: assert.strictEqual,
+  deepEqual: assert.deepStrictEqual,
+  notEqual: assert.notStrictEqual,
+  notDeepEqual: assert.notDeepStrictEqual
+});
+assert.strict.strict = assert.strict;
+
 var objectKeys = Object.keys || function (obj) {
   var keys = [];
   for (var key in obj) {
@@ -1953,7 +1969,7 @@ var objectKeys = Object.keys || function (obj) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"util/":22}],20:[function(require,module,exports){
+},{"object-assign":36,"util/":22}],20:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -2575,7 +2591,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":21,"_process":36,"inherits":20}],23:[function(require,module,exports){
+},{"./support/isBuffer":21,"_process":37,"inherits":20}],23:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -2643,7 +2659,8 @@ function toByteArray (b64) {
     ? validLen - 4
     : validLen
 
-  for (var i = 0; i < len; i += 4) {
+  var i
+  for (i = 0; i < len; i += 4) {
     tmp =
       (revLookup[b64.charCodeAt(i)] << 18) |
       (revLookup[b64.charCodeAt(i + 1)] << 12) |
@@ -2729,6 +2746,7 @@ function fromByteArray (uint8) {
 }
 
 },{}],24:[function(require,module,exports){
+(function (Buffer){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -2741,6 +2759,10 @@ function fromByteArray (uint8) {
 
 var base64 = require('base64-js')
 var ieee754 = require('ieee754')
+var customInspectSymbol =
+  (typeof Symbol === 'function' && typeof Symbol.for === 'function')
+    ? Symbol.for('nodejs.util.inspect.custom')
+    : null
 
 exports.Buffer = Buffer
 exports.SlowBuffer = SlowBuffer
@@ -2777,7 +2799,9 @@ function typedArraySupport () {
   // Can typed array instances can be augmented?
   try {
     var arr = new Uint8Array(1)
-    arr.__proto__ = { __proto__: Uint8Array.prototype, foo: function () { return 42 } }
+    var proto = { foo: function () { return 42 } }
+    Object.setPrototypeOf(proto, Uint8Array.prototype)
+    Object.setPrototypeOf(arr, proto)
     return arr.foo() === 42
   } catch (e) {
     return false
@@ -2806,7 +2830,7 @@ function createBuffer (length) {
   }
   // Return an augmented `Uint8Array` instance
   var buf = new Uint8Array(length)
-  buf.__proto__ = Buffer.prototype
+  Object.setPrototypeOf(buf, Buffer.prototype)
   return buf
 }
 
@@ -2856,7 +2880,7 @@ function from (value, encodingOrOffset, length) {
   }
 
   if (value == null) {
-    throw TypeError(
+    throw new TypeError(
       'The first argument must be one of type string, Buffer, ArrayBuffer, Array, ' +
       'or Array-like Object. Received type ' + (typeof value)
     )
@@ -2908,8 +2932,8 @@ Buffer.from = function (value, encodingOrOffset, length) {
 
 // Note: Change prototype *after* Buffer.from is defined to workaround Chrome bug:
 // https://github.com/feross/buffer/pull/148
-Buffer.prototype.__proto__ = Uint8Array.prototype
-Buffer.__proto__ = Uint8Array
+Object.setPrototypeOf(Buffer.prototype, Uint8Array.prototype)
+Object.setPrototypeOf(Buffer, Uint8Array)
 
 function assertSize (size) {
   if (typeof size !== 'number') {
@@ -3013,7 +3037,8 @@ function fromArrayBuffer (array, byteOffset, length) {
   }
 
   // Return an augmented `Uint8Array` instance
-  buf.__proto__ = Buffer.prototype
+  Object.setPrototypeOf(buf, Buffer.prototype)
+
   return buf
 }
 
@@ -3335,6 +3360,9 @@ Buffer.prototype.inspect = function inspect () {
   if (this.length > max) str += ' ... '
   return '<Buffer ' + str + '>'
 }
+if (customInspectSymbol) {
+  Buffer.prototype[customInspectSymbol] = Buffer.prototype.inspect
+}
 
 Buffer.prototype.compare = function compare (target, start, end, thisStart, thisEnd) {
   if (isInstance(target, Uint8Array)) {
@@ -3460,7 +3488,7 @@ function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
         return Uint8Array.prototype.lastIndexOf.call(buffer, val, byteOffset)
       }
     }
-    return arrayIndexOf(buffer, [ val ], byteOffset, encoding, dir)
+    return arrayIndexOf(buffer, [val], byteOffset, encoding, dir)
   }
 
   throw new TypeError('val must be string, number or Buffer')
@@ -3789,7 +3817,7 @@ function hexSlice (buf, start, end) {
 
   var out = ''
   for (var i = start; i < end; ++i) {
-    out += toHex(buf[i])
+    out += hexSliceLookupTable[buf[i]]
   }
   return out
 }
@@ -3826,7 +3854,8 @@ Buffer.prototype.slice = function slice (start, end) {
 
   var newBuf = this.subarray(start, end)
   // Return an augmented `Uint8Array` instance
-  newBuf.__proto__ = Buffer.prototype
+  Object.setPrototypeOf(newBuf, Buffer.prototype)
+
   return newBuf
 }
 
@@ -4315,6 +4344,8 @@ Buffer.prototype.fill = function fill (val, start, end, encoding) {
     }
   } else if (typeof val === 'number') {
     val = val & 255
+  } else if (typeof val === 'boolean') {
+    val = Number(val)
   }
 
   // Invalid ranges are not set to a default, so can range check early.
@@ -4370,11 +4401,6 @@ function base64clean (str) {
     str = str + '='
   }
   return str
-}
-
-function toHex (n) {
-  if (n < 16) return '0' + n.toString(16)
-  return n.toString(16)
 }
 
 function utf8ToBytes (string, units) {
@@ -4507,7 +4533,22 @@ function numberIsNaN (obj) {
   return obj !== obj // eslint-disable-line no-self-compare
 }
 
-},{"base64-js":23,"ieee754":26}],25:[function(require,module,exports){
+// Create lookup table for `toString('hex')`
+// See: https://github.com/feross/buffer/issues/219
+var hexSliceLookupTable = (function () {
+  var alphabet = '0123456789abcdef'
+  var table = new Array(256)
+  for (var i = 0; i < 16; ++i) {
+    var i16 = i * 16
+    for (var j = 0; j < 16; ++j) {
+      table[i16 + j] = alphabet[i] + alphabet[j]
+    }
+  }
+  return table
+})()
+
+}).call(this,require("buffer").Buffer)
+},{"base64-js":23,"buffer":24,"ieee754":26}],25:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -5388,6 +5429,98 @@ var ToJSONReviver;
 })(ToJSONReviver = exports.ToJSONReviver || (exports.ToJSONReviver = {}));
 
 },{}],36:[function(require,module,exports){
+/*
+object-assign
+(c) Sindre Sorhus
+@license MIT
+*/
+
+'use strict';
+/* eslint-disable no-unused-vars */
+var getOwnPropertySymbols = Object.getOwnPropertySymbols;
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+var propIsEnumerable = Object.prototype.propertyIsEnumerable;
+
+function toObject(val) {
+	if (val === null || val === undefined) {
+		throw new TypeError('Object.assign cannot be called with null or undefined');
+	}
+
+	return Object(val);
+}
+
+function shouldUseNative() {
+	try {
+		if (!Object.assign) {
+			return false;
+		}
+
+		// Detect buggy property enumeration order in older V8 versions.
+
+		// https://bugs.chromium.org/p/v8/issues/detail?id=4118
+		var test1 = new String('abc');  // eslint-disable-line no-new-wrappers
+		test1[5] = 'de';
+		if (Object.getOwnPropertyNames(test1)[0] === '5') {
+			return false;
+		}
+
+		// https://bugs.chromium.org/p/v8/issues/detail?id=3056
+		var test2 = {};
+		for (var i = 0; i < 10; i++) {
+			test2['_' + String.fromCharCode(i)] = i;
+		}
+		var order2 = Object.getOwnPropertyNames(test2).map(function (n) {
+			return test2[n];
+		});
+		if (order2.join('') !== '0123456789') {
+			return false;
+		}
+
+		// https://bugs.chromium.org/p/v8/issues/detail?id=3056
+		var test3 = {};
+		'abcdefghijklmnopqrst'.split('').forEach(function (letter) {
+			test3[letter] = letter;
+		});
+		if (Object.keys(Object.assign({}, test3)).join('') !==
+				'abcdefghijklmnopqrst') {
+			return false;
+		}
+
+		return true;
+	} catch (err) {
+		// We don't expect any of the above to throw, but better to be safe.
+		return false;
+	}
+}
+
+module.exports = shouldUseNative() ? Object.assign : function (target, source) {
+	var from;
+	var to = toObject(target);
+	var symbols;
+
+	for (var s = 1; s < arguments.length; s++) {
+		from = Object(arguments[s]);
+
+		for (var key in from) {
+			if (hasOwnProperty.call(from, key)) {
+				to[key] = from[key];
+			}
+		}
+
+		if (getOwnPropertySymbols) {
+			symbols = getOwnPropertySymbols(from);
+			for (var i = 0; i < symbols.length; i++) {
+				if (propIsEnumerable.call(from, symbols[i])) {
+					to[symbols[i]] = from[symbols[i]];
+				}
+			}
+		}
+	}
+
+	return to;
+};
+
+},{}],37:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -5573,7 +5706,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const buffer_1 = require("buffer");
@@ -5604,7 +5737,7 @@ class BufferListReader extends reader_1.ReaderBase {
         return this._contexts.length;
     }
     popd() {
-        let context = this._contexts.pop();
+        const context = this._contexts.pop();
         this._offset = context.offset;
         this._curOffset = context.curOffset;
         this._curBufferIndex = context.curBufferIndex;
@@ -5662,7 +5795,7 @@ class BufferListReader extends reader_1.ReaderBase {
         let newOffset = this._curOffset + offsetStep;
         if (newOffset > curBuffer.length) {
             let bufferLength = 0;
-            let buffers = [];
+            const buffers = [];
             for (let endBufferIndex = this._curBufferIndex; endBufferIndex < this._buffers.length; ++endBufferIndex) {
                 buffers.push(this._buffers[endBufferIndex]);
                 bufferLength += this._buffers[endBufferIndex].length;
@@ -5680,8 +5813,8 @@ class BufferListReader extends reader_1.ReaderBase {
         return curBuffer;
     }
     _readNumber(bufferFunction, byteSize, noAssert) {
-        let start = this._curOffset;
-        let currBuffer = this._consolidate(byteSize, noAssert);
+        const start = this._curOffset;
+        const currBuffer = this._consolidate(byteSize, noAssert);
         return bufferFunction.call(currBuffer, start, noAssert);
     }
     readByte(noAssert) {
@@ -5694,26 +5827,26 @@ class BufferListReader extends reader_1.ReaderBase {
         return this._readNumber(buffer_1.Buffer.prototype.readDoubleLE, 8, noAssert);
     }
     readString(encoding, len) {
-        let end = reader_1.Reader.AdjustEnd(this._offset, this._length, len);
+        const end = reader_1.Reader.AdjustEnd(this._offset, this._length, len);
         if (this._offset === end) {
             return '';
         }
         else {
-            let start = this._curOffset;
+            const start = this._curOffset;
             len = end - this._offset;
-            let currBuffer = this._consolidate(len);
+            const currBuffer = this._consolidate(len);
             return currBuffer.toString(encoding, start, end);
         }
     }
     readBuffer(len) {
-        let end = reader_1.Reader.AdjustEnd(this._offset, this._length, len);
+        const end = reader_1.Reader.AdjustEnd(this._offset, this._length, len);
         if (this._offset === end) {
             return buffer_1.Buffer.alloc(0);
         }
         else {
-            let start = this._curOffset;
+            const start = this._curOffset;
             len = end - this._offset;
-            let currBuffer = this._consolidate(len);
+            const currBuffer = this._consolidate(len);
             if ((start === 0) && (len === currBuffer.length)) {
                 return currBuffer;
             }
@@ -5725,7 +5858,7 @@ class BufferListReader extends reader_1.ReaderBase {
 }
 exports.BufferListReader = BufferListReader;
 
-},{"./reader":44,"buffer":24}],38:[function(require,module,exports){
+},{"./reader":45,"buffer":24}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const buffer_1 = require("buffer");
@@ -5739,8 +5872,8 @@ class BufferListWriterBase extends writer_1.WriterBase {
         return this._length;
     }
     writeBytes(dataArray) {
-        let uint8Array = new Uint8Array(dataArray);
-        let buffer = buffer_1.Buffer.from(uint8Array.buffer);
+        const uint8Array = new Uint8Array(dataArray);
+        const buffer = buffer_1.Buffer.from(uint8Array.buffer);
         return this._appendBuffer(buffer.length, buffer);
     }
     _writeNumber(bufferFunction, data, byteSize) {
@@ -5761,7 +5894,7 @@ class BufferListWriterBase extends writer_1.WriterBase {
         if (len != null) {
             data = data.substring(0, len);
         }
-        let buffer = buffer_1.Buffer.from(data, encoding);
+        const buffer = buffer_1.Buffer.from(data, encoding);
         return this._appendBuffer(buffer.length, buffer);
     }
     writeBuffer(buffer, sourceStart, sourceEnd) {
@@ -5809,7 +5942,7 @@ class BufferListWriter extends BufferListWriterBase {
 }
 exports.BufferListWriter = BufferListWriter;
 
-},{"./writer":45,"buffer":24}],39:[function(require,module,exports){
+},{"./writer":46,"buffer":24}],40:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5840,7 +5973,7 @@ class BufferReader extends reader_1.ReaderBase {
         return this.checkEOF();
     }
     _readNumber(bufferFunction, byteSize) {
-        let start = this._offset;
+        const start = this._offset;
         this._offset += byteSize;
         return bufferFunction.call(this._buffer, start, this._noAssert);
     }
@@ -5854,23 +5987,23 @@ class BufferReader extends reader_1.ReaderBase {
         return this._readNumber(Buffer.prototype.readDoubleLE, 8);
     }
     readString(encoding, len) {
-        let end = reader_1.Reader.AdjustEnd(this._offset, this._buffer.length, len);
+        const end = reader_1.Reader.AdjustEnd(this._offset, this._buffer.length, len);
         if (this._offset === end) {
             return '';
         }
         else {
-            let start = this._offset;
+            const start = this._offset;
             this._offset = end;
             return this._buffer.toString(encoding, start, end);
         }
     }
     readBuffer(len) {
-        let end = reader_1.Reader.AdjustEnd(this._offset, this._buffer.length, len);
+        const end = reader_1.Reader.AdjustEnd(this._offset, this._buffer.length, len);
         if (this._offset === end) {
             return Buffer.allocUnsafe(0);
         }
         else {
-            let start = this._offset;
+            const start = this._offset;
             len = end - this._offset;
             this._offset = end;
             if ((start === 0) && (len === this._buffer.length)) {
@@ -5887,7 +6020,7 @@ class BufferReader extends reader_1.ReaderBase {
 exports.BufferReader = BufferReader;
 
 }).call(this,require("buffer").Buffer)
-},{"./reader":44,"buffer":24}],40:[function(require,module,exports){
+},{"./reader":45,"buffer":24}],41:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5938,7 +6071,7 @@ class BufferWriter extends writer_1.WriterBase {
         return this._offset;
     }
     write(writer) {
-        let buffers = writer.buffers;
+        const buffers = writer.buffers;
         for (let i = 0, l = buffers.length; i < l; ++i) {
             this.writeBuffer(buffers[i]);
         }
@@ -5952,7 +6085,7 @@ class BufferWriter extends writer_1.WriterBase {
 exports.BufferWriter = BufferWriter;
 
 }).call(this,require("buffer").Buffer)
-},{"./writer":45,"buffer":24}],41:[function(require,module,exports){
+},{"./writer":46,"buffer":24}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
@@ -5987,7 +6120,7 @@ class IpcPacketParser {
 }
 exports.IpcPacketParser = IpcPacketParser;
 
-},{"./bufferListWriter":38,"./bufferReader":39,"./ipcPacketBufferWrap":43}],42:[function(require,module,exports){
+},{"./bufferListWriter":39,"./bufferReader":40,"./ipcPacketBufferWrap":44}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
@@ -6010,14 +6143,14 @@ class IpcPacketBuffer extends ipcPacketBufferWrap_1.IpcPacketBufferWrap {
         return result;
     }
     decodeFromBuffer(buffer) {
-        let result = this._readHeader(new bufferReader_1.BufferReader(buffer));
+        const result = this._readHeader(new bufferReader_1.BufferReader(buffer));
         if (result) {
             this._buffer = buffer;
         }
         return result;
     }
     _serializeAndCheck(checker, dataNumber) {
-        let bufferWriter = new bufferListWriter_1.BufferListWriter();
+        const bufferWriter = new bufferListWriter_1.BufferListWriter();
         this.write(bufferWriter, dataNumber);
         this._buffer = bufferWriter.buffer;
         return checker.call(this);
@@ -6032,7 +6165,7 @@ class IpcPacketBuffer extends ipcPacketBufferWrap_1.IpcPacketBufferWrap {
         return this._serializeAndCheck(this.isDate, dataDate);
     }
     serializeString(data, encoding) {
-        let bufferWriter = new bufferListWriter_1.BufferListWriter();
+        const bufferWriter = new bufferListWriter_1.BufferListWriter();
         this.writeString(bufferWriter, data, encoding);
         this._buffer = bufferWriter.buffer;
         return this.isString();
@@ -6051,7 +6184,7 @@ class IpcPacketBuffer extends ipcPacketBufferWrap_1.IpcPacketBufferWrap {
     }
     _parseAndCheck(checker) {
         if (checker.call(this)) {
-            let bufferReader = new bufferReader_1.BufferReader(this._buffer, this._headerSize);
+            const bufferReader = new bufferReader_1.BufferReader(this._buffer, this._headerSize);
             return this._readContent(0, bufferReader);
         }
         return null;
@@ -6082,21 +6215,21 @@ class IpcPacketBuffer extends ipcPacketBufferWrap_1.IpcPacketBufferWrap {
     }
     parseArrayLength() {
         if (this.isArray()) {
-            let bufferReader = new bufferReader_1.BufferReader(this._buffer, this._headerSize);
+            const bufferReader = new bufferReader_1.BufferReader(this._buffer, this._headerSize);
             return this._readArrayLength(bufferReader);
         }
         return null;
     }
     parseArrayAt(index) {
         if (this.isArray()) {
-            let bufferReader = new bufferReader_1.BufferReader(this._buffer, this._headerSize);
+            const bufferReader = new bufferReader_1.BufferReader(this._buffer, this._headerSize);
             return this._readArrayAt(bufferReader, index);
         }
         return null;
     }
     parseArraySlice(start, end) {
         if (this.isArray()) {
-            let bufferReader = new bufferReader_1.BufferReader(this._buffer, this._headerSize);
+            const bufferReader = new bufferReader_1.BufferReader(this._buffer, this._headerSize);
             return this._readArraySlice(bufferReader, start, end);
         }
         return null;
@@ -6104,7 +6237,7 @@ class IpcPacketBuffer extends ipcPacketBufferWrap_1.IpcPacketBufferWrap {
 }
 exports.IpcPacketBuffer = IpcPacketBuffer;
 
-},{"./bufferListWriter":38,"./bufferReader":39,"./ipcPacketBufferWrap":43}],43:[function(require,module,exports){
+},{"./bufferListWriter":39,"./bufferReader":40,"./ipcPacketBufferWrap":44}],44:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -6114,8 +6247,8 @@ const json_helpers_1 = require("json-helpers");
 const headerSeparator = '['.charCodeAt(0);
 const footerSeparator = ']'.charCodeAt(0);
 const FooterLength = 1;
-const MinHeaderLength = 2;
-const ObjectHeaderLength = MinHeaderLength + 4;
+const FixedHeaderSize = 2;
+const DynamicHeaderSize = FixedHeaderSize + 4;
 var BufferType;
 (function (BufferType) {
     BufferType[BufferType["NotValid"] = 'X'.charCodeAt(0)] = "NotValid";
@@ -6158,15 +6291,15 @@ class IpcPacketBufferWrap {
     }
     setTypeAndContentSize(bufferType, contentSize) {
         this._type = bufferType;
-        switch (this._type) {
+        switch (bufferType) {
             case BufferType.Date:
             case BufferType.Double:
-                this._headerSize = MinHeaderLength;
+                this._headerSize = FixedHeaderSize;
                 this._contentSize = 8;
                 break;
             case BufferType.NegativeInteger:
             case BufferType.PositiveInteger:
-                this._headerSize = MinHeaderLength;
+                this._headerSize = FixedHeaderSize;
                 this._contentSize = 4;
                 break;
             case BufferType.Object:
@@ -6174,14 +6307,14 @@ class IpcPacketBufferWrap {
             case BufferType.String:
             case BufferType.Buffer:
             case BufferType.ArrayWithSize:
-                this._headerSize = ObjectHeaderLength;
+                this._headerSize = DynamicHeaderSize;
                 this._contentSize = contentSize;
                 break;
             case BufferType.BooleanTrue:
             case BufferType.BooleanFalse:
             case BufferType.Null:
             case BufferType.Undefined:
-                this._headerSize = MinHeaderLength;
+                this._headerSize = FixedHeaderSize;
                 this._contentSize = 0;
                 break;
             default:
@@ -6248,15 +6381,7 @@ class IpcPacketBufferWrap {
         }
     }
     isFixedSize() {
-        switch (this._type) {
-            case BufferType.Object:
-            case BufferType.ObjectSTRINGIFY:
-            case BufferType.String:
-            case BufferType.Buffer:
-            case BufferType.ArrayWithSize:
-                return false;
-        }
-        return true;
+        return (this._headerSize === FixedHeaderSize);
     }
     _skipHeader(bufferReader) {
         return bufferReader.skip(this._headerSize);
@@ -6291,7 +6416,7 @@ class IpcPacketBufferWrap {
     }
     writeHeader(bufferWriter) {
         bufferWriter.pushContext();
-        let bufferWriterHeader = new bufferWriter_1.BufferWriter(Buffer.allocUnsafe(this._headerSize));
+        const bufferWriterHeader = new bufferWriter_1.BufferWriter(Buffer.allocUnsafe(this._headerSize));
         bufferWriterHeader.writeByte(headerSeparator);
         bufferWriterHeader.writeByte(this._type);
         if (this.isFixedSize() === false) {
@@ -6306,7 +6431,7 @@ class IpcPacketBufferWrap {
     writeFixedSize(bufferWriter, bufferType, num) {
         bufferWriter.pushContext();
         this.setTypeAndContentSize(bufferType);
-        let bufferWriteAllInOne = new bufferWriter_1.BufferWriter(Buffer.allocUnsafe(this.packetSize));
+        const bufferWriteAllInOne = new bufferWriter_1.BufferWriter(Buffer.allocUnsafe(this.packetSize));
         bufferWriteAllInOne.writeByte(headerSeparator);
         bufferWriteAllInOne.writeByte(this._type);
         switch (bufferType) {
@@ -6361,7 +6486,7 @@ class IpcPacketBufferWrap {
     }
     writeNumber(bufferWriter, dataNumber) {
         if (Number.isInteger(dataNumber)) {
-            let absDataNumber = Math.abs(dataNumber);
+            const absDataNumber = Math.abs(dataNumber);
             if (absDataNumber <= 0xFFFFFFFF) {
                 if (dataNumber < 0) {
                     this.writeFixedSize(bufferWriter, BufferType.NegativeInteger, absDataNumber);
@@ -6375,11 +6500,11 @@ class IpcPacketBufferWrap {
         this.writeFixedSize(bufferWriter, BufferType.Double, dataNumber);
     }
     writeDate(bufferWriter, data) {
-        let t = data.getTime();
+        const t = data.getTime();
         this.writeFixedSize(bufferWriter, BufferType.Date, t);
     }
     writeString(bufferWriter, data, encoding) {
-        let buffer = Buffer.from(data, 'utf8');
+        const buffer = Buffer.from(data, 'utf8');
         this.setTypeAndContentSize(BufferType.String, buffer.length);
         this.writeHeader(bufferWriter);
         bufferWriter.writeBuffer(buffer);
@@ -6396,14 +6521,12 @@ class IpcPacketBufferWrap {
             this.writeFixedSize(bufferWriter, BufferType.Null);
         }
         else {
-            let contentBufferWriter = new bufferListWriter_1.BufferListWriter();
-            let keys = Object.keys(dataObject);
-            for (let i = 0, l = keys.length; i < l; ++i) {
-                let key = keys[i];
-                let buffer = Buffer.from(key, 'utf8');
+            const contentBufferWriter = new bufferListWriter_1.BufferListWriter();
+            for (let [key, value] of Object.entries(dataObject)) {
+                const buffer = Buffer.from(key, 'utf8');
                 contentBufferWriter.writeUInt32(buffer.length);
                 contentBufferWriter.writeBuffer(buffer);
-                this.write(contentBufferWriter, dataObject[key]);
+                this.write(contentBufferWriter, value);
             }
             this.setTypeAndContentSize(BufferType.Object, contentBufferWriter.length);
             this.writeHeader(bufferWriter);
@@ -6416,13 +6539,13 @@ class IpcPacketBufferWrap {
             this.writeFixedSize(bufferWriter, BufferType.Null);
         }
         else {
-            let contentBufferWriter = new bufferListWriter_1.BufferListWriter();
-            let keys = Object.keys(dataObject);
+            const contentBufferWriter = new bufferListWriter_1.BufferListWriter();
+            const keys = Object.keys(dataObject);
             for (let i = 0, l = keys.length; i < l; ++i) {
-                let key = keys[i];
+                const key = keys[i];
                 const desc = Object.getOwnPropertyDescriptor(dataObject, key);
                 if (desc && (typeof desc.value !== 'function')) {
-                    let buffer = Buffer.from(key, 'utf8');
+                    const buffer = Buffer.from(key, 'utf8');
                     contentBufferWriter.writeUInt32(buffer.length);
                     contentBufferWriter.writeBuffer(buffer);
                     this.write(contentBufferWriter, desc.value);
@@ -6439,8 +6562,8 @@ class IpcPacketBufferWrap {
             this.writeFixedSize(bufferWriter, BufferType.Null);
         }
         else {
-            let stringifycation = JSON.stringify(dataObject);
-            let buffer = Buffer.from(stringifycation);
+            const stringifycation = JSON.stringify(dataObject);
+            const buffer = Buffer.from(stringifycation);
             this.setTypeAndContentSize(BufferType.ObjectSTRINGIFY, buffer.length);
             this.writeHeader(bufferWriter);
             bufferWriter.writeBuffer(buffer);
@@ -6452,8 +6575,8 @@ class IpcPacketBufferWrap {
             this.writeFixedSize(bufferWriter, BufferType.Null);
         }
         else {
-            let stringifycation = json_helpers_1.JSONParser.stringify(dataObject);
-            let buffer = Buffer.from(stringifycation, 'utf8');
+            const stringifycation = json_helpers_1.JSONParser.stringify(dataObject);
+            const buffer = Buffer.from(stringifycation, 'utf8');
             this.setTypeAndContentSize(BufferType.ObjectSTRINGIFY, buffer.length);
             this.writeHeader(bufferWriter);
             bufferWriter.writeBuffer(buffer);
@@ -6461,7 +6584,7 @@ class IpcPacketBufferWrap {
         }
     }
     writeArrayWithSize(bufferWriter, args) {
-        let contentBufferWriter = new bufferListWriter_1.BufferListWriter();
+        const contentBufferWriter = new bufferListWriter_1.BufferListWriter();
         for (let i = 0, l = args.length; i < l; ++i) {
             this.write(contentBufferWriter, args[i]);
         }
@@ -6476,7 +6599,7 @@ class IpcPacketBufferWrap {
     }
     _read(depth, bufferReader) {
         this._readHeader(bufferReader);
-        let arg = this._readContent(depth, bufferReader);
+        const arg = this._readContent(depth, bufferReader);
         bufferReader.skip(this.footerSize);
         return arg;
     }
@@ -6529,7 +6652,7 @@ class IpcPacketBufferWrap {
         return bufferReader.readString('utf8', len);
     }
     _readObjectSTRINGIFY2(depth, bufferReader) {
-        let data = bufferReader.readString('utf8', this._contentSize);
+        const data = bufferReader.readString('utf8', this._contentSize);
         return json_helpers_1.JSONParser.parse(data);
     }
     _readObjectDirect(depth, bufferReader) {
@@ -6537,8 +6660,8 @@ class IpcPacketBufferWrap {
         if (depth === 0) {
             context = { type: this._type, headerSize: this._headerSize, contentSize: this._contentSize };
         }
-        let offsetContentSize = bufferReader.offset + this._contentSize;
-        let dataObject = {};
+        const offsetContentSize = bufferReader.offset + this._contentSize;
+        const dataObject = {};
         while (bufferReader.offset < offsetContentSize) {
             let keyLen = bufferReader.readUInt32();
             let key = bufferReader.readString('utf8', keyLen);
@@ -6557,7 +6680,7 @@ class IpcPacketBufferWrap {
             context = { type: this._type, headerSize: this._headerSize, contentSize: this._contentSize };
         }
         let argsLen = bufferReader.readUInt32();
-        let args = [];
+        const args = [];
         while (argsLen > 0) {
             let arg = this._read(depth + 1, bufferReader);
             args.push(arg);
@@ -6585,11 +6708,11 @@ class IpcPacketBufferWrap {
         bufferReader.skip(this._contentSize + this.footerSize);
     }
     _readArrayAt(bufferReader, index) {
-        let argsLen = bufferReader.readUInt32();
+        const argsLen = bufferReader.readUInt32();
         if (index >= argsLen) {
             return null;
         }
-        let headerArg = new IpcPacketBufferWrap();
+        const headerArg = new IpcPacketBufferWrap();
         while (index > 0) {
             headerArg.byPass(bufferReader);
             --index;
@@ -6604,7 +6727,7 @@ class IpcPacketBufferWrap {
         return null;
     }
     _readArraySlice(bufferReader, start, end) {
-        let argsLen = bufferReader.readUInt32();
+        const argsLen = bufferReader.readUInt32();
         if (start == null) {
             start = 0;
         }
@@ -6626,13 +6749,13 @@ class IpcPacketBufferWrap {
         if (end <= start) {
             return [];
         }
-        let headerArg = new IpcPacketBufferWrap();
+        const headerArg = new IpcPacketBufferWrap();
         while (start > 0) {
             headerArg.byPass(bufferReader);
             --start;
             --end;
         }
-        let args = [];
+        const args = [];
         while (end > 0) {
             let arg = headerArg.read(bufferReader);
             args.push(arg);
@@ -6651,7 +6774,7 @@ class IpcPacketBufferWrap {
 exports.IpcPacketBufferWrap = IpcPacketBufferWrap;
 
 }).call(this,require("buffer").Buffer)
-},{"./bufferListWriter":38,"./bufferWriter":40,"buffer":24,"json-helpers":49}],44:[function(require,module,exports){
+},{"./bufferListWriter":39,"./bufferWriter":41,"buffer":24,"json-helpers":30}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Reader;
@@ -6690,7 +6813,7 @@ class ReaderBase {
 }
 exports.ReaderBase = ReaderBase;
 
-},{}],45:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class WriterBase {
@@ -6706,7 +6829,15 @@ class WriterBase {
 }
 exports.WriterBase = WriterBase;
 
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
+"use strict";
+function __export(m) {
+    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+}
+Object.defineProperty(exports, "__esModule", { value: true });
+__export(require("./socket-serializer-common"));
+
+},{"./socket-serializer-common":48}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ipcPacketBuffer_1 = require("./code/ipcPacketBuffer");
@@ -6729,23 +6860,7 @@ var ipcPacket_1 = require("./code/ipcPacket");
 exports.IpcPacketSerializer = ipcPacket_1.IpcPacketSerializer;
 exports.IpcPacketParser = ipcPacket_1.IpcPacketParser;
 
-},{"./code/bufferListReader":37,"./code/bufferListWriter":38,"./code/bufferReader":39,"./code/bufferWriter":40,"./code/ipcPacket":41,"./code/ipcPacketBuffer":42,"./code/ipcPacketBufferWrap":43,"./code/reader":44}],47:[function(require,module,exports){
-arguments[4][28][0].apply(exports,arguments)
-},{"./json-formatter":48,"buffer":24,"dup":28}],48:[function(require,module,exports){
-arguments[4][29][0].apply(exports,arguments)
-},{"dup":29}],49:[function(require,module,exports){
-arguments[4][30][0].apply(exports,arguments)
-},{"./json-parser":50,"./tojson-v1":52,"./tojson-v2":53,"dup":30}],50:[function(require,module,exports){
-arguments[4][31][0].apply(exports,arguments)
-},{"./tojson":54,"dup":31}],51:[function(require,module,exports){
-arguments[4][32][0].apply(exports,arguments)
-},{"./tojson":54,"dup":32}],52:[function(require,module,exports){
-arguments[4][33][0].apply(exports,arguments)
-},{"./json-formatter-default":47,"./tojson":54,"./tojson-impl":51,"dup":33}],53:[function(require,module,exports){
-arguments[4][34][0].apply(exports,arguments)
-},{"./json-formatter-default":47,"./tojson":54,"./tojson-impl":51,"dup":34}],54:[function(require,module,exports){
-arguments[4][35][0].apply(exports,arguments)
-},{"dup":35}],55:[function(require,module,exports){
+},{"./code/bufferListReader":38,"./code/bufferListWriter":39,"./code/bufferReader":40,"./code/bufferWriter":41,"./code/ipcPacket":42,"./code/ipcPacketBuffer":43,"./code/ipcPacketBufferWrap":44,"./code/reader":45}],49:[function(require,module,exports){
 var v1 = require('./v1');
 var v4 = require('./v4');
 
@@ -6755,7 +6870,7 @@ uuid.v4 = v4;
 
 module.exports = uuid;
 
-},{"./v1":58,"./v4":59}],56:[function(require,module,exports){
+},{"./v1":52,"./v4":53}],50:[function(require,module,exports){
 /**
  * Convert array of 16 byte values to UUID string format of the form:
  * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
@@ -6781,7 +6896,7 @@ function bytesToUuid(buf, offset) {
 
 module.exports = bytesToUuid;
 
-},{}],57:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 // Unique ID creation requires a high quality random # generator.  In the
 // browser this is a little complicated due to unknown quality of Math.random()
 // and inconsistent support for the `crypto` API.  We do the best we can via
@@ -6817,7 +6932,7 @@ if (getRandomValues) {
   };
 }
 
-},{}],58:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -6928,7 +7043,7 @@ function v1(options, buf, offset) {
 
 module.exports = v1;
 
-},{"./lib/bytesToUuid":56,"./lib/rng":57}],59:[function(require,module,exports){
+},{"./lib/bytesToUuid":50,"./lib/rng":51}],53:[function(require,module,exports){
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -6959,7 +7074,7 @@ function v4(options, buf, offset) {
 
 module.exports = v4;
 
-},{"./lib/bytesToUuid":56,"./lib/rng":57}],60:[function(require,module,exports){
+},{"./lib/bytesToUuid":50,"./lib/rng":51}],54:[function(require,module,exports){
 const ipcBusModule = require('../../lib/electron-common-ipc');
 const uuid = require('uuid');
 
@@ -7034,7 +7149,7 @@ const IpcClientTest = function _IpcClientTest(name, busPath, busTimeout) {
 
 exports.IpcClientTest = IpcClientTest;
 
-},{"../../lib/electron-common-ipc":17,"uuid":55}],61:[function(require,module,exports){
+},{"../../lib/electron-common-ipc":17,"uuid":49}],55:[function(require,module,exports){
 const { IpcClientTest } = require('./ipcClientTest.js');
 
 window.ipcRenderer.on('init-window', (event, id, busPath, busTimeout) => {
@@ -7051,4 +7166,4 @@ window.ipcRenderer.on('init-window', (event, id, busPath, busTimeout) => {
 });
 
 
-},{"./ipcClientTest.js":60}]},{},[61]);
+},{"./ipcClientTest.js":54}]},{},[55]);

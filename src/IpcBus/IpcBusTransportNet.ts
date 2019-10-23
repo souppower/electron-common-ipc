@@ -15,7 +15,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
     private _promiseConnected: Promise<void>;
 
     protected _socket: net.Socket;
-    protected _netBinds: { [key: string]: Function };
+    protected _netBinds: { [key: string]: (...args: any[]) => void };
 
     private _socketBuffer: number;
     private _socketWriter: Writer;
@@ -130,7 +130,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
 
                 const socket = new net.Socket();
                 socket.unref();
-                let socketLocalBinds: { [key: string]: Function } = {};
+                let socketLocalBinds: { [key: string]: (...args: any[]) => void } = {};
                 const catchConnect = (conn: any) => {
                     clearTimeout(timer);
                     for (let key in socketLocalBinds) {
@@ -193,7 +193,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
             if (this._socket) {
                 let timer: NodeJS.Timer;
                 const socket = this._socket;
-                let socketLocalBinds: { [key: string]: Function } = {};
+                let socketLocalBinds: { [key: string]: (...args: any[]) => void } = {};
                 const catchClose = () => {
                     clearTimeout(timer);
                     for (let key in socketLocalBinds) {

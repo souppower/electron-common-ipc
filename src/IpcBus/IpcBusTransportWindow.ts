@@ -21,7 +21,7 @@ export interface IpcWindow extends EventEmitter {
 /** @internal */
 export class IpcBusTransportWindow extends IpcBusTransportImpl {
     private _ipcWindow: IpcWindow;
-    private _onIpcEventReceived: Function;
+    private _onIpcEventReceived: (...args: any[]) => void;
     private _promiseConnected: Promise<void>;
     private _packetOut: IpcPacketBufferWrap;
     private _packetIn: IpcPacketBuffer;
