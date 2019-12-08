@@ -11,7 +11,7 @@ import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_COMMAND, I
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
-export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
+export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBusBridge {
     private _ipcMain: any;
     private _onRendererMessageBind: Function;
 
@@ -19,8 +19,11 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<Electron.WebContents>;
 
     protected _ipcTransport: IpcBusTransportNet;
+    protected _connected: boolean;
 
     constructor() {
+        super('main');
+
         this._ipcMain = require('electron').ipcMain;
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<Electron.WebContents>('IPCBus:Bridge', false);
@@ -50,27 +53,32 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     // IpcBusBridge API
     connect(arg1: Bridge.IpcBusBridge.ConnectOptions | string | number, arg2?: Bridge.IpcBusBridge.ConnectOptions | string, arg3?: Bridge.IpcBusBridge.ConnectOptions): Promise<void> {
-        if (this._ipcTransport == null) {
+        if (!this._connected) {
+            this._connected = true;
             const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
             if (options == null) {
                 return Promise.reject('Wrong options');
             }
-            this._ipcTransport = new IpcBusTransportNet('main');
-            return this._ipcTransport.ipcConnect({ peerName: `IpcBusBridge`, ...options })
+            // super.ipcCallback((channel, ipcBusEvent, ...args) => {
+            //     super.emit(channel, ipcBusEvent, ...args);
+            // });
+            return super.ipcConnect({ peerName: `IpcBusBridge`, ...options })
                 .then(() => {
-                    this._ipcTransport.ipcSend(IpcBusCommand.Kind.BridgeConnect, null);
+                    super.ipcSend(IpcBusCommand.Kind.BridgeConnect, null);
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
+                })
+                .catch(err => {
+                    this._connected = false;
                 });
         }
         return Promise.resolve();
     }
 
     close(options?: Bridge.IpcBusBridge.CloseOptions): Promise<void> {
-        if (this._ipcTransport != null) {
-            const ipcTransport = this._ipcTransport;
-            this._ipcTransport = null;
-            ipcTransport.ipcSend(IpcBusCommand.Kind.BridgeClose, null);
-            return ipcTransport.ipcClose(options);
+        if (this._connected) {
+            this._connected = false;
+            super.ipcSend(IpcBusCommand.Kind.BridgeClose, null);
+            return super.ipcClose(options);
         }
         return Promise.resolve();
     }
@@ -107,7 +115,6 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         }
         return handled;
     }
-
 
     protected _onCommandReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         ipcBusCommand.kind = ('B' + ipcBusCommand.kind) as IpcBusCommand.Kind;
@@ -208,29 +215,29 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             case IpcBusCommand.Kind.BridgeRequestMessage:
                 this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, webContents);
                 this._onCommandBufferReceived(ipcBusCommand, buffer);
-                if (this._ipcTransport) {
-                    this._ipcTransport.ipcPostBuffer(buffer);
+                if (this._connected) {
+                    super.ipcPostBuffer(buffer);
                 }
                 break;
 
             case IpcBusCommand.Kind.BridgeSendMessage:
                 this._onCommandBufferReceived(ipcBusCommand, buffer);
-                if (this._ipcTransport) {
-                    this._ipcTransport.ipcPostBuffer(buffer);
+                if (this._connected) {
+                    super.ipcPostBuffer(buffer);
                 }
                 break;
 
             case IpcBusCommand.Kind.BridgeRequestResponse:
                 this._onCommandBufferReceived(ipcBusCommand, buffer);
-                if (this._ipcTransport) {
-                    this._ipcTransport.ipcPostBuffer(buffer);
+                if (this._connected) {
+                    super.ipcPostBuffer(buffer);
                 }
                 break;
 
             case IpcBusCommand.Kind.BridgeRequestCancel:
                 this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
-                if (this._ipcTransport) {
-                    this._ipcTransport.ipcPostBuffer(buffer);
+                if (this._connected) {
+                    super.ipcPostBuffer(buffer);
                 }
                 break;
 

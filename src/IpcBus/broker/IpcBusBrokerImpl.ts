@@ -85,6 +85,7 @@ class IpcBusBrokerSocket {
 export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocketClient {
     private _ipcBusBrokerClient: Client.IpcBusClient;
     private _socketClients: Map<net.Socket, IpcBusBrokerSocket>;
+    private _socketBridge: net.Socket;
 
     private _server: net.Server;
     private _netBinds: { [key: string]: (...args: any[]) => void };
@@ -362,6 +363,11 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
 
             case IpcBusCommand.Kind.SendMessage:
+                this._socketBridge && this._socketBridge.write(packet.buffer);
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
+                    connData.conn.write(packet.buffer);
+                });
+                break;
             case IpcBusCommand.Kind.BridgeSendMessage:
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.write(packet.buffer);
@@ -369,6 +375,14 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
 
             case IpcBusCommand.Kind.RequestMessage:
+                // Register the replyChannel
+                this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, socket);
+                this._socketBridge && this._socketBridge.write(packet.buffer); 
+                // Request ipcBusCommand to subscribed connections
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
+                    connData.conn.write(packet.buffer);
+                });
+                break;
             case IpcBusCommand.Kind.BridgeRequestMessage:
                 // Register the replyChannel
                 this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, socket);
@@ -380,6 +394,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
 
             case IpcBusCommand.Kind.RequestResponse:
+                // this._socketBridge && this._socketBridge.write(packet.buffer); 
             case IpcBusCommand.Kind.BridgeRequestResponse: {
                 const replySocket = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
                 if (replySocket) {
@@ -395,9 +410,11 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
 
             case IpcBusCommand.Kind.BridgeConnect:
+                this._socketBridge = socket;
                 break;
 
             case IpcBusCommand.Kind.BridgeClose:
+                this._socketBridge = null;
                 break;
             default:
                 console.log(JSON.stringify(ipcBusCommand, null, 4));
