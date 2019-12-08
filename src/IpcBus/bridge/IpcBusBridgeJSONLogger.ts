@@ -6,12 +6,8 @@ import * as fs from 'fs';
 import * as winston from 'winston';
 
 import { IpcPacketBuffer } from 'socket-serializer';
-
 import * as Client from '../IpcBusClient';
-import * as Broker from '../broker/IpcBusBroker';
-
 import { IpcBusCommand } from '../IpcBusCommand';
-
 import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain

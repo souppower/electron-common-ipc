@@ -79,14 +79,11 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
     };
 
     /// IpcBusTrandport API
-    ipcConnect(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    ipcConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
         if (!p) {
-            options = options || {};
-            if (options.timeoutDelay == null) {
-                options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
-            }
+            options = IpcBusUtils.CheckConnectOptions(options);
             p = this._promiseConnected = new Promise<void>((resolve, reject) => {
                 // this._ipcRendererReady.then(() => {
                     // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.

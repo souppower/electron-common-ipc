@@ -73,8 +73,8 @@ function test(remoteBroker, busPath, factory) {
       return brokers.start()
         .then(() => {
           let ipcBusPath = brokers.getBusPath();
-          ipcBusClient = ipcBusModule.CreateIpcBusClient(ipcBusPath);
-          return ipcBusClient.connect({ peerName: 'client' });
+          ipcBusClient = ipcBusModule.CreateIpcBusClient();
+          return ipcBusClient.connect(ipcBusPath, { peerName: 'client' });
         });
     });
 

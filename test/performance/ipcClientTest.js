@@ -9,10 +9,10 @@ const IpcClientTest = function _IpcClientTest(name, busPath, busTimeout) {
     const _busTimeout = busTimeout;
     let _results = [];
 
-    this.ipcClient = ipcBusModule.IpcBusClient.Create(_busPath);
+    this.ipcClient = ipcBusModule.IpcBusClient.Create();
 
     this.create = () => {
-        return this.ipcClient.connect({ peerName: _name, timeoutDelay: _busTimeout })
+        return this.ipcClient.connect(_busPath, { peerName: _name, timeoutDelay: _busTimeout })
         .then(() => {
             this.ipcClient.on(eventTestSend, (event, msg) => {
                 // Break echo

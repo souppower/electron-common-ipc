@@ -5,8 +5,6 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 import * as Bridge from './IpcBusBridge';
-import { IpcBusClientImpl } from '../IpcBusClientImpl';
-
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusTransportNet } from '../IpcBusTransportNet';
 import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_COMMAND, IPCBUS_TRANSPORT_RENDERER_EVENT } from '../IpcBusTransportWindow';
@@ -51,10 +49,10 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // }
 
     // IpcBusBridge API
-    connect(options: any, hostname?: string): Promise<void> {
+    connect(arg1: Bridge.IpcBusBridge.ConnectOptions | string | number, arg2?: Bridge.IpcBusBridge.ConnectOptions | string, arg3?: Bridge.IpcBusBridge.ConnectOptions): Promise<void> {
         if (this._ipcTransport == null) {
-            options = IpcBusUtils.CheckCreateOptions(options, hostname);
-            if (!options) {
+            const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
+            if (options == null) {
                 return Promise.reject('Wrong options');
             }
             this._ipcTransport = new IpcBusTransportNet('main');
@@ -71,7 +69,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         if (this._ipcTransport != null) {
             const ipcTransport = this._ipcTransport;
             this._ipcTransport = null;
-            this._ipcTransport.ipcSend(IpcBusCommand.Kind.BridgeClose, null);
+            ipcTransport.ipcSend(IpcBusCommand.Kind.BridgeClose, null);
             return ipcTransport.ipcClose(options);
         }
         return Promise.resolve();

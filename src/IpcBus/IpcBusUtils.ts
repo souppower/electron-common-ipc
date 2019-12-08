@@ -1,9 +1,9 @@
 // Constants
 import { EventEmitter } from 'events';
 
-import { IpcNetOptions } from './IpcBusClient';
+import { IpcConnectOptions } from './IpcBusClient';
 
-export const IPC_BUS_TIMEOUT = 2000;
+export const IPC_BUS_TIMEOUT = 20000;// 2000;
 
 const win32prefix1 = '\\\\.\\pipe';
 const win32prefix2 = '\\\\?\\pipe';
@@ -20,35 +20,39 @@ function CleanPipeName(str: string) {
     return str;
 }
 
-export function CheckCreateOptions(options: IpcNetOptions | string | number, hostName?: string): IpcNetOptions | null {
+export function CheckConnectOptions<T extends IpcConnectOptions>(arg1: T | string | number, arg2?: T | string, arg3?: T): T | null {
     // A port number : 59233, 42153
     // A port number + hostname : 59233, '127.0.0.1'
-    if (Number(options) >= 0) {
-        return { port: Number(options), host: hostName };
+    let options: T = (typeof arg1 === 'object' ? arg1 : typeof arg2 === 'object' ? arg2 : typeof arg3 === 'object' ? arg3: {}) as T; 
+    if (Number(arg1) >= 0) {
+        options.port = Number(arg1);
+        options.host = typeof arg2 === 'string' ? arg2 : undefined;
     }
     // A 'hostname:port' pattern : 'localhost:8082'
     // A path : '//local-ipc'
-    else if (typeof options === 'string') {
-        const parts = options.split(':');
-        if (parts.length === 2) {
-            if (Number(parts[1]) >= 0) {
-                return { port: Number(parts[1]), host: parts[0] };
-            }
+    else if (typeof arg1 === 'string') {
+        const parts = arg1.split(':');
+        if ((parts.length === 2) && (Number(parts[1]) >= 0)) {
+            options.port = Number(parts[1]);
+            options.host = parts[0];
         }
-        return { path: CleanPipeName(options) };
+        else {
+            options.path = CleanPipeName(arg1);
+        }
     }
     // An IpcNetOptions object similar to NodeJS.net.ListenOptions
-    else if (typeof options === 'object') {
-        const localOptions: IpcNetOptions = options as Object || {};
-        if (localOptions.port) {
-            return localOptions;
-        }
-        if (localOptions.path) {
-            localOptions.path =  CleanPipeName(localOptions.path);
-            return localOptions;
+    else if (typeof arg1 === 'object') {
+        if (options.path) {
+            options.path =  CleanPipeName(arg1.path);
         }
     }
-    return null;
+    if ((options.port == null && options.path == null)) {
+        return null;
+    }
+    if (options.timeoutDelay == null) {
+        options.timeoutDelay = IPC_BUS_TIMEOUT;
+    }
+    return options;
 }
 
 function JSON_stringify_array(data: any[], maxLen: number, output: string): string {

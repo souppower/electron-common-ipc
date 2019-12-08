@@ -24,9 +24,9 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         return this._transport.peer;
     }
 
-    connect(options: any, hostname?: string): Promise<void> {
-        options = IpcBusUtils.CheckCreateOptions(options, hostname);
-        if (!options) {
+    connect(arg1: Client.IpcBusClient.ConnectOptions | string | number, arg2?: Client.IpcBusClient.ConnectOptions | string, arg3?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+        const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
+        if (options == null) {
             return Promise.reject('Wrong options');
         }
         return this._transport.ipcConnect(options);

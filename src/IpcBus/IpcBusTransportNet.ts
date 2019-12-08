@@ -95,13 +95,13 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
     }
 
     /// IpcBusTransportImpl API
-    ipcConnect(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    ipcConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
         if (!p) {
-            options = options || {};
-            if (options.timeoutDelay == null) {
-                options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
+            options = IpcBusUtils.CheckConnectOptions(options);
+            if (options == null) {
+                return Promise.reject('Wrong options');
             }
             p = this._promiseConnected = new Promise<void>((resolve, reject) => {
                 this._ipcBusPeer.name = options.peerName || `${this._ipcBusPeer.process.type}_${this._ipcBusPeer.process.pid}`;

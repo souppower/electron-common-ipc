@@ -233,10 +233,10 @@ var CrossFrameMessage;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusClient_1 = require("./IpcBusClient");
-exports.CreateIpcBusClient = (options, hostname) => {
+exports.CreateIpcBusClient = () => {
     const windowLocal = window;
     if (windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.CreateIpcBusClient) {
-        return windowLocal.ElectronCommonIpc.CreateIpcBusClient(options, hostname);
+        return windowLocal.ElectronCommonIpc.CreateIpcBusClient();
     }
     return null;
 };
@@ -249,6 +249,11 @@ exports.IPCBUS_CHANNEL = '/electron-ipc-bus';
 exports.IPCBUS_CHANNEL_QUERY_STATE = `${exports.IPCBUS_CHANNEL}/queryState`;
 exports.ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH';
 exports.ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH';
+var IpcBusBrokerOwner;
+(function (IpcBusBrokerOwner) {
+    IpcBusBrokerOwner[IpcBusBrokerOwner["Bridge"] = 0] = "Bridge";
+    IpcBusBrokerOwner[IpcBusBrokerOwner["Broker"] = 1] = "Broker";
+})(IpcBusBrokerOwner = exports.IpcBusBrokerOwner || (exports.IpcBusBrokerOwner = {}));
 var IpcBusClient;
 (function (IpcBusClient) {
 })(IpcBusClient = exports.IpcBusClient || (exports.IpcBusClient = {}));
@@ -258,8 +263,9 @@ var IpcBusClient;
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
 const IpcBusCommand_1 = require("./IpcBusCommand");
+const IpcBusUtils = require("./IpcBusUtils");
 class IpcBusClientImpl extends events_1.EventEmitter {
-    constructor(options, ipcBusClientTransport) {
+    constructor(ipcBusClientTransport) {
         super();
         super.setMaxListeners(0);
         this._transport = ipcBusClientTransport;
@@ -270,7 +276,11 @@ class IpcBusClientImpl extends events_1.EventEmitter {
     get peer() {
         return this._transport.peer;
     }
-    connect(options) {
+    connect(arg1, arg2, arg3) {
+        const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
+        if (options == null) {
+            return Promise.reject('Wrong options');
+        }
         return this._transport.ipcConnect(options);
     }
     close(options) {
@@ -331,14 +341,14 @@ class IpcBusClientImpl extends events_1.EventEmitter {
 }
 exports.IpcBusClientImpl = IpcBusClientImpl;
 
-},{"./IpcBusCommand":7,"events":25}],6:[function(require,module,exports){
+},{"./IpcBusCommand":7,"./IpcBusUtils":11,"events":25}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusTransportWindow_1 = require("./IpcBusTransportWindow");
 const IpcBusClientImpl_1 = require("./IpcBusClientImpl");
-function Create(contextType, options, ipcWindow) {
-    const transport = new IpcBusTransportWindow_1.IpcBusTransportWindow(contextType, options, ipcWindow);
-    const ipcClient = new IpcBusClientImpl_1.IpcBusClientImpl(options, transport);
+function Create(contextType, ipcWindow) {
+    const transport = new IpcBusTransportWindow_1.IpcBusTransportWindow(contextType, ipcWindow);
+    const ipcClient = new IpcBusClientImpl_1.IpcBusClientImpl(transport);
     return ipcClient;
 }
 exports.Create = Create;
@@ -361,6 +371,17 @@ var IpcBusCommand;
         Kind["RequestMessage"] = "RQM";
         Kind["RequestResponse"] = "RQR";
         Kind["RequestCancel"] = "RQC";
+        Kind["BridgeConnect"] = "BCOO";
+        Kind["BridgeDisconnect"] = "BCOD";
+        Kind["BridgeClose"] = "BCOC";
+        Kind["BridgeAddChannelListener"] = "BLICA";
+        Kind["BridgeRemoveChannelListener"] = "BLICR";
+        Kind["BridgeRemoveChannelAllListeners"] = "BLICRA";
+        Kind["BridgeRemoveListeners"] = "BLIR";
+        Kind["BridgeSendMessage"] = "BMES";
+        Kind["BridgeRequestMessage"] = "BRQM";
+        Kind["BridgeRequestResponse"] = "BRQR";
+        Kind["BridgeRequestCancel"] = "BRQC";
     })(Kind = IpcBusCommand.Kind || (IpcBusCommand.Kind = {}));
     ;
 })(IpcBusCommand = exports.IpcBusCommand || (exports.IpcBusCommand = {}));
@@ -368,7 +389,6 @@ var IpcBusCommand;
 },{}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const IpcBusUtils = require("./IpcBusUtils");
 const IpcBusClientWindow_1 = require("./IpcBusClientWindow");
 const CrossFrameEventEmitter2_1 = require("./CrossFrameEventEmitter2");
 const trace = false;
@@ -389,10 +409,9 @@ function _PreloadElectronCommonIpc(context, iframeSupport = false) {
                 windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
                 if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
                     trace && console.log(`inject - ${context} - ElectronCommonIpc.CreateIpcBusClient`);
-                    windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
+                    windowLocal.ElectronCommonIpc.CreateIpcBusClient = () => {
                         trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
-                        const localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-                        const ipcBusClient = IpcBusClientWindow_1.Create('renderer', localOptions || {}, electron.ipcRenderer);
+                        const ipcBusClient = IpcBusClientWindow_1.Create('renderer', electron.ipcRenderer);
                         return ipcBusClient;
                     };
                 }
@@ -426,10 +445,9 @@ function _PreloadElectronCommonIpc(context, iframeSupport = false) {
             if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
                 trace && console.log(`${context} - Frame ElectronCommonIpc`);
                 const crossFrameEE = new CrossFrameEventEmitter2_1.CrossFrameEventEmitter(window.parent);
-                windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
+                windowLocal.ElectronCommonIpc.CreateIpcBusClient = () => {
                     trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
-                    const localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-                    const ipcBusClient = IpcBusClientWindow_1.Create('renderer-frame', localOptions || {}, crossFrameEE);
+                    const ipcBusClient = IpcBusClientWindow_1.Create('renderer-frame', crossFrameEE);
                     return ipcBusClient;
                 };
             }
@@ -450,7 +468,7 @@ function IsElectronCommonIpcAvailable() {
 }
 exports.IsElectronCommonIpcAvailable = IsElectronCommonIpcAvailable;
 
-},{"./CrossFrameEventEmitter2":1,"./IpcBusClientWindow":6,"./IpcBusUtils":11,"electron":"electron"}],9:[function(require,module,exports){
+},{"./CrossFrameEventEmitter2":1,"./IpcBusClientWindow":6,"electron":"electron"}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const uuid = require("uuid");
@@ -459,6 +477,10 @@ const IpcBusUtils = require("./IpcBusUtils");
 const IpcBusCommand_1 = require("./IpcBusCommand");
 const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
 const v1IdPattern = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+function extractPeerIdFromReplyChannel(replyChannel) {
+    return replyChannel.substr(replyChannelPrefix.length, v1IdPattern.length);
+}
+exports.extractPeerIdFromReplyChannel = extractPeerIdFromReplyChannel;
 class DeferredRequest {
     constructor(channel) {
         this._channel = channel;
@@ -489,9 +511,8 @@ class DeferredRequest {
     ;
 }
 class IpcBusTransportImpl {
-    constructor(ipcBusContext, options) {
+    constructor(ipcBusContext) {
         this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusContext };
-        this._netOptions = options;
         this._requestFunctions = new Map();
         this._requestNumber = 0;
     }
@@ -501,9 +522,6 @@ class IpcBusTransportImpl {
     generateReplyChannel() {
         ++this._requestNumber;
         return `${replyChannelPrefix}${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
-    }
-    extractPeerIdFromReplyChannel(replyChannel) {
-        return replyChannel.substr(replyChannelPrefix.length, v1IdPattern.length);
     }
     ipcCallback(callback) {
         this._ipcCallback = callback;
@@ -586,9 +604,9 @@ exports.IPCBUS_TRANSPORT_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
 exports.IPCBUS_TRANSPORT_RENDERER_COMMAND = 'IpcBusRenderer:Command';
 exports.IPCBUS_TRANSPORT_RENDERER_EVENT = 'IpcBusRenderer:Event';
 class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
-    constructor(contextType, options, ipcWindow) {
+    constructor(contextType, ipcWindow) {
         assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
-        super({ type: contextType, pid: -1 }, options);
+        super({ type: contextType, pid: -1 });
         this._ipcWindow = ipcWindow;
         this._packetOut = new socket_serializer_1.IpcPacketBufferWrap();
         this._packetIn = new socket_serializer_1.IpcPacketBuffer();
@@ -633,10 +651,7 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
     ipcConnect(options) {
         let p = this._promiseConnected;
         if (!p) {
-            options = options || {};
-            if (options.timeoutDelay == null) {
-                options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
-            }
+            options = IpcBusUtils.CheckConnectOptions(options);
             p = this._promiseConnected = new Promise((resolve, reject) => {
                 let timer;
                 const onIpcConnect = (eventOrPeer, peerOrUndefined) => {
@@ -676,6 +691,7 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
     }
     ipcPostCommand(ipcBusCommand, args) {
         if (this._connected) {
+            ipcBusCommand.kind = ('B' + ipcBusCommand.kind);
             const bufferWriter = new socket_serializer_1.BufferListWriter();
             if (args) {
                 this._packetOut.writeArray(bufferWriter, [ipcBusCommand, args]);
@@ -694,7 +710,7 @@ exports.IpcBusTransportWindow = IpcBusTransportWindow;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
-exports.IPC_BUS_TIMEOUT = 2000;
+exports.IPC_BUS_TIMEOUT = 20000;
 const win32prefix1 = '\\\\.\\pipe';
 const win32prefix2 = '\\\\?\\pipe';
 function CleanPipeName(str) {
@@ -707,32 +723,36 @@ function CleanPipeName(str) {
     }
     return str;
 }
-function CheckCreateOptions(options, hostName) {
-    if (Number(options) >= 0) {
-        return { port: Number(options), host: hostName };
+function CheckConnectOptions(arg1, arg2, arg3) {
+    let options = (typeof arg1 === 'object' ? arg1 : typeof arg2 === 'object' ? arg2 : typeof arg3 === 'object' ? arg3 : {});
+    if (Number(arg1) >= 0) {
+        options.port = Number(arg1);
+        options.host = typeof arg2 === 'string' ? arg2 : undefined;
     }
-    else if (typeof options === 'string') {
-        const parts = options.split(':');
-        if (parts.length === 2) {
-            if (Number(parts[1]) >= 0) {
-                return { port: Number(parts[1]), host: parts[0] };
-            }
+    else if (typeof arg1 === 'string') {
+        const parts = arg1.split(':');
+        if ((parts.length === 2) && (Number(parts[1]) >= 0)) {
+            options.port = Number(parts[1]);
+            options.host = parts[0];
         }
-        return { path: CleanPipeName(options) };
-    }
-    else if (typeof options === 'object') {
-        const localOptions = options || {};
-        if (localOptions.port) {
-            return localOptions;
-        }
-        if (localOptions.path) {
-            localOptions.path = CleanPipeName(localOptions.path);
-            return localOptions;
+        else {
+            options.path = CleanPipeName(arg1);
         }
     }
-    return null;
+    else if (typeof arg1 === 'object') {
+        if (options.path) {
+            options.path = CleanPipeName(arg1.path);
+        }
+    }
+    if ((options.port == null && options.path == null)) {
+        return null;
+    }
+    if (options.timeoutDelay == null) {
+        options.timeoutDelay = exports.IPC_BUS_TIMEOUT;
+    }
+    return options;
 }
-exports.CheckCreateOptions = CheckCreateOptions;
+exports.CheckConnectOptions = CheckConnectOptions;
 function JSON_stringify_array(data, maxLen, output) {
     output += '[';
     for (let i = 0, l = data.length; i < l; ++i) {
@@ -830,9 +850,10 @@ function preg_quote(str) {
     return str.replace(new RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]', 'g'), '\\$&');
 }
 class ChannelConnectionMap extends events_1.EventEmitter {
-    constructor(name) {
+    constructor(name, emitter) {
         super();
         this._name = name;
+        this._emitter = emitter;
         this._channelsMap = new Map();
         this._requestChannels = new Map();
     }
@@ -859,9 +880,11 @@ class ChannelConnectionMap extends events_1.EventEmitter {
         this._requestChannels.clear();
     }
     addRef(channel, conn, peerId) {
+        let channelAdded = false;
         Logger.enable && this._info(`AddRef: '${channel}', peerId = ${peerId}`);
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
+            channelAdded = true;
             connsMap = new Map();
             this._channelsMap.set(channel, connsMap);
         }
@@ -874,9 +897,13 @@ class ChannelConnectionMap extends events_1.EventEmitter {
             connData.addPeerId(peerId);
         }
         Logger.enable && this._info(`AddRef: '${channel}', count = ${connData.peerIds.size}`);
+        if (channelAdded) {
+            this._emitter && this.emit('channel-added', channel);
+        }
         return connsMap.size;
     }
     _releaseConnData(channel, conn, connsMap, peerId, all) {
+        let channelRemoved = false;
         const connData = connsMap.get(conn);
         if (connData == null) {
             Logger.enable && this._warn(`Release '${channel}': conn is unknown`);
@@ -899,10 +926,14 @@ class ChannelConnectionMap extends events_1.EventEmitter {
             if (connData.peerIds.size === 0) {
                 connsMap.delete(conn);
                 if (connsMap.size === 0) {
+                    channelRemoved = true;
                     this._channelsMap.delete(channel);
                 }
             }
             Logger.enable && this._info(`Release '${channel}': count = ${connData.peerIds.size}`);
+            if (channelRemoved) {
+                this._emitter && this.emit('channel-removed', channel);
+            }
             return connsMap.size;
         }
     }
@@ -961,6 +992,12 @@ class ChannelConnectionMap extends events_1.EventEmitter {
                 callback(connData, channel);
             });
         });
+    }
+    on(event, listener) {
+        return super.addListener(event, listener);
+    }
+    off(event, listener) {
+        return super.removeListener(event, listener);
     }
 }
 exports.ChannelConnectionMap = ChannelConnectionMap;
@@ -7086,10 +7123,10 @@ const IpcClientTest = function _IpcClientTest(name, busPath, busTimeout) {
     const _busTimeout = busTimeout;
     let _results = [];
 
-    this.ipcClient = ipcBusModule.IpcBusClient.Create(_busPath);
+    this.ipcClient = ipcBusModule.IpcBusClient.Create();
 
     this.create = () => {
-        return this.ipcClient.connect({ peerName: _name, timeoutDelay: _busTimeout })
+        return this.ipcClient.connect(_busPath, { peerName: _name, timeoutDelay: _busTimeout })
         .then(() => {
             this.ipcClient.on(eventTestSend, (event, msg) => {
                 // Break echo

@@ -1,12 +1,9 @@
-import { IpcTimeoutOptions, IpcNetOptions } from '../IpcBusClient';
+import { IpcTimeoutOptions, IpcConnectOptions, IpcConnectFunction } from '../IpcBusClient';
 
 export namespace IpcBusBridge {
-    export interface ConnectOptions extends IpcTimeoutOptions, IpcNetOptions {
+    export interface ConnectOptions extends IpcConnectOptions {
     }
-    export interface ConnectFunction {
-        (options: ConnectOptions): Promise<void>;
-        (port: number, hostname?: string): Promise<void>;
-        (path: string): Promise<void>;
+    export interface ConnectFunction extends IpcConnectFunction<IpcBusBridge.ConnectOptions> {
     }
 
     export interface CloseOptions extends IpcTimeoutOptions {

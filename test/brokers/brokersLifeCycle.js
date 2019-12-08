@@ -135,10 +135,10 @@ Brokers = (function () {
           }
           else {
             // Create broker
-            ipcBusBroker = ipcBusModule.CreateIpcBusBroker(busPath);
+            ipcBusBroker = ipcBusModule.CreateIpcBusBroker();
             // Start broker
             trace && console.log('IpcBusBroker starting...');
-            return ipcBusBroker.start({ timeoutDelay })
+            return ipcBusBroker.connect(busPath, { timeoutDelay })
           }
         })
         .then((msg) => {
@@ -153,9 +153,9 @@ Brokers = (function () {
     function _startBridge() {
       // Create bridge
       trace && console.log('IpcBusBridge starting...');
-      ipcBusBridge = ipcBusModule.CreateIpcBusBridge(busPath);
+      ipcBusBridge = ipcBusModule.CreateIpcBusBridge();
       // Start bridge
-      return ipcBusBridge.start({ timeoutDelay })
+      return ipcBusBridge.connect(busPath, { timeoutDelay })
         .then((msg) => {
           trace && console.log('IpcBusBridge started');
         })
@@ -186,7 +186,7 @@ Brokers = (function () {
 
     function _stopBrokers() {
       trace && console.log('IpcBusBridge stopping...');
-      return ipcBusBridge.stop({ timeoutDelay })
+      return ipcBusBridge.close({ timeoutDelay })
         .then(() => {
           ipcBusBridge = null;
           trace && console.log('IpcBusBridge stopped');
@@ -201,7 +201,7 @@ Brokers = (function () {
             return _stopRemoteBroker();
           }
           else {
-            return ipcBusBroker.stop({ timeoutDelay });
+            return ipcBusBroker.close({ timeoutDelay });
           }
         })
         .then(() => {

@@ -8,8 +8,6 @@ const csvWriter = require('csv-write-stream');
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as Client from '../IpcBusClient';
-import * as Broker from './IpcBusBroker';
-
 import { IpcBusCommand } from '../IpcBusCommand';
 import { JSON_stringify } from '../IpcBusUtils';
 

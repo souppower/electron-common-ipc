@@ -64,14 +64,21 @@ export interface IpcNetOptions {
     path?: string;
 }
 
+export interface IpcConnectOptions extends IpcNetOptions, IpcTimeoutOptions {
+}
+
+export interface IpcConnectFunction<T> {
+    (options: T): Promise<void>;
+    (path: string, options?: T): Promise<void>;
+    (port: number, options?: T): Promise<void>;
+    (port: number, hostname?: string, options?: T): Promise<void>;
+}
+
 export namespace IpcBusClient {
-    export interface ConnectOptions extends IpcTimeoutOptions, IpcSocketBufferingOptions, IpcNetOptions {
+    export interface ConnectOptions extends IpcConnectOptions, IpcSocketBufferingOptions {
         peerName?: string;
     }
-    export interface ConnectFunction {
-        (options?: IpcBusClient.ConnectOptions): Promise<void>;
-        (port: number, hostname?: string): Promise<void>;
-        (path: string): Promise<void>;
+    export interface ConnectFunction extends IpcConnectFunction<IpcBusClient.ConnectOptions> {
     }
 
     export interface CloseOptions extends IpcTimeoutOptions {

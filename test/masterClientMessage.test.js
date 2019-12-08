@@ -36,9 +36,9 @@ function test(remoteBroker, busPath) {
       return brokers.start()
         .then(() => {
           let ipcBusPath = brokers.getBusPath();
-          ipcClient1 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
-          ipcClient2 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
-          return Promise.all([ipcClient1.connect({ peerName: 'client1', timeoutDelay }), ipcClient2.connect({ peerName: 'client2', timeoutDelay })]);
+          ipcClient1 = ipcBusModule.CreateIpcBusClient();
+          ipcClient2 = ipcBusModule.CreateIpcBusClient();
+          return Promise.all([ipcClient1.connect(ipcBusPath, { peerName: 'client1', timeoutDelay }), ipcClient2.connect(ipcBusPath, { peerName: 'client2', timeoutDelay })]);
         })
     });
 

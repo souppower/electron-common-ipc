@@ -18,10 +18,10 @@ if (args.busPath) {
 }
 
 // Create broker
-let ipcBusBroker = ipcBusModule.CreateIpcBusBroker(ipcBusPath);
+let ipcBusBroker = ipcBusModule.CreateIpcBusBroker();
 // Start broker
 console.log('Remote IpcBusBroker starting...');
-ipcBusBroker.start({ timeoutDelay })
+ipcBusBroker.connect(ipcBusPath, { timeoutDelay })
  .then((msg) => {
     console.log('Remote IpcBusBroker started');
     process.send({ event: 'resolve'});
@@ -38,7 +38,7 @@ process.on('message', (message) => {
         Promise.resolve()
         .then(() => {
             if (ipcBusBroker) {
-                return ipcBusBroker.stop({ timeoutDelay });
+                return ipcBusBroker.close({ timeoutDelay });
             }
             else {
                 return Promise.resolve();
@@ -62,7 +62,7 @@ process.on('exit', (message) => {
     // If the process exit suddently, try to close brokers anyway.
     if (ipcBusBroker) {
         console.log('Remote IpcBusBroker emergency stop');
-        ipcBusBroker.stop();
+        ipcBusBroker.close();
         ipcBusBroker = null;
     }
 });

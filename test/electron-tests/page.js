@@ -50,8 +50,8 @@ window.addEventListener('load', () => {
         //     crossFrameEE.send('test-frame', 'hello frame');
         // }, 100);
         const window_id = GetWindowId();
-        const ipcBus = electronCommonIpcModule.CreateIpcBusClient({ peerName: `client-parent-${window_id}` });
-        ipcBus.connect()
+        const ipcBus = electronCommonIpcModule.CreateIpcBusClient();
+        ipcBus.connect({ peerName: `client-parent-${window_id}` })
         .then(() => {
             ipcBus.on(`test-parent-${window_id}`, (...args) => {
                 console.log(`ipcBus - Parent receive message : ${args}`);
@@ -83,8 +83,8 @@ window.addEventListener('load', () => {
         //     crossFrameEE.send('test-parent', 'hello parent');
         // }, 200);
 
-        const ipcBus = electronCommonIpcModule.CreateIpcBusClient({ peerName: `client-frame-${window_id}` });
-        ipcBus.connect({ timeoutDelay: 8000})
+        const ipcBus = electronCommonIpcModule.CreateIpcBusClient();
+        ipcBus.connect({ peerName: `client-frame-${window_id}`, timeoutDelay: 8000 })
         .then(() => {
             ipcBus.on(`test-frame-${window_id}`, (...args) => {
                 console.log(`ipcBus - Frame receive message : ${args}`);

@@ -78,7 +78,7 @@
                 // "--grep=Brokers",
                 // "--grep=Node",
                 // "--grep=Service",
-                // "${workspaceRoot}/test/*.test.js",
+                "${workspaceRoot}/test/*.test.js",
                 // "${workspaceRoot}/test/brokersLifeCycle.test.js",
                 // "${workspaceRoot}/test/masterClientMessage.test.js",
                 // "${workspaceRoot}/test/clientLifeCycle.test.js",

@@ -160,13 +160,10 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     }
 
     // IpcBusBroker API
-    connect(options?: Broker.IpcBusBroker.ConnectOptions, hostname?: string): Promise<void> {
-        options = IpcBusUtils.CheckCreateOptions(options, hostname);
-        if (!options) {
+    connect(arg1: Broker.IpcBusBroker.ConnectOptions | string | number, arg2?: Broker.IpcBusBroker.ConnectOptions | string, arg3?: Broker.IpcBusBroker.ConnectOptions): Promise<void> {
+        const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
+        if (options == null) {
             return Promise.reject('Wrong options');
-        }
-        if (options.timeoutDelay == null) {
-            options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseStarted;
@@ -207,7 +204,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                     fctReject(msg);
                 };
 
-                const catchListening =  (_server: any) => {
+                const catchListening = (_server: any) => {
                     removeLocalListeners();
                     this._server = server;
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Listening for incoming connections on ${JSON.stringify(options)}`);
@@ -215,7 +212,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                         this._server.addListener(key, this._netBinds[key]);
                     }
 
-                    this._ipcBusBrokerClient.connect({ timeoutDelay: options.timeoutDelay })
+                    this._ipcBusBrokerClient.connect(options)
                         .then(() => {
                             this._ipcBusBrokerClient.addListener(Client.IPCBUS_CHANNEL_QUERY_STATE, this._onQueryState);
                             resolve();
@@ -243,7 +240,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 else if (options.port && options.host) {
                     server.listen(options.port, options.host);
                 }
-                else  {
+                else {
                     server.listen(options.port);
                 }
             });
@@ -338,9 +335,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 this._ipcBusPeers.set(ipcBusCommand.peer.id, ipcBusCommand.peer);
                 break;
 
-            // User by peers associated with a webContent.
-            // There is only one socket for managing all this peers
-            // We must not close this socket but just peer in it
             case IpcBusCommand.Kind.Disconnect:
                 if (this._ipcBusPeers.delete(ipcBusCommand.peer.id)) {
                     this._subscriptions.releasePeerId(socket, ipcBusCommand.peer.id);
@@ -368,33 +362,14 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
 
             case IpcBusCommand.Kind.SendMessage:
-                // IpcBusUtils.Logger.enable && console.log(`[IPCBus:Broker] SendMessage ${ipcBusCommand.channel}`);
-                // if (IpcBusUtils.Logger.enable) {
-                //     if (!this._subscriptions.hasChannel(ipcBusCommand.channel)) {
-                //         console.log(`[IPCBus:Broker] SendMessage NoChannel !! ${ipcBusCommand.channel}`);
-                //     }
-                // }
+            case IpcBusCommand.Kind.BridgeSendMessage:
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.write(packet.buffer);
                 });
-                // if (this._wildSubscriptions.size > 0) {
-                //     const args: any[] = null;
-                //     const bufferPacket = new IpcPacketBuffer();
-                //     this._wildSubscriptions.forEach((wildChannel) => {
-                //         if (ipcBusCommand.channel.lastIndexOf(wildChannel, 0) === 0) {
-                //             // Re-add '*' suffix
-                //             ipcBusCommand.emit = wildChannel + '*';
-                //             args = args || packet.parseArrayAt(1);
-                //             bufferPacket.serializeArray([ipcBusCommand, args]);
-                //             this._subscriptions.forEachChannel(ipcBusCommand.emit, (connData, channel) => {
-                //                 connData.conn.write(bufferPacket.buffer);
-                //             });
-                //         }
-                //     });
-                // }
                 break;
 
             case IpcBusCommand.Kind.RequestMessage:
+            case IpcBusCommand.Kind.BridgeRequestMessage:
                 // Register the replyChannel
                 this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, socket);
 
@@ -404,7 +379,8 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 });
                 break;
 
-            case IpcBusCommand.Kind.RequestResponse: {
+            case IpcBusCommand.Kind.RequestResponse:
+            case IpcBusCommand.Kind.BridgeRequestResponse: {
                 const replySocket = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
                 if (replySocket) {
                     this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
@@ -414,9 +390,15 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             }
 
             case IpcBusCommand.Kind.RequestCancel:
+            case IpcBusCommand.Kind.BridgeRequestCancel:
                 this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                 break;
 
+            case IpcBusCommand.Kind.BridgeConnect:
+                break;
+
+            case IpcBusCommand.Kind.BridgeClose:
+                break;
             default:
                 console.log(JSON.stringify(ipcBusCommand, null, 4));
                 throw 'IpcBusBrokerImpl: Not valid packet !';

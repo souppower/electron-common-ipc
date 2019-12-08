@@ -3,7 +3,7 @@
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as Client from '../IpcBusClient';
-import * as Broker from '../broker/IpcBusBroker';
+import { extractPeerIdFromReplyChannel } from '../IpcBusTransportImpl';
 
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
@@ -17,7 +17,8 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
 
     protected abstract addLog(webContents: Electron.WebContents, peer: Client.IpcBusPeer, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): void;
 
-    protected _onCommandReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+    protected _onCommandBufferReceived(ipcBusCommand: IpcBusCommand, buffer: Buffer): boolean {
+        const ipcPacketBuffer = new IpcPacketBuffer();
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestMessage: {
@@ -35,20 +36,21 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
                 const webContents = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
                 if (webContents) {
                     const args = ipcPacketBuffer.parseArrayAt(1);
-                    const peerId = this.extractPeerIdFromReplyChannel(ipcBusCommand.request.replyChannel);
+                    const peerId = extractPeerIdFromReplyChannel(ipcBusCommand.request.replyChannel);
                     const peer = this._ipcBusPeers.get(peerId);
                     this.addLog(webContents, peer, ipcPacketBuffer, ipcBusCommand, args);
                 }
                 break;
             }
         }
-        super._onCommandReceived(ipcBusCommand, ipcPacketBuffer);
+        return super._onCommandBufferReceived(ipcBusCommand, buffer);
     }
 
     protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
-        this._packetIn.decodeFromBuffer(buffer);
-        const args = this._packetIn.parseArrayAt(1);
-        this.addLog(event.sender, ipcBusCommand.peer, this._packetIn, ipcBusCommand, args);
+        const ipcPacketBuffer = new IpcPacketBuffer();
+        ipcPacketBuffer.decodeFromBuffer(buffer);
+        const args = ipcPacketBuffer.parseArrayAt(1);
+        this.addLog(event.sender, ipcBusCommand.peer, ipcPacketBuffer, ipcBusCommand, args);
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(log);
 
         super._onRendererMessage(event, ipcBusCommand, buffer);

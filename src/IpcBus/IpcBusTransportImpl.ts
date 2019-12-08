@@ -9,6 +9,9 @@ import { IpcBusTransport } from './IpcBusTransport';
 const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
 const v1IdPattern = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
 
+export function extractPeerIdFromReplyChannel(replyChannel: string): string {
+    return replyChannel.substr(replyChannelPrefix.length, v1IdPattern.length);
+}
 
 /** @internal */
 class DeferredRequest {
@@ -73,10 +76,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     private generateReplyChannel(): string {
         ++this._requestNumber;
         return `${replyChannelPrefix}${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
-    }
-
-    protected extractPeerIdFromReplyChannel(replyChannel: string): string {
-        return replyChannel.substr(replyChannelPrefix.length, v1IdPattern.length);
     }
 
     ipcCallback(callback: (channel: string, ipcBusEvent: Client.IpcBusEvent, ...args: any[]) => void): void {
