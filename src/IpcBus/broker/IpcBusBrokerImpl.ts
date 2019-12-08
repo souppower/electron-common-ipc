@@ -83,7 +83,6 @@ class IpcBusBrokerSocket {
 
 /** @internal */
 export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocketClient {
-    private _netOptions: Client.IpcNetOptions;
     private _ipcBusBrokerClient: Client.IpcBusClient;
     private _socketClients: Map<net.Socket, IpcBusBrokerSocket>;
 
@@ -96,9 +95,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     // private _wildSubscriptions: Set<string>;
     private _ipcBusPeers: Map<string, Client.IpcBusPeer>;
 
-    constructor(contextType: Client.IpcBusProcessType, options: Broker.IpcBusBroker.CreateOptions) {
-        this._netOptions = options;
-
+    constructor(contextType: Client.IpcBusProcessType) {
         // Callbacks
         this._netBinds = {};
         this._netBinds['error'] = this._onServerError.bind(this);
@@ -107,7 +104,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
         this._onQueryState = this._onQueryState.bind(this);
 
-        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<net.Socket>('IPCBus:Broker');
+        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<net.Socket>('IPCBus:Broker', false);
         // this._wildSubscriptions = new Set<string>();
         this._socketClients = new Map<net.Socket, IpcBusBrokerSocket>();
         this._ipcBusPeers = new Map<string, Client.IpcBusPeer>();
@@ -126,7 +123,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         //     }
         // });
 
-        this._ipcBusBrokerClient = CreateIpcBusClientNet(contextType, this._netOptions);
+        this._ipcBusBrokerClient = CreateIpcBusClientNet(contextType);
     }
 
     protected _onQueryState(ipcBusEvent: Client.IpcBusEvent, replyChannel: string) {
@@ -163,8 +160,11 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     }
 
     // IpcBusBroker API
-    start(options?: Broker.IpcBusBroker.StartOptions): Promise<void> {
-        options = options || {};
+    connect(options?: Broker.IpcBusBroker.ConnectOptions, hostname?: string): Promise<void> {
+        options = IpcBusUtils.CheckCreateOptions(options, hostname);
+        if (!options) {
+            return Promise.reject('Wrong options');
+        }
         if (options.timeoutDelay == null) {
             options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
@@ -192,25 +192,25 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
                         timer = null;
-                        const msg = `[IPCBus:Broker] error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._netOptions)}`;
+                        const msg = `[IPCBus:Broker] error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(options)}`;
                         fctReject(msg);
                     }, options.timeoutDelay);
                 }
 
                 const catchError = (err: any) => {
-                    const msg = `[IPCBus:Broker] error = ${err} on ${JSON.stringify(this._netOptions)}`;
+                    const msg = `[IPCBus:Broker] error = ${err} on ${JSON.stringify(options)}`;
                     fctReject(msg);
                 };
 
                 const catchClose = () => {
-                    const msg = `[IPCBus:Broker] close on ${JSON.stringify(this._netOptions)}`;
+                    const msg = `[IPCBus:Broker] close on ${JSON.stringify(options)}`;
                     fctReject(msg);
                 };
 
                 const catchListening =  (_server: any) => {
                     removeLocalListeners();
                     this._server = server;
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Listening for incoming connections on ${JSON.stringify(this._netOptions)}`);
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Listening for incoming connections on ${JSON.stringify(options)}`);
                     for (let key in this._netBinds) {
                         this._server.addListener(key, this._netBinds[key]);
                     }
@@ -237,21 +237,21 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 server.addListener('listening', catchListening);
                 server.addListener('error', catchError);
                 server.addListener('close', catchClose);
-                if (this._netOptions.path) {
-                    server.listen(this._netOptions.path);
+                if (options.path) {
+                    server.listen(options.path);
                 }
-                else if (this._netOptions.port && this._netOptions.host) {
-                    server.listen(this._netOptions.port, this._netOptions.host);
+                else if (options.port && options.host) {
+                    server.listen(options.port, options.host);
                 }
                 else  {
-                    server.listen(this._netOptions.port);
+                    server.listen(options.port);
                 }
             });
         }
         return p;
     }
 
-    stop(options?: Broker.IpcBusBroker.StopOptions): Promise<void> {
+    close(options?: Broker.IpcBusBroker.CloseOptions): Promise<void> {
         options = options || {};
         if (options.timeoutDelay == null) {
             options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
@@ -270,7 +270,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
                         server.removeListener('close', catchClose);
-                        const msg = `[IPCBus:Broker] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._netOptions)}`;
+                        const msg = `[IPCBus:Broker] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(options)}`;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                         reject(msg);
                     }, options.timeoutDelay);

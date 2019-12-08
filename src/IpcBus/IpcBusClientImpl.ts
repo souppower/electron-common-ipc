@@ -4,13 +4,14 @@ import * as Client from './IpcBusClient';
 
 import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusTransport } from './IpcBusTransport';
+import * as IpcBusUtils from './IpcBusUtils';
 
 // Implementation for a common IpcBusClient
 /** @internal */
 export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClient {
     protected _transport: IpcBusTransport;
 
-    constructor(options: Client.IpcBusClient.CreateOptions, ipcBusClientTransport: IpcBusTransport) {
+    constructor(ipcBusClientTransport: IpcBusTransport) {
         super();
         super.setMaxListeners(0);
         this._transport = ipcBusClientTransport;
@@ -23,7 +24,11 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         return this._transport.peer;
     }
 
-    connect(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    connect(options: any, hostname?: string): Promise<void> {
+        options = IpcBusUtils.CheckCreateOptions(options, hostname);
+        if (!options) {
+            return Promise.reject('Wrong options');
+        }
         return this._transport.ipcConnect(options);
     }
 

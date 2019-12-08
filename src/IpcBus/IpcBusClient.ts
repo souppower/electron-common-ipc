@@ -11,6 +11,11 @@ export const ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH'
 
 export type IpcBusProcessType = 'renderer-frame' | 'native' | ElectronProcessType | string;
 
+export enum IpcBusBrokerOwner {
+    Bridge,
+    Broker
+}
+
 export interface IpcBusProcess {
     type: IpcBusProcessType;
     pid: number;    // Process Id
@@ -60,29 +65,35 @@ export interface IpcNetOptions {
 }
 
 export namespace IpcBusClient {
-    export interface ConnectOptions extends IpcTimeoutOptions, IpcSocketBufferingOptions {
+    export interface ConnectOptions extends IpcTimeoutOptions, IpcSocketBufferingOptions, IpcNetOptions {
         peerName?: string;
     }
+    export interface ConnectFunction {
+        (options?: IpcBusClient.ConnectOptions): Promise<void>;
+        (port: number, hostname?: string): Promise<void>;
+        (path: string): Promise<void>;
+    }
+
     export interface CloseOptions extends IpcTimeoutOptions {
+    }
+    export interface CloseFunction {
+        (options?: IpcBusClient.CloseOptions): Promise<void>;
     }
 
     export interface CreateOptions extends IpcNetOptions {
     }
 
     export interface CreateFunction {
-        (options: CreateOptions): IpcBusClient | null ;
-        (port: number, hostname?: string): IpcBusClient | null ;
-        (path: string): IpcBusClient | null ;
+        (): IpcBusClient | null ;
     }
-
     export let Create: IpcBusClient.CreateFunction;
 }
 
 export interface IpcBusClient extends EventEmitter {
     peer: IpcBusPeer;
 
-    connect(options?: IpcBusClient.ConnectOptions): Promise<void>;
-    close(options?: IpcBusClient.CloseOptions): Promise<void>;
+    connect: IpcBusClient.ConnectFunction;
+    close: IpcBusClient.CloseFunction;
 
     send(channel: string, ...args: any[]): void;
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;

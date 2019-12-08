@@ -22,8 +22,8 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
     private _logger: any;
     private _line: number;
 
-    constructor(logPath: string, options: Broker.IpcBusBroker.CreateOptions) {
-        super(options);
+    constructor(logPath: string) {
+        super();
 
         this._line = 0;
 

@@ -1,5 +1,3 @@
-import * as IpcBusUtils from './IpcBusUtils';
-
 import { Create as CreateIpcBusClientWindow } from './IpcBusClientWindow';
 
 import { CrossFrameEventEmitter, IpcBusFrameBridge } from './CrossFrameEventEmitter2';
@@ -31,11 +29,10 @@ function _PreloadElectronCommonIpc(context: string, iframeSupport: boolean = fal
                 windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
                 if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
                     trace && console.log(`inject - ${context} - ElectronCommonIpc.CreateIpcBusClient`);
-                    windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options: any, hostname?: string) => {
+                    windowLocal.ElectronCommonIpc.CreateIpcBusClient = () => {
                         trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
-                        const localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
                         // 'ipcRenderer as any', ipcRenderer does not cover all EventListener interface !
-                        const ipcBusClient = CreateIpcBusClientWindow('renderer', localOptions || {}, electron.ipcRenderer as any);
+                        const ipcBusClient = CreateIpcBusClientWindow('renderer', electron.ipcRenderer as any);
                         return ipcBusClient;
                     };
                 }
@@ -71,10 +68,9 @@ function _PreloadElectronCommonIpc(context: string, iframeSupport: boolean = fal
             if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
                 trace && console.log(`${context} - Frame ElectronCommonIpc`);
                 const crossFrameEE = new CrossFrameEventEmitter(window.parent);
-                windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options: any, hostname?: string) => {
+                windowLocal.ElectronCommonIpc.CreateIpcBusClient = () => {
                     trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
-                    const localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-                    const ipcBusClient = CreateIpcBusClientWindow('renderer-frame', localOptions || {}, crossFrameEE);
+                    const ipcBusClient = CreateIpcBusClientWindow('renderer-frame', crossFrameEE);
                     return ipcBusClient;
                 };
             }

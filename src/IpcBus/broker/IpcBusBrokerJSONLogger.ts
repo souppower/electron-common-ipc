@@ -8,7 +8,6 @@ import * as winston from 'winston';
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as Client from '../IpcBusClient';
-import * as Broker from './IpcBusBroker';
 
 import { IpcBusCommand } from '../IpcBusCommand';
 
@@ -18,8 +17,8 @@ import { IpcBusBrokerLogger } from './IpcBusBrokerLogger';
 export class IpcBusBrokerJSONLogger extends IpcBusBrokerLogger {
     private _logger: winston.LoggerInstance;
 
-    constructor(logPath: string, contextType: Client.IpcBusProcessType, options: Broker.IpcBusBroker.CreateOptions) {
-        super(contextType, options);
+    constructor(logPath: string, contextType: Client.IpcBusProcessTypes) {
+        super(contextType);
 
         !fs.existsSync(logPath) && fs.mkdirSync(logPath);
 

@@ -25,10 +25,10 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
     protected _packetIn: IpcPacketBuffer;
     private _bufferListReader: BufferListReader;
 
-    constructor(contextType: Client.IpcBusProcessType, options: Client.IpcBusClient.CreateOptions) {
+    constructor(contextType: Client.IpcBusProcessType) {
         assert((contextType === 'main') || (contextType === 'node'), `IpcBusTransportNet: contextType must not be a ${contextType}`);
 
-        super({ type: contextType, pid: process.pid }, options);
+        super({ type: contextType, pid: process.pid });
         this._packetOut = new IpcPacketBufferWrap();
 
         this._bufferListReader = new BufferListReader();
@@ -113,13 +113,13 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
                 if (options.timeoutDelay >= 0) {
                     timer = setTimeout(() => {
                         timer = null;
-                        const msg = `[IPCBusTransport:Net ${this._ipcBusPeer.id}] error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._netOptions)}`;
+                        const msg = `[IPCBusTransport:Net ${this._ipcBusPeer.id}] error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(options)}`;
                         fctReject(msg);
                     }, options.timeoutDelay);
                 }
 
                 const catchError = (err: any) => {
-                    const msg = `[IPCBusTransport:Net ${this._ipcBusPeer.id}] socket error = ${err} on ${JSON.stringify(this._netOptions)}`;
+                    const msg = `[IPCBusTransport:Net ${this._ipcBusPeer.id}] socket error = ${err} on ${JSON.stringify(options)}`;
                     fctReject(msg);
                 };
 
@@ -141,7 +141,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
                         this._socket.addListener(key, this._netBinds[key]);
                     }
 
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Net ${this._ipcBusPeer.id}] connected on ${JSON.stringify(this._netOptions)}`);
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Net ${this._ipcBusPeer.id}] connected on ${JSON.stringify(options)}`);
                     if ((this._socketBuffer == null) || (this._socketBuffer === 0)) {
                         this._socketWriter = new SocketWriter(this._socket);
                     }
@@ -170,14 +170,14 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
                 for (let key in socketLocalBinds) {
                     socket.addListener(key, socketLocalBinds[key]);
                 }
-                if (this._netOptions.path) {
-                    socket.connect(this._netOptions.path);
+                if (options.path) {
+                    socket.connect(options.path);
                 }
-                else if (this._netOptions.port && this._netOptions.host) {
-                    socket.connect(this._netOptions.port, this._netOptions.host);
+                else if (options.port && options.host) {
+                    socket.connect(options.port, options.host);
                 }
                 else  {
-                    socket.connect(this._netOptions.port);
+                    socket.connect(options.port);
                 }
             });
         }
@@ -207,7 +207,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
                         for (let key in socketLocalBinds) {
                             socket.removeListener(key, socketLocalBinds[key]);
                         }
-                        const msg = `[IPCBusTransport:Net ${this._ipcBusPeer.id}] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(this._netOptions)}`;
+                        const msg = `[IPCBusTransport:Net ${this._ipcBusPeer.id}] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(options)}`;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                         reject(msg);
                     }, options.timeoutDelay);
@@ -233,6 +233,12 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
             else {
                 this._packetOut.writeArray(this._socketWriter, [ipcBusCommand]);
             }
+        }
+    }
+
+    ipcPostBuffer(buffer: Buffer) {
+        if (this._socketWriter) {
+            this._socketWriter.writeBuffer(buffer);
         }
     }
 }

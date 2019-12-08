@@ -1,26 +1,25 @@
 import { IpcTimeoutOptions, IpcNetOptions } from '../IpcBusClient';
 
 export namespace IpcBusBroker {
-    export interface StartOptions extends IpcTimeoutOptions {
+    export interface ConnectOptions extends IpcTimeoutOptions, IpcNetOptions {
+    }
+    export interface ConnectFunction {
+        (options?: IpcBusBroker.ConnectOptions): Promise<void>;
     }
 
-    export interface StopOptions extends IpcTimeoutOptions {
+    export interface CloseOptions extends IpcTimeoutOptions {
     }
-
-    export interface CreateOptions extends IpcNetOptions {
+    export interface CloseFunction {
+        (options?: IpcBusBroker.CloseOptions): Promise<void>;
     }
 
     export interface CreateFunction {
-        (options: CreateOptions): IpcBusBroker | null ;
-        (port: number, hostname?: string): IpcBusBroker | null ;
-        (path: string): IpcBusBroker | null ;
     }
-
     export let Create: CreateFunction;
 }
 
 export interface IpcBusBroker {
-    start(options?: IpcBusBroker.StartOptions): Promise<void>;
-    stop(options?: IpcBusBroker.StopOptions): Promise<void>;
+    connect: IpcBusBroker.ConnectFunction;
+    close: IpcBusBroker.CloseFunction;
     queryState(): Object;
 }

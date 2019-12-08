@@ -52,15 +52,13 @@ class DeferredRequest {
 /** @internal */
 export abstract class IpcBusTransportImpl implements IpcBusTransport {
     protected _ipcBusPeer: Client.IpcBusPeer;
-    protected readonly _netOptions: Client.IpcNetOptions;
     protected _ipcCallback: Function;
 
     protected _requestFunctions: Map<string, DeferredRequest>;
     protected _requestNumber: number;
 
-    constructor(ipcBusContext: Client.IpcBusProcess, options: Client.IpcBusClient.CreateOptions) {
-         this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusContext };
-        this._netOptions = options;
+    constructor(ipcBusContext: Client.IpcBusProcess) {
+        this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusContext };
         this._requestFunctions = new Map<string, DeferredRequest>();
         this._requestNumber = 0;
     }

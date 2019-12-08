@@ -27,9 +27,9 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
     private _packetIn: IpcPacketBuffer;
     private _connected: boolean;
 
-    constructor(contextType: Client.IpcBusProcessType, options: Client.IpcBusClient.CreateOptions, ipcWindow: IpcWindow) {
+    constructor(contextType: Client.IpcBusProcessType, ipcWindow: IpcWindow) {
         assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
-        super({ type: contextType, pid: -1 }, options);
+        super({ type: contextType, pid: -1 });
 
         this._ipcWindow = ipcWindow;
 
@@ -137,6 +137,7 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._connected) {
+            ipcBusCommand.kind = ('B' + ipcBusCommand.kind) as IpcBusCommand.Kind;
             const bufferWriter = new BufferListWriter();
             if (args) {
                 this._packetOut.writeArray(bufferWriter, [ipcBusCommand, args]);
@@ -148,4 +149,3 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
         }
     }
 }
-

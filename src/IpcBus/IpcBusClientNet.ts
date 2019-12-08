@@ -4,8 +4,8 @@ import { IpcBusTransportNet } from './IpcBusTransportNet';
 import { IpcBusClientImpl}  from './IpcBusClientImpl';
 
 // Implementation for Node process
-export function Create(contextType: Client.IpcBusProcessType, options: Client.IpcBusClient.CreateOptions): Client.IpcBusClient {
-    const transport = new IpcBusTransportNet(contextType, options);
-    const ipcClient = new IpcBusClientImpl(options, transport);
+export function Create(contextType: Client.IpcBusProcessType): Client.IpcBusClient {
+    const transport = new IpcBusTransportNet(contextType);
+    const ipcClient = new IpcBusClientImpl(transport);
     return ipcClient;
 }

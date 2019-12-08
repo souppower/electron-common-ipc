@@ -23,7 +23,19 @@ export namespace IpcBusCommand {
         SendMessage                 = 'MES',    // MEssage
         RequestMessage              = 'RQM',    // ReQuest
         RequestResponse             = 'RQR',
-        RequestCancel               = 'RQC'
+        RequestCancel               = 'RQC',
+
+        BridgeConnect                     = 'BCOO',    // COnnexion
+        BridgeDisconnect                  = 'BCOD',
+        BridgeClose                       = 'BCOC',
+        BridgeAddChannelListener          = 'BLICA',   // LIstener
+        BridgeRemoveChannelListener       = 'BLICR',
+        BridgeRemoveChannelAllListeners   = 'BLICRA',
+        BridgeRemoveListeners             = 'BLIR',
+        BridgeSendMessage                 = 'BMES',    // MEssage
+        BridgeRequestMessage              = 'BRQM',    // ReQuest
+        BridgeRequestResponse             = 'BRQR',
+        BridgeRequestCancel               = 'BRQC',
     };
 
     /** @internal */
