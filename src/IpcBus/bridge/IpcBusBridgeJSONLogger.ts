@@ -5,7 +5,6 @@ import * as fs from 'fs';
 
 import * as winston from 'winston';
 
-import { IpcPacketBuffer } from 'socket-serializer';
 import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
@@ -29,7 +28,7 @@ export class IpcBusBridgeJSONLogger extends IpcBusBridgeLogger {
         });
     }
 
-    protected addLog(webContents: Electron.WebContents, peer: Client.IpcBusPeer, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): any {
+    protected addLog(webContents: Electron.WebContents, peer: Client.IpcBusPeer, ipcBusCommand: IpcBusCommand, args: any[]): any {
         const log: any = { command: ipcBusCommand };
         if (args) {
             for (let i = 0, l = args.length; i < l; ++i) {

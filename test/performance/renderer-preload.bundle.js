@@ -196,7 +196,7 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 }
 exports.IpcBusFrameBridge = IpcBusFrameBridge;
 
-},{"./CrossFrameMessage":2,"./IpcBusTransportWindow":10,"events":25,"uuid":49}],2:[function(require,module,exports){
+},{"./CrossFrameMessage":2,"./IpcBusTransportWindow":10,"events":25,"uuid":38}],2:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const json_helpers_1 = require("json-helpers");
@@ -278,9 +278,6 @@ class IpcBusClientImpl extends events_1.EventEmitter {
     }
     connect(arg1, arg2, arg3) {
         const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
-        if (options == null) {
-            return Promise.reject('Wrong options');
-        }
         return this._transport.ipcConnect(options);
     }
     close(options) {
@@ -382,6 +379,10 @@ var IpcBusCommand;
         Kind["BridgeRequestMessage"] = "BRQM";
         Kind["BridgeRequestResponse"] = "BRQR";
         Kind["BridgeRequestCancel"] = "BRQC";
+        Kind["BrokerAddChannels"] = "BOCAS";
+        Kind["BrokerRemoveChannels"] = "BOCRS";
+        Kind["BridgeAddChannels"] = "BICAS";
+        Kind["BridgeRemoveChannels"] = "BICRS";
     })(Kind = IpcBusCommand.Kind || (IpcBusCommand.Kind = {}));
     ;
 })(IpcBusCommand = exports.IpcBusCommand || (exports.IpcBusCommand = {}));
@@ -526,42 +527,51 @@ class IpcBusTransportImpl {
     ipcCallback(callback) {
         this._ipcCallback = callback;
     }
+    _onCommandSendMessage(ipcBusCommand, args) {
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
+        const ipcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
+        this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
+    }
+    _onCommandRequestdMessage(ipcBusCommand, args) {
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
+        const ipcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
+        ipcBusEvent.request = {
+            resolve: (payload) => {
+                ipcBusCommand.request.resolve = true;
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
+                this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
+            },
+            reject: (err) => {
+                ipcBusCommand.request.reject = true;
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
+                this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
+            }
+        };
+        this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
+    }
+    _onCommandRequestResponse(ipcBusCommand, args) {
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
+        const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
+        if (deferredRequest) {
+            this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
+            deferredRequest.fulFilled(ipcBusCommand, args);
+        }
+    }
     _onCommandReceived(ipcBusCommand, ipcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage: {
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
-                const ipcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
                 const args = ipcPacketBuffer.parseArrayAt(1);
-                this._ipcCallback(ipcBusCommand.emit || ipcBusCommand.channel, ipcBusEvent, ...args);
+                this._onCommandSendMessage(ipcBusCommand, args);
                 break;
             }
             case IpcBusCommand_1.IpcBusCommand.Kind.RequestMessage: {
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-                const ipcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
-                ipcBusEvent.request = {
-                    resolve: (payload) => {
-                        ipcBusCommand.request.resolve = true;
-                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
-                        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
-                    },
-                    reject: (err) => {
-                        ipcBusCommand.request.reject = true;
-                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
-                        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
-                    }
-                };
                 const args = ipcPacketBuffer.parseArrayAt(1);
-                this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
+                this._onCommandRequestdMessage(ipcBusCommand, args);
                 break;
             }
             case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse: {
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-                const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
-                if (deferredRequest) {
-                    this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
-                    const args = ipcPacketBuffer.parseArrayAt(1);
-                    deferredRequest.fulFilled(ipcBusCommand, args);
-                }
+                const args = ipcPacketBuffer.parseArrayAt(1);
+                this._onCommandRequestResponse(ipcBusCommand, args);
                 break;
             }
         }
@@ -592,11 +602,10 @@ class IpcBusTransportImpl {
 }
 exports.IpcBusTransportImpl = IpcBusTransportImpl;
 
-},{"./IpcBusClient":4,"./IpcBusCommand":7,"./IpcBusUtils":11,"uuid":49}],10:[function(require,module,exports){
+},{"./IpcBusClient":4,"./IpcBusCommand":7,"./IpcBusUtils":11,"uuid":38}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert = require("assert");
-const socket_serializer_1 = require("socket-serializer");
 const IpcBusUtils = require("./IpcBusUtils");
 const IpcBusTransportImpl_1 = require("./IpcBusTransportImpl");
 const IpcBusCommand_1 = require("./IpcBusCommand");
@@ -608,8 +617,6 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
         assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
         super({ type: contextType, pid: -1 });
         this._ipcWindow = ipcWindow;
-        this._packetOut = new socket_serializer_1.IpcPacketBufferWrap();
-        this._packetIn = new socket_serializer_1.IpcPacketBuffer();
     }
     _reset() {
         this._promiseConnected = null;
@@ -625,9 +632,21 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
             if (peerOrUndefined.id === this._ipcBusPeer.id) {
                 this._ipcBusPeer = peerOrUndefined;
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Standard listening for #${this._ipcBusPeer.name}`);
-                this._onIpcEventReceived = (eventEmitter, ipcBusCommand, buffer) => {
-                    this._packetIn.decodeFromBuffer(buffer);
-                    this._onCommandReceived(ipcBusCommand, this._packetIn);
+                this._onIpcEventReceived = (eventEmitter, ipcBusCommand, args) => {
+                    switch (ipcBusCommand.kind) {
+                        case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage: {
+                            this._onCommandSendMessage(ipcBusCommand, args);
+                            break;
+                        }
+                        case IpcBusCommand_1.IpcBusCommand.Kind.RequestMessage: {
+                            this._onCommandRequestdMessage(ipcBusCommand, args);
+                            break;
+                        }
+                        case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse: {
+                            this._onCommandRequestResponse(ipcBusCommand, args);
+                            break;
+                        }
+                    }
                 };
                 this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
                 return true;
@@ -637,9 +656,21 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
             if (eventOrPeer.id === this._ipcBusPeer.id) {
                 this._ipcBusPeer = eventOrPeer;
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
-                this._onIpcEventReceived = (ipcBusCommand, buffer) => {
-                    this._packetIn.decodeFromBuffer(buffer);
-                    this._onCommandReceived(ipcBusCommand, this._packetIn);
+                this._onIpcEventReceived = (ipcBusCommand, args) => {
+                    switch (ipcBusCommand.kind) {
+                        case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage: {
+                            this._onCommandSendMessage(ipcBusCommand, args);
+                            break;
+                        }
+                        case IpcBusCommand_1.IpcBusCommand.Kind.RequestMessage: {
+                            this._onCommandRequestdMessage(ipcBusCommand, args);
+                            break;
+                        }
+                        case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse: {
+                            this._onCommandRequestResponse(ipcBusCommand, args);
+                            break;
+                        }
+                    }
                 };
                 this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
                 return true;
@@ -692,20 +723,13 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
     ipcPostCommand(ipcBusCommand, args) {
         if (this._connected) {
             ipcBusCommand.kind = ('B' + ipcBusCommand.kind);
-            const bufferWriter = new socket_serializer_1.BufferListWriter();
-            if (args) {
-                this._packetOut.writeArray(bufferWriter, [ipcBusCommand, args]);
-            }
-            else {
-                this._packetOut.writeArray(bufferWriter, [ipcBusCommand]);
-            }
-            this._ipcWindow.send(exports.IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, bufferWriter.buffer);
+            this._ipcWindow.send(exports.IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, args);
         }
     }
 }
 exports.IpcBusTransportWindow = IpcBusTransportWindow;
 
-},{"./IpcBusCommand":7,"./IpcBusTransportImpl":9,"./IpcBusUtils":11,"assert":19,"socket-serializer":47}],11:[function(require,module,exports){
+},{"./IpcBusCommand":7,"./IpcBusTransportImpl":9,"./IpcBusUtils":11,"assert":19}],11:[function(require,module,exports){
 (function (Buffer,process){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -743,9 +767,6 @@ function CheckConnectOptions(arg1, arg2, arg3) {
         if (options.path) {
             options.path = CleanPipeName(arg1.path);
         }
-    }
-    if ((options.port == null && options.path == null)) {
-        return null;
     }
     if (options.timeoutDelay == null) {
         options.timeoutDelay = exports.IPC_BUS_TIMEOUT;
@@ -874,6 +895,9 @@ class ChannelConnectionMap extends events_1.EventEmitter {
     }
     hasChannel(channel) {
         return this._channelsMap.has(channel);
+    }
+    getChannels() {
+        return Object.keys(this._channelsMap);
     }
     clear() {
         this._channelsMap.clear();
@@ -5744,1160 +5768,6 @@ process.chdir = function (dir) {
 process.umask = function() { return 0; };
 
 },{}],38:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const buffer_1 = require("buffer");
-const reader_1 = require("./reader");
-class BufferListReader extends reader_1.ReaderBase {
-    constructor(buffers, offset) {
-        super();
-        this._contexts = [];
-        this._buffers = buffers || [];
-        this._length = this._buffers.reduce((sum, buffer) => sum + buffer.length, 0);
-        this._offset = 0;
-        this._curOffset = 0;
-        this._curBufferIndex = 0;
-        this.seek(offset || 0);
-    }
-    appendBuffer(buffer) {
-        this._buffers.push(buffer);
-        this._length += buffer.length;
-    }
-    get length() {
-        return this._length;
-    }
-    get offset() {
-        return this._offset;
-    }
-    pushd() {
-        this._contexts.push({ offset: this._offset, curOffset: this._curOffset, curBufferIndex: this._curBufferIndex });
-        return this._contexts.length;
-    }
-    popd() {
-        const context = this._contexts.pop();
-        this._offset = context.offset;
-        this._curOffset = context.curOffset;
-        this._curBufferIndex = context.curBufferIndex;
-        return this._contexts.length;
-    }
-    seek(offset) {
-        if (this._offset !== offset) {
-            let curBuffer = this._buffers[this._curBufferIndex];
-            this._curOffset += (offset - this._offset);
-            this._offset = offset;
-            while (this._curOffset >= curBuffer.length) {
-                if (this._curBufferIndex >= this._buffers.length - 1) {
-                    if (!this._noAssert) {
-                        throw new RangeError('Index out of range');
-                    }
-                    return false;
-                }
-                ++this._curBufferIndex;
-                curBuffer = this._buffers[this._curBufferIndex];
-                this._curOffset -= curBuffer.length;
-            }
-            while (this._curOffset < 0) {
-                if (this._curBufferIndex <= 0) {
-                    if (!this._noAssert) {
-                        throw new RangeError('Index out of range');
-                    }
-                    return false;
-                }
-                --this._curBufferIndex;
-                curBuffer = this._buffers[this._curBufferIndex];
-                this._curOffset += curBuffer.length;
-            }
-        }
-        return this.checkEOF();
-    }
-    reduce() {
-        if (this.checkEOF(1)) {
-            this._buffers = [];
-            this._offset = 0;
-            this._length = 0;
-            this._curOffset = 0;
-            this._curBufferIndex = 0;
-        }
-        else {
-            if (this._curBufferIndex > 0) {
-                this._buffers.splice(0, this._curBufferIndex);
-                this._length -= (this._offset - this._curOffset);
-                this._offset = this._curOffset;
-                this._curBufferIndex = 0;
-            }
-        }
-    }
-    _consolidate(offsetStep, noAssert) {
-        let curBuffer = this._buffers[this._curBufferIndex];
-        let newOffset = this._curOffset + offsetStep;
-        if (newOffset > curBuffer.length) {
-            let bufferLength = 0;
-            const buffers = [];
-            for (let endBufferIndex = this._curBufferIndex; endBufferIndex < this._buffers.length; ++endBufferIndex) {
-                buffers.push(this._buffers[endBufferIndex]);
-                bufferLength += this._buffers[endBufferIndex].length;
-                if (newOffset <= bufferLength) {
-                    break;
-                }
-            }
-            curBuffer = this._buffers[this._curBufferIndex] = buffer_1.Buffer.concat(buffers, bufferLength);
-            this._buffers.splice(this._curBufferIndex + 1, buffers.length - 1);
-            if (!noAssert && (newOffset > curBuffer.length)) {
-            }
-        }
-        this._offset += offsetStep;
-        this._curOffset = newOffset;
-        return curBuffer;
-    }
-    _readNumber(bufferFunction, byteSize, noAssert) {
-        const start = this._curOffset;
-        const currBuffer = this._consolidate(byteSize, noAssert);
-        return bufferFunction.call(currBuffer, start, noAssert);
-    }
-    readByte(noAssert) {
-        return this._readNumber(buffer_1.Buffer.prototype.readUInt8, 1, noAssert);
-    }
-    readUInt32(noAssert) {
-        return this._readNumber(buffer_1.Buffer.prototype.readUInt32LE, 4, noAssert);
-    }
-    readDouble(noAssert) {
-        return this._readNumber(buffer_1.Buffer.prototype.readDoubleLE, 8, noAssert);
-    }
-    readString(encoding, len) {
-        const end = reader_1.Reader.AdjustEnd(this._offset, this._length, len);
-        if (this._offset === end) {
-            return '';
-        }
-        else {
-            const start = this._curOffset;
-            len = end - this._offset;
-            const currBuffer = this._consolidate(len);
-            return currBuffer.toString(encoding, start, end);
-        }
-    }
-    readBuffer(len) {
-        const end = reader_1.Reader.AdjustEnd(this._offset, this._length, len);
-        if (this._offset === end) {
-            return buffer_1.Buffer.alloc(0);
-        }
-        else {
-            const start = this._curOffset;
-            len = end - this._offset;
-            const currBuffer = this._consolidate(len);
-            if ((start === 0) && (len === currBuffer.length)) {
-                return currBuffer;
-            }
-            else {
-                return currBuffer.slice(start, end);
-            }
-        }
-    }
-}
-exports.BufferListReader = BufferListReader;
-
-},{"./reader":45,"buffer":24}],39:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const buffer_1 = require("buffer");
-const writer_1 = require("./writer");
-class BufferListWriterBase extends writer_1.WriterBase {
-    constructor() {
-        super();
-        this._length = 0;
-    }
-    get length() {
-        return this._length;
-    }
-    writeBytes(dataArray) {
-        const uint8Array = new Uint8Array(dataArray);
-        const buffer = buffer_1.Buffer.from(uint8Array.buffer);
-        return this._appendBuffer(buffer.length, buffer);
-    }
-    _writeNumber(bufferFunction, data, byteSize) {
-        let buffer = buffer_1.Buffer.allocUnsafe(byteSize);
-        bufferFunction.call(buffer, data, 0, this._noAssert);
-        return this._appendBuffer(byteSize, buffer);
-    }
-    writeByte(data) {
-        return this._writeNumber(buffer_1.Buffer.prototype.writeUInt8, data, 1);
-    }
-    writeUInt32(data) {
-        return this._writeNumber(buffer_1.Buffer.prototype.writeUInt32LE, data, 4);
-    }
-    writeDouble(data) {
-        return this._writeNumber(buffer_1.Buffer.prototype.writeDoubleLE, data, 8);
-    }
-    writeString(data, encoding, len) {
-        if (len != null) {
-            data = data.substring(0, len);
-        }
-        const buffer = buffer_1.Buffer.from(data, encoding);
-        return this._appendBuffer(buffer.length, buffer);
-    }
-    writeBuffer(buffer, sourceStart, sourceEnd) {
-        if ((sourceStart != null) || (sourceEnd != null)) {
-            buffer = buffer.slice(sourceStart, sourceEnd);
-        }
-        return this._appendBuffer(buffer.length, buffer);
-    }
-    write(writer) {
-        return this._appendBuffers(writer.length, writer.buffers);
-    }
-    pushContext() {
-    }
-    popContext() {
-    }
-}
-exports.BufferListWriterBase = BufferListWriterBase;
-class BufferListWriter extends BufferListWriterBase {
-    constructor() {
-        super();
-        this._buffers = [];
-    }
-    get buffer() {
-        if (this._buffers.length === 0) {
-            return buffer_1.Buffer.allocUnsafe(0);
-        }
-        if (this._buffers.length > 1) {
-            this._buffers = [buffer_1.Buffer.concat(this._buffers, this._length)];
-        }
-        return this._buffers[0];
-    }
-    get buffers() {
-        return this._buffers;
-    }
-    _appendBuffer(length, buffer) {
-        this._buffers.push(buffer);
-        this._length += length;
-        return this._length;
-    }
-    _appendBuffers(length, buffers) {
-        this._buffers = this._buffers.concat(buffers);
-        this._length += length;
-        return this._length;
-    }
-}
-exports.BufferListWriter = BufferListWriter;
-
-},{"./writer":46,"buffer":24}],40:[function(require,module,exports){
-(function (Buffer){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const reader_1 = require("./reader");
-class BufferReader extends reader_1.ReaderBase {
-    constructor(buffer, offset) {
-        super();
-        this._buffer = buffer;
-        this._offset = offset || 0;
-        this._contexts = [];
-    }
-    get length() {
-        return this._buffer.length;
-    }
-    get offset() {
-        return this._offset;
-    }
-    pushd() {
-        this._contexts.push(this._offset);
-        return this._contexts.length;
-    }
-    popd() {
-        this._offset = this._contexts.pop();
-        return this._contexts.length;
-    }
-    seek(offset) {
-        this._offset = offset;
-        return this.checkEOF();
-    }
-    _readNumber(bufferFunction, byteSize) {
-        const start = this._offset;
-        this._offset += byteSize;
-        return bufferFunction.call(this._buffer, start, this._noAssert);
-    }
-    readByte() {
-        return this._readNumber(Buffer.prototype.readUInt8, 1);
-    }
-    readUInt32() {
-        return this._readNumber(Buffer.prototype.readUInt32LE, 4);
-    }
-    readDouble() {
-        return this._readNumber(Buffer.prototype.readDoubleLE, 8);
-    }
-    readString(encoding, len) {
-        const end = reader_1.Reader.AdjustEnd(this._offset, this._buffer.length, len);
-        if (this._offset === end) {
-            return '';
-        }
-        else {
-            const start = this._offset;
-            this._offset = end;
-            return this._buffer.toString(encoding, start, end);
-        }
-    }
-    readBuffer(len) {
-        const end = reader_1.Reader.AdjustEnd(this._offset, this._buffer.length, len);
-        if (this._offset === end) {
-            return Buffer.allocUnsafe(0);
-        }
-        else {
-            const start = this._offset;
-            len = end - this._offset;
-            this._offset = end;
-            if ((start === 0) && (len === this._buffer.length)) {
-                return this._buffer;
-            }
-            else {
-                return this._buffer.slice(start, end);
-            }
-        }
-    }
-    reduce() {
-    }
-}
-exports.BufferReader = BufferReader;
-
-}).call(this,require("buffer").Buffer)
-},{"./reader":45,"buffer":24}],41:[function(require,module,exports){
-(function (Buffer){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const writer_1 = require("./writer");
-class BufferWriter extends writer_1.WriterBase {
-    constructor(buffer, offset) {
-        super();
-        this._buffer = buffer;
-        this._offset = offset || 0;
-    }
-    get buffer() {
-        return this._buffer;
-    }
-    get buffers() {
-        return [this._buffer];
-    }
-    get length() {
-        return this._buffer.length;
-    }
-    get offset() {
-        return this._offset;
-    }
-    writeBytes(dataArray) {
-        for (let i = 0, l = dataArray.length; i < l; ++i) {
-            this._writeNumber(Buffer.prototype.writeUInt8, dataArray[i], 1);
-        }
-        return this._offset;
-    }
-    _writeNumber(bufferFunction, data, byteSize) {
-        this._offset = bufferFunction.call(this._buffer, data, this._offset, this._noAssert);
-        return this._offset;
-    }
-    writeByte(data) {
-        return this._writeNumber(Buffer.prototype.writeUInt8, data, 1);
-    }
-    writeUInt32(data) {
-        return this._writeNumber(Buffer.prototype.writeUInt32LE, data, 4);
-    }
-    writeDouble(data) {
-        return this._writeNumber(Buffer.prototype.writeDoubleLE, data, 8);
-    }
-    writeString(data, encoding, len) {
-        this._offset += this._buffer.write(data, this._offset, len, encoding);
-        return this._offset;
-    }
-    writeBuffer(data, sourceStart, sourceEnd) {
-        this._offset += data.copy(this._buffer, this._offset, sourceStart, sourceEnd);
-        return this._offset;
-    }
-    write(writer) {
-        const buffers = writer.buffers;
-        for (let i = 0, l = buffers.length; i < l; ++i) {
-            this.writeBuffer(buffers[i]);
-        }
-        return this._offset;
-    }
-    pushContext() {
-    }
-    popContext() {
-    }
-}
-exports.BufferWriter = BufferWriter;
-
-}).call(this,require("buffer").Buffer)
-},{"./writer":46,"buffer":24}],42:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
-const bufferListWriter_1 = require("./bufferListWriter");
-const bufferReader_1 = require("./bufferReader");
-class IpcPacketSerializer {
-    constructor() {
-        this._writer = new bufferListWriter_1.BufferListWriter();
-        this._packet = new ipcPacketBufferWrap_1.IpcPacketBufferWrap();
-    }
-    serialize(data) {
-        this._packet.write(this._writer, data);
-        return this;
-    }
-    get buffer() {
-        return this._writer.buffer;
-    }
-    get buffers() {
-        return this._writer.buffers;
-    }
-}
-exports.IpcPacketSerializer = IpcPacketSerializer;
-;
-class IpcPacketParser {
-    constructor(buffer) {
-        this._reader = new bufferReader_1.BufferReader(buffer);
-        this._packet = new ipcPacketBufferWrap_1.IpcPacketBufferWrap();
-    }
-    parse() {
-        return this._packet.read(this._reader);
-    }
-}
-exports.IpcPacketParser = IpcPacketParser;
-
-},{"./bufferListWriter":39,"./bufferReader":40,"./ipcPacketBufferWrap":44}],43:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
-const bufferReader_1 = require("./bufferReader");
-const bufferListWriter_1 = require("./bufferListWriter");
-class IpcPacketBuffer extends ipcPacketBufferWrap_1.IpcPacketBufferWrap {
-    constructor() {
-        super();
-    }
-    get buffer() {
-        return this._buffer;
-    }
-    decodeFromReader(bufferReader) {
-        bufferReader.pushd();
-        let result = this._readHeader(bufferReader);
-        bufferReader.popd();
-        if (result) {
-            this._buffer = bufferReader.readBuffer(this.packetSize);
-        }
-        return result;
-    }
-    decodeFromBuffer(buffer) {
-        const result = this._readHeader(new bufferReader_1.BufferReader(buffer));
-        if (result) {
-            this._buffer = buffer;
-        }
-        return result;
-    }
-    _serializeAndCheck(checker, dataNumber) {
-        const bufferWriter = new bufferListWriter_1.BufferListWriter();
-        this.write(bufferWriter, dataNumber);
-        this._buffer = bufferWriter.buffer;
-        return checker.call(this);
-    }
-    serializeNumber(dataNumber) {
-        return this._serializeAndCheck(this.isNumber, dataNumber);
-    }
-    serializeBoolean(dataBoolean) {
-        return this._serializeAndCheck(this.isBoolean, dataBoolean);
-    }
-    serializeDate(dataDate) {
-        return this._serializeAndCheck(this.isDate, dataDate);
-    }
-    serializeString(data, encoding) {
-        const bufferWriter = new bufferListWriter_1.BufferListWriter();
-        this.writeString(bufferWriter, data, encoding);
-        this._buffer = bufferWriter.buffer;
-        return this.isString();
-    }
-    serializeObject(dataObject) {
-        return this._serializeAndCheck(this.isObject, dataObject);
-    }
-    serializeBuffer(dataBuffer) {
-        return this._serializeAndCheck(this.isBuffer, dataBuffer);
-    }
-    serializeArray(args) {
-        return this._serializeAndCheck(this.isArray, args);
-    }
-    serialize(data) {
-        return this._serializeAndCheck(this.isComplete, data);
-    }
-    _parseAndCheck(checker) {
-        if (checker.call(this)) {
-            const bufferReader = new bufferReader_1.BufferReader(this._buffer, this._headerSize);
-            return this._readContent(0, bufferReader);
-        }
-        return null;
-    }
-    parse() {
-        return this._parseAndCheck(this.isComplete);
-    }
-    parseBoolean() {
-        return this._parseAndCheck(this.isBoolean);
-    }
-    parseNumber() {
-        return this._parseAndCheck(this.isNumber);
-    }
-    parseDate() {
-        return this._parseAndCheck(this.isDate);
-    }
-    parseObject() {
-        return this._parseAndCheck(this.isObject);
-    }
-    parseBuffer() {
-        return this._parseAndCheck(this.isBuffer);
-    }
-    parseArray() {
-        return this._parseAndCheck(this.isArray);
-    }
-    parseString() {
-        return this._parseAndCheck(this.isString);
-    }
-    parseArrayLength() {
-        if (this.isArray()) {
-            const bufferReader = new bufferReader_1.BufferReader(this._buffer, this._headerSize);
-            return this._readArrayLength(bufferReader);
-        }
-        return null;
-    }
-    parseArrayAt(index) {
-        if (this.isArray()) {
-            const bufferReader = new bufferReader_1.BufferReader(this._buffer, this._headerSize);
-            return this._readArrayAt(bufferReader, index);
-        }
-        return null;
-    }
-    parseArraySlice(start, end) {
-        if (this.isArray()) {
-            const bufferReader = new bufferReader_1.BufferReader(this._buffer, this._headerSize);
-            return this._readArraySlice(bufferReader, start, end);
-        }
-        return null;
-    }
-}
-exports.IpcPacketBuffer = IpcPacketBuffer;
-
-},{"./bufferListWriter":39,"./bufferReader":40,"./ipcPacketBufferWrap":44}],44:[function(require,module,exports){
-(function (Buffer){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const bufferListWriter_1 = require("./bufferListWriter");
-const bufferWriter_1 = require("./bufferWriter");
-const json_helpers_1 = require("json-helpers");
-const headerSeparator = '['.charCodeAt(0);
-const footerSeparator = ']'.charCodeAt(0);
-const FooterLength = 1;
-const FixedHeaderSize = 2;
-const DynamicHeaderSize = FixedHeaderSize + 4;
-var BufferType;
-(function (BufferType) {
-    BufferType[BufferType["NotValid"] = 'X'.charCodeAt(0)] = "NotValid";
-    BufferType[BufferType["Partial"] = 'P'.charCodeAt(0)] = "Partial";
-    BufferType[BufferType["String"] = 's'.charCodeAt(0)] = "String";
-    BufferType[BufferType["Buffer"] = 'B'.charCodeAt(0)] = "Buffer";
-    BufferType[BufferType["BooleanTrue"] = 'T'.charCodeAt(0)] = "BooleanTrue";
-    BufferType[BufferType["BooleanFalse"] = 'F'.charCodeAt(0)] = "BooleanFalse";
-    BufferType[BufferType["ArrayWithSize"] = 'A'.charCodeAt(0)] = "ArrayWithSize";
-    BufferType[BufferType["PositiveInteger"] = '+'.charCodeAt(0)] = "PositiveInteger";
-    BufferType[BufferType["NegativeInteger"] = '-'.charCodeAt(0)] = "NegativeInteger";
-    BufferType[BufferType["Double"] = 'd'.charCodeAt(0)] = "Double";
-    BufferType[BufferType["Object"] = 'O'.charCodeAt(0)] = "Object";
-    BufferType[BufferType["ObjectSTRINGIFY"] = 'o'.charCodeAt(0)] = "ObjectSTRINGIFY";
-    BufferType[BufferType["Null"] = 'N'.charCodeAt(0)] = "Null";
-    BufferType[BufferType["Undefined"] = 'U'.charCodeAt(0)] = "Undefined";
-    BufferType[BufferType["Date"] = 'D'.charCodeAt(0)] = "Date";
-})(BufferType = exports.BufferType || (exports.BufferType = {}));
-;
-class IpcPacketBufferWrap {
-    constructor() {
-        this.writeArray = this.writeArrayWithSize;
-        this.writeObject = this.writeObjectSTRINGIFY2;
-        this._type = BufferType.NotValid;
-    }
-    get type() {
-        return this._type;
-    }
-    get packetSize() {
-        return this._contentSize + (this._headerSize + FooterLength);
-    }
-    get contentSize() {
-        return this._contentSize;
-    }
-    get footerSize() {
-        return FooterLength;
-    }
-    get headerSize() {
-        return this._headerSize;
-    }
-    setTypeAndContentSize(bufferType, contentSize) {
-        this._type = bufferType;
-        switch (bufferType) {
-            case BufferType.Date:
-            case BufferType.Double:
-                this._headerSize = FixedHeaderSize;
-                this._contentSize = 8;
-                break;
-            case BufferType.NegativeInteger:
-            case BufferType.PositiveInteger:
-                this._headerSize = FixedHeaderSize;
-                this._contentSize = 4;
-                break;
-            case BufferType.Object:
-            case BufferType.ObjectSTRINGIFY:
-            case BufferType.String:
-            case BufferType.Buffer:
-            case BufferType.ArrayWithSize:
-                this._headerSize = DynamicHeaderSize;
-                this._contentSize = contentSize;
-                break;
-            case BufferType.BooleanTrue:
-            case BufferType.BooleanFalse:
-            case BufferType.Null:
-            case BufferType.Undefined:
-                this._headerSize = FixedHeaderSize;
-                this._contentSize = 0;
-                break;
-            default:
-                this._type = BufferType.NotValid;
-                break;
-        }
-    }
-    setPacketSize(packetSize) {
-        this._contentSize = packetSize - (this._headerSize + FooterLength);
-    }
-    isNotValid() {
-        return (this._type === BufferType.NotValid);
-    }
-    isPartial() {
-        return (this._type === BufferType.Partial);
-    }
-    isComplete() {
-        return (this._type !== BufferType.NotValid) && (this._type !== BufferType.Partial);
-    }
-    isNull() {
-        return (this._type === BufferType.Null);
-    }
-    isUndefined() {
-        return (this._type === BufferType.Undefined);
-    }
-    isArray() {
-        return (this._type === BufferType.ArrayWithSize);
-    }
-    isObject() {
-        switch (this._type) {
-            case BufferType.Object:
-            case BufferType.ObjectSTRINGIFY:
-                return true;
-            default:
-                return false;
-        }
-    }
-    isString() {
-        return (this._type === BufferType.String);
-    }
-    isBuffer() {
-        return (this._type === BufferType.Buffer);
-    }
-    isDate() {
-        return (this._type === BufferType.Date);
-    }
-    isNumber() {
-        switch (this._type) {
-            case BufferType.NegativeInteger:
-            case BufferType.PositiveInteger:
-            case BufferType.Double:
-                return true;
-            default:
-                return false;
-        }
-    }
-    isBoolean() {
-        switch (this._type) {
-            case BufferType.BooleanTrue:
-            case BufferType.BooleanFalse:
-                return true;
-            default:
-                return false;
-        }
-    }
-    isFixedSize() {
-        return (this._headerSize === FixedHeaderSize);
-    }
-    _skipHeader(bufferReader) {
-        return bufferReader.skip(this._headerSize);
-    }
-    _readHeader(bufferReader) {
-        if (bufferReader.checkEOF(2)) {
-            this._type = BufferType.Partial;
-            return false;
-        }
-        if (bufferReader.readByte() !== headerSeparator) {
-            this._type = BufferType.NotValid;
-            return false;
-        }
-        this.setTypeAndContentSize(bufferReader.readByte(), 0);
-        if (this._type === BufferType.NotValid) {
-            return false;
-        }
-        if (bufferReader.checkEOF(this._headerSize - 2)) {
-            this._type = BufferType.Partial;
-            return false;
-        }
-        else {
-            if (this.isFixedSize() === false) {
-                this.setPacketSize(bufferReader.readUInt32());
-            }
-            if (bufferReader.checkEOF(this._contentSize + this.footerSize)) {
-                this._type = BufferType.Partial;
-                return false;
-            }
-        }
-        return true;
-    }
-    writeHeader(bufferWriter) {
-        bufferWriter.pushContext();
-        const bufferWriterHeader = new bufferWriter_1.BufferWriter(Buffer.allocUnsafe(this._headerSize));
-        bufferWriterHeader.writeByte(headerSeparator);
-        bufferWriterHeader.writeByte(this._type);
-        if (this.isFixedSize() === false) {
-            bufferWriterHeader.writeUInt32(this.packetSize);
-        }
-        bufferWriter.writeBuffer(bufferWriterHeader.buffer);
-    }
-    writeFooter(bufferWriter) {
-        bufferWriter.writeByte(footerSeparator);
-        bufferWriter.popContext();
-    }
-    writeFixedSize(bufferWriter, bufferType, num) {
-        bufferWriter.pushContext();
-        this.setTypeAndContentSize(bufferType);
-        const bufferWriteAllInOne = new bufferWriter_1.BufferWriter(Buffer.allocUnsafe(this.packetSize));
-        bufferWriteAllInOne.writeByte(headerSeparator);
-        bufferWriteAllInOne.writeByte(this._type);
-        switch (bufferType) {
-            case BufferType.NegativeInteger:
-            case BufferType.PositiveInteger:
-                bufferWriteAllInOne.writeUInt32(num);
-                break;
-            case BufferType.Double:
-            case BufferType.Date:
-                bufferWriteAllInOne.writeDouble(num);
-                break;
-        }
-        bufferWriteAllInOne.writeByte(footerSeparator);
-        bufferWriter.writeBuffer(bufferWriteAllInOne.buffer);
-        bufferWriter.popContext();
-    }
-    write(bufferWriter, data) {
-        switch (typeof data) {
-            case 'object':
-                if (Buffer.isBuffer(data)) {
-                    this.writeBuffer(bufferWriter, data);
-                }
-                else if (Array.isArray(data)) {
-                    this.writeArray(bufferWriter, data);
-                }
-                else if (data instanceof Date) {
-                    this.writeDate(bufferWriter, data);
-                }
-                else {
-                    this.writeObject(bufferWriter, data);
-                }
-                break;
-            case 'string':
-                this.writeString(bufferWriter, data);
-                break;
-            case 'number':
-                this.writeNumber(bufferWriter, data);
-                break;
-            case 'boolean':
-                this.writeBoolean(bufferWriter, data);
-                break;
-            case 'undefined':
-                this.writeFixedSize(bufferWriter, BufferType.Undefined);
-                break;
-            case 'symbol':
-            default:
-                break;
-        }
-    }
-    writeBoolean(bufferWriter, dataBoolean) {
-        this.writeFixedSize(bufferWriter, dataBoolean ? BufferType.BooleanTrue : BufferType.BooleanFalse);
-    }
-    writeNumber(bufferWriter, dataNumber) {
-        if (Number.isInteger(dataNumber)) {
-            const absDataNumber = Math.abs(dataNumber);
-            if (absDataNumber <= 0xFFFFFFFF) {
-                if (dataNumber < 0) {
-                    this.writeFixedSize(bufferWriter, BufferType.NegativeInteger, absDataNumber);
-                }
-                else {
-                    this.writeFixedSize(bufferWriter, BufferType.PositiveInteger, absDataNumber);
-                }
-                return;
-            }
-        }
-        this.writeFixedSize(bufferWriter, BufferType.Double, dataNumber);
-    }
-    writeDate(bufferWriter, data) {
-        const t = data.getTime();
-        this.writeFixedSize(bufferWriter, BufferType.Date, t);
-    }
-    writeString(bufferWriter, data, encoding) {
-        const buffer = Buffer.from(data, 'utf8');
-        this.setTypeAndContentSize(BufferType.String, buffer.length);
-        this.writeHeader(bufferWriter);
-        bufferWriter.writeBuffer(buffer);
-        this.writeFooter(bufferWriter);
-    }
-    writeBuffer(bufferWriter, buffer) {
-        this.setTypeAndContentSize(BufferType.Buffer, buffer.length);
-        this.writeHeader(bufferWriter);
-        bufferWriter.writeBuffer(buffer);
-        this.writeFooter(bufferWriter);
-    }
-    writeObjectDirect1(bufferWriter, dataObject) {
-        if (dataObject === null) {
-            this.writeFixedSize(bufferWriter, BufferType.Null);
-        }
-        else {
-            const contentBufferWriter = new bufferListWriter_1.BufferListWriter();
-            for (let [key, value] of Object.entries(dataObject)) {
-                const buffer = Buffer.from(key, 'utf8');
-                contentBufferWriter.writeUInt32(buffer.length);
-                contentBufferWriter.writeBuffer(buffer);
-                this.write(contentBufferWriter, value);
-            }
-            this.setTypeAndContentSize(BufferType.Object, contentBufferWriter.length);
-            this.writeHeader(bufferWriter);
-            bufferWriter.write(contentBufferWriter);
-            this.writeFooter(bufferWriter);
-        }
-    }
-    writeObjectDirect2(bufferWriter, dataObject) {
-        if (dataObject === null) {
-            this.writeFixedSize(bufferWriter, BufferType.Null);
-        }
-        else {
-            const contentBufferWriter = new bufferListWriter_1.BufferListWriter();
-            const keys = Object.keys(dataObject);
-            for (let i = 0, l = keys.length; i < l; ++i) {
-                const key = keys[i];
-                const desc = Object.getOwnPropertyDescriptor(dataObject, key);
-                if (desc && (typeof desc.value !== 'function')) {
-                    const buffer = Buffer.from(key, 'utf8');
-                    contentBufferWriter.writeUInt32(buffer.length);
-                    contentBufferWriter.writeBuffer(buffer);
-                    this.write(contentBufferWriter, desc.value);
-                }
-            }
-            this.setTypeAndContentSize(BufferType.Object, contentBufferWriter.length);
-            this.writeHeader(bufferWriter);
-            bufferWriter.write(contentBufferWriter);
-            this.writeFooter(bufferWriter);
-        }
-    }
-    writeObjectSTRINGIFY1(bufferWriter, dataObject) {
-        if (dataObject === null) {
-            this.writeFixedSize(bufferWriter, BufferType.Null);
-        }
-        else {
-            const stringifycation = JSON.stringify(dataObject);
-            const buffer = Buffer.from(stringifycation);
-            this.setTypeAndContentSize(BufferType.ObjectSTRINGIFY, buffer.length);
-            this.writeHeader(bufferWriter);
-            bufferWriter.writeBuffer(buffer);
-            this.writeFooter(bufferWriter);
-        }
-    }
-    writeObjectSTRINGIFY2(bufferWriter, dataObject) {
-        if (dataObject === null) {
-            this.writeFixedSize(bufferWriter, BufferType.Null);
-        }
-        else {
-            const stringifycation = json_helpers_1.JSONParser.stringify(dataObject);
-            const buffer = Buffer.from(stringifycation, 'utf8');
-            this.setTypeAndContentSize(BufferType.ObjectSTRINGIFY, buffer.length);
-            this.writeHeader(bufferWriter);
-            bufferWriter.writeBuffer(buffer);
-            this.writeFooter(bufferWriter);
-        }
-    }
-    writeArrayWithSize(bufferWriter, args) {
-        const contentBufferWriter = new bufferListWriter_1.BufferListWriter();
-        for (let i = 0, l = args.length; i < l; ++i) {
-            this.write(contentBufferWriter, args[i]);
-        }
-        this.setTypeAndContentSize(BufferType.ArrayWithSize, contentBufferWriter.length + 4);
-        this.writeHeader(bufferWriter);
-        bufferWriter.writeUInt32(args.length);
-        bufferWriter.write(contentBufferWriter);
-        this.writeFooter(bufferWriter);
-    }
-    read(bufferReader) {
-        return this._read(0, bufferReader);
-    }
-    _read(depth, bufferReader) {
-        this._readHeader(bufferReader);
-        const arg = this._readContent(depth, bufferReader);
-        bufferReader.skip(this.footerSize);
-        return arg;
-    }
-    _readContent(depth, bufferReader) {
-        let arg;
-        switch (this.type) {
-            case BufferType.ArrayWithSize:
-                arg = this._readArray(depth, bufferReader);
-                break;
-            case BufferType.Object:
-                arg = this._readObjectDirect(depth, bufferReader);
-                break;
-            case BufferType.ObjectSTRINGIFY:
-                arg = this._readObjectSTRINGIFY2(depth, bufferReader);
-                break;
-            case BufferType.Null:
-                arg = null;
-                break;
-            case BufferType.Undefined:
-                arg = undefined;
-                break;
-            case BufferType.String:
-                arg = this._readString(bufferReader, this._contentSize);
-                break;
-            case BufferType.Buffer:
-                arg = bufferReader.readBuffer(this._contentSize);
-                break;
-            case BufferType.Date:
-                arg = new Date(bufferReader.readDouble());
-                break;
-            case BufferType.Double:
-                arg = bufferReader.readDouble();
-                break;
-            case BufferType.NegativeInteger:
-                arg = -bufferReader.readUInt32();
-                break;
-            case BufferType.PositiveInteger:
-                arg = +bufferReader.readUInt32();
-                break;
-            case BufferType.BooleanTrue:
-                arg = true;
-                break;
-            case BufferType.BooleanFalse:
-                arg = false;
-                break;
-        }
-        return arg;
-    }
-    _readString(bufferReader, len) {
-        return bufferReader.readString('utf8', len);
-    }
-    _readObjectSTRINGIFY2(depth, bufferReader) {
-        const data = bufferReader.readString('utf8', this._contentSize);
-        return json_helpers_1.JSONParser.parse(data);
-    }
-    _readObjectDirect(depth, bufferReader) {
-        let context;
-        if (depth === 0) {
-            context = { type: this._type, headerSize: this._headerSize, contentSize: this._contentSize };
-        }
-        const offsetContentSize = bufferReader.offset + this._contentSize;
-        const dataObject = {};
-        while (bufferReader.offset < offsetContentSize) {
-            let keyLen = bufferReader.readUInt32();
-            let key = bufferReader.readString('utf8', keyLen);
-            dataObject[key] = this._read(depth + 1, bufferReader);
-        }
-        if (context) {
-            this._type = context.type;
-            this._headerSize = context.headerSize;
-            this._contentSize = context.contentSize;
-        }
-        return dataObject;
-    }
-    _readArray(depth, bufferReader) {
-        let context;
-        if (depth === 0) {
-            context = { type: this._type, headerSize: this._headerSize, contentSize: this._contentSize };
-        }
-        let argsLen = bufferReader.readUInt32();
-        const args = [];
-        while (argsLen > 0) {
-            let arg = this._read(depth + 1, bufferReader);
-            args.push(arg);
-            --argsLen;
-        }
-        if (context) {
-            this._type = context.type;
-            this._headerSize = context.headerSize;
-            this._contentSize = context.contentSize;
-        }
-        return args;
-    }
-    _readArrayLength(bufferReader) {
-        return bufferReader.readUInt32();
-    }
-    readArrayLength(bufferReader) {
-        this._readHeader(bufferReader);
-        if (this.isArray()) {
-            return this._readArrayLength(bufferReader);
-        }
-        return null;
-    }
-    byPass(bufferReader) {
-        this._readHeader(bufferReader);
-        bufferReader.skip(this._contentSize + this.footerSize);
-    }
-    _readArrayAt(bufferReader, index) {
-        const argsLen = bufferReader.readUInt32();
-        if (index >= argsLen) {
-            return null;
-        }
-        const headerArg = new IpcPacketBufferWrap();
-        while (index > 0) {
-            headerArg.byPass(bufferReader);
-            --index;
-        }
-        return headerArg.read(bufferReader);
-    }
-    readArrayAt(bufferReader, index) {
-        this._readHeader(bufferReader);
-        if (this.isArray()) {
-            return this._readArrayAt(bufferReader, index);
-        }
-        return null;
-    }
-    _readArraySlice(bufferReader, start, end) {
-        const argsLen = bufferReader.readUInt32();
-        if (start == null) {
-            start = 0;
-        }
-        else if (start < 0) {
-            start = argsLen + start;
-        }
-        if (start >= argsLen) {
-            return [];
-        }
-        if (end == null) {
-            end = argsLen;
-        }
-        else if (end < 0) {
-            end = argsLen + end;
-        }
-        else {
-            end = Math.min(end, argsLen);
-        }
-        if (end <= start) {
-            return [];
-        }
-        const headerArg = new IpcPacketBufferWrap();
-        while (start > 0) {
-            headerArg.byPass(bufferReader);
-            --start;
-            --end;
-        }
-        const args = [];
-        while (end > 0) {
-            let arg = headerArg.read(bufferReader);
-            args.push(arg);
-            --end;
-        }
-        return args;
-    }
-    readArraySlice(bufferReader, start, end) {
-        this._readHeader(bufferReader);
-        if (this.isArray()) {
-            return this._readArraySlice(bufferReader, start, end);
-        }
-        return null;
-    }
-}
-exports.IpcPacketBufferWrap = IpcPacketBufferWrap;
-
-}).call(this,require("buffer").Buffer)
-},{"./bufferListWriter":39,"./bufferWriter":41,"buffer":24,"json-helpers":30}],45:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var Reader;
-(function (Reader) {
-    function AdjustEnd(offset, maxLen, len) {
-        let end;
-        if (len == null) {
-            end = maxLen;
-        }
-        else if (len <= 0) {
-            end = offset;
-        }
-        else {
-            end = Math.min(offset + len, maxLen);
-        }
-        return end;
-    }
-    Reader.AdjustEnd = AdjustEnd;
-})(Reader = exports.Reader || (exports.Reader = {}));
-class ReaderBase {
-    constructor() {
-        this._noAssert = true;
-    }
-    get noAssert() {
-        return this._noAssert;
-    }
-    set noAssert(noAssert) {
-        this._noAssert = noAssert;
-    }
-    checkEOF(offsetStep) {
-        return (this.offset + (offsetStep || 0) > this.length);
-    }
-    skip(offsetStep) {
-        return this.seek(this.offset + (offsetStep || 1));
-    }
-}
-exports.ReaderBase = ReaderBase;
-
-},{}],46:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-class WriterBase {
-    constructor() {
-        this._noAssert = true;
-    }
-    get noAssert() {
-        return this._noAssert;
-    }
-    set noAssert(noAssert) {
-        this._noAssert = noAssert;
-    }
-}
-exports.WriterBase = WriterBase;
-
-},{}],47:[function(require,module,exports){
-"use strict";
-function __export(m) {
-    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
-}
-Object.defineProperty(exports, "__esModule", { value: true });
-__export(require("./socket-serializer-common"));
-
-},{"./socket-serializer-common":48}],48:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var ipcPacketBuffer_1 = require("./code/ipcPacketBuffer");
-exports.IpcPacketBuffer = ipcPacketBuffer_1.IpcPacketBuffer;
-var ipcPacketBufferWrap_1 = require("./code/ipcPacketBufferWrap");
-exports.IpcPacketBufferWrap = ipcPacketBufferWrap_1.IpcPacketBufferWrap;
-var ipcPacketBufferWrap_2 = require("./code/ipcPacketBufferWrap");
-exports.BufferType = ipcPacketBufferWrap_2.BufferType;
-var bufferWriter_1 = require("./code/bufferWriter");
-exports.BufferWriter = bufferWriter_1.BufferWriter;
-var bufferListWriter_1 = require("./code/bufferListWriter");
-exports.BufferListWriter = bufferListWriter_1.BufferListWriter;
-var reader_1 = require("./code/reader");
-exports.Reader = reader_1.Reader;
-var bufferReader_1 = require("./code/bufferReader");
-exports.BufferReader = bufferReader_1.BufferReader;
-var bufferListReader_1 = require("./code/bufferListReader");
-exports.BufferListReader = bufferListReader_1.BufferListReader;
-var ipcPacket_1 = require("./code/ipcPacket");
-exports.IpcPacketSerializer = ipcPacket_1.IpcPacketSerializer;
-exports.IpcPacketParser = ipcPacket_1.IpcPacketParser;
-
-},{"./code/bufferListReader":38,"./code/bufferListWriter":39,"./code/bufferReader":40,"./code/bufferWriter":41,"./code/ipcPacket":42,"./code/ipcPacketBuffer":43,"./code/ipcPacketBufferWrap":44,"./code/reader":45}],49:[function(require,module,exports){
 var v1 = require('./v1');
 var v4 = require('./v4');
 
@@ -6907,7 +5777,7 @@ uuid.v4 = v4;
 
 module.exports = uuid;
 
-},{"./v1":52,"./v4":53}],50:[function(require,module,exports){
+},{"./v1":41,"./v4":42}],39:[function(require,module,exports){
 /**
  * Convert array of 16 byte values to UUID string format of the form:
  * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
@@ -6933,7 +5803,7 @@ function bytesToUuid(buf, offset) {
 
 module.exports = bytesToUuid;
 
-},{}],51:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 // Unique ID creation requires a high quality random # generator.  In the
 // browser this is a little complicated due to unknown quality of Math.random()
 // and inconsistent support for the `crypto` API.  We do the best we can via
@@ -6969,7 +5839,7 @@ if (getRandomValues) {
   };
 }
 
-},{}],52:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -7080,7 +5950,7 @@ function v1(options, buf, offset) {
 
 module.exports = v1;
 
-},{"./lib/bytesToUuid":50,"./lib/rng":51}],53:[function(require,module,exports){
+},{"./lib/bytesToUuid":39,"./lib/rng":40}],42:[function(require,module,exports){
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -7111,7 +5981,7 @@ function v4(options, buf, offset) {
 
 module.exports = v4;
 
-},{"./lib/bytesToUuid":50,"./lib/rng":51}],54:[function(require,module,exports){
+},{"./lib/bytesToUuid":39,"./lib/rng":40}],43:[function(require,module,exports){
 const electronCommonIpcModule = require('../../lib/electron-common-ipc');
 electronCommonIpcModule.PreloadElectronCommonIpc();
 
@@ -7121,4 +5991,4 @@ const electron = require('electron');
 window.ipcRenderer = electron.ipcRenderer;
 
 
-},{"../../lib/electron-common-ipc":17,"electron":"electron"}]},{},[54]);
+},{"../../lib/electron-common-ipc":17,"electron":"electron"}]},{},[43]);

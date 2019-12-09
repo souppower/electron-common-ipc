@@ -100,7 +100,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
         let p = this._promiseConnected;
         if (!p) {
             options = IpcBusUtils.CheckConnectOptions(options);
-            if (options == null) {
+            if ((options.port == null && options.path == null)) {
                 return Promise.reject('Wrong options');
             }
             p = this._promiseConnected = new Promise<void>((resolve, reject) => {

@@ -1,6 +1,6 @@
 import * as net from 'net';
 
-import { IpcPacketBuffer, BufferListReader } from 'socket-serializer';
+import { IpcPacketBuffer, BufferListReader, SocketWriter } from 'socket-serializer';
 
 import * as Client from '../IpcBusClient';
 import * as Broker from './IpcBusBroker';
@@ -85,7 +85,9 @@ class IpcBusBrokerSocket {
 export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocketClient {
     private _ipcBusBrokerClient: Client.IpcBusClient;
     private _socketClients: Map<net.Socket, IpcBusBrokerSocket>;
+
     private _socketBridge: net.Socket;
+    private _bridgeChannels: Set<string>;
 
     private _server: net.Server;
     private _netBinds: { [key: string]: (...args: any[]) => void };
@@ -93,7 +95,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     private _promiseStarted: Promise<void>;
 
     private _subscriptions: IpcBusUtils.ChannelConnectionMap<net.Socket>;
-    // private _wildSubscriptions: Set<string>;
     private _ipcBusPeers: Map<string, Client.IpcBusPeer>;
 
     constructor(contextType: Client.IpcBusProcessType) {
@@ -105,24 +106,19 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
         this._onQueryState = this._onQueryState.bind(this);
 
-        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<net.Socket>('IPCBus:Broker', false);
-        // this._wildSubscriptions = new Set<string>();
+        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<net.Socket>('IPCBus:Broker', true);
         this._socketClients = new Map<net.Socket, IpcBusBrokerSocket>();
         this._ipcBusPeers = new Map<string, Client.IpcBusPeer>();
 
-        // this._subscriptions.on('channel-added', (channel: string) => {
-        //     if (IpcBusUtils.ContainsWildCards(channel)) {
-        //         // Remove '*' suffix
-        //         this._wildSubscriptions.add(channel.slice(0, -1));
-        //     }
-        // });
+        this._bridgeChannels = new Set<string>();
 
-        // this._subscriptions.on('channel-removed', (channel: string) => {
-        //     if (IpcBusUtils.ContainsWildCards(channel)) {
-        //         // Remove '*' suffix
-        //         this._wildSubscriptions.delete(channel.slice(0, -1));
-        //     }
-        // });
+        this._subscriptions.on('channel-added', (channel: string) => {
+            this._socketBridge && this.brokerAddChannels([channel]);
+        });
+
+        this._subscriptions.on('channel-removed', (channel: string) => {
+            this._socketBridge && this.brokerRemoveChannels([channel]);
+        });
 
         this._ipcBusBrokerClient = CreateIpcBusClientNet(contextType);
     }
@@ -151,6 +147,8 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             this._socketClients.forEach((socket) => {
                 socket.release();
             });
+            this._socketBridge = null;
+
             server.close();
             server.unref();
         }
@@ -163,7 +161,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     // IpcBusBroker API
     connect(arg1: Broker.IpcBusBroker.ConnectOptions | string | number, arg2?: Broker.IpcBusBroker.ConnectOptions | string, arg3?: Broker.IpcBusBroker.ConnectOptions): Promise<void> {
         const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
-        if (options == null) {
+        if ((options.port == null && options.path == null)) {
             return Promise.reject('Wrong options');
         }
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
@@ -302,6 +300,9 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     onSocketClose(socket: net.Socket): void {
         // Not closing server
         if (this._server) {
+            if (this._socketBridge === socket) {
+                this._socketBridge = null;
+            }
             this._socketClients.delete(socket);
             this._socketCleanUp(socket);
         }
@@ -363,7 +364,9 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
 
             case IpcBusCommand.Kind.SendMessage:
-                this._socketBridge && this._socketBridge.write(packet.buffer);
+                if (this._bridgeChannels.has(ipcBusCommand.channel)) {
+                    this._socketBridge && this._socketBridge.write(packet.buffer);
+                }
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.write(packet.buffer);
                 });
@@ -377,7 +380,9 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             case IpcBusCommand.Kind.RequestMessage:
                 // Register the replyChannel
                 this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, socket);
-                this._socketBridge && this._socketBridge.write(packet.buffer); 
+                if (this._bridgeChannels.has(ipcBusCommand.channel)) {
+                    this._socketBridge && this._socketBridge.write(packet.buffer);
+                }
                 // Request ipcBusCommand to subscribed connections
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.write(packet.buffer);
@@ -386,7 +391,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             case IpcBusCommand.Kind.BridgeRequestMessage:
                 // Register the replyChannel
                 this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, socket);
-
                 // Request ipcBusCommand to subscribed connections
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.write(packet.buffer);
@@ -408,17 +412,61 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                 break;
 
-            case IpcBusCommand.Kind.BridgeConnect:
-                this._socketBridge = socket;
+            case IpcBusCommand.Kind.BridgeAddChannels: {
+                const channels: string[] = packet.parseArrayAt(1);
+                channels.forEach(channel => {
+                    this._bridgeChannels.add(channel);
+                });
                 break;
+            }
+
+            case IpcBusCommand.Kind.BridgeRemoveChannels: {
+                const channels: string[] = packet.parseArrayAt(1);
+                channels.forEach(channel => {
+                    this._bridgeChannels.delete(channel);
+                });
+                break;
+            }
+
+            case IpcBusCommand.Kind.BridgeConnect: {
+                this._socketBridge = socket;
+                this._bridgeChannels.clear();
+                const channels = this._subscriptions.getChannels();
+                this.brokerAddChannels(channels);
+                break;
+            }
 
             case IpcBusCommand.Kind.BridgeClose:
                 this._socketBridge = null;
+                this._bridgeChannels.clear();
                 break;
+
             default:
                 console.log(JSON.stringify(ipcBusCommand, null, 4));
                 throw 'IpcBusBrokerImpl: Not valid packet !';
         }
+    }
+
+    private brokerAddChannels(channels: string[]) {
+        const ipcBusCommand: IpcBusCommand = {
+            kind: IpcBusCommand.Kind.BrokerAddChannels,
+            channel: '',
+            peer: this._ipcBusBrokerClient.peer
+        };
+        const socketWriter = new SocketWriter(this._socketBridge);
+        const ipcPacketBuffer = new IpcPacketBuffer();
+        ipcPacketBuffer.writeArray(socketWriter, [ipcBusCommand, channels]);
+    }
+
+    private brokerRemoveChannels(channels: string[]) {
+        const ipcBusCommand: IpcBusCommand = {
+            kind: IpcBusCommand.Kind.BrokerRemoveChannels,
+            channel: '',
+            peer: this._ipcBusBrokerClient.peer
+        };
+        const socketWriter = new SocketWriter(this._socketBridge);
+        const ipcPacketBuffer = new IpcPacketBuffer();
+        ipcPacketBuffer.writeArray(socketWriter, [ipcBusCommand, channels]);
     }
 
     queryState(): Object {

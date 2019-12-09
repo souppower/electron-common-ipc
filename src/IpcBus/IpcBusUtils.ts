@@ -46,9 +46,6 @@ export function CheckConnectOptions<T extends IpcConnectOptions>(arg1: T | strin
             options.path =  CleanPipeName(arg1.path);
         }
     }
-    if ((options.port == null && options.path == null)) {
-        return null;
-    }
     if (options.timeoutDelay == null) {
         options.timeoutDelay = IPC_BUS_TIMEOUT;
     }
@@ -217,6 +214,10 @@ export class ChannelConnectionMap<T1> extends EventEmitter {
 
     hasChannel(channel: string): boolean {
         return this._channelsMap.has(channel);
+    }
+
+    getChannels(): string[] {
+        return Object.keys(this._channelsMap);
     }
 
     clear() {

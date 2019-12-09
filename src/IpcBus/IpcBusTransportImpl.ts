@@ -82,42 +82,54 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         this._ipcCallback = callback;
     }
 
+    protected _onCommandSendMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
+        const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
+        this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
+    }
+
+    protected _onCommandRequestdMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
+        const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
+        ipcBusEvent.request = {
+            resolve: (payload: Object | string) => {
+                ipcBusCommand.request.resolve = true;
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
+                this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
+            },
+            reject: (err: string) => {
+                ipcBusCommand.request.reject = true;
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
+                this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
+            }
+        };
+        this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
+    }
+
+    protected _onCommandRequestResponse(ipcBusCommand: IpcBusCommand, args: any[]) {
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
+        const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
+        if (deferredRequest) {
+            this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
+            deferredRequest.fulFilled(ipcBusCommand, args);
+        }
+    }
+
     protected _onCommandReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
-                const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
                 const args = ipcPacketBuffer.parseArrayAt(1);
-                this._ipcCallback(ipcBusCommand.emit || ipcBusCommand.channel, ipcBusEvent, ...args);
+                this._onCommandSendMessage(ipcBusCommand, args);
                 break;
             }
             case IpcBusCommand.Kind.RequestMessage: {
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-                const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
-                ipcBusEvent.request = {
-                    resolve: (payload: Object | string) => {
-                        ipcBusCommand.request.resolve = true;
-                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
-                        this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
-                    },
-                    reject: (err: string) => {
-                        ipcBusCommand.request.reject = true;
-                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
-                        this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
-                    }
-                };
                 const args = ipcPacketBuffer.parseArrayAt(1);
-                this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
+                this._onCommandRequestdMessage(ipcBusCommand, args);
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-                const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
-                if (deferredRequest) {
-                    this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
-                    const args = ipcPacketBuffer.parseArrayAt(1);
-                    deferredRequest.fulFilled(ipcBusCommand, args);
-                }
+                const args = ipcPacketBuffer.parseArrayAt(1);
+                this._onCommandRequestResponse(ipcBusCommand, args);
                 break;
             }
         }

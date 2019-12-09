@@ -4,7 +4,6 @@ import { IpcBusPeer } from './IpcBusClient';
 export interface IpcBusCommand {
     kind: IpcBusCommand.Kind;
     channel: string;
-    emit?: string;
     peer: IpcBusPeer;
     request?: IpcBusCommand.Request;
 }
@@ -36,6 +35,11 @@ export namespace IpcBusCommand {
         BridgeRequestMessage              = 'BRQM',    // ReQuest
         BridgeRequestResponse             = 'BRQR',
         BridgeRequestCancel               = 'BRQC',
+
+        BrokerAddChannels                 = 'BOCAS',
+        BrokerRemoveChannels              = 'BOCRS',
+        BridgeAddChannels                 = 'BICAS',
+        BridgeRemoveChannels              = 'BICRS',
     };
 
     /** @internal */
