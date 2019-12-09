@@ -221,12 +221,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 break;
 
             case IpcBusCommand.Kind.BridgeSendMessage:
-                this._onCommandBufferReceived(ipcBusCommand, buffer);
-                if (this._connected) {
-                    super.ipcPostBuffer(buffer);
-                }
-                break;
-
             case IpcBusCommand.Kind.BridgeRequestResponse:
                 this._onCommandBufferReceived(ipcBusCommand, buffer);
                 if (this._connected) {

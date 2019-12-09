@@ -394,7 +394,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
 
             case IpcBusCommand.Kind.RequestResponse:
-                // this._socketBridge && this._socketBridge.write(packet.buffer); 
             case IpcBusCommand.Kind.BridgeRequestResponse: {
                 const replySocket = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
                 if (replySocket) {

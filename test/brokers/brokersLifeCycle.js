@@ -12,6 +12,18 @@ const trace = false;
 let localBusPath = '/tr-ipc-bus/test';
 let localBusPathCount = 0;
 
+function createConnection(path) {
+  if (path) {
+    ++localBusPathCount;
+    return Promise.resolve(`${localBusPath}/${localBusPathCount}`);
+  }
+  else {
+    const port = 49152;
+    return sph.findFirstFreePort({ portRange: `>=${port}`, testConnection: true, log: false });
+  }
+}
+
+
 function getLocalBusPath() {
   ++localBusPathCount;
   return `${localBusPath}/${localBusPathCount}`;
@@ -220,3 +232,4 @@ Brokers = (function () {
 exports.Brokers = Brokers;
 exports.timeoutDelay = timeoutDelay;
 exports.getLocalBusPath = getLocalBusPath;
+exports.createConnection = createConnection;

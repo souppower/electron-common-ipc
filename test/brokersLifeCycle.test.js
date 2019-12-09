@@ -1,62 +1,31 @@
 const brokersLifeCycle = require('./brokers/brokersLifeCycle');
 
-describe('Brokers', () => {
-    let brokers;
-    before(() => {
-        brokers = new brokersLifeCycle.Brokers();
-    });
+function test(remoteBroker, busPath) {
+    describe(`Brokers lifeCycle`, () => {
+        before(() => {
+            return brokersLifeCycle.createConnection(busPath)
+            .then((busPortOrPath) => {
+                describe(`Brokers ${busPortOrPath} ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
+                    let brokers;
+                    before(() => {
+                        brokers = new brokersLifeCycle.Brokers(remoteBroker, busPortOrPath);
+                    });
 
-    it('start brokers', async () => {
-        return brokers.start();
-    });
+                    it('start brokers', async () => {
+                        return brokers.start();
+                    });
 
-    it('stop brokers', async () => {
-        return brokers.stop();
+                    it('stop brokers', async () => {
+                        return brokers.stop();
+                    });
+                });
+            });
+        });
+        it("", async function(){})  // this is important!
     });
-});
-
-describe('Brokers in remote process', () => {
-    let brokers;
-    before(() => {
-        brokers = new brokersLifeCycle.Brokers(true);
-    });
-
-    it('start brokers', async () => {
-        return brokers.start();
-    });
-
-    it('stop brokers', async () => {
-        return brokers.stop();
-    });
-});
-
-describe(`Brokers ${brokersLifeCycle.localBusPath}`, () => {
-    let brokers;
-    before(() => {
-        brokers = new brokersLifeCycle.Brokers(false, brokersLifeCycle.localBusPath);
-    });
-
-    it('start brokers', async () => {
-        return brokers.start();
-    });
-
-    it('stop brokers', async () => {
-        return brokers.stop();
-    });
-});
-
-describe(`Brokers ${brokersLifeCycle.localBusPath} in remote process`, () => {
-    let brokers;
-    before(() => {
-        brokers = new brokersLifeCycle.Brokers(true, brokersLifeCycle.localBusPath);
-    });
-
-    it('start brokers', async () => {
-        return brokers.start();
-    });
-
-    it('stop brokers', async () => {
-        return brokers.stop();
-    });
-});
+}
+test(false, false);
+test(true, false);
+test(false, true);
+test(true, true);
 
