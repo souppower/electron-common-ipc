@@ -1,6 +1,11 @@
 import * as Client from './IpcBusClient';
 import { IpcBusCommand } from './IpcBusCommand';
 
+
+export interface IpcBusSender {
+    send(channel: string, ...args: any[]): void;
+}
+
 /** @internal */
 export interface IpcBusTransport {
     readonly peer: Client.IpcBusPeer;

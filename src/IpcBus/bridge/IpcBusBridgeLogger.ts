@@ -15,7 +15,7 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
 
     protected _onCommandSendMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
         this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-            const webContents = connData.conn;
+            const webContents = connData.conn.constructor.name === 'WebContents' ? connData.conn as Electron.WebContents : undefined;
             connData.peerIds.forEach((peerId) => {
                 const peer = this._ipcBusPeers.get(peerId.peerId);
                 this.addLog(webContents, peer, ipcBusCommand, args);
@@ -24,28 +24,29 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         super._onCommandSendMessage(ipcBusCommand, args);
     }
 
-    protected _onCommandRequestdMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
+    protected _onCommandRequestMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
         this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-            const webContents = connData.conn;
+            const webContents = connData.conn.constructor.name === 'WebContents' ? connData.conn as Electron.WebContents : undefined;
             connData.peerIds.forEach((peerId) => {
                 const peer = this._ipcBusPeers.get(peerId.peerId);
                 this.addLog(webContents, peer, ipcBusCommand, args);
             });
         });
-        super._onCommandRequestdMessage(ipcBusCommand, args);
+        super._onCommandRequestMessage(ipcBusCommand, args);
     }
 
     protected _onCommandRequestResponse(ipcBusCommand: IpcBusCommand, args: any[]) {
-        const webContents = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
-        if (webContents) {
+        const ipcBusSender = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
+        if (ipcBusSender) {
             const peerId = extractPeerIdFromReplyChannel(ipcBusCommand.request.replyChannel);
             const peer = this._ipcBusPeers.get(peerId);
+            const webContents = ipcBusSender.constructor.name === 'WebContents' ? ipcBusSender as Electron.WebContents : undefined;
             this.addLog(webContents, peer, ipcBusCommand, args);
         }
         super._onCommandRequestResponse(ipcBusCommand, args);
     }
 
-    protected _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
+    _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
         this.addLog(event.sender, ipcBusCommand.peer, ipcBusCommand, args);
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(log);
         super._onRendererMessage(event, ipcBusCommand, args);

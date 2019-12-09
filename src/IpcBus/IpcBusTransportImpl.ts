@@ -88,7 +88,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
     }
 
-    protected _onCommandRequestdMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
+    protected _onCommandRequestMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
         const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
         ipcBusEvent.request = {
@@ -126,7 +126,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
             case IpcBusCommand.Kind.BridgeRequestMessage:
                 case IpcBusCommand.Kind.RequestMessage: {
                 const args = ipcPacketBuffer.parseArrayAt(1);
-                this._onCommandRequestdMessage(ipcBusCommand, args);
+                this._onCommandRequestMessage(ipcBusCommand, args);
                 break;
             }
             case IpcBusCommand.Kind.BridgeRequestResponse:

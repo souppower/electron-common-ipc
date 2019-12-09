@@ -532,7 +532,7 @@ class IpcBusTransportImpl {
         const ipcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
         this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
     }
-    _onCommandRequestdMessage(ipcBusCommand, args) {
+    _onCommandRequestMessage(ipcBusCommand, args) {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
         const ipcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
         ipcBusEvent.request = {
@@ -568,7 +568,7 @@ class IpcBusTransportImpl {
             case IpcBusCommand_1.IpcBusCommand.Kind.BridgeRequestMessage:
             case IpcBusCommand_1.IpcBusCommand.Kind.RequestMessage: {
                 const args = ipcPacketBuffer.parseArrayAt(1);
-                this._onCommandRequestdMessage(ipcBusCommand, args);
+                this._onCommandRequestMessage(ipcBusCommand, args);
                 break;
             }
             case IpcBusCommand_1.IpcBusCommand.Kind.BridgeRequestResponse:
@@ -624,10 +624,10 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
     _reset() {
         this._promiseConnected = null;
         if (this._connected) {
+            this._connected = false;
             if (this._onIpcEventReceived) {
                 this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             }
-            this._connected = false;
         }
     }
     _onConnect(eventOrPeer, peerOrUndefined) {
@@ -642,7 +642,7 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
                             break;
                         }
                         case IpcBusCommand_1.IpcBusCommand.Kind.RequestMessage: {
-                            this._onCommandRequestdMessage(ipcBusCommand, args);
+                            this._onCommandRequestMessage(ipcBusCommand, args);
                             break;
                         }
                         case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse: {
@@ -666,7 +666,7 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
                             break;
                         }
                         case IpcBusCommand_1.IpcBusCommand.Kind.RequestMessage: {
-                            this._onCommandRequestdMessage(ipcBusCommand, args);
+                            this._onCommandRequestMessage(ipcBusCommand, args);
                             break;
                         }
                         case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse: {

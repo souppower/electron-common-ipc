@@ -4,6 +4,8 @@ import { EventEmitter } from 'events';
 import * as IpcBusUtils from './IpcBusUtils';
 import * as Client from './IpcBusClient';
 
+
+import { IpcBusSender } from './IpcBusTransport';
 import { IpcBusTransportImpl } from './IpcBusTransportImpl';
 import { IpcBusCommand } from './IpcBusCommand';
 
@@ -11,8 +13,7 @@ export const IPCBUS_TRANSPORT_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
 export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'IpcBusRenderer:Command';
 export const IPCBUS_TRANSPORT_RENDERER_EVENT = 'IpcBusRenderer:Event';
 
-export interface IpcWindow extends EventEmitter {
-    send(channel: string, ...args: any[]): void;
+export interface IpcWindow extends EventEmitter, IpcBusSender {
 }
 
 // Implementation for renderer process
@@ -33,11 +34,11 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
     protected _reset() {
         this._promiseConnected = null;
         if (this._connected) {
+            this._connected = false;
             // this._ipcWindow.removeAllListeners(IPCBUS_TRANSPORT_RENDERER_CONNECT);
             if (this._onIpcEventReceived) {
                 this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             }
-            this._connected = false;
         }
     }
 
@@ -55,7 +56,7 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
                             break;
                         }
                         case IpcBusCommand.Kind.RequestMessage: {
-                            this._onCommandRequestdMessage(ipcBusCommand, args);
+                            this._onCommandRequestMessage(ipcBusCommand, args);
                             break;
                         }
                         case IpcBusCommand.Kind.RequestResponse: {
@@ -79,7 +80,7 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
                             break;
                         }
                         case IpcBusCommand.Kind.RequestMessage: {
-                            this._onCommandRequestdMessage(ipcBusCommand, args);
+                            this._onCommandRequestMessage(ipcBusCommand, args);
                             break;
                         }
                         case IpcBusCommand.Kind.RequestResponse: {

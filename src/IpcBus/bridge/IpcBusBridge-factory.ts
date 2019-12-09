@@ -8,6 +8,9 @@ import { IpcBusBridgeJSONLogger } from './IpcBusBridgeJSONLogger';
 import { IpcBusBridgeCSVLogger } from './IpcBusBridgeCSVLogger';
 
 export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge => {
+    if (IpcBusBridgeImpl.Instance != null) {
+        return IpcBusBridgeImpl.Instance;
+    }
     let ipcBusBridge: IpcBusBridge = null;
     const electronProcessType = GetElectronProcessType();
     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBridge process type = ${electronProcessType}`);
