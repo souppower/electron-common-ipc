@@ -27,7 +27,7 @@ console.log('IPC Bus Path : ' + busPath);
 // IPC Bus
 const ipcBusModule = require('electron-common-ipc');
 // const ipcBusClient = ipcBusModule.IpcBusClient.Create(busPath);
-const ipcBusClient = ipcBusModule.CreateIpcBusClient(busPath);
+const ipcBusClient = ipcBusModule.CreateIpcBusClient();
 // ipcBusModule.ActivateIpcBusTrace(true);
 // ipcBusModule.ActivateServiceTrace(true);
 
@@ -511,12 +511,12 @@ function startApp() {
 }
 
 function prepareApp() {
-    ipcBridge = ipcBusModule.IpcBusBridge.Create(busPath);
-    ipcBridge.start()
+    ipcBridge = ipcBusModule.IpcBusBridge.Create();
+    ipcBridge.connect(busPath)
         .then((msg) => {
             console.log('<MAIN> IPC bridge is ready !');
             // Setup IPC Client (and renderer bridge)
-            ipcBusClient.connect({ peerName: 'MainBus', socketBuffer: 2048 })
+            ipcBusClient.connect(busPath, { peerName: 'MainBus', socketBuffer: 2048 })
                 .then(() => startApp());
         });
 }
@@ -528,8 +528,8 @@ electronApp.on('ready', function () {
     console.log('<MAIN> Starting IPC broker ...');
     if (localIpcBroker) {
         // Broker in Master process
-        ipcBroker = ipcBusModule.IpcBusBroker.Create(busPath);
-        ipcBroker.start()
+        ipcBroker = ipcBusModule.IpcBusBroker.Create();
+        ipcBroker.connect(busPath)
             .then((msg) => {
                 console.log('<MAIN> IPC broker is ready !');
                 prepareApp();

@@ -15,15 +15,15 @@ export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge 
         case 'main':
             const logPath = process.env['ELECTRON_IPC_BRIDGE_LOG_JSON'];
             if (logPath) {
-                ipcBusBridge = new IpcBusBridgeJSONLogger(logPath);
+                ipcBusBridge = new IpcBusBridgeJSONLogger(electronProcessType, logPath);
             }
             else {
                 const logPath = process.env['ELECTRON_IPC_BRIDGE_LOG_CSV'];
                 if (logPath) {
-                    ipcBusBridge = new IpcBusBridgeCSVLogger(logPath);
+                    ipcBusBridge = new IpcBusBridgeCSVLogger(electronProcessType, logPath);
                 }
                 else {
-                    ipcBusBridge = new IpcBusBridgeImpl();
+                    ipcBusBridge = new IpcBusBridgeImpl(electronProcessType);
                 }
             }
             break;

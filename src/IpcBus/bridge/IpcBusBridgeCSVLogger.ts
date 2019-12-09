@@ -16,8 +16,8 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
     private _logger: any;
     private _line: number;
 
-    constructor(logPath: string) {
-        super();
+    constructor(contextType: Client.IpcBusProcessType, logPath: string) {
+        super(contextType);
 
         this._line = 0;
 

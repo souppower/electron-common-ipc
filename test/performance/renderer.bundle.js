@@ -559,16 +559,19 @@ class IpcBusTransportImpl {
     }
     _onCommandReceived(ipcBusCommand, ipcPacketBuffer) {
         switch (ipcBusCommand.kind) {
+            case IpcBusCommand_1.IpcBusCommand.Kind.BridgeSendMessage:
             case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage: {
                 const args = ipcPacketBuffer.parseArrayAt(1);
                 this._onCommandSendMessage(ipcBusCommand, args);
                 break;
             }
+            case IpcBusCommand_1.IpcBusCommand.Kind.BridgeRequestMessage:
             case IpcBusCommand_1.IpcBusCommand.Kind.RequestMessage: {
                 const args = ipcPacketBuffer.parseArrayAt(1);
                 this._onCommandRequestdMessage(ipcBusCommand, args);
                 break;
             }
+            case IpcBusCommand_1.IpcBusCommand.Kind.BridgeRequestResponse:
             case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse: {
                 const args = ipcPacketBuffer.parseArrayAt(1);
                 this._onCommandRequestResponse(ipcBusCommand, args);

@@ -13,7 +13,6 @@ import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_COMMAND, I
 /** @internal */
 export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBusBridge {
     private _ipcMain: any;
-    private _onRendererMessageBind: Function;
 
     protected _ipcBusPeers: Map<string, Client.IpcBusPeer>;
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<Electron.WebContents>;
@@ -21,24 +20,24 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     protected _connected: boolean;
 
-    constructor() {
-        super('main');
+    constructor(contextType: Client.IpcBusProcessType) {
+        super(contextType);
 
         this._ipcMain = require('electron').ipcMain;
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<Electron.WebContents>('IPCBus:Bridge', true);
-        this._ipcBusPeers = new Map<string, Client.IpcBusPeer>();
-        this._brokerChannels = new Set<string>();
-
-        this._onRendererMessageBind = this._onRendererMessage.bind(this);
-        this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessageBind);
-
         this._subscriptions.on('channel-added', channel => {
             this._connected && this.bridgeAddChannels([channel]);
         });
         this._subscriptions.on('channel-removed', channel => {
             this._connected && this.bridgeRemoveChannels([channel]);
         });
+
+        this._ipcBusPeers = new Map<string, Client.IpcBusPeer>();
+        this._brokerChannels = new Set<string>();
+
+        this._onRendererMessage = this._onRendererMessage.bind(this);
+        this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessage);
     }
 
     protected _reset(endSocket: boolean) {

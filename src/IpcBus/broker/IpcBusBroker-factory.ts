@@ -16,12 +16,12 @@ export const CreateIpcBusBroker: IpcBusBroker.CreateFunction = (): IpcBusBroker 
         case 'node':
             const logPath = process.env['ELECTRON_IPC_BROKER_LOG_JSON'];
             if (logPath) {
-                ipcBusBroker = new IpcBusBrokerJSONLogger(logPath, electronProcessType);
+                ipcBusBroker = new IpcBusBrokerJSONLogger(electronProcessType, logPath);
             }
             else {
                 const logPath = process.env['ELECTRON_IPC_BROKER_LOG_CSV'];
                 if (logPath) {
-                    ipcBusBroker = new IpcBusBrokerCSVLogger(logPath, electronProcessType);
+                    ipcBusBroker = new IpcBusBrokerCSVLogger(electronProcessType, logPath);
                 }
                 else {
                     ipcBusBroker = new IpcBusBrokerImpl(electronProcessType);

@@ -2,7 +2,7 @@ const isTypedArray = require('is-typedarray').strict
 
 var PerfTests = function _PerfTests(type, busPath) {
     const _ipcBusModule = require('electron-common-ipc');
-    var _ipcBus = _ipcBusModule.IpcBusClient.Create(busPath);
+    var _ipcBus = _ipcBusModule.IpcBusClient.Create();
     var _type = type;
 
     this.doPerformanceTests = function _doPerformanceTests(testParams) {
@@ -10,7 +10,7 @@ var PerfTests = function _PerfTests(type, busPath) {
     }
 
     this.connect = function() {
-        _ipcBus.connect({ peerName: `perfTestsBus ${_type}` })
+        _ipcBus.connect(busPath, { peerName: `perfTestsBus ${_type}` })
             .then((msg) => {
                 _ipcBus.on('test-performance-trace', (ipcBusEvent, activateTrace) => this.onIPCBus_TestPerformanceTrace(ipcBusEvent, activateTrace));
                 _ipcBus.on('test-performance-run', (ipcBusEvent, testParams) => this.onIPCBus_TestPerformanceRun(ipcBusEvent, testParams));

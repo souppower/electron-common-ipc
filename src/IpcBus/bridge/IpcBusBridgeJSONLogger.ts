@@ -14,8 +14,8 @@ import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
 export class IpcBusBridgeJSONLogger extends IpcBusBridgeLogger {
     private _logger: winston.LoggerInstance;
 
-    constructor(logPath: string) {
-        super();
+    constructor(contextType: Client.IpcBusProcessType, logPath: string) {
+        super(contextType);
 
         !fs.existsSync(logPath) && fs.mkdirSync(logPath);
 

@@ -7,8 +7,8 @@ import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
-    constructor() {
-        super();
+    constructor(contextType: Client.IpcBusProcessType) {
+        super(contextType);
     }
 
     protected abstract addLog(webContents: Electron.WebContents, peer: Client.IpcBusPeer, ipcBusCommand: IpcBusCommand, args: any[]): void;

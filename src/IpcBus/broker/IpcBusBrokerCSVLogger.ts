@@ -18,7 +18,7 @@ export class IpcBusBrokerCSVLogger extends IpcBusBrokerLogger {
     private _logger: any;
     private _line: number;
 
-    constructor(logPath: string, contextType: Client.IpcBusProcessType) {
+    constructor(contextType: Client.IpcBusProcessType, logPath: string) {
         super(contextType);
 
         this._line = 0;

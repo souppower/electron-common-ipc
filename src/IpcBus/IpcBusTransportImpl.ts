@@ -117,17 +117,20 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
 
     protected _onCommandReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.SendMessage: {
+            case IpcBusCommand.Kind.BridgeSendMessage:
+                case IpcBusCommand.Kind.SendMessage: {
                 const args = ipcPacketBuffer.parseArrayAt(1);
                 this._onCommandSendMessage(ipcBusCommand, args);
                 break;
             }
-            case IpcBusCommand.Kind.RequestMessage: {
+            case IpcBusCommand.Kind.BridgeRequestMessage:
+                case IpcBusCommand.Kind.RequestMessage: {
                 const args = ipcPacketBuffer.parseArrayAt(1);
                 this._onCommandRequestdMessage(ipcBusCommand, args);
                 break;
             }
-            case IpcBusCommand.Kind.RequestResponse: {
+            case IpcBusCommand.Kind.BridgeRequestResponse:
+                case IpcBusCommand.Kind.RequestResponse: {
                 const args = ipcPacketBuffer.parseArrayAt(1);
                 this._onCommandRequestResponse(ipcBusCommand, args);
                 break;
