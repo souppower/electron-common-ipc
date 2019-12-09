@@ -232,7 +232,7 @@ var MainProcess = (function () {
 
         function onIPCElectron_RequestMessage(topicName, topicMsg) {
             console.log('Master - onIPCElectron_RequestMessage : topic:' + topicName + ' msg:' + topicMsg);
-            ipcBusClient.request(topicName, 2000, topicMsg)
+            ipcBusClient.request(topicName, 20000, topicMsg)
                 .then((requestPromiseResponse) => {
                     processMainToView.postRequestThen(requestPromiseResponse);
                 })

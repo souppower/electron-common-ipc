@@ -44,6 +44,7 @@ export namespace IpcBusCommand {
 
     /** @internal */
     export interface Request {
+        channel: string;
         replyChannel: string;
         resolve?: boolean;
         reject?: boolean;

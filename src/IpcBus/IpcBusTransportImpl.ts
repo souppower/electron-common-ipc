@@ -142,7 +142,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         if (timeoutDelay == null) {
             timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
-        const ipcBusCommandRequest: IpcBusCommand.Request = { replyChannel: this.generateReplyChannel() };
+        const ipcBusCommandRequest: IpcBusCommand.Request = {channel, replyChannel: this.generateReplyChannel() };
 
         const deferredRequest = new DeferredRequest(channel);
         // Register locally

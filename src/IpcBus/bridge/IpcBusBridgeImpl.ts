@@ -255,14 +255,14 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 
             case IpcBusCommand.Kind.BridgeRequestResponse:
                 this._onCommandRequestResponse(ipcBusCommand, args);
-                if (this._connected) {
+                if (this._brokerChannels.has(ipcBusCommand.request.channel)) {
                     super.ipcPostCommand(ipcBusCommand, args);
                 }
                 break;
 
             case IpcBusCommand.Kind.BridgeRequestCancel:
                 this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
-                if (this._connected) {
+                if (this._brokerChannels.has(ipcBusCommand.request.channel)) {
                     super.ipcPostCommand(ipcBusCommand, args);
                 }
                 break;

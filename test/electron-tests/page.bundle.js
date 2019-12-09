@@ -583,7 +583,7 @@ class IpcBusTransportImpl {
         if (timeoutDelay == null) {
             timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
-        const ipcBusCommandRequest = { replyChannel: this.generateReplyChannel() };
+        const ipcBusCommandRequest = { channel, replyChannel: this.generateReplyChannel() };
         const deferredRequest = new DeferredRequest(channel);
         this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
         this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestMessage, channel, ipcBusCommandRequest, args);

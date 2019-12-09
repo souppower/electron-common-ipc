@@ -403,6 +403,9 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 if (replySocket) {
                     this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                     replySocket.write(packet.buffer);
+                    if (this._bridgeChannels.has(ipcBusCommand.request.channel)) {
+                        this._socketBridge && this._socketBridge.write(packet.buffer);
+                    }
                 }
                 break;
             }
@@ -410,6 +413,9 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             case IpcBusCommand.Kind.RequestCancel:
             case IpcBusCommand.Kind.BridgeRequestCancel:
                 this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
+                if (this._bridgeChannels.has(ipcBusCommand.request.channel)) {
+                    this._socketBridge && this._socketBridge.write(packet.buffer);
+                }
                 break;
 
             case IpcBusCommand.Kind.BridgeAddChannels: {

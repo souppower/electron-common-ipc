@@ -22,7 +22,7 @@ function doOpenPerfView(event) {
 
 function doQueryBrokerState() {
 //    processToMaster.send('queryState');
-    ipcBus.request(ipcBus.IPCBUS_CHANNEL_QUERY_STATE, 2000)
+    ipcBus.request(ipcBus.IPCBUS_CHANNEL_QUERY_STATE, 20000)
         .then((ipcBusRequestResponse) => onIPC_BrokerStatusTopic(ipcBusRequestResponse.payload));
 }
 
@@ -130,7 +130,7 @@ function doRequestMessageToTopic(event) {
 
     var args = { topic: topicName, msg: topicMsg };
     if (processToMonitor.Type() === 'renderer') {
-        let p = ipcBus.request(topicName, 2000, topicMsg)
+        let p = ipcBus.request(topicName, 20000, topicMsg)
             .then((requestPromiseResponse) => {
                 onIPCBus_OnRequestThen(requestPromiseResponse);
             })
