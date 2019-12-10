@@ -227,11 +227,6 @@ const Client = require("./IpcBusClient");
 const IpcBusUtils = require("./IpcBusUtils");
 const IpcBusCommand_1 = require("./IpcBusCommand");
 const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
-const v1IdPattern = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
-function extractPeerIdFromReplyChannel(replyChannel) {
-    return replyChannel.substr(replyChannelPrefix.length, v1IdPattern.length);
-}
-exports.extractPeerIdFromReplyChannel = extractPeerIdFromReplyChannel;
 class DeferredRequest {
     constructor(channel) {
         this._channel = channel;
@@ -503,8 +498,8 @@ class ChannelConnectionMap extends events_1.EventEmitter {
     _warn(str) {
         Logger.enable && Logger.warn(`[${this._name}] ${str}`);
     }
-    setRequestChannel(channel, conn) {
-        this._requestChannels.set(channel, conn);
+    setRequestChannel(channel, conn, peer) {
+        this._requestChannels.set(channel, { conn, peer });
     }
     getRequestChannel(channel) {
         return this._requestChannels.get(channel);
@@ -522,9 +517,9 @@ class ChannelConnectionMap extends events_1.EventEmitter {
         this._channelsMap.clear();
         this._requestChannels.clear();
     }
-    addRef(channel, conn, peerId) {
+    addRef(channel, conn, peer) {
         let channelAdded = false;
-        Logger.enable && this._info(`AddRef: '${channel}', peerId = ${peerId}`);
+        Logger.enable && this._info(`AddRef: '${channel}', peerId = ${peer.id}`);
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             channelAdded = true;
@@ -533,19 +528,19 @@ class ChannelConnectionMap extends events_1.EventEmitter {
         }
         let connData = connsMap.get(conn);
         if (connData == null) {
-            connData = new ConnectionData(conn, peerId);
+            connData = new ConnectionPeers(conn, peer);
             connsMap.set(conn, connData);
         }
         else {
-            connData.addPeerId(peerId);
+            connData.addPeer(peer);
         }
-        Logger.enable && this._info(`AddRef: '${channel}', count = ${connData.peerIds.size}`);
+        Logger.enable && this._info(`AddRef: '${channel}', count = ${connData.peerRefCounts.size}`);
         if (channelAdded) {
             this._emitter && this.emit('channel-added', channel);
         }
         return connsMap.size;
     }
-    _releaseConnData(channel, conn, connsMap, peerId, all) {
+    _releaseConnData(channel, conn, connsMap, peer, all) {
         let channelRemoved = false;
         const connData = connsMap.get(conn);
         if (connData == null) {
@@ -553,60 +548,60 @@ class ChannelConnectionMap extends events_1.EventEmitter {
             return 0;
         }
         else {
-            if (peerId == null) {
-                connData.clearPeerIds();
+            if (peer == null) {
+                connData.clearPeers();
             }
             else {
                 if (all) {
-                    if (connData.removePeerId(peerId) === false) {
-                        Logger.enable && this._warn(`Release '${channel}': peerId #${peerId} is unknown`);
+                    if (connData.removePeer(peer) === false) {
+                        Logger.enable && this._warn(`Release '${channel}': peerId #${peer.id} is unknown`);
                     }
                 }
                 else {
-                    connData.releasePeerId(peerId);
+                    connData.releasePeer(peer);
                 }
             }
-            if (connData.peerIds.size === 0) {
+            if (connData.peerRefCounts.size === 0) {
                 connsMap.delete(conn);
                 if (connsMap.size === 0) {
                     channelRemoved = true;
                     this._channelsMap.delete(channel);
                 }
             }
-            Logger.enable && this._info(`Release '${channel}': count = ${connData.peerIds.size}`);
+            Logger.enable && this._info(`Release '${channel}': count = ${connData.peerRefCounts.size}`);
             if (channelRemoved) {
                 this._emitter && this.emit('channel-removed', channel);
             }
             return connsMap.size;
         }
     }
-    _release(channel, conn, peerId, all) {
-        Logger.enable && this._info(`Release '${channel}' (${all}): peerId = ${peerId}`);
+    _release(channel, conn, peer, all) {
+        Logger.enable && this._info(`Release '${channel}' (${all}): peerId = ${peer.id}`);
         const connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`Release '${channel}': '${channel}' is unknown`);
             return 0;
         }
         else {
-            return this._releaseConnData(channel, conn, connsMap, peerId, all);
+            return this._releaseConnData(channel, conn, connsMap, peer, all);
         }
     }
-    release(channel, conn, peerId) {
-        return this._release(channel, conn, peerId, false);
+    release(channel, conn, peer) {
+        return this._release(channel, conn, peer, false);
     }
-    releaseAll(channel, conn, peerId) {
-        return this._release(channel, conn, peerId, true);
+    releaseAll(channel, conn, peer) {
+        return this._release(channel, conn, peer, true);
     }
-    releasePeerId(conn, peerId) {
-        Logger.enable && this._info(`releasePeerId: peerId = ${peerId}`);
+    releasePeer(conn, peer) {
+        Logger.enable && this._info(`releasePeerId: peerId = ${peer.id}`);
         this._channelsMap.forEach((connsMap, channel) => {
-            this._releaseConnData(channel, conn, connsMap, peerId, true);
+            this._releaseConnData(channel, conn, connsMap, peer, true);
         });
     }
     releaseConnection(conn) {
         Logger.enable && this._info(`ReleaseConn: conn = ${conn}`);
-        this._requestChannels.forEach((connCurrent, channel) => {
-            if (connCurrent === conn) {
+        this._requestChannels.forEach((connData, channel) => {
+            if (connData.conn === conn) {
                 this._requestChannels.delete(channel);
             }
         });
@@ -622,7 +617,7 @@ class ChannelConnectionMap extends events_1.EventEmitter {
         }
         else {
             connsMap.forEach((connData, conn) => {
-                Logger.enable && this._info(`forEachChannel '${channel}' - ${JSON.stringify(Array.from(connData.peerIds.keys()))} (${connData.peerIds.size})`);
+                Logger.enable && this._info(`forEachChannel '${channel}' - ${JSON.stringify(Array.from(connData.peerRefCounts.keys()))} (${connData.peerRefCounts.size})`);
                 callback(connData, channel);
             });
         }
@@ -631,7 +626,7 @@ class ChannelConnectionMap extends events_1.EventEmitter {
         Logger.enable && this._info('forEach');
         this._channelsMap.forEach((connsMap, channel) => {
             connsMap.forEach((connData, conn) => {
-                Logger.enable && this._info(`forEach '${channel}' - ${JSON.stringify(Array.from(connData.peerIds.keys()))} (${connData.peerIds.size})`);
+                Logger.enable && this._info(`forEach '${channel}' - ${JSON.stringify(Array.from(connData.peerRefCounts.keys()))} (${connData.peerRefCounts.size})`);
                 callback(connData, channel);
             });
         });
@@ -644,47 +639,47 @@ class ChannelConnectionMap extends events_1.EventEmitter {
     }
 }
 exports.ChannelConnectionMap = ChannelConnectionMap;
-class ConnectionData {
-    constructor(conn, peerId) {
-        this.peerIds = new Map();
+class ConnectionPeers {
+    constructor(conn, peer) {
+        this.peerRefCounts = new Map();
         this.conn = conn;
-        const peerIdRefCount = { peerId, refCount: 1 };
-        this.peerIds.set(peerId, peerIdRefCount);
+        const peerRefCount = { peer, refCount: 1 };
+        this.peerRefCounts.set(peer.id, peerRefCount);
     }
-    addPeerId(peerId) {
-        let peerIdRefCount = this.peerIds.get(peerId);
-        if (peerIdRefCount == null) {
-            peerIdRefCount = { peerId, refCount: 1 };
-            this.peerIds.set(peerId, peerIdRefCount);
+    addPeer(peer) {
+        let peerRefCount = this.peerRefCounts.get(peer.id);
+        if (peerRefCount == null) {
+            peerRefCount = { peer, refCount: 1 };
+            this.peerRefCounts.set(peer.id, peerRefCount);
         }
         else {
-            ++peerIdRefCount.refCount;
+            ++peerRefCount.refCount;
         }
-        return peerIdRefCount.refCount;
+        return peerRefCount.refCount;
     }
-    clearPeerIds() {
-        this.peerIds.clear();
+    clearPeers() {
+        this.peerRefCounts.clear();
     }
-    removePeerId(peerId) {
-        return this.peerIds.delete(peerId);
+    removePeer(peer) {
+        return this.peerRefCounts.delete(peer.id);
     }
-    releasePeerId(peerId) {
-        const peerIdRefCount = this.peerIds.get(peerId);
-        if (peerIdRefCount == null) {
+    releasePeer(peer) {
+        const peerRefCount = this.peerRefCounts.get(peer.id);
+        if (peerRefCount == null) {
             return null;
         }
         else {
-            if (--peerIdRefCount.refCount <= 0) {
-                this.peerIds.delete(peerId);
+            if (--peerRefCount.refCount <= 0) {
+                this.peerRefCounts.delete(peer.id);
             }
         }
-        return peerIdRefCount.refCount;
+        return peerRefCount.refCount;
     }
 }
-exports.ConnectionData = ConnectionData;
-(function (ConnectionData_1) {
+exports.ConnectionPeers = ConnectionPeers;
+(function (ConnectionPeers) {
     ;
-})(ConnectionData = exports.ConnectionData || (exports.ConnectionData = {}));
+})(ConnectionPeers = exports.ConnectionPeers || (exports.ConnectionPeers = {}));
 ;
 
 }).call(this,{"isBuffer":require("../../node_modules/is-buffer/index.js")},require('_process'))

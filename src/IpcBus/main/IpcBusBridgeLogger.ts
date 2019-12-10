@@ -1,5 +1,4 @@
 import * as Client from '../IpcBusClient';
-import { extractPeerIdFromReplyChannel } from '../IpcBusTransportImpl';
 
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
@@ -16,8 +15,8 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
     protected _onCommandSendMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
         this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
             const webContents = connData.conn.constructor.name === 'WebContents' ? connData.conn as Electron.WebContents : undefined;
-            connData.peerIds.forEach((peerId) => {
-                const peer = this._ipcBusPeers.get(peerId.peerId);
+            connData.peerRefCounts.forEach((peerRefCount) => {
+                const peer = peerRefCount.peer;
                 this.addLog(webContents, peer, ipcBusCommand, args);
             });
         });
@@ -25,12 +24,11 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
     }
 
     protected _onCommandRequestResponse(ipcBusCommand: IpcBusCommand, args: any[]) {
-        const ipcBusSender = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
-        if (ipcBusSender) {
-            const peerId = extractPeerIdFromReplyChannel(ipcBusCommand.request.replyChannel);
-            const peer = this._ipcBusPeers.get(peerId);
+        const connData = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
+        if (connData) {
+            const ipcBusSender = connData.conn;
             const webContents = ipcBusSender.constructor.name === 'WebContents' ? ipcBusSender as Electron.WebContents : undefined;
-            this.addLog(webContents, peer, ipcBusCommand, args);
+            this.addLog(webContents, connData.peer, ipcBusCommand, args);
         }
         super._onCommandRequestResponse(ipcBusCommand, args);
     }

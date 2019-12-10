@@ -17,7 +17,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     
     private _ipcMain: any;
 
-    protected _ipcBusPeers: Map<string, Client.IpcBusPeer>;
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<IpcBusSender>;
     protected _brokerChannels: Set<string>;
 
@@ -38,7 +37,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
             this._connected && this.bridgeRemoveChannels([channel]);
         });
 
-        this._ipcBusPeers = new Map<string, Client.IpcBusPeer>();
         this._brokerChannels = new Set<string>();
 
         this._onRendererMessage = this._onRendererMessage.bind(this);
@@ -110,8 +108,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     queryState(): Object {
         const queryStateResult: Object[] = [];
         this._subscriptions.forEach((connData, channel) => {
-            connData.peerIds.forEach((peerIdRefCount) => {
-                queryStateResult.push({ channel: channel, peer: this._ipcBusPeers.get(peerIdRefCount.peerId), count: peerIdRefCount.refCount });
+            connData.peerRefCounts.forEach((peerRefCount) => {
+                queryStateResult.push({ channel: channel, peer: peerRefCount.peer, count: peerRefCount.refCount });
             });
         });
         return queryStateResult;
@@ -126,10 +124,10 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     protected _onCommandRequestResponse(ipcBusCommand: IpcBusCommand, args: any[]) {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-        const ipcBusSender = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
-        if (ipcBusSender) {
+        const connData = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
+        if (connData) {
             this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
-            ipcBusSender.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, args);
+            connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, args);
         }
     }
 
@@ -183,7 +181,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     private _onConnect(ipcBusSender: IpcBusSender, ipcBusCommand: IpcBusCommand, args: any[]): void {
         const ipcBusPeer = ipcBusCommand.peer;
-        this._ipcBusPeers.set(ipcBusPeer.id, ipcBusPeer);
 
         const webContents = ipcBusSender.constructor.name === 'WebContents' ? ipcBusSender as Electron.WebContents : undefined;
         if (webContents) {
@@ -192,7 +189,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
             webContents.addListener('destroyed', () => {
                 this._senderCleanup(webContents);
-                this._ipcBusPeers.delete(ipcBusPeer.id);
             });
             // We get back to the webContents
             // - to confirm the connection
@@ -215,12 +211,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         }
     }
 
-    private _onDisconnect(ipcBusSender: IpcBusSender, ipcBusCommand: IpcBusCommand, args: any[]): void {
-        const ipcBusPeer = ipcBusCommand.peer;
-        this._senderCleanup(ipcBusSender);
-        this._ipcBusPeers.delete(ipcBusPeer.id);
-    }
-
     _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
         const ipcBusSender: IpcBusSender = event.sender || event;
         switch (ipcBusCommand.kind) {
@@ -230,19 +220,19 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
             case IpcBusCommand.Kind.BridgeDisconnect:
             case IpcBusCommand.Kind.BridgeClose:
-                this._onDisconnect(ipcBusSender, ipcBusCommand, args);
+                this._senderCleanup(ipcBusSender);
                 break;
 
             case IpcBusCommand.Kind.BridgeAddChannelListener:
-                this._subscriptions.addRef(ipcBusCommand.channel, ipcBusSender, ipcBusCommand.peer.id);
+                this._subscriptions.addRef(ipcBusCommand.channel, ipcBusSender, ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.BridgeRemoveChannelAllListeners:
-                this._subscriptions.releaseAll(ipcBusCommand.channel, ipcBusSender, ipcBusCommand.peer.id);
+                this._subscriptions.releaseAll(ipcBusCommand.channel, ipcBusSender, ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.BridgeRemoveChannelListener:
-                this._subscriptions.release(ipcBusCommand.channel, ipcBusSender, ipcBusCommand.peer.id);
+                this._subscriptions.release(ipcBusCommand.channel, ipcBusSender, ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.BridgeRemoveListeners:
@@ -251,7 +241,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
             case IpcBusCommand.Kind.BridgeSendMessage:
                 if (ipcBusCommand.request) {
-                    this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, ipcBusSender);
+                    this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, ipcBusSender, ipcBusCommand.peer);
                 }
                 this._onCommandSendMessage(ipcBusCommand, args);
                 if (this._brokerChannels.has(ipcBusCommand.channel)) {

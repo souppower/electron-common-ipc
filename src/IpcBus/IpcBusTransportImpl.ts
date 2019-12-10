@@ -7,11 +7,11 @@ import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusTransport } from './IpcBusTransport';
 
 const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
-const v1IdPattern = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+// const v1IdPattern = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
 
-export function extractPeerIdFromReplyChannel(replyChannel: string): string {
-    return replyChannel.substr(replyChannelPrefix.length, v1IdPattern.length);
-}
+// export function extractPeerIdFromReplyChannel(replyChannel: string): string {
+//     return replyChannel.substr(replyChannelPrefix.length, v1IdPattern.length);
+// }
 
 /** @internal */
 class DeferredRequest {
