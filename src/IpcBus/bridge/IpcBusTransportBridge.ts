@@ -1,6 +1,5 @@
 import * as assert from 'assert';
 
-import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
@@ -29,32 +28,19 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
 
     send(channel: string, ipcBusCommand: IpcBusCommand, args: any[]) {
         if (channel === IPCBUS_TRANSPORT_RENDERER_EVENT) {
-            switch (ipcBusCommand.kind) {
-                case IpcBusCommand.Kind.SendMessage: {
-                    this._onCommandSendMessage(ipcBusCommand, args);
-                    break;
-                }
-                case IpcBusCommand.Kind.RequestMessage: {
-                    this._onCommandRequestMessage(ipcBusCommand, args);
-                    break;
-                }
-                case IpcBusCommand.Kind.RequestResponse: {
-                    this._onCommandRequestResponse(ipcBusCommand, args);
-                    break;
-                }
-            }
+            this._onCommandReceived(ipcBusCommand, args);
         }
         else if (channel === IPCBUS_TRANSPORT_RENDERER_CONNECT) {
-            this._ipcBusPeer = args[0];
+            this._ipcBusPeer = (ipcBusCommand as any) as Client.IpcBusPeer;
         }
     }
 
-    /// IpcBusTrandport API
+    /// IpcBusTransport API
     ipcConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
         if (!p) {
-            options = IpcBusUtils.CheckConnectOptions(options);
+            // options = IpcBusUtils.CheckConnectOptions(options);
             p = this._promiseConnected = new Promise<void>((resolve, reject) => {
                 if (IpcBusBridgeImpl.Instance) {
                     this._connected = true;

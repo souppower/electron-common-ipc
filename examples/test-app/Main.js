@@ -44,7 +44,8 @@ const PerfTests = require('./PerfTests.js');
 
 // Helpers
 function spawnNodeInstance(scriptPath) {
-    const args = [path.join(__dirname, scriptPath), '--parent-pid=' + process.pid, '--bus-path=' + busPath, "--inspect"];
+    const args = [path.join(__dirname, scriptPath), '--parent-pid=' + process.pid, '--bus-path=' + busPath];
+    // args.push('--inspect-brk=9000');
 
     let options = { env: {} };
     for (let key of Object.keys(process.env)) {

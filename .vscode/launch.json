@@ -7,8 +7,10 @@
         {
             "type": "node",
             "request": "attach",
-            "name": "Attach",
-            "port": 9229
+            "protocol": "inspector",
+            "name": "Attach to Node process",
+            "address": "localhost",
+            "port": 9000,
         },
         {
             "name": "Launch Test apps",

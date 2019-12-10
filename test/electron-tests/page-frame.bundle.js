@@ -557,27 +557,28 @@ class IpcBusTransportImpl {
             deferredRequest.fulFilled(ipcBusCommand, args);
         }
     }
-    _onCommandReceived(ipcBusCommand, ipcPacketBuffer) {
+    _onCommandReceived(ipcBusCommand, args) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand_1.IpcBusCommand.Kind.BridgeSendMessage:
             case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage: {
-                const args = ipcPacketBuffer.parseArrayAt(1);
                 this._onCommandSendMessage(ipcBusCommand, args);
                 break;
             }
             case IpcBusCommand_1.IpcBusCommand.Kind.BridgeRequestMessage:
             case IpcBusCommand_1.IpcBusCommand.Kind.RequestMessage: {
-                const args = ipcPacketBuffer.parseArrayAt(1);
                 this._onCommandRequestMessage(ipcBusCommand, args);
                 break;
             }
             case IpcBusCommand_1.IpcBusCommand.Kind.BridgeRequestResponse:
             case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse: {
-                const args = ipcPacketBuffer.parseArrayAt(1);
                 this._onCommandRequestResponse(ipcBusCommand, args);
                 break;
             }
         }
+    }
+    _onCommandPacketReceived(ipcBusCommand, ipcPacketBuffer) {
+        const args = ipcPacketBuffer.parseArrayAt(1);
+        this._onCommandReceived(ipcBusCommand, args);
     }
     ipcRequest(channel, timeoutDelay, args) {
         if (timeoutDelay == null) {
@@ -636,20 +637,7 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
                 this._ipcBusPeer = peerOrUndefined;
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Standard listening for #${this._ipcBusPeer.name}`);
                 this._onIpcEventReceived = (eventEmitter, ipcBusCommand, args) => {
-                    switch (ipcBusCommand.kind) {
-                        case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage: {
-                            this._onCommandSendMessage(ipcBusCommand, args);
-                            break;
-                        }
-                        case IpcBusCommand_1.IpcBusCommand.Kind.RequestMessage: {
-                            this._onCommandRequestMessage(ipcBusCommand, args);
-                            break;
-                        }
-                        case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse: {
-                            this._onCommandRequestResponse(ipcBusCommand, args);
-                            break;
-                        }
-                    }
+                    this._onCommandReceived(ipcBusCommand, args);
                 };
                 this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
                 return true;
@@ -660,20 +648,7 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
                 this._ipcBusPeer = eventOrPeer;
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
                 this._onIpcEventReceived = (ipcBusCommand, args) => {
-                    switch (ipcBusCommand.kind) {
-                        case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage: {
-                            this._onCommandSendMessage(ipcBusCommand, args);
-                            break;
-                        }
-                        case IpcBusCommand_1.IpcBusCommand.Kind.RequestMessage: {
-                            this._onCommandRequestMessage(ipcBusCommand, args);
-                            break;
-                        }
-                        case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse: {
-                            this._onCommandRequestResponse(ipcBusCommand, args);
-                            break;
-                        }
-                    }
+                    this._onCommandReceived(ipcBusCommand, args);
                 };
                 this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
                 return true;

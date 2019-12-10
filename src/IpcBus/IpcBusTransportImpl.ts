@@ -115,27 +115,29 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         }
     }
 
-    protected _onCommandReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+    protected _onCommandReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.BridgeSendMessage:
-                case IpcBusCommand.Kind.SendMessage: {
-                const args = ipcPacketBuffer.parseArrayAt(1);
+            case IpcBusCommand.Kind.SendMessage: {
                 this._onCommandSendMessage(ipcBusCommand, args);
                 break;
             }
             case IpcBusCommand.Kind.BridgeRequestMessage:
-                case IpcBusCommand.Kind.RequestMessage: {
-                const args = ipcPacketBuffer.parseArrayAt(1);
+            case IpcBusCommand.Kind.RequestMessage: {
                 this._onCommandRequestMessage(ipcBusCommand, args);
                 break;
             }
             case IpcBusCommand.Kind.BridgeRequestResponse:
-                case IpcBusCommand.Kind.RequestResponse: {
-                const args = ipcPacketBuffer.parseArrayAt(1);
+            case IpcBusCommand.Kind.RequestResponse: {
                 this._onCommandRequestResponse(ipcBusCommand, args);
                 break;
             }
         }
+    }
+
+    protected _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+        const args = ipcPacketBuffer.parseArrayAt(1);
+        this._onCommandReceived(ipcBusCommand, args);
     }
 
     ipcRequest(channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {

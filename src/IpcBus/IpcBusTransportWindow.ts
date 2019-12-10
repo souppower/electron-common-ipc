@@ -50,20 +50,7 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
                 this._ipcBusPeer = peerOrUndefined;
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Standard listening for #${this._ipcBusPeer.name}`);
                 this._onIpcEventReceived = (eventEmitter: any, ipcBusCommand, args) => {
-                    switch (ipcBusCommand.kind) {
-                        case IpcBusCommand.Kind.SendMessage: {
-                            this._onCommandSendMessage(ipcBusCommand, args);
-                            break;
-                        }
-                        case IpcBusCommand.Kind.RequestMessage: {
-                            this._onCommandRequestMessage(ipcBusCommand, args);
-                            break;
-                        }
-                        case IpcBusCommand.Kind.RequestResponse: {
-                            this._onCommandRequestResponse(ipcBusCommand, args);
-                            break;
-                        }
-                    }
+                    this._onCommandReceived(ipcBusCommand, args);
                 };
                 this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
                 return true;
@@ -74,20 +61,7 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
                 this._ipcBusPeer = eventOrPeer;
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
                 this._onIpcEventReceived = (ipcBusCommand: IpcBusCommand, args) => {
-                    switch (ipcBusCommand.kind) {
-                        case IpcBusCommand.Kind.SendMessage: {
-                            this._onCommandSendMessage(ipcBusCommand, args);
-                            break;
-                        }
-                        case IpcBusCommand.Kind.RequestMessage: {
-                            this._onCommandRequestMessage(ipcBusCommand, args);
-                            break;
-                        }
-                        case IpcBusCommand.Kind.RequestResponse: {
-                            this._onCommandRequestResponse(ipcBusCommand, args);
-                            break;
-                        }
-                    }
+                    this._onCommandReceived(ipcBusCommand, args);
                 };
                 this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
                 return true;

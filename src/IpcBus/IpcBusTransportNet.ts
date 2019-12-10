@@ -69,7 +69,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
         while (this._packetIn.decodeFromReader(this._bufferListReader)) {
             const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
             if (ipcBusCommand && ipcBusCommand.peer) {
-                this._onCommandReceived(ipcBusCommand, this._packetIn);
+                this._onCommandPacketReceived(ipcBusCommand, this._packetIn);
             }
             else {
                 throw `[IPCBusTransport:Net ${this._ipcBusPeer.id}] Not valid packet !`;

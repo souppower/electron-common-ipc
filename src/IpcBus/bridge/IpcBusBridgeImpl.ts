@@ -141,7 +141,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     }
 
     // This is coming from the Socket broker
-    protected _onCommandReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+    protected _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.BrokerAddChannels: {
                 const channels: string[] = ipcPacketBuffer.parseArrayAt(1);
@@ -158,7 +158,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 return;
             }
         }
-        return super._onCommandReceived(ipcBusCommand, ipcPacketBuffer);
+        return super._onCommandPacketReceived(ipcBusCommand, ipcPacketBuffer);
     }
 
     private _rendererCleanUp(ipcBusSender: IpcBusSender): void {
