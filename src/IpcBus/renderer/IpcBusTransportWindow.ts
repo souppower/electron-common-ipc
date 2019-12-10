@@ -9,9 +9,9 @@ import { IpcBusSender } from '../IpcBusTransport';
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import { IpcBusCommand } from '../IpcBusCommand';
 
-export const IPCBUS_TRANSPORT_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
-export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'IpcBusRenderer:Command';
-export const IPCBUS_TRANSPORT_RENDERER_EVENT = 'IpcBusRenderer:Event';
+export const IPCBUS_TRANSPORT_RENDERER_CONNECT = 'ECIPC:IpcBusRenderer:Connect';
+export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:Command';
+export const IPCBUS_TRANSPORT_RENDERER_EVENT = 'ECIPC:IpcBusRenderer:Event';
 
 export interface IpcWindow extends EventEmitter, IpcBusSender {
 }

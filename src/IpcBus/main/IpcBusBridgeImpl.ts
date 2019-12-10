@@ -8,14 +8,18 @@ import * as Bridge from './IpcBusBridge';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusSender } from '../IpcBusTransport';
 import { IpcBusTransportNet } from '../node/IpcBusTransportNet';
-import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_COMMAND, IPCBUS_TRANSPORT_RENDERER_EVENT } from '../renderer/IpcBusTransportWindow';
+import { 
+    IPCBUS_TRANSPORT_RENDERER_CONNECT, 
+    IPCBUS_TRANSPORT_RENDERER_COMMAND, 
+    IPCBUS_TRANSPORT_RENDERER_EVENT } from '../renderer/IpcBusTransportWindow';
+
+export const IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE = 'ECIPC:IpcBusBridge:RequestInstance';
+export const IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE = 'ECIPC:IpcBusBridge:BroadcastInstance';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBusBridge {
-    private static _singleton: IpcBusBridgeImpl;
-    
-    private _ipcMain: any;
+    private _ipcMain: Electron.IpcMain;
 
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<IpcBusSender>;
     protected _brokerChannels: Set<string>;
@@ -42,11 +46,12 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         this._onRendererMessage = this._onRendererMessage.bind(this);
         this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessage);
 
-        IpcBusBridgeImpl._singleton = this; 
-    }
-
-    static get Instance() {
-        return IpcBusBridgeImpl._singleton;
+        this._ipcMain.emit(IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE, this);
+        this._ipcMain.on(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, (event, replyChannel: string) => {
+            if (replyChannel) {
+                this._ipcMain.emit(replyChannel, undefined, this)
+            }
+        });
     }
 
     protected _reset(endSocket: boolean) {

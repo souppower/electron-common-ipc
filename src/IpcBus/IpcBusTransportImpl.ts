@@ -73,7 +73,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         return this._ipcBusPeer;
     }
 
-    private generateReplyChannel(): string {
+    protected generateReplyChannel(): string {
         ++this._requestNumber;
         return `${replyChannelPrefix}${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
     }

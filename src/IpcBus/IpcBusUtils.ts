@@ -23,7 +23,7 @@ function CleanPipeName(str: string) {
 export function CheckConnectOptions<T extends IpcConnectOptions>(arg1: T | string | number, arg2?: T | string, arg3?: T): T | null {
     // A port number : 59233, 42153
     // A port number + hostname : 59233, '127.0.0.1'
-    let options: T = (typeof arg1 === 'object' ? arg1 : typeof arg2 === 'object' ? arg2 : typeof arg3 === 'object' ? arg3: {}) as T; 
+    const options: T = (typeof arg1 === 'object' ? arg1 : typeof arg2 === 'object' ? arg2 : typeof arg3 === 'object' ? arg3: {}) as T; 
     if (Number(arg1) >= 0) {
         options.port = Number(arg1);
         options.host = typeof arg2 === 'string' ? arg2 : undefined;
@@ -37,14 +37,12 @@ export function CheckConnectOptions<T extends IpcConnectOptions>(arg1: T | strin
             options.host = parts[0];
         }
         else {
-            options.path = CleanPipeName(arg1);
+            options.path = arg1;
         }
     }
     // An IpcNetOptions object similar to NodeJS.net.ListenOptions
-    else if (typeof arg1 === 'object') {
-        if (options.path) {
-            options.path =  CleanPipeName(arg1.path);
-        }
+    if (options.path) {
+        options.path = CleanPipeName(options.path);
     }
     if (options.timeoutDelay == null) {
         options.timeoutDelay = IPC_BUS_TIMEOUT;

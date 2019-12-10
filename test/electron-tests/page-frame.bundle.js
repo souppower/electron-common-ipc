@@ -365,7 +365,7 @@ function CleanPipeName(str) {
     return str;
 }
 function CheckConnectOptions(arg1, arg2, arg3) {
-    let options = (typeof arg1 === 'object' ? arg1 : typeof arg2 === 'object' ? arg2 : typeof arg3 === 'object' ? arg3 : {});
+    const options = (typeof arg1 === 'object' ? arg1 : typeof arg2 === 'object' ? arg2 : typeof arg3 === 'object' ? arg3 : {});
     if (Number(arg1) >= 0) {
         options.port = Number(arg1);
         options.host = typeof arg2 === 'string' ? arg2 : undefined;
@@ -377,13 +377,11 @@ function CheckConnectOptions(arg1, arg2, arg3) {
             options.host = parts[0];
         }
         else {
-            options.path = CleanPipeName(arg1);
+            options.path = arg1;
         }
     }
-    else if (typeof arg1 === 'object') {
-        if (options.path) {
-            options.path = CleanPipeName(arg1.path);
-        }
+    if (options.path) {
+        options.path = CleanPipeName(options.path);
     }
     if (options.timeoutDelay == null) {
         options.timeoutDelay = exports.IPC_BUS_TIMEOUT;
@@ -936,9 +934,9 @@ const assert = require("assert");
 const IpcBusUtils = require("../IpcBusUtils");
 const IpcBusTransportImpl_1 = require("../IpcBusTransportImpl");
 const IpcBusCommand_1 = require("../IpcBusCommand");
-exports.IPCBUS_TRANSPORT_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
-exports.IPCBUS_TRANSPORT_RENDERER_COMMAND = 'IpcBusRenderer:Command';
-exports.IPCBUS_TRANSPORT_RENDERER_EVENT = 'IpcBusRenderer:Event';
+exports.IPCBUS_TRANSPORT_RENDERER_CONNECT = 'ECIPC:IpcBusRenderer:Connect';
+exports.IPCBUS_TRANSPORT_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:Command';
+exports.IPCBUS_TRANSPORT_RENDERER_EVENT = 'ECIPC:IpcBusRenderer:Event';
 class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
     constructor(contextType, ipcWindow) {
         assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
