@@ -249,11 +249,6 @@ exports.IPCBUS_CHANNEL = '/electron-ipc-bus';
 exports.IPCBUS_CHANNEL_QUERY_STATE = `${exports.IPCBUS_CHANNEL}/queryState`;
 exports.ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH';
 exports.ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH';
-var IpcBusBrokerOwner;
-(function (IpcBusBrokerOwner) {
-    IpcBusBrokerOwner[IpcBusBrokerOwner["Bridge"] = 0] = "Bridge";
-    IpcBusBrokerOwner[IpcBusBrokerOwner["Broker"] = 1] = "Broker";
-})(IpcBusBrokerOwner = exports.IpcBusBrokerOwner || (exports.IpcBusBrokerOwner = {}));
 var IpcBusClient;
 (function (IpcBusClient) {
 })(IpcBusClient = exports.IpcBusClient || (exports.IpcBusClient = {}));
@@ -5950,6 +5945,7 @@ function v4(options, buf, offset) {
 module.exports = v4;
 
 },{"./lib/bytesToUuid":39,"./lib/rng":40}],43:[function(require,module,exports){
+(function (Buffer){
 const uuid = require('uuid');
 
 function GetQueryStringParams(sParam) {
@@ -6012,9 +6008,12 @@ window.addEventListener('load', () => {
                 console.log(`ipcBus - self receive message : ${args}`);
             });
             setTimeout(() => {
+                const buffer = Buffer.from('ceci et un test');
                 console.log('ipcBus - Parent send message');
                 ipcBus.send(`test-frame-${window_id}`, 'hello frame');
                 ipcBus.send(`test-myself-${window_id}`, 'hello myself');
+                ipcBus.send(`test-frame-${window_id}`,buffer);
+                ipcBus.send(`test-myself-${window_id}`, buffer);
             }, 100);
         })
         .catch((err) => {
@@ -6054,4 +6053,5 @@ window.addEventListener('load', () => {
 
 })
 
-},{"../..":17,"../../lib/IpcBus/CrossFrameEventEmitter2":1,"uuid":38}]},{},[43]);
+}).call(this,require("buffer").Buffer)
+},{"../..":17,"../../lib/IpcBus/CrossFrameEventEmitter2":1,"buffer":24,"uuid":38}]},{},[43]);

@@ -11,11 +11,6 @@ export const ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH'
 
 export type IpcBusProcessType = 'renderer-frame' | 'native' | ElectronProcessType | string;
 
-export enum IpcBusBrokerOwner {
-    Bridge,
-    Broker
-}
-
 export interface IpcBusProcess {
     type: IpcBusProcessType;
     pid: number;    // Process Id

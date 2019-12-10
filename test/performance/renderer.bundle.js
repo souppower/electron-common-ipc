@@ -249,11 +249,6 @@ exports.IPCBUS_CHANNEL = '/electron-ipc-bus';
 exports.IPCBUS_CHANNEL_QUERY_STATE = `${exports.IPCBUS_CHANNEL}/queryState`;
 exports.ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH';
 exports.ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH';
-var IpcBusBrokerOwner;
-(function (IpcBusBrokerOwner) {
-    IpcBusBrokerOwner[IpcBusBrokerOwner["Bridge"] = 0] = "Bridge";
-    IpcBusBrokerOwner[IpcBusBrokerOwner["Broker"] = 1] = "Broker";
-})(IpcBusBrokerOwner = exports.IpcBusBrokerOwner || (exports.IpcBusBrokerOwner = {}));
 var IpcBusClient;
 (function (IpcBusClient) {
 })(IpcBusClient = exports.IpcBusClient || (exports.IpcBusClient = {}));
