@@ -35,9 +35,9 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
         this._promiseConnected = null;
         if (this._connected) {
             this._connected = false;
-            // this._ipcWindow.removeAllListeners(IPCBUS_TRANSPORT_RENDERER_CONNECT);
             if (this._onIpcEventReceived) {
                 this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+                this._onIpcEventReceived = null;
             }
         }
     }
@@ -60,9 +60,7 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
             if ((eventOrPeer as Client.IpcBusPeer).id === this._ipcBusPeer.id) {
                 this._ipcBusPeer = eventOrPeer;
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
-                this._onIpcEventReceived = (ipcBusCommand: IpcBusCommand, args) => {
-                    this._onCommandReceived(ipcBusCommand, args);
-                };
+                this._onIpcEventReceived = this._onCommandReceived.bind(this);
                 this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
                 return true;
             }

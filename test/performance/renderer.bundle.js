@@ -647,9 +647,7 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
             if (eventOrPeer.id === this._ipcBusPeer.id) {
                 this._ipcBusPeer = eventOrPeer;
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
-                this._onIpcEventReceived = (ipcBusCommand, args) => {
-                    this._onCommandReceived(ipcBusCommand, args);
-                };
+                this._onIpcEventReceived = this._onCommandReceived.bind(this);
                 this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
                 return true;
             }
