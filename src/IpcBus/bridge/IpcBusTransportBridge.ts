@@ -28,7 +28,7 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
 
     send(channel: string, ipcBusCommand: IpcBusCommand, args: any[]) {
         if (channel === IPCBUS_TRANSPORT_RENDERER_EVENT) {
-            this._onCommandReceived(ipcBusCommand, args);
+            this._onCommandReceived(undefined, ipcBusCommand, args);
         }
         else if (channel === IPCBUS_TRANSPORT_RENDERER_CONNECT) {
             this._ipcBusPeer = (ipcBusCommand as any) as Client.IpcBusPeer;

@@ -112,7 +112,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         }
     }
 
-    protected _onCommandReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
+    protected _onCommandReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, args: any[]) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.BridgeSendMessage:
             case IpcBusCommand.Kind.SendMessage: {
@@ -129,7 +129,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
 
     protected _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         const args = ipcPacketBuffer.parseArrayAt(1);
-        this._onCommandReceived(ipcBusCommand, args);
+        this._onCommandReceived(undefined, ipcBusCommand, args);
     }
 
     ipcRequest(channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
