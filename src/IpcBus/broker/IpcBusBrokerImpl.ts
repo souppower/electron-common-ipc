@@ -365,7 +365,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
             case IpcBusCommand.Kind.SendMessage:
                 // Register the replyChannel
-                if (ipcBusCommand?.request) {
+                if (ipcBusCommand.request) {
                     this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, socket);
                 }
                 if (this._bridgeChannels.has(ipcBusCommand.channel)) {
