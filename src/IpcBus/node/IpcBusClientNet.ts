@@ -1,7 +1,7 @@
-import * as Client from './IpcBusClient';
+import * as Client from '../IpcBusClient';
 
 import { IpcBusTransportNet } from './IpcBusTransportNet';
-import { IpcBusClientImpl}  from './IpcBusClientImpl';
+import { IpcBusClientImpl}  from '../IpcBusClientImpl';
 
 // Implementation for Node process
 export function Create(contextType: Client.IpcBusProcessType): Client.IpcBusClient {

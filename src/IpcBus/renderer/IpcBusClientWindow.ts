@@ -1,7 +1,7 @@
-import * as Client from './IpcBusClient';
+import * as Client from '../IpcBusClient';
 
 import { IpcBusTransportWindow, IpcWindow } from './IpcBusTransportWindow';
-import { IpcBusClientImpl}  from './IpcBusClientImpl';
+import { IpcBusClientImpl}  from '../IpcBusClientImpl';
 
 // Implementation for Renderer process
 export function Create(contextType: Client.IpcBusProcessType, ipcWindow: IpcWindow): Client.IpcBusClient {

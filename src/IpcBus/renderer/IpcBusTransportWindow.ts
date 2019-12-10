@@ -1,13 +1,13 @@
 import * as assert from 'assert';
 import { EventEmitter } from 'events';
 
-import * as IpcBusUtils from './IpcBusUtils';
-import * as Client from './IpcBusClient';
+import * as IpcBusUtils from '../IpcBusUtils';
+import * as Client from '../IpcBusClient';
 
 
-import { IpcBusSender } from './IpcBusTransport';
-import { IpcBusTransportImpl } from './IpcBusTransportImpl';
-import { IpcBusCommand } from './IpcBusCommand';
+import { IpcBusSender } from '../IpcBusTransport';
+import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
+import { IpcBusCommand } from '../IpcBusCommand';
 
 export const IPCBUS_TRANSPORT_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
 export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'IpcBusRenderer:Command';

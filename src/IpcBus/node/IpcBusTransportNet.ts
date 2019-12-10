@@ -3,11 +3,11 @@ import * as net from 'net';
 
 import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
 
-import * as IpcBusUtils from './IpcBusUtils';
-import * as Client from './IpcBusClient';
+import * as IpcBusUtils from '../IpcBusUtils';
+import * as Client from '../IpcBusClient';
 
-import { IpcBusTransportImpl } from './IpcBusTransportImpl';
-import { IpcBusCommand } from './IpcBusCommand';
+import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
+import { IpcBusCommand } from '../IpcBusCommand';
 
 // Implementation for Node process
 /** @internal */

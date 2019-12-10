@@ -6,7 +6,7 @@ import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 import { IpcBusSender } from '../IpcBusTransport';
-import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_EVENT } from '../IpcBusTransportWindow';
+import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_EVENT } from '../renderer/IpcBusTransportWindow';
 
 // Implementation for renderer process
 /** @internal */

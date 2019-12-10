@@ -3,8 +3,8 @@ import { GetElectronProcessType } from 'electron-process-type/lib/v2';
 import { IpcBusClient } from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
 
-import { Create as CreateIpcBusClientNet } from './IpcBusClientNet';
-import { Create as CreateIpcBusClientMain } from './bridge/IpcBusClientBridge';
+import { Create as CreateIpcBusClientNet } from './node/IpcBusClientNet';
+import { Create as CreateIpcBusClientMain } from './main/IpcBusClientBridge';
 
 export const CreateIpcBusClient: IpcBusClient.CreateFunction = (): IpcBusClient => {
     const electronProcessType = GetElectronProcessType();

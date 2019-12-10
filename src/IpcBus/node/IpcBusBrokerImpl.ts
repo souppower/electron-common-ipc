@@ -5,7 +5,7 @@ import { IpcPacketBuffer, BufferListReader, SocketWriter } from 'socket-serializ
 import * as Client from '../IpcBusClient';
 import * as Broker from './IpcBusBroker';
 import * as IpcBusUtils from '../IpcBusUtils';
-import { Create as CreateIpcBusClientNet } from '../IpcBusClientNet';
+import { Create as CreateIpcBusClientNet } from './IpcBusClientNet';
 
 import { IpcBusCommand } from '../IpcBusCommand';
 

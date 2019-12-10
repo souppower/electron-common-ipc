@@ -85,7 +85,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     protected _onCommandSendMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
         const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
-        this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
         if (ipcBusCommand.request) {
             ipcBusEvent.request = {
                 resolve: (payload: Object | string) => {
