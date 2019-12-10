@@ -154,7 +154,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         return super._onCommandPacketReceived(ipcBusCommand, ipcPacketBuffer);
     }
 
-    private _rendererCleanUp(ipcBusSender: IpcBusSender): void {
+    private _senderCleanup(ipcBusSender: IpcBusSender): void {
         this._subscriptions.releaseConnection(ipcBusSender);
     }
 
@@ -191,7 +191,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
             ipcBusPeer.name = args[0] || ipcBusPeer.name;
 
             webContents.addListener('destroyed', () => {
-                this._rendererCleanUp(webContents);
+                this._senderCleanup(webContents);
                 this._ipcBusPeers.delete(ipcBusPeer.id);
             });
             // We get back to the webContents
@@ -217,8 +217,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     private _onDisconnect(ipcBusSender: IpcBusSender, ipcBusCommand: IpcBusCommand, args: any[]): void {
         const ipcBusPeer = ipcBusCommand.peer;
+        this._senderCleanup(ipcBusSender);
         this._ipcBusPeers.delete(ipcBusPeer.id);
-        this._rendererCleanUp(ipcBusSender);
     }
 
     _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
@@ -246,7 +246,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 break;
 
             case IpcBusCommand.Kind.BridgeRemoveListeners:
-                this._rendererCleanUp(ipcBusSender);
+                this._senderCleanup(ipcBusSender);
                 break;
 
             case IpcBusCommand.Kind.BridgeSendMessage:
