@@ -16,8 +16,12 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         super.setMaxListeners(0);
         this._transport = ipcBusClientTransport;
         this._transport.ipcCallback((channel, ipcBusEvent, ...args) => {
-            super.emit(channel, ipcBusEvent, ...args);
+            this._eventEmitterEmit(channel, ipcBusEvent, ...args);
         });
+    }
+
+    protected _eventEmitterEmit(channel: string, ...args: any[]) {
+        super.emit(channel, ...args);
     }
 
     get peer(): Client.IpcBusPeer {

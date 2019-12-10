@@ -34,8 +34,11 @@ class IpcBusClientImpl extends events_1.EventEmitter {
         super.setMaxListeners(0);
         this._transport = ipcBusClientTransport;
         this._transport.ipcCallback((channel, ipcBusEvent, ...args) => {
-            super.emit(channel, ipcBusEvent, ...args);
+            this._eventEmitterEmit(channel, ipcBusEvent, ...args);
         });
+    }
+    _eventEmitterEmit(channel, ...args) {
+        super.emit(channel, ...args);
     }
     get peer() {
         return this._transport.peer;
@@ -666,7 +669,7 @@ class ConnectionPeers {
     releasePeer(peer) {
         const peerRefCount = this.peerRefCounts.get(peer.id);
         if (peerRefCount == null) {
-            return null;
+            return 0;
         }
         else {
             if (--peerRefCount.refCount <= 0) {
