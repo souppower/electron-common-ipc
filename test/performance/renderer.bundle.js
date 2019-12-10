@@ -365,7 +365,6 @@ var IpcBusCommand;
         Kind["RemoveChannelAllListeners"] = "LICRA";
         Kind["RemoveListeners"] = "LIR";
         Kind["SendMessage"] = "MES";
-        Kind["RequestMessage"] = "RQM";
         Kind["RequestResponse"] = "RQR";
         Kind["RequestCancel"] = "RQC";
         Kind["BridgeConnect"] = "BCOO";
@@ -376,7 +375,6 @@ var IpcBusCommand;
         Kind["BridgeRemoveChannelAllListeners"] = "BLICRA";
         Kind["BridgeRemoveListeners"] = "BLIR";
         Kind["BridgeSendMessage"] = "BMES";
-        Kind["BridgeRequestMessage"] = "BRQM";
         Kind["BridgeRequestResponse"] = "BRQR";
         Kind["BridgeRequestCancel"] = "BRQC";
         Kind["BrokerAddChannels"] = "BOCAS";
@@ -531,22 +529,20 @@ class IpcBusTransportImpl {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
         const ipcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
         this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
-    }
-    _onCommandRequestMessage(ipcBusCommand, args) {
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-        const ipcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
-        ipcBusEvent.request = {
-            resolve: (payload) => {
-                ipcBusCommand.request.resolve = true;
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
-                this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
-            },
-            reject: (err) => {
-                ipcBusCommand.request.reject = true;
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
-                this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
-            }
-        };
+        if (ipcBusCommand.request) {
+            ipcBusEvent.request = {
+                resolve: (payload) => {
+                    ipcBusCommand.request.resolve = true;
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
+                    this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
+                },
+                reject: (err) => {
+                    ipcBusCommand.request.reject = true;
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
+                    this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
+                }
+            };
+        }
         this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
     }
     _onCommandRequestResponse(ipcBusCommand, args) {
@@ -562,11 +558,6 @@ class IpcBusTransportImpl {
             case IpcBusCommand_1.IpcBusCommand.Kind.BridgeSendMessage:
             case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage: {
                 this._onCommandSendMessage(ipcBusCommand, args);
-                break;
-            }
-            case IpcBusCommand_1.IpcBusCommand.Kind.BridgeRequestMessage:
-            case IpcBusCommand_1.IpcBusCommand.Kind.RequestMessage: {
-                this._onCommandRequestMessage(ipcBusCommand, args);
                 break;
             }
             case IpcBusCommand_1.IpcBusCommand.Kind.BridgeRequestResponse:
@@ -587,7 +578,7 @@ class IpcBusTransportImpl {
         const ipcBusCommandRequest = { channel, replyChannel: this.generateReplyChannel() };
         const deferredRequest = new DeferredRequest(channel);
         this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
-        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestMessage, channel, ipcBusCommandRequest, args);
+        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.SendMessage, channel, ipcBusCommandRequest, args);
         if (timeoutDelay >= 0) {
             setTimeout(() => {
                 if (this._requestFunctions.delete(ipcBusCommandRequest.replyChannel)) {
@@ -628,6 +619,7 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
             this._connected = false;
             if (this._onIpcEventReceived) {
                 this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+                this._onIpcEventReceived = null;
             }
         }
     }

@@ -20,7 +20,6 @@ export namespace IpcBusCommand {
         RemoveChannelAllListeners   = 'LICRA',
         RemoveListeners             = 'LIR',
         SendMessage                 = 'MES',    // MEssage
-        RequestMessage              = 'RQM',    // ReQuest
         RequestResponse             = 'RQR',
         RequestCancel               = 'RQC',
 
@@ -32,7 +31,6 @@ export namespace IpcBusCommand {
         BridgeRemoveChannelAllListeners   = 'BLICRA',
         BridgeRemoveListeners             = 'BLIR',
         BridgeSendMessage                 = 'BMES',    // MEssage
-        BridgeRequestMessage              = 'BRQM',    // ReQuest
         BridgeRequestResponse             = 'BRQR',
         BridgeRequestCancel               = 'BRQC',
 

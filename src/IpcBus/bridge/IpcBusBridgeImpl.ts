@@ -124,13 +124,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         });
     }
 
-    protected _onCommandRequestMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-        this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-            connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, args);
-        });
-    }
-
     protected _onCommandRequestResponse(ipcBusCommand: IpcBusCommand, args: any[]) {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
         const ipcBusSender = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
@@ -256,15 +249,10 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 this._rendererCleanUp(ipcBusSender);
                 break;
 
-            case IpcBusCommand.Kind.BridgeRequestMessage:
-                this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, ipcBusSender);
-                this._onCommandRequestMessage(ipcBusCommand, args);
-                if (this._brokerChannels.has(ipcBusCommand.channel)) {
-                    super.ipcPostCommand(ipcBusCommand, args);
-                }
-                break;
-
             case IpcBusCommand.Kind.BridgeSendMessage:
+                if (ipcBusCommand.request) {
+                    this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, ipcBusSender);
+                }
                 this._onCommandSendMessage(ipcBusCommand, args);
                 if (this._brokerChannels.has(ipcBusCommand.channel)) {
                     super.ipcPostCommand(ipcBusCommand, args);

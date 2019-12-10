@@ -364,6 +364,10 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
 
             case IpcBusCommand.Kind.SendMessage:
+                // Register the replyChannel
+                if (ipcBusCommand?.request) {
+                    this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, socket);
+                }
                 if (this._bridgeChannels.has(ipcBusCommand.channel)) {
                     this._socketBridge && this._socketBridge.write(packet.buffer);
                 }
@@ -372,26 +376,10 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 });
                 break;
             case IpcBusCommand.Kind.BridgeSendMessage:
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-                    connData.conn.write(packet.buffer);
-                });
-                break;
-
-            case IpcBusCommand.Kind.RequestMessage:
                 // Register the replyChannel
-                this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, socket);
-                if (this._bridgeChannels.has(ipcBusCommand.channel)) {
-                    this._socketBridge && this._socketBridge.write(packet.buffer);
+                if (ipcBusCommand.request) {
+                    this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, socket);
                 }
-                // Request ipcBusCommand to subscribed connections
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-                    connData.conn.write(packet.buffer);
-                });
-                break;
-            case IpcBusCommand.Kind.BridgeRequestMessage:
-                // Register the replyChannel
-                this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, socket);
-                // Request ipcBusCommand to subscribed connections
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.write(packet.buffer);
                 });

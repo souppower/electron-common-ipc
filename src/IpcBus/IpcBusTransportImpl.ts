@@ -86,23 +86,20 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
         const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
         this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
-    }
-
-    protected _onCommandRequestMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-        const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
-        ipcBusEvent.request = {
-            resolve: (payload: Object | string) => {
-                ipcBusCommand.request.resolve = true;
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
-                this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
-            },
-            reject: (err: string) => {
-                ipcBusCommand.request.reject = true;
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
-                this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
-            }
-        };
+        if (ipcBusCommand.request) {
+            ipcBusEvent.request = {
+                resolve: (payload: Object | string) => {
+                    ipcBusCommand.request.resolve = true;
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
+                    this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
+                },
+                reject: (err: string) => {
+                    ipcBusCommand.request.reject = true;
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
+                    this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
+                }
+            };
+        }
         this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
     }
 
@@ -120,11 +117,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
             case IpcBusCommand.Kind.BridgeSendMessage:
             case IpcBusCommand.Kind.SendMessage: {
                 this._onCommandSendMessage(ipcBusCommand, args);
-                break;
-            }
-            case IpcBusCommand.Kind.BridgeRequestMessage:
-            case IpcBusCommand.Kind.RequestMessage: {
-                this._onCommandRequestMessage(ipcBusCommand, args);
                 break;
             }
             case IpcBusCommand.Kind.BridgeRequestResponse:
@@ -150,7 +142,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         // Register locally
          this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
          // Execute request
-         this.ipcSend(IpcBusCommand.Kind.RequestMessage, channel, ipcBusCommandRequest, args);
+         this.ipcSend(IpcBusCommand.Kind.SendMessage, channel, ipcBusCommandRequest, args);
         // Clean-up
         if (timeoutDelay >= 0) {
             setTimeout(() => {
