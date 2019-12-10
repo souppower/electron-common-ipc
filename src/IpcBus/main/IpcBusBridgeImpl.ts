@@ -46,10 +46,10 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         this._onRendererMessage = this._onRendererMessage.bind(this);
         this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessage);
 
-        this._ipcMain.emit(IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE, this);
+        this._ipcMain.emit(IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE, { sender: null }, this);
         this._ipcMain.on(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, (event, replyChannel: string) => {
             if (replyChannel) {
-                this._ipcMain.emit(replyChannel, undefined, this)
+                this._ipcMain.emit(replyChannel, { sender: null }, this)
             }
         });
     }
@@ -217,7 +217,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     }
 
     _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
-        const ipcBusSender: IpcBusSender = event.sender || event;
+        const ipcBusSender: IpcBusSender = event.sender;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.BridgeConnect:
                 this._onConnect(ipcBusSender, ipcBusCommand, args);

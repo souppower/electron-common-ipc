@@ -78,7 +78,7 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
                     }, options.timeoutDelay);
                 }
                 // We wait for the bridge confirmation
-                this._ipcMain.emit(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, undefined, replyChannel);
+                this._ipcMain.emit(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, { sender: this }, replyChannel);
             });
         }
         return this._promiseConnected;
@@ -97,7 +97,7 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
     ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._ipcBusBridge) {
             ipcBusCommand.kind = ('B' + ipcBusCommand.kind) as IpcBusCommand.Kind;
-            this._ipcBusBridge._onRendererMessage(this, ipcBusCommand, args);
+            this._ipcBusBridge._onRendererMessage({ sender: this }, ipcBusCommand, args);
         }
     }
 }
