@@ -8,19 +8,24 @@ import { IpcBusClientImpl}  from '../IpcBusClientImpl';
 class IpcBusClientBridge extends IpcBusClientImpl {
     connect(arg1: Client.IpcBusClient.ConnectOptions | string | number, arg2?: Client.IpcBusClient.ConnectOptions | string, arg3?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
-        const peer = this._transport.peer;
-        this._transport.ipcClose();
-        this._transport.ipcCallback = null;
-        if ((options.port == null) || (options.path == null)) {
-            this._transport = new IpcBusTransportBridge(peer.process.type);
+        let classFactory: any;
+        if ((options.port == null) && (options.path == null)) {
+            classFactory = IpcBusTransportBridge;
         }
         else {
-            this._transport = new IpcBusTransportNet(peer.process.type);
+            classFactory = IpcBusTransportNet;
         }
-        this._transport.ipcCallback((channel, ipcBusEvent, ...args) => {
-            super._eventEmitterEmit(channel, ipcBusEvent, ...args);
-        });
-        return this._transport.ipcConnect({ peerName: options.peerName || peer.name, ...options });
+        if ((this._transport instanceof classFactory) === false) {
+            const peer = this._transport.peer;
+            this._transport.ipcClose();
+            this._transport.ipcCallback = null;
+            this._transport = new (classFactory)(peer.process.type);
+            this._transport.ipcCallback((channel, ipcBusEvent, ...args) => {
+                super._eventEmitterEmit(channel, ipcBusEvent, ...args);
+            });
+            options.peerName = options.peerName || peer.name;
+        }
+        return this._transport.ipcConnect(options);
     }
 }
 
