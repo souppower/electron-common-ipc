@@ -1,6 +1,6 @@
-import { Create as CreateIpcBusClientWindow } from './renderer/IpcBusClientWindow';
+import { Create as CreateIpcBusClientWindow } from './IpcBusClientWindow';
 
-import { CrossFrameEventEmitter, IpcBusFrameBridge } from './renderer/CrossFrameEventEmitter2';
+import { CrossFrameEventEmitter, IpcBusFrameBridge } from './CrossFrameEventEmitter2';
 // import { CrossFrameEventDispatcher } from './CrossFrameEventEmitter';
 
 const trace = false; // true;

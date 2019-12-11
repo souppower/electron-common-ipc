@@ -105,7 +105,7 @@ class IpcBusClientImpl extends events_1.EventEmitter {
 }
 exports.IpcBusClientImpl = IpcBusClientImpl;
 
-},{"./IpcBusCommand":4,"./IpcBusUtils":7,"events":26}],4:[function(require,module,exports){
+},{"./IpcBusCommand":4,"./IpcBusUtils":6,"events":26}],4:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var IpcBusCommand;
@@ -141,88 +141,6 @@ var IpcBusCommand;
 })(IpcBusCommand = exports.IpcBusCommand || (exports.IpcBusCommand = {}));
 
 },{}],5:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const IpcBusClientWindow_1 = require("./renderer/IpcBusClientWindow");
-const CrossFrameEventEmitter2_1 = require("./renderer/CrossFrameEventEmitter2");
-const trace = false;
-function PreloadElectronCommonIpcAutomatic() {
-    return _PreloadElectronCommonIpc('Implicit');
-}
-exports.PreloadElectronCommonIpcAutomatic = PreloadElectronCommonIpcAutomatic;
-function PreloadElectronCommonIpc(iframeSupport = false) {
-    return _PreloadElectronCommonIpc('Explicit', iframeSupport);
-}
-exports.PreloadElectronCommonIpc = PreloadElectronCommonIpc;
-function _PreloadElectronCommonIpc(context, iframeSupport = false) {
-    const windowLocal = window;
-    if (windowLocal.self === windowLocal.top) {
-        try {
-            const electron = require('electron');
-            if (electron && electron.ipcRenderer) {
-                windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
-                if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
-                    trace && console.log(`inject - ${context} - ElectronCommonIpc.CreateIpcBusClient`);
-                    windowLocal.ElectronCommonIpc.CreateIpcBusClient = () => {
-                        trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
-                        const ipcBusClient = IpcBusClientWindow_1.Create('renderer', electron.ipcRenderer);
-                        return ipcBusClient;
-                    };
-                }
-                if (windowLocal.ElectronCommonIpc.FrameBridge == null) {
-                    trace && console.log(`inject - ${context} - ElectronCommonIpc.FrameBridge`);
-                    windowLocal.ElectronCommonIpc.FrameBridge = new CrossFrameEventEmitter2_1.IpcBusFrameBridge(electron.ipcRenderer, window);
-                }
-            }
-        }
-        catch (_) {
-        }
-        try {
-            const frameBridge = windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.FrameBridge;
-            if (frameBridge) {
-                if (iframeSupport) {
-                    trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - start`);
-                    frameBridge.start();
-                }
-                else {
-                    frameBridge.stop();
-                    trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - stop`);
-                }
-            }
-        }
-        catch (_) {
-        }
-    }
-    else {
-        try {
-            windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
-            if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
-                trace && console.log(`${context} - Frame ElectronCommonIpc`);
-                const crossFrameEE = new CrossFrameEventEmitter2_1.CrossFrameEventEmitter(window.parent);
-                windowLocal.ElectronCommonIpc.CreateIpcBusClient = () => {
-                    trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
-                    const ipcBusClient = IpcBusClientWindow_1.Create('renderer-frame', crossFrameEE);
-                    return ipcBusClient;
-                };
-            }
-        }
-        catch (_) {
-        }
-    }
-    return IsElectronCommonIpcAvailable();
-}
-function IsElectronCommonIpcAvailable() {
-    try {
-        const windowLocal = window;
-        return (windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.CreateIpcBusClient) != null;
-    }
-    catch (_) {
-    }
-    return false;
-}
-exports.IsElectronCommonIpcAvailable = IsElectronCommonIpcAvailable;
-
-},{"./renderer/CrossFrameEventEmitter2":9,"./renderer/IpcBusClientWindow":11,"electron":"electron"}],6:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const uuid = require("uuid");
@@ -346,7 +264,7 @@ class IpcBusTransportImpl {
 }
 exports.IpcBusTransportImpl = IpcBusTransportImpl;
 
-},{"./IpcBusClient":2,"./IpcBusCommand":4,"./IpcBusUtils":7,"uuid":39}],7:[function(require,module,exports){
+},{"./IpcBusClient":2,"./IpcBusCommand":4,"./IpcBusUtils":6,"uuid":39}],6:[function(require,module,exports){
 (function (Buffer,process){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -684,7 +602,7 @@ exports.ConnectionPeers = ConnectionPeers;
 ;
 
 }).call(this,{"isBuffer":require("../../node_modules/is-buffer/index.js")},require('_process'))
-},{"../../node_modules/is-buffer/index.js":28,"_process":38,"events":26}],8:[function(require,module,exports){
+},{"../../node_modules/is-buffer/index.js":28,"_process":38,"events":26}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusUtils = require("../IpcBusUtils");
@@ -780,7 +698,7 @@ class IpcBusTransportIpc extends IpcBusTransportImpl_1.IpcBusTransportImpl {
 }
 exports.IpcBusTransportIpc = IpcBusTransportIpc;
 
-},{"../IpcBusCommand":4,"../IpcBusTransportImpl":6,"../IpcBusUtils":7}],9:[function(require,module,exports){
+},{"../IpcBusCommand":4,"../IpcBusTransportImpl":5,"../IpcBusUtils":6}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const uuid = require("uuid");
@@ -978,7 +896,7 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 }
 exports.IpcBusFrameBridge = IpcBusFrameBridge;
 
-},{"../main/IpcBusTransportIpc":8,"./CrossFrameMessage":10,"events":26,"uuid":39}],10:[function(require,module,exports){
+},{"../main/IpcBusTransportIpc":7,"./CrossFrameMessage":9,"events":26,"uuid":39}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const json_helpers_1 = require("json-helpers");
@@ -1011,7 +929,7 @@ var CrossFrameMessage;
     CrossFrameMessage.Encode = Encode;
 })(CrossFrameMessage = exports.CrossFrameMessage || (exports.CrossFrameMessage = {}));
 
-},{"json-helpers":31}],11:[function(require,module,exports){
+},{"json-helpers":31}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusTransportWindow_1 = require("./IpcBusTransportWindow");
@@ -1023,7 +941,89 @@ function Create(contextType, ipcWindow) {
 }
 exports.Create = Create;
 
-},{"../IpcBusClientImpl":3,"./IpcBusTransportWindow":12}],12:[function(require,module,exports){
+},{"../IpcBusClientImpl":3,"./IpcBusTransportWindow":12}],11:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const IpcBusClientWindow_1 = require("./IpcBusClientWindow");
+const CrossFrameEventEmitter2_1 = require("./CrossFrameEventEmitter2");
+const trace = false;
+function PreloadElectronCommonIpcAutomatic() {
+    return _PreloadElectronCommonIpc('Implicit');
+}
+exports.PreloadElectronCommonIpcAutomatic = PreloadElectronCommonIpcAutomatic;
+function PreloadElectronCommonIpc(iframeSupport = false) {
+    return _PreloadElectronCommonIpc('Explicit', iframeSupport);
+}
+exports.PreloadElectronCommonIpc = PreloadElectronCommonIpc;
+function _PreloadElectronCommonIpc(context, iframeSupport = false) {
+    const windowLocal = window;
+    if (windowLocal.self === windowLocal.top) {
+        try {
+            const electron = require('electron');
+            if (electron && electron.ipcRenderer) {
+                windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
+                if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
+                    trace && console.log(`inject - ${context} - ElectronCommonIpc.CreateIpcBusClient`);
+                    windowLocal.ElectronCommonIpc.CreateIpcBusClient = () => {
+                        trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
+                        const ipcBusClient = IpcBusClientWindow_1.Create('renderer', electron.ipcRenderer);
+                        return ipcBusClient;
+                    };
+                }
+                if (windowLocal.ElectronCommonIpc.FrameBridge == null) {
+                    trace && console.log(`inject - ${context} - ElectronCommonIpc.FrameBridge`);
+                    windowLocal.ElectronCommonIpc.FrameBridge = new CrossFrameEventEmitter2_1.IpcBusFrameBridge(electron.ipcRenderer, window);
+                }
+            }
+        }
+        catch (_) {
+        }
+        try {
+            const frameBridge = windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.FrameBridge;
+            if (frameBridge) {
+                if (iframeSupport) {
+                    trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - start`);
+                    frameBridge.start();
+                }
+                else {
+                    frameBridge.stop();
+                    trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - stop`);
+                }
+            }
+        }
+        catch (_) {
+        }
+    }
+    else {
+        try {
+            windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
+            if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
+                trace && console.log(`${context} - Frame ElectronCommonIpc`);
+                const crossFrameEE = new CrossFrameEventEmitter2_1.CrossFrameEventEmitter(window.parent);
+                windowLocal.ElectronCommonIpc.CreateIpcBusClient = () => {
+                    trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
+                    const ipcBusClient = IpcBusClientWindow_1.Create('renderer-frame', crossFrameEE);
+                    return ipcBusClient;
+                };
+            }
+        }
+        catch (_) {
+        }
+    }
+    return IsElectronCommonIpcAvailable();
+}
+function IsElectronCommonIpcAvailable() {
+    try {
+        const windowLocal = window;
+        return (windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.CreateIpcBusClient) != null;
+    }
+    catch (_) {
+    }
+    return false;
+}
+exports.IsElectronCommonIpcAvailable = IsElectronCommonIpcAvailable;
+
+},{"./CrossFrameEventEmitter2":8,"./IpcBusClientWindow":10,"electron":"electron"}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert = require("assert");
@@ -1036,7 +1036,7 @@ class IpcBusTransportWindow extends IpcBusTransportIpc_1.IpcBusTransportIpc {
 }
 exports.IpcBusTransportWindow = IpcBusTransportWindow;
 
-},{"../main/IpcBusTransportIpc":8,"assert":20}],13:[function(require,module,exports){
+},{"../main/IpcBusTransportIpc":7,"assert":20}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusService_1 = require("./IpcBusService");
@@ -1214,7 +1214,7 @@ class IpcBusServiceImpl {
 }
 exports.IpcBusServiceImpl = IpcBusServiceImpl;
 
-},{"../IpcBusUtils":7,"./IpcBusService":14,"./IpcBusServiceUtils":17,"events":26}],16:[function(require,module,exports){
+},{"../IpcBusUtils":6,"./IpcBusService":14,"./IpcBusServiceUtils":17,"events":26}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
@@ -1435,7 +1435,7 @@ class IpcBusServiceProxyImpl extends events_1.EventEmitter {
 }
 exports.IpcBusServiceProxyImpl = IpcBusServiceProxyImpl;
 
-},{"../IpcBusUtils":7,"./IpcBusService":14,"./IpcBusServiceUtils":17,"events":26}],17:[function(require,module,exports){
+},{"../IpcBusUtils":6,"./IpcBusService":14,"./IpcBusServiceUtils":17,"events":26}],17:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Client = require("../IpcBusClient");
@@ -1464,10 +1464,10 @@ function __export(m) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __export(require("./electron-common-ipc-common"));
 __export(require("./IpcBus/IpcBusClient-factory-browser"));
-const IpcBusRendererPreload_1 = require("./IpcBus/IpcBusRendererPreload");
+const IpcBusRendererPreload_1 = require("./IpcBus/renderer/IpcBusRendererPreload");
 IpcBusRendererPreload_1.PreloadElectronCommonIpcAutomatic();
 
-},{"./IpcBus/IpcBusClient-factory-browser":1,"./IpcBus/IpcBusRendererPreload":5,"./electron-common-ipc-common":19}],19:[function(require,module,exports){
+},{"./IpcBus/IpcBusClient-factory-browser":1,"./IpcBus/renderer/IpcBusRendererPreload":11,"./electron-common-ipc-common":19}],19:[function(require,module,exports){
 "use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
@@ -1476,7 +1476,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __export(require("./IpcBus/IpcBusClient"));
 __export(require("./IpcBus/service/IpcBusService"));
 __export(require("./IpcBus/service/IpcBusService-factory"));
-__export(require("./IpcBus/IpcBusRendererPreload"));
+__export(require("./IpcBus/renderer/IpcBusRendererPreload"));
 const IpcBusUtils = require("./IpcBus/IpcBusUtils");
 function ActivateIpcBusTrace(enable) {
     IpcBusUtils.Logger.enable = enable;
@@ -1487,7 +1487,7 @@ function ActivateServiceTrace(enable) {
 }
 exports.ActivateServiceTrace = ActivateServiceTrace;
 
-},{"./IpcBus/IpcBusClient":2,"./IpcBus/IpcBusRendererPreload":5,"./IpcBus/IpcBusUtils":7,"./IpcBus/service/IpcBusService":14,"./IpcBus/service/IpcBusService-factory":13}],20:[function(require,module,exports){
+},{"./IpcBus/IpcBusClient":2,"./IpcBus/IpcBusUtils":6,"./IpcBus/renderer/IpcBusRendererPreload":11,"./IpcBus/service/IpcBusService":14,"./IpcBus/service/IpcBusService-factory":13}],20:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -6058,4 +6058,4 @@ window.addEventListener('load', () => {
 })
 
 }).call(this,require("buffer").Buffer)
-},{"../..":18,"../../lib/IpcBus/renderer/CrossFrameEventEmitter2":9,"buffer":25,"uuid":39}]},{},[44]);
+},{"../..":18,"../../lib/IpcBus/renderer/CrossFrameEventEmitter2":8,"buffer":25,"uuid":39}]},{},[44]);
