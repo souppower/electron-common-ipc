@@ -57,7 +57,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     private bridgeAddChannels(channels: string[]) {
         const ipcBusCommand: IpcBusCommand = {
-            kind: IpcBusCommand.Kind.BridgeAddChannels,
+            kind: IpcBusCommand.Kind.AddBridgeChannels,
             channel: '',
             peer: this.peer
         };
@@ -66,7 +66,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     private bridgeRemoveChannels(channels: string[]) {
         const ipcBusCommand: IpcBusCommand = {
-            kind: IpcBusCommand.Kind.BridgeRemoveChannels,
+            kind: IpcBusCommand.Kind.RemoveBridgeChannels,
             channel: '',
             peer: this.peer
         };
@@ -141,14 +141,14 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     // This is coming from the Socket broker
     protected _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.BrokerAddChannels: {
+            case IpcBusCommand.Kind.AddBrokerChannels: {
                 const channels: string[] = ipcPacketBuffer.parseArrayAt(1);
                 channels.forEach(channel => {
                     this._brokerChannels.add(channel);
                 });
                 return;
             }
-            case IpcBusCommand.Kind.BrokerRemoveChannels: {
+            case IpcBusCommand.Kind.RemoveBrokerChannels: {
                 const channels: string[] = ipcPacketBuffer.parseArrayAt(1);
                 channels.forEach(channel => {
                     this._brokerChannels.delete(channel);

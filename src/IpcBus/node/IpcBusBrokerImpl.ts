@@ -400,7 +400,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 }
                 break;
 
-            case IpcBusCommand.Kind.BridgeAddChannels: {
+            case IpcBusCommand.Kind.AddBridgeChannels: {
                 const channels: string[] = packet.parseArrayAt(1);
                 channels.forEach(channel => {
                     this._bridgeChannels.add(channel);
@@ -408,7 +408,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
             }
 
-            case IpcBusCommand.Kind.BridgeRemoveChannels: {
+            case IpcBusCommand.Kind.RemoveBridgeChannels: {
                 const channels: string[] = packet.parseArrayAt(1);
                 channels.forEach(channel => {
                     this._bridgeChannels.delete(channel);

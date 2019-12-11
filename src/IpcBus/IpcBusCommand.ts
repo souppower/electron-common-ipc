@@ -36,10 +36,10 @@ export namespace IpcBusCommand {
         BridgeRequestResponse             = 'BRQR',
         BridgeRequestCancel               = 'BRQC',
 
-        BrokerAddChannels                 = 'BOCAS',
-        BrokerRemoveChannels              = 'BOCRS',
-        BridgeAddChannels                 = 'BICAS',
-        BridgeRemoveChannels              = 'BICRS',
+        AddBrokerChannels                 = 'BOCAS',
+        RemoveBrokerChannels              = 'BOCRS',
+        AddBridgeChannels                 = 'BICAS',
+        RemoveBridgeChannels              = 'BICRS',
     };
 
     /** @internal */
