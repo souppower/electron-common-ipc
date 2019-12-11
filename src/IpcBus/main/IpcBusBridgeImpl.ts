@@ -51,13 +51,11 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
         this._brokerChannels = new Set<string>();
 
+        // callbacks
         this._onRendererMessage = this._onRendererMessage.bind(this);
-        this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessage);
+        this._onConnectToBridge = this._onConnectToBridge.bind(this);
 
         this._ipcMain.emit(IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE, { sender: null }, this);
-        this._ipcMain.on(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, (event) => {
-            event.sender.send(IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE, { sender: null }, this);
-        });
     }
 
     protected _reset(endSocket: boolean) {
@@ -87,6 +85,12 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     // IpcBusBridge API
     connect(arg1: Bridge.IpcBusBridge.ConnectOptions | string | number, arg2?: Bridge.IpcBusBridge.ConnectOptions | string, arg3?: Bridge.IpcBusBridge.ConnectOptions): Promise<void> {
+        // To manage re-entrance
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessage);
+        this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessage);
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, this._onConnectToBridge);
+        this._ipcMain.addListener(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, this._onConnectToBridge);
+
         if (!this._connected) {
             this._connected = true;
             this._brokerChannels.clear();
@@ -108,6 +112,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     }
 
     close(options?: Bridge.IpcBusBridge.CloseOptions): Promise<void> {
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessage);
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, this._onConnectToBridge);
         if (this._connected) {
             this._connected = false;
             return super.ipcClose(options);
@@ -210,6 +216,10 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 webContentsLike.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
             });
         }
+    }
+
+    _onConnectToBridge(event: any) {
+        event.sender.send(IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE, { sender: null }, this);
     }
 
     _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
