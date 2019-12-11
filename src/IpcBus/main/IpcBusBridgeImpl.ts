@@ -1,12 +1,13 @@
 /// <reference types='electron' />
 
+import { EventEmitter } from 'events';
+
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 import * as Bridge from './IpcBusBridge';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusSender } from '../IpcBusTransport';
 import { IpcBusTransportNet } from '../node/IpcBusTransportNet';
 import { 
     IPCBUS_TRANSPORT_RENDERER_CONNECT, 
@@ -16,15 +17,22 @@ import {
 export const IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE = 'ECIPC:IpcBusBridge:RequestInstance';
 export const IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE = 'ECIPC:IpcBusBridge:BroadcastInstance';
 
+export interface WebContentsLike extends EventEmitter {
+    id: number;
+    getOSProcessId(): number;
+    send(channel: string, ...args: any[]): void;
+    getURL(): string;
+    isLoadingMainFrame(): boolean;
+    getTitle(): string;
+}
+
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBusBridge {
     private _ipcMain: Electron.IpcMain;
 
-    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<IpcBusSender>;
+    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<WebContentsLike>;
     protected _brokerChannels: Set<string>;
-
-    private _busMainCount: number;
 
     protected _connected: boolean;
 
@@ -33,7 +41,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
         this._ipcMain = require('electron').ipcMain;
 
-        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<IpcBusSender>('IPCBus:Bridge', true);
+        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<WebContentsLike>('IPCBus:Bridge', true);
         this._subscriptions.on('channel-added', channel => {
             this._connected && this.bridgeAddChannels([channel]);
         });
@@ -155,16 +163,16 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         return super._onCommandPacketReceived(ipcBusCommand, ipcPacketBuffer);
     }
 
-    private _senderCleanup(ipcBusSender: IpcBusSender): void {
-        this._subscriptions.releaseConnection(ipcBusSender);
+    private _senderCleanup(webContentsLike: WebContentsLike): void {
+        this._subscriptions.releaseConnection(webContentsLike);
     }
 
-    private _completePeerInfo(webContents: Electron.WebContents, ipcBusPeer: Client.IpcBusPeer): void {
-        let peerName = `${ipcBusPeer.process.type}-${webContents.id}`;
-        ipcBusPeer.process.wcid = webContents.id;
+    private _completePeerInfo(webContentsLike: WebContentsLike, ipcBusPeer: Client.IpcBusPeer): void {
+        let peerName = `${ipcBusPeer.process.type}-${webContentsLike.id}`;
+        ipcBusPeer.process.wcid = webContentsLike.id;
         // Hidden function, may disappear
         try {
-            ipcBusPeer.process.rid = (webContents as any).getProcessId();
+            ipcBusPeer.process.rid = (webContentsLike as any).getProcessId();
             peerName += `-r${ipcBusPeer.process.rid}`;
         }
         catch (err) {
@@ -172,79 +180,69 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         }
         // >= Electron 1.7.1
         try {
-            ipcBusPeer.process.pid = webContents.getOSProcessId();
+            ipcBusPeer.process.pid = webContentsLike.getOSProcessId();
             peerName += `_${ipcBusPeer.process.pid}`;
         }
         catch (err) {
             // For backward we fill pid with webContents id
-            ipcBusPeer.process.pid = webContents.id;
+            ipcBusPeer.process.pid = webContentsLike.id;
         }
         ipcBusPeer.name = peerName;
     }
 
-    private _onConnect(ipcBusSender: IpcBusSender, ipcBusCommand: IpcBusCommand, args: any[]): void {
+    private _onConnect(webContentsLike: WebContentsLike, ipcBusCommand: IpcBusCommand, args: any[]): void {
         const ipcBusPeer = ipcBusCommand.peer;
+        this._completePeerInfo(webContentsLike, ipcBusPeer);
+        ipcBusPeer.name = args[0] || ipcBusPeer.name;
 
-        const webContents = ipcBusSender.constructor.name === 'WebContents' ? ipcBusSender as Electron.WebContents : undefined;
-        if (webContents) {
-            this._completePeerInfo(webContents, ipcBusPeer);
-            ipcBusPeer.name = args[0] || ipcBusPeer.name;
-
-            webContents.addListener('destroyed', () => {
-                this._senderCleanup(webContents);
-            });
-            // We get back to the webContents
-            // - to confirm the connection
-            // - to provide peerName and id/s
-            // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
-            if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
-                webContents.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
-            }
-            else {
-                webContents.on('did-finish-load', () => {
-                    webContents.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
-                });
-            }
+        webContentsLike.addListener('destroyed', () => {
+            this._senderCleanup(webContentsLike);
+        });
+        // We get back to the webContents
+        // - to confirm the connection
+        // - to provide peerName and id/s
+        // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
+        if (webContentsLike.getURL() && !webContentsLike.isLoadingMainFrame()) {
+            webContentsLike.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
         }
         else {
-            ++this._busMainCount;
-            const peerName = `${ipcBusPeer.process.type}-${this._busMainCount}`;
-            ipcBusPeer.name = args[0] || peerName;
-            ipcBusSender.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
+            webContentsLike.on('did-finish-load', () => {
+                webContentsLike.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ipcBusPeer);
+            });
         }
     }
 
     _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
-        const ipcBusSender: IpcBusSender = event.sender;
+        const webContentsLike: WebContentsLike = event.sender;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.BridgeConnect:
-                this._onConnect(ipcBusSender, ipcBusCommand, args);
+                this._onConnect(webContentsLike, ipcBusCommand, args);
                 break;
 
             case IpcBusCommand.Kind.BridgeDisconnect:
             case IpcBusCommand.Kind.BridgeClose:
-                this._senderCleanup(ipcBusSender);
+                this._senderCleanup(webContentsLike);
                 break;
 
             case IpcBusCommand.Kind.BridgeAddChannelListener:
-                this._subscriptions.addRef(ipcBusCommand.channel, ipcBusSender, ipcBusCommand.peer);
+                this._subscriptions.addRef(ipcBusCommand.channel, webContentsLike, ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.BridgeRemoveChannelAllListeners:
-                this._subscriptions.releaseAll(ipcBusCommand.channel, ipcBusSender, ipcBusCommand.peer);
+                this._subscriptions.releaseAll(ipcBusCommand.channel, webContentsLike, ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.BridgeRemoveChannelListener:
-                this._subscriptions.release(ipcBusCommand.channel, ipcBusSender, ipcBusCommand.peer);
+                this._subscriptions.release(ipcBusCommand.channel, webContentsLike, ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.BridgeRemoveListeners:
-                this._senderCleanup(ipcBusSender);
+                this._senderCleanup(webContentsLike);
                 break;
 
             case IpcBusCommand.Kind.BridgeSendMessage:
                 if (ipcBusCommand.request) {
-                    this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, ipcBusSender, ipcBusCommand.peer);
+                    this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, webContentsLike, ipcBusCommand.peer);
                 }
                 this._onCommandSendMessage(ipcBusCommand, args);
                 if (this._brokerChannels.has(ipcBusCommand.channel)) {
