@@ -333,9 +333,9 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             case IpcBusCommand.Kind.Connect:
                 break;
 
-            case IpcBusCommand.Kind.Disconnect:
-                this._subscriptions.releasePeer(socket, ipcBusCommand.peer);
-                break;
+            // case IpcBusCommand.Kind.Disconnect:
+            //     this._subscriptions.releasePeer(socket, ipcBusCommand.peer);
+            //     break;
 
             case IpcBusCommand.Kind.Close:
                 this._socketCleanUp(socket);

@@ -54,16 +54,21 @@ class DeferredRequest {
 
 /** @internal */
 export abstract class IpcBusTransportImpl implements IpcBusTransport {
-    protected _ipcBusPeer: Client.IpcBusPeer;
-    protected _ipcCallback: Function;
+    private static _lastLocalProcessId: number = 0;
 
-    protected _requestFunctions: Map<string, DeferredRequest>;
-    protected _requestNumber: number;
+    protected _ipcBusPeer: Client.IpcBusPeer;
+    protected _promiseConnected: Promise<void>;
+
+    private _localProcessId: number;
+    private _ipcCallback: Function;
+    private _requestFunctions: Map<string, DeferredRequest>;
+    private _requestNumber: number;
 
     constructor(ipcBusContext: Client.IpcBusProcess) {
         this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusContext };
         this._requestFunctions = new Map<string, DeferredRequest>();
         this._requestNumber = 0;
+        this._localProcessId = IpcBusTransportImpl._lastLocalProcessId++;
     }
 
     // ----------------------
@@ -71,6 +76,15 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     // ----------------------
     get peer(): Client.IpcBusPeer {
         return this._ipcBusPeer;
+    }
+
+    protected generateName(): string {
+        let name = `${this._ipcBusPeer.process.type}_${this._ipcBusPeer.process.pid}`;
+        if (this._ipcBusPeer.process.rid) {
+            name += `-${this._ipcBusPeer.process.rid}`;
+        }
+        name += `-${this._localProcessId}`;
+        return name;
     }
 
     protected generateReplyChannel(): string {
@@ -163,7 +177,20 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         this.ipcPostCommand({ kind, channel, peer: this.peer, request: ipcBusCommandRequest }, args);
     }
 
-    abstract ipcConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void>;
+    ipcConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
+        // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
+        let p = this._promiseConnected;
+        if (!p) {
+            p = this._promiseConnected = this.ipcHandshake(options)
+            .then(() => {
+                this._ipcBusPeer.name = options.peerName || this.generateName();
+                this.ipcSend(IpcBusCommand.Kind.Connect, '');
+            })
+        }
+        return p;
+    }
+
+    abstract ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<void>;
     abstract ipcClose(options?: Client.IpcBusClient.CloseOptions): Promise<void>;
     abstract ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
 }

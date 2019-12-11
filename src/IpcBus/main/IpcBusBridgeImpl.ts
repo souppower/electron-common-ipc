@@ -53,7 +53,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
         // callbacks
         this._onRendererMessage = this._onRendererMessage.bind(this);
-        this._onConnectToBridge = this._onConnectToBridge.bind(this);
+        this._onMainConnect = this._onMainConnect.bind(this);
 
         this._ipcMain.emit(IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE, { sender: null }, this);
     }
@@ -88,8 +88,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         // To manage re-entrance
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessage);
         this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessage);
-        this._ipcMain.removeListener(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, this._onConnectToBridge);
-        this._ipcMain.addListener(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, this._onConnectToBridge);
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, this._onMainConnect);
+        this._ipcMain.addListener(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, this._onMainConnect);
 
         if (!this._connected) {
             this._connected = true;
@@ -113,7 +113,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     close(options?: Bridge.IpcBusBridge.CloseOptions): Promise<void> {
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessage);
-        this._ipcMain.removeListener(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, this._onConnectToBridge);
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, this._onMainConnect);
         if (this._connected) {
             this._connected = false;
             return super.ipcClose(options);
@@ -174,12 +174,10 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     }
 
     private _completePeerInfo(webContentsLike: WebContentsLike, ipcBusPeer: Client.IpcBusPeer): void {
-        let peerName = `${ipcBusPeer.process.type}-${webContentsLike.id}`;
         ipcBusPeer.process.wcid = webContentsLike.id;
         // Hidden function, may disappear
         try {
             ipcBusPeer.process.rid = (webContentsLike as any).getProcessId();
-            peerName += `-r${ipcBusPeer.process.rid}`;
         }
         catch (err) {
             ipcBusPeer.process.rid = -1;
@@ -187,19 +185,16 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         // >= Electron 1.7.1
         try {
             ipcBusPeer.process.pid = webContentsLike.getOSProcessId();
-            peerName += `_${ipcBusPeer.process.pid}`;
         }
         catch (err) {
             // For backward we fill pid with webContents id
             ipcBusPeer.process.pid = webContentsLike.id;
         }
-        ipcBusPeer.name = peerName;
     }
 
-    private _onConnect(webContentsLike: WebContentsLike, ipcBusCommand: IpcBusCommand, args: any[]): void {
+    private _onRendererConnect(webContentsLike: WebContentsLike, ipcBusCommand: IpcBusCommand): void {
         const ipcBusPeer = ipcBusCommand.peer;
         this._completePeerInfo(webContentsLike, ipcBusPeer);
-        ipcBusPeer.name = args[0] || ipcBusPeer.name;
 
         webContentsLike.addListener('destroyed', () => {
             this._senderCleanup(webContentsLike);
@@ -218,7 +213,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         }
     }
 
-    _onConnectToBridge(event: any) {
+    _onMainConnect(event: any) {
         event.sender.send(IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE, { sender: null }, this);
     }
 
@@ -226,10 +221,10 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         const webContentsLike: WebContentsLike = event.sender;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.BridgeConnect:
-                this._onConnect(webContentsLike, ipcBusCommand, args);
+                this._onRendererConnect(webContentsLike, ipcBusCommand);
                 break;
 
-            case IpcBusCommand.Kind.BridgeDisconnect:
+            // case IpcBusCommand.Kind.BridgeDisconnect:
             case IpcBusCommand.Kind.BridgeClose:
                 this._senderCleanup(webContentsLike);
                 break;

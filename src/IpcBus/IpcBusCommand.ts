@@ -13,7 +13,7 @@ export namespace IpcBusCommand {
     /** @internal */
     export enum Kind {
         Connect                     = 'COO',    // COnnexion
-        Disconnect                  = 'COD',
+        // Disconnect                  = 'COD',
         Close                       = 'COC',
         AddChannelListener          = 'LICA',   // LIstener
         RemoveChannelListener       = 'LICR',
@@ -24,7 +24,7 @@ export namespace IpcBusCommand {
         RequestCancel               = 'RQC',
 
         BridgeConnect                     = 'BCOO',    // COnnexion
-        BridgeDisconnect                  = 'BCOD',
+        // BridgeDisconnect                  = 'BCOD',
         BridgeClose                       = 'BCOC',
         BridgeAddChannelListener          = 'BLICA',   // LIstener
         BridgeRemoveChannelListener       = 'BLICR',

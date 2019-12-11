@@ -113,7 +113,6 @@ var IpcBusCommand;
     let Kind;
     (function (Kind) {
         Kind["Connect"] = "COO";
-        Kind["Disconnect"] = "COD";
         Kind["Close"] = "COC";
         Kind["AddChannelListener"] = "LICA";
         Kind["RemoveChannelListener"] = "LICR";
@@ -123,7 +122,6 @@ var IpcBusCommand;
         Kind["RequestResponse"] = "RQR";
         Kind["RequestCancel"] = "RQC";
         Kind["BridgeConnect"] = "BCOO";
-        Kind["BridgeDisconnect"] = "BCOD";
         Kind["BridgeClose"] = "BCOC";
         Kind["BridgeAddChannelListener"] = "BLICA";
         Kind["BridgeRemoveChannelListener"] = "BLICR";
@@ -182,9 +180,18 @@ class IpcBusTransportImpl {
         this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusContext };
         this._requestFunctions = new Map();
         this._requestNumber = 0;
+        this._localProcessId = IpcBusTransportImpl._lastLocalProcessId++;
     }
     get peer() {
         return this._ipcBusPeer;
+    }
+    generateName() {
+        let name = `${this._ipcBusPeer.process.type}_${this._ipcBusPeer.process.pid}`;
+        if (this._ipcBusPeer.process.rid) {
+            name += `-${this._ipcBusPeer.process.rid}`;
+        }
+        name += `-${this._localProcessId}`;
+        return name;
     }
     generateReplyChannel() {
         ++this._requestNumber;
@@ -261,8 +268,20 @@ class IpcBusTransportImpl {
     ipcSend(kind, channel, ipcBusCommandRequest, args) {
         this.ipcPostCommand({ kind, channel, peer: this.peer, request: ipcBusCommandRequest }, args);
     }
+    ipcConnect(options) {
+        let p = this._promiseConnected;
+        if (!p) {
+            p = this._promiseConnected = this.ipcHandshake(options)
+                .then(() => {
+                this._ipcBusPeer.name = options.peerName || this.generateName();
+                this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Connect, '');
+            });
+        }
+        return p;
+    }
 }
 exports.IpcBusTransportImpl = IpcBusTransportImpl;
+IpcBusTransportImpl._lastLocalProcessId = 0;
 
 },{"./IpcBusClient":2,"./IpcBusCommand":4,"./IpcBusUtils":6,"uuid":39}],6:[function(require,module,exports){
 (function (Buffer,process){
@@ -648,39 +667,34 @@ class IpcBusTransportIpc extends IpcBusTransportImpl_1.IpcBusTransportImpl {
         return false;
     }
     ;
-    ipcConnect(options) {
-        let p = this._promiseConnected;
-        if (!p) {
+    ipcHandshake(options) {
+        return new Promise((resolve, reject) => {
             options = IpcBusUtils.CheckConnectOptions(options);
-            p = this._promiseConnected = new Promise((resolve, reject) => {
-                let timer;
-                const onIpcConnect = (eventOrPeer, peerOrUndefined) => {
-                    if (this._connected) {
-                        if (this._onConnect(eventOrPeer, peerOrUndefined)) {
-                            this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
-                            clearTimeout(timer);
-                            resolve();
-                        }
-                    }
-                    else {
+            let timer;
+            const onIpcConnect = (eventOrPeer, peerOrUndefined) => {
+                if (this._connected) {
+                    if (this._onConnect(eventOrPeer, peerOrUndefined)) {
                         this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
-                        reject('cancelled');
+                        clearTimeout(timer);
+                        resolve();
                     }
-                };
-                if (options.timeoutDelay >= 0) {
-                    timer = setTimeout(() => {
-                        timer = null;
-                        this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
-                        this._reset();
-                        reject('timeout');
-                    }, options.timeoutDelay);
                 }
-                this._connected = true;
-                this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
-                this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Connect, '', undefined, [options.peerName]);
-            });
-        }
-        return p;
+                else {
+                    this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                    reject('cancelled');
+                }
+            };
+            if (options.timeoutDelay >= 0) {
+                timer = setTimeout(() => {
+                    timer = null;
+                    this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                    this._reset();
+                    reject('timeout');
+                }, options.timeoutDelay);
+            }
+            this._connected = true;
+            this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+        });
     }
     ipcClose(options) {
         if (this._connected) {

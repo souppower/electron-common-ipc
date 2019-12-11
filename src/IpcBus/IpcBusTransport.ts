@@ -10,6 +10,7 @@ export interface IpcBusSender {
 export interface IpcBusTransport {
     readonly peer: Client.IpcBusPeer;
 
+    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<void>;
     ipcConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void>;
     ipcClose(options?: Client.IpcBusClient.CloseOptions): Promise<void>;
     ipcRequest(channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse>;
