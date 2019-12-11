@@ -11,7 +11,7 @@ import { IpcBusTransportNet } from '../node/IpcBusTransportNet';
 import { 
     IPCBUS_TRANSPORT_RENDERER_CONNECT, 
     IPCBUS_TRANSPORT_RENDERER_COMMAND, 
-    IPCBUS_TRANSPORT_RENDERER_EVENT } from '../renderer/IpcBusTransportWindow';
+    IPCBUS_TRANSPORT_RENDERER_EVENT } from '../main/IpcBusTransportIpc';
 
 export const IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE = 'ECIPC:IpcBusBridge:RequestInstance';
 export const IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE = 'ECIPC:IpcBusBridge:BroadcastInstance';
@@ -47,10 +47,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessage);
 
         this._ipcMain.emit(IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE, { sender: null }, this);
-        this._ipcMain.on(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, (event, replyChannel: string) => {
-            if (replyChannel) {
-                this._ipcMain.emit(replyChannel, { sender: null }, this)
-            }
+        this._ipcMain.on(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, (event) => {
+            event.sender.send(IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE, { sender: null }, this);
         });
     }
 

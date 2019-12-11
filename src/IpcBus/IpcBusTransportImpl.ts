@@ -111,6 +111,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         }
     }
 
+    // We have to simulate a fake first parameter as this function can be called from an Electron ipc with an event
+    // or directly from our code.
     protected _onCommandReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, args: any[]) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.BridgeSendMessage:

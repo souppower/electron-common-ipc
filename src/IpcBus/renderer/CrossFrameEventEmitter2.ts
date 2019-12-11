@@ -1,8 +1,8 @@
 import * as uuid from 'uuid';
 import { EventEmitter } from 'events';
 
-import { IpcWindow } from './IpcBusTransportWindow';
-import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_EVENT } from './IpcBusTransportWindow';
+import { IpcWindow } from '../main/IpcBusTransportIpc';
+import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_EVENT } from '../main/IpcBusTransportIpc';
 
 import { CrossFrameMessage } from './CrossFrameMessage';
 
