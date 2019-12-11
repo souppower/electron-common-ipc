@@ -37,9 +37,9 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
     }
 
     send(channel: string, ipcBusCommand: IpcBusCommand, args: any[]) {
-        if (channel === IPCBUS_TRANSPORT_RENDERER_EVENT) {
+        // if (channel === IPCBUS_TRANSPORT_RENDERER_EVENT) {
             this._onCommandReceived(undefined, ipcBusCommand, args);
-        }
+        // }
     }
 
     /// IpcBusTransport API
