@@ -82,12 +82,12 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         this._ipcMain.addListener(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, this._onMainConnect);
 
         if (!this._connected) {
-            this._connected = true;
-            this._brokerChannels.clear();
             const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
             if ((options.port == null) && (options.path == null)) {
-                return Promise.reject('Wrong options');
+                return Promise.resolve();
             }
+            this._connected = true;
+            this._brokerChannels.clear();
             return super.ipcConnect({ peerName: `IpcBusBridge`, ...options })
                 .then(() => {
                     super.ipcSend(IpcBusCommand.Kind.BridgeConnect, null);
