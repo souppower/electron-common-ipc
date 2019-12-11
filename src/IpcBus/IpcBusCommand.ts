@@ -12,6 +12,7 @@ export interface IpcBusCommand {
 export namespace IpcBusCommand {
     /** @internal */
     export enum Kind {
+        Handshake                   = 'HAN',    // COnnexion
         Connect                     = 'COO',    // COnnexion
         // Disconnect                  = 'COD',
         Close                       = 'COC',
@@ -23,6 +24,7 @@ export namespace IpcBusCommand {
         RequestResponse             = 'RQR',
         RequestCancel               = 'RQC',
 
+        BridgeHandshake                   = 'BHAN',
         BridgeConnect                     = 'BCOO',    // COnnexion
         // BridgeDisconnect                  = 'BCOD',
         BridgeClose                       = 'BCOC',

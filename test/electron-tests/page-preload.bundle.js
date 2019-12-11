@@ -112,6 +112,7 @@ var IpcBusCommand;
 (function (IpcBusCommand) {
     let Kind;
     (function (Kind) {
+        Kind["Handshake"] = "HAN";
         Kind["Connect"] = "COO";
         Kind["Close"] = "COC";
         Kind["AddChannelListener"] = "LICA";
@@ -121,6 +122,7 @@ var IpcBusCommand;
         Kind["SendMessage"] = "MES";
         Kind["RequestResponse"] = "RQR";
         Kind["RequestCancel"] = "RQC";
+        Kind["BridgeHandshake"] = "BHAN";
         Kind["BridgeConnect"] = "BCOO";
         Kind["BridgeClose"] = "BCOC";
         Kind["BridgeAddChannelListener"] = "BLICA";
@@ -627,7 +629,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusUtils = require("../IpcBusUtils");
 const IpcBusTransportImpl_1 = require("../IpcBusTransportImpl");
 const IpcBusCommand_1 = require("../IpcBusCommand");
-exports.IPCBUS_TRANSPORT_RENDERER_CONNECT = 'ECIPC:IpcBusRenderer:Connect';
+exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Connect';
 exports.IPCBUS_TRANSPORT_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:Command';
 exports.IPCBUS_TRANSPORT_RENDERER_EVENT = 'ECIPC:IpcBusRenderer:Event';
 class IpcBusTransportIpc extends IpcBusTransportImpl_1.IpcBusTransportImpl {
@@ -674,26 +676,27 @@ class IpcBusTransportIpc extends IpcBusTransportImpl_1.IpcBusTransportImpl {
             const onIpcConnect = (eventOrPeer, peerOrUndefined) => {
                 if (this._connected) {
                     if (this._onConnect(eventOrPeer, peerOrUndefined)) {
-                        this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                        this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
                         clearTimeout(timer);
                         resolve();
                     }
                 }
                 else {
-                    this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                    this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
                     reject('cancelled');
                 }
             };
             if (options.timeoutDelay >= 0) {
                 timer = setTimeout(() => {
                     timer = null;
-                    this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                    this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
                     this._reset();
                     reject('timeout');
                 }, options.timeoutDelay);
             }
             this._connected = true;
-            this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+            this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
+            this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Handshake, '');
         });
     }
     ipcClose(options) {
@@ -873,11 +876,11 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
     }
     start() {
         super.start();
-        this._ipcWindow.addListener(IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
+        this._ipcWindow.addListener(IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._messageTransportHandlerConnect);
         this._ipcWindow.addListener(IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
     }
     stop() {
-        this._ipcWindow.removeListener(IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
+        this._ipcWindow.removeListener(IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._messageTransportHandlerConnect);
         this._ipcWindow.removeListener(IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
         super.stop();
     }
@@ -902,7 +905,7 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
     }
     _messageTransportHandlerConnect(...args) {
         trace && console.log(`_messageTransportHandlerConnect ${JSON.stringify(args)}`);
-        const packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, args);
+        const packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, args);
         this._ports.forEach((port) => {
             port.postMessage(packet);
         });

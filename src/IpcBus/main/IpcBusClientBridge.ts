@@ -1,7 +1,7 @@
 import * as Client from '../IpcBusClient';
 import * as IpcBusUtils from '../IpcBusUtils';
 
-import { IpcBusTransportBridge, IpcMainHandler } from './IpcBusTransportBridge';
+import { IpcBusTransportBridge } from './IpcBusTransportBridge';
 import { IpcBusTransportNet } from '../node/IpcBusTransportNet';
 import { IpcBusClientImpl}  from '../IpcBusClientImpl';
 
@@ -31,8 +31,7 @@ class IpcBusClientBridge extends IpcBusClientImpl {
 
 // Implementation for Electron Main process
 export function Create(contextType: Client.IpcBusProcessType): Client.IpcBusClient {
-    const ipcWindow = new IpcMainHandler();
-    const transport = new IpcBusTransportBridge(contextType, ipcWindow);
+    const transport = new IpcBusTransportBridge(contextType);
     const ipcClient = new IpcBusClientBridge(transport);
     // const ipcClient = new IpcBusClientImpl(transport);
     return ipcClient;

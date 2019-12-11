@@ -9,7 +9,6 @@ import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { JSON_stringify } from '../IpcBusUtils';
 import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
-import { WebContentsLike } from './IpcBusBridgeImpl';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
@@ -41,13 +40,12 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
         this._logger.pipe(fs.createWriteStream(path.join(logPath, 'electron-common-ipcbus-bridge.csv')));
     }
 
-    protected addLog(webContentsLike: WebContentsLike, peer: Client.IpcBusPeer, ipcBusCommand: IpcBusCommand, args: any[]): any {
+    protected addLog(peer: Client.IpcBusPeer, ipcBusCommand: IpcBusCommand, args: any[]): any {
         ++this._line;
         const log: string[] = [
             this._line.toString(),
             ipcBusCommand.kind,
-            peer.id, JSON.stringify(peer.process),
-            `${webContentsLike.getTitle()}\n${webContentsLike.getURL()}`
+            peer.id, JSON.stringify(peer.process)
         ];
         if (peer.id !== ipcBusCommand.peer.id) {
             log.push(ipcBusCommand.peer.id);

@@ -7,7 +7,7 @@ import { IpcBusSender } from '../IpcBusTransport';
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import { IpcBusCommand } from '../IpcBusCommand';
 
-export const IPCBUS_TRANSPORT_RENDERER_CONNECT = 'ECIPC:IpcBusRenderer:Connect';
+export const IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Connect';
 export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:Command';
 export const IPCBUS_TRANSPORT_RENDERER_EVENT = 'ECIPC:IpcBusRenderer:Event';
 
@@ -72,13 +72,13 @@ export class IpcBusTransportIpc extends IpcBusTransportImpl {
             const onIpcConnect = (eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer) => {
                 if (this._connected) {
                     if (this._onConnect(eventOrPeer, peerOrUndefined)) {
-                        this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                        this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
                         clearTimeout(timer);
                         resolve();
                     }
                 }
                 else {
-                    this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                    this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
                     reject('cancelled');
                 }
             };
@@ -87,14 +87,15 @@ export class IpcBusTransportIpc extends IpcBusTransportImpl {
             if (options.timeoutDelay >= 0) {
                 timer = setTimeout(() => {
                     timer = null;
-                    this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+                    this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
                     this._reset();
                     reject('timeout');
                 }, options.timeoutDelay);
             }
             // We wait for the bridge confirmation
             this._connected = true;
-            this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
+            this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
+            this.ipcSend(IpcBusCommand.Kind.Handshake, '');
         });
     }
 
