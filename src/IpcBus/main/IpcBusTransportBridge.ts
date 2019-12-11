@@ -6,9 +6,6 @@ import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 import { IpcBusSender } from '../IpcBusTransport';
-import { 
-    IPCBUS_TRANSPORT_RENDERER_EVENT,
- } from './IpcBusTransportIpc';
 
  import { 
     IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE,

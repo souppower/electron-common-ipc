@@ -271,8 +271,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         }
     }
 
-    _onMainConnect(event: any) {
-        event.sender.send(IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE, { sender: null }, this);
+    _onMainConnect(event: any, replyChannel: string) {
+        this._ipcMain.emit(replyChannel, { sender: null }, this);
     }
 
     _onMainMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, args: any[]) {
