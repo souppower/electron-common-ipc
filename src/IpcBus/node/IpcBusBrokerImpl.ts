@@ -372,7 +372,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             case IpcBusCommand.Kind.BridgeSendMessage:
                 // Register the replyChannel
                 if (ipcBusCommand.request) {
-                    this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, socket, ipcBusCommand.peer);
+                    this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, this._socketBridge, ipcBusCommand.peer);
                 }
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.write(packet.buffer);
@@ -385,9 +385,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 if (connData) {
                     this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                     connData.conn.write(packet.buffer);
-                    if (this._bridgeChannels.has(ipcBusCommand.request.channel)) {
-                        this._socketBridge && this._socketBridge.write(packet.buffer);
-                    }
                 }
                 break;
             }
@@ -395,9 +392,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             case IpcBusCommand.Kind.RequestCancel:
             case IpcBusCommand.Kind.BridgeRequestCancel:
                 this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
-                if (this._bridgeChannels.has(ipcBusCommand.request.channel)) {
-                    this._socketBridge && this._socketBridge.write(packet.buffer);
-                }
                 break;
 
             case IpcBusCommand.Kind.AddBridgeChannels: {
@@ -437,7 +431,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
     private brokerAddChannels(channels: string[]) {
         const ipcBusCommand: IpcBusCommand = {
-            kind: IpcBusCommand.Kind.BrokerAddChannels,
+            kind: IpcBusCommand.Kind.AddBrokerChannels,
             channel: '',
             peer: this._ipcBusBrokerClient.peer
         };
@@ -448,7 +442,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
     private brokerRemoveChannels(channels: string[]) {
         const ipcBusCommand: IpcBusCommand = {
-            kind: IpcBusCommand.Kind.BrokerRemoveChannels,
+            kind: IpcBusCommand.Kind.RemoveBrokerChannels,
             channel: '',
             peer: this._ipcBusBrokerClient.peer
         };
