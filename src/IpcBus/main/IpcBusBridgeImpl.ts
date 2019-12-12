@@ -11,7 +11,7 @@ import { IpcBusSender } from '../IpcBusTransport';
 import { 
     IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, 
     IPCBUS_TRANSPORT_RENDERER_COMMAND, 
-    IPCBUS_TRANSPORT_RENDERER_EVENT } from '../main/IpcBusTransportIpc';
+    IPCBUS_TRANSPORT_RENDERER_EVENT } from '../renderer/IpcBusTransportIpc';
 
 export const IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE = 'ECIPC:IpcBusBridge:RequestInstance';
 export const IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE = 'ECIPC:IpcBusBridge:BroadcastInstance';
@@ -81,22 +81,26 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, this._onMainConnect);
         this._ipcMain.addListener(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, this._onMainConnect);
 
+        const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
         if (!this._connected) {
-            const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
-            if ((options.port == null) && (options.path == null)) {
-                return Promise.resolve();
+            if ((options.port != null) || (options.path != null)) {
+                this._connected = true;
+                this._brokerChannels.clear();
+                return super.ipcConnect({ peerName: `IpcBusBridge`, ...options })
+                    .then(() => {
+                        super.ipcSend(IpcBusCommand.Kind.BridgeConnect, null);
+                        this.bridgeAddChannels(this._subscriptions.getChannels());
+                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
+                    })
+                    .catch(err => {
+                        this._connected = false;
+                    });
             }
-            this._connected = true;
-            this._brokerChannels.clear();
-            return super.ipcConnect({ peerName: `IpcBusBridge`, ...options })
-                .then(() => {
-                    super.ipcSend(IpcBusCommand.Kind.BridgeConnect, null);
-                    this.bridgeAddChannels(this._subscriptions.getChannels());
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
-                })
-                .catch(err => {
-                    this._connected = false;
-                });
+        }
+        else {
+            if ((options.port == null) && (options.path == null)) {
+                return super.ipcClose(options);
+            }
         }
         return Promise.resolve();
     }
@@ -105,7 +109,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessage);
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, this._onMainConnect);
         if (this._connected) {
-            this._connected = false;
             return super.ipcClose(options);
         }
         return Promise.resolve();

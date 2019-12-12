@@ -2,7 +2,7 @@ import * as assert from 'assert';
 
 import * as Client from '../IpcBusClient';
 
-import { IpcBusTransportIpc, IpcWindow } from '../main/IpcBusTransportIpc';
+import { IpcBusTransportIpc, IpcWindow } from './IpcBusTransportIpc';
 
 // Implementation for renderer process
 /** @internal */
