@@ -123,6 +123,20 @@ electronApp.on('ready', function () {
 });
 ```
 
+# Breaking changes
+6.x.x | 7.x.x
+--- | ---
+IpcBusBridge.Create(net-options) | IpcBusBridge.Create()
+ipcBusBridge.connect(connect-options) | ipcBusBridge.connect(connect-options + net-options)
+ipcBusBridge.stop(close-options) | ipcBusBridge.close(close-options)
+IpcBusBroker.Create(net-options) | IpcBusBroker.Create()
+IpcBusBroker.connect(connect-options) | IpcBusBroker.connect(connect-options + net-options)
+IpcBusBroker.stop(close-options) | IpcBusBroker.close(close-options)
+IpcBusClient.Create(net-options) | IpcBusClient.Create()
+IpcBusClient.connect(connect-options) | IpcBusClient.connect(connect-options + net-options)
+IpcBusClient.stop(close-options) | IpcBusClient.close(close-options)
+
+
 # Initialization
 If you are using the bus in a renderer process (page), you must take care of the context :
 - sandbox
