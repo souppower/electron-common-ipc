@@ -14,8 +14,8 @@ if (args.busPath) {
 }
 
 const ipcBusModule = require('../lib/electron-common-ipc');
-const ipcClient = ipcBusModule.CreateIpcBusClient(ipcBusPath);
-ipcClient.connect({ peerName: 'client Node', timeoutDelay })
+const ipcClient = ipcBusModule.CreateIpcBusClient();
+ipcClient.connect(ipcBusPath, { peerName: 'client Node', timeoutDelay })
     .then(() => {
         ipcClient.on('test-message', (event, ...args) => {
             console.log(`test-message event=${event}, args=${args}`);

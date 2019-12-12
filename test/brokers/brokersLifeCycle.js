@@ -12,6 +12,18 @@ const trace = false;
 let localBusPath = '/tr-ipc-bus/test';
 let localBusPathCount = 0;
 
+function createConnection(path) {
+  if (path) {
+    ++localBusPathCount;
+    return Promise.resolve(`${localBusPath}/${localBusPathCount}`);
+  }
+  else {
+    const port = 49152;
+    return sph.findFirstFreePort({ portRange: `>=${port}`, testConnection: true, log: false });
+  }
+}
+
+
 function getLocalBusPath() {
   ++localBusPathCount;
   return `${localBusPath}/${localBusPathCount}`;
@@ -135,10 +147,10 @@ Brokers = (function () {
           }
           else {
             // Create broker
-            ipcBusBroker = ipcBusModule.CreateIpcBusBroker(busPath);
+            ipcBusBroker = ipcBusModule.CreateIpcBusBroker();
             // Start broker
             trace && console.log('IpcBusBroker starting...');
-            return ipcBusBroker.start({ timeoutDelay })
+            return ipcBusBroker.connect(busPath, { timeoutDelay })
           }
         })
         .then((msg) => {
@@ -153,9 +165,9 @@ Brokers = (function () {
     function _startBridge() {
       // Create bridge
       trace && console.log('IpcBusBridge starting...');
-      ipcBusBridge = ipcBusModule.CreateIpcBusBridge(busPath);
+      ipcBusBridge = ipcBusModule.CreateIpcBusBridge();
       // Start bridge
-      return ipcBusBridge.start({ timeoutDelay })
+      return ipcBusBridge.connect(busPath, { timeoutDelay })
         .then((msg) => {
           trace && console.log('IpcBusBridge started');
         })
@@ -186,7 +198,7 @@ Brokers = (function () {
 
     function _stopBrokers() {
       trace && console.log('IpcBusBridge stopping...');
-      return ipcBusBridge.stop({ timeoutDelay })
+      return ipcBusBridge.close({ timeoutDelay })
         .then(() => {
           ipcBusBridge = null;
           trace && console.log('IpcBusBridge stopped');
@@ -201,7 +213,7 @@ Brokers = (function () {
             return _stopRemoteBroker();
           }
           else {
-            return ipcBusBroker.stop({ timeoutDelay });
+            return ipcBusBroker.close({ timeoutDelay });
           }
         })
         .then(() => {
@@ -220,3 +232,4 @@ Brokers = (function () {
 exports.Brokers = Brokers;
 exports.timeoutDelay = timeoutDelay;
 exports.getLocalBusPath = getLocalBusPath;
+exports.createConnection = createConnection;

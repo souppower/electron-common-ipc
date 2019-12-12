@@ -24,7 +24,7 @@ let busPath = GetCmdLineArgValue('bus-path');
 console.log(busPath);
 
 const ipcBusModule = require('electron-common-ipc');
-const ipcBus = ipcBusModule.IpcBusClient.Create(busPath);
+const ipcBus = ipcBusModule.IpcBusClient.Create();
 // ipcBusModule.ActivateIpcBusTrace(true);
 
 const PerfTests = require('./PerfTests.js');
@@ -124,7 +124,7 @@ var isConnected = false;
 var msgs = [];
 var perfTests;
 
-ipcBus.connect()
+ipcBus.connect(busPath)
     .then(() => {
         console.log('node - connect');
         isConnected = true;

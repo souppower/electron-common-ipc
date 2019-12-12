@@ -1,8 +1,8 @@
 import * as uuid from 'uuid';
 import { EventEmitter } from 'events';
 
-import { IpcWindow } from './IpcBusTransportWindow';
-import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_EVENT } from './IpcBusTransportWindow';
+import { IpcWindow } from './IpcBusTransportIpc';
+import { IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, IPCBUS_TRANSPORT_RENDERER_EVENT } from './IpcBusTransportIpc';
 
 import { CrossFrameMessage } from './CrossFrameMessage';
 
@@ -214,12 +214,12 @@ export class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 
     start() {
         super.start();
-        this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
+        this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._messageTransportHandlerConnect);
         this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
     }
 
     stop() {
-        this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
+        this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._messageTransportHandlerConnect);
         this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
         super.stop();
     }
@@ -248,7 +248,7 @@ export class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 
     protected _messageTransportHandlerConnect(...args: any[]) {
         trace && console.log(`_messageTransportHandlerConnect ${JSON.stringify(args)}`);
-        const packet = CrossFrameMessage.Encode('dispatcher', IPCBUS_TRANSPORT_RENDERER_CONNECT, args);
+        const packet = CrossFrameMessage.Encode('dispatcher', IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, args);
         this._ports.forEach((port) => {
             port.postMessage(packet);
         });

@@ -23,8 +23,8 @@ function test1(remoteBroker, busPath) {
 
     let ipcBusClient;
     it(`start client ${busPath}`, () => {
-      ipcBusClient = ipcBusModule.CreateIpcBusClient(brokers.getBusPath());
-      return ipcBusClient.connect({ peerName: 'client', timeoutDelay })
+      ipcBusClient = ipcBusModule.CreateIpcBusClient();
+      return ipcBusClient.connect(brokers.getBusPath(), { peerName: 'client', timeoutDelay })
     });
 
     it(`stop client ${busPath}`, async () => {
@@ -49,8 +49,8 @@ function test2(remoteBroker, busPath) {
 
     let ipcBusClient;
     it(`start client ${busPath}`, () => {
-      ipcBusClient = ipcBusModule.CreateIpcBusClient(brokers.getBusPath());
-      return ipcBusClient.connect({ peerName: 'client', timeoutDelay })
+      ipcBusClient = ipcBusModule.CreateIpcBusClient();
+      return ipcBusClient.connect(brokers.getBusPath(), { peerName: 'client', timeoutDelay })
     });
   });
 }

@@ -7,8 +7,10 @@
         {
             "type": "node",
             "request": "attach",
-            "name": "Attach",
-            "port": 9229
+            "protocol": "inspector",
+            "name": "Attach to Node process",
+            "address": "localhost",
+            "port": 9000,
         },
         {
             "name": "Launch Test apps",
@@ -80,8 +82,7 @@
                 // "--grep=Service",
                 // "${workspaceRoot}/test/*.test.js",
                 // "${workspaceRoot}/test/brokersLifeCycle.test.js",
-                // "${workspaceRoot}/test/masterClientMessage.test.js",
-                // "${workspaceRoot}/test/clientLifeCycle.test.js",
+                "${workspaceRoot}/test/masterClientMessage.test.js",
                 // "${workspaceRoot}/test/clientLifeCycle.test.js",
                 // "${workspaceRoot}/test/clientWildListening.test.js",
                 // "${workspaceRoot}/test/service.test.js",

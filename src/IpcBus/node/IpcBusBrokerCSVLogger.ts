@@ -8,8 +8,6 @@ const csvWriter = require('csv-write-stream');
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as Client from '../IpcBusClient';
-import * as Broker from './IpcBusBroker';
-
 import { IpcBusCommand } from '../IpcBusCommand';
 import { JSON_stringify } from '../IpcBusUtils';
 
@@ -20,8 +18,8 @@ export class IpcBusBrokerCSVLogger extends IpcBusBrokerLogger {
     private _logger: any;
     private _line: number;
 
-    constructor(logPath: string, contextType: Client.IpcBusProcessType, options: Broker.IpcBusBroker.CreateOptions) {
-        super(contextType, options);
+    constructor(contextType: Client.IpcBusProcessType, logPath: string) {
+        super(contextType);
 
         this._line = 0;
 

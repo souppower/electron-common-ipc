@@ -1,6 +1,6 @@
 {
   "name": "electron-common-ipc",
-  "version": "6.6.0",
+  "version": "7.0.0",
   "description": "A safe IPC bus for applications built on Node or Electron.",
   "repository": {
     "type": "git",
@@ -40,9 +40,8 @@
   "browser": "./lib/electron-common-ipc-browser.js",
   "dependencies": {
     "csv-write-stream": "^2.0.0",
-    "electron-process-type": "^4.0.0",
+    "electron-process-type": "^4.1.0",
     "json-helpers": "^2.1.0",
-    "npm-run-all": "^4.1.5",
     "socket-serializer": "^3.5.0",
     "uuid": "^3.3.3",
     "winston": "^2.4.1"
@@ -61,23 +60,22 @@
     "expect": "^24.9.0",
     "minimist": "^1.2.0",
     "mocha": "^5.2.0",
+    "npm-run-all": "^4.1.5",
     "sinon": "^7.5.0",
     "socket-port-helpers": "^1.1.1",
     "tslint": "^5.20.0",
     "tslint-microsoft-contrib": "^6.2.0",
-    "typescript": "^3.6.4"
+    "typescript": "^3.7.3"
   },
   "scripts": {
     "clean": "del-cli ./lib ./build ./dist",
     "build": "npm run build-js && npm run build-declaration && npm run browserify-test",
     "build-js": "tsc -p ./tsconfig/tsconfig-js.json",
-    "build-declaration": "npm run build-declaration-ts && npm run build-declaration-dts-bundle && npm run build-declaration-dts-bundle-browser && npm run clean-declaration-dts",
-    "build-declaration-ts": "tsc -p ./tsconfig/tsconfig-declaration.json",
-    "build-declaration-dts-bundle": "dts-bundle --outputAsModuleFolder --name electron-common-ipc --main ./lib/electron-common-ipc.d.ts",
-    "build-declaration-dts-bundle-browser": "dts-bundle --outputAsModuleFolder --name electron-common-ipc-browser --main ./lib/electron-common-ipc-browser.d.ts",
-    "clean-declaration-dts": "del-cli ./lib/IpcBus/*.d.ts",
-    "build-declaration-dts-bundle2": "dts-bundle-generator --project ./tsconfig/tsconfig-js.json -o ./src/electron-common-ipc.d.ts ./src/electron-common-ipc.ts",
-    "build-declaration-dts-bundle-browser2": "dts-bundle-generator --project ./tsconfig/tsconfig-js.json -o ./src/electron-common-ipc-browser.d.ts ./src/electron-common-ipc-browser.ts",
+    "build-declaration": "run-s build-declaration:*",
+    "build-declaration:ts": "tsc -p ./tsconfig/tsconfig-declaration.json",
+    "build-declaration:dts-bundle": "dts-bundle --outputAsModuleFolder --name electron-common-ipc --main ./lib/electron-common-ipc.d.ts",
+    "build-declaration:dts-bundle-browser": "dts-bundle --outputAsModuleFolder --name electron-common-ipc-browser --main ./lib/electron-common-ipc-browser.d.ts",
+    "build-declaration:clean-up": "del-cli ./lib/IpcBus/*.d.ts",
     "browserify-test": "run-p browserify-test:*",
     "browserify-test:preload": "browserify -o ./test/electron-tests/page-preload.bundle.js -x electron ./test/electron-tests/page-preload.js",
     "browserify-test:js1": "browserify -o ./test/electron-tests/page.bundle.js -x electron ./test/electron-tests/page.js",

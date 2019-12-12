@@ -57,8 +57,8 @@ function test(remoteBroker, busPath) {
     before(() => {
       return brokersLifeCycle.startBrokers(remoteBroker, busPath)
         .then((ipcBusPath) => {
-          ipcClient1 = ipcBusModule.CreateIpcBusClient(ipcBusPath);
-          return Promise.all([ipcClient1.connect({ peerName: 'client1', timeoutDelay })])
+          ipcClient1 = ipcBusModule.CreateIpcBusClient();
+          return Promise.all([ipcClient1.connect(ipcBusPath, { peerName: 'client1', timeoutDelay })])
             .then(() => {
               return new Promise((resolve, reject) => {
                 let options = { stdio: ['pipe', 'pipe', 'pipe', 'ipc'] };

@@ -5,13 +5,8 @@ import * as fs from 'fs';
 
 import * as winston from 'winston';
 
-import { IpcPacketBuffer } from 'socket-serializer';
-
 import * as Client from '../IpcBusClient';
-import * as Broker from '../broker/IpcBusBroker';
-
 import { IpcBusCommand } from '../IpcBusCommand';
-
 import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
@@ -19,8 +14,8 @@ import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
 export class IpcBusBridgeJSONLogger extends IpcBusBridgeLogger {
     private _logger: winston.LoggerInstance;
 
-    constructor(logPath: string, options: Broker.IpcBusBroker.CreateOptions) {
-        super(options);
+    constructor(contextType: Client.IpcBusProcessType, logPath: string) {
+        super(contextType);
 
         !fs.existsSync(logPath) && fs.mkdirSync(logPath);
 
@@ -33,24 +28,14 @@ export class IpcBusBridgeJSONLogger extends IpcBusBridgeLogger {
         });
     }
 
-    protected addLog(webContents: Electron.WebContents, peer: Client.IpcBusPeer, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): any {
+    protected addLog(peer: Client.IpcBusPeer, ipcBusCommand: IpcBusCommand, args: any[]): any {
         const log: any = { command: ipcBusCommand };
         if (args) {
             for (let i = 0, l = args.length; i < l; ++i) {
                 log[`arg${i}`] = args[i];
             }
         }
-        log.webContents = { id: webContents.id, url: webContents.getURL(), isLoadingMainFrame: webContents.isLoadingMainFrame() };
-        try {
-            log.webContents.rid = (webContents as any).getProcessId();
-        }
-        catch (err) {
-        }
-        try {
-            log.webContents.pid = webContents.getOSProcessId();
-        }
-        catch (err) {
-        }
+        log.peer = peer;
         this._logger.info(ipcBusCommand.kind, log);
     }
 }

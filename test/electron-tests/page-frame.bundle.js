@@ -1,9 +1,634 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const IpcBusClient_1 = require("./IpcBusClient");
+exports.CreateIpcBusClient = () => {
+    const windowLocal = window;
+    if (windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.CreateIpcBusClient) {
+        return windowLocal.ElectronCommonIpc.CreateIpcBusClient();
+    }
+    return null;
+};
+IpcBusClient_1.IpcBusClient.Create = exports.CreateIpcBusClient;
+
+},{"./IpcBusClient":2}],2:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.IPCBUS_CHANNEL = '/electron-ipc-bus';
+exports.IPCBUS_CHANNEL_QUERY_STATE = `${exports.IPCBUS_CHANNEL}/queryState`;
+exports.ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH';
+exports.ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH';
+var IpcBusClient;
+(function (IpcBusClient) {
+})(IpcBusClient = exports.IpcBusClient || (exports.IpcBusClient = {}));
+
+},{}],3:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const events_1 = require("events");
+const IpcBusCommand_1 = require("./IpcBusCommand");
+const IpcBusUtils = require("./IpcBusUtils");
+class IpcBusClientImpl extends events_1.EventEmitter {
+    constructor(ipcBusClientTransport) {
+        super();
+        super.setMaxListeners(0);
+        this._transport = ipcBusClientTransport;
+        this._transport.ipcCallback((channel, ipcBusEvent, ...args) => {
+            this._eventEmitterEmit(channel, ipcBusEvent, ...args);
+        });
+    }
+    _eventEmitterEmit(channel, ...args) {
+        super.emit(channel, ...args);
+    }
+    get peer() {
+        return this._transport.peer;
+    }
+    connect(arg1, arg2, arg3) {
+        const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
+        return this._transport.ipcConnect(options);
+    }
+    close(options) {
+        super.removeAllListeners();
+        return this._transport.ipcClose(options);
+    }
+    send(channel, ...args) {
+        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.SendMessage, channel, undefined, args);
+    }
+    request(channel, timeoutDelay, ...args) {
+        return this._transport.ipcRequest(channel, timeoutDelay, args);
+    }
+    emit(event, ...args) {
+        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.SendMessage, event, undefined, args);
+        return true;
+    }
+    addListener(channel, listener) {
+        super.addListener(channel, listener);
+        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.AddChannelListener, channel);
+        return this;
+    }
+    removeListener(channel, listener) {
+        super.removeListener(channel, listener);
+        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RemoveChannelListener, channel);
+        return this;
+    }
+    on(channel, listener) {
+        return this.addListener(channel, listener);
+    }
+    once(channel, listener) {
+        super.once(channel, listener);
+        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.AddChannelListener, channel);
+        return this;
+    }
+    off(channel, listener) {
+        return this.removeListener(channel, listener);
+    }
+    removeAllListeners(channel) {
+        super.removeAllListeners(channel);
+        if (channel) {
+            this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RemoveChannelAllListeners, channel);
+        }
+        else {
+            this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RemoveListeners, '');
+        }
+        return this;
+    }
+    prependListener(channel, listener) {
+        super.prependListener(channel, listener);
+        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.AddChannelListener, channel);
+        return this;
+    }
+    prependOnceListener(channel, listener) {
+        super.prependOnceListener(channel, listener);
+        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.AddChannelListener, channel);
+        return this;
+    }
+}
+exports.IpcBusClientImpl = IpcBusClientImpl;
+
+},{"./IpcBusCommand":4,"./IpcBusUtils":6,"events":26}],4:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var IpcBusCommand;
+(function (IpcBusCommand) {
+    let Kind;
+    (function (Kind) {
+        Kind["Handshake"] = "HAN";
+        Kind["Connect"] = "COO";
+        Kind["Close"] = "COC";
+        Kind["AddChannelListener"] = "LICA";
+        Kind["RemoveChannelListener"] = "LICR";
+        Kind["RemoveChannelAllListeners"] = "LICRA";
+        Kind["RemoveListeners"] = "LIR";
+        Kind["SendMessage"] = "MES";
+        Kind["RequestResponse"] = "RQR";
+        Kind["RequestCancel"] = "RQC";
+        Kind["BridgeHandshake"] = "BHAN";
+        Kind["BridgeConnect"] = "BCOO";
+        Kind["BridgeClose"] = "BCOC";
+        Kind["BridgeAddChannelListener"] = "BLICA";
+        Kind["BridgeRemoveChannelListener"] = "BLICR";
+        Kind["BridgeRemoveChannelAllListeners"] = "BLICRA";
+        Kind["BridgeRemoveListeners"] = "BLIR";
+        Kind["BridgeSendMessage"] = "BMES";
+        Kind["BridgeRequestResponse"] = "BRQR";
+        Kind["BridgeRequestCancel"] = "BRQC";
+        Kind["AddBrokerChannels"] = "BOCAS";
+        Kind["RemoveBrokerChannels"] = "BOCRS";
+        Kind["AddBridgeChannels"] = "BICAS";
+        Kind["RemoveBridgeChannels"] = "BICRS";
+    })(Kind = IpcBusCommand.Kind || (IpcBusCommand.Kind = {}));
+    ;
+})(IpcBusCommand = exports.IpcBusCommand || (exports.IpcBusCommand = {}));
+
+},{}],5:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const uuid = require("uuid");
+const Client = require("./IpcBusClient");
+const IpcBusUtils = require("./IpcBusUtils");
+const IpcBusCommand_1 = require("./IpcBusCommand");
+const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
+class DeferredRequest {
+    constructor(channel) {
+        this._channel = channel;
+        this.promise = new Promise((resolve, reject) => {
+            this.reject = reject;
+            this.resolve = resolve;
+        });
+    }
+    fulFilled(ipcBusCommand, args) {
+        const ipcBusEvent = { channel: this._channel, sender: ipcBusCommand.peer };
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Peer #${ipcBusEvent.sender.name} replied to request on ${ipcBusCommand.request.replyChannel}`);
+        if (ipcBusCommand.request.resolve) {
+            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] resolve`);
+            const response = { event: ipcBusEvent, payload: args[0] };
+            this.resolve(response);
+        }
+        else if (ipcBusCommand.request.reject) {
+            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] reject`);
+            const response = { event: ipcBusEvent, err: args[0] };
+            this.reject(response);
+        }
+        else {
+            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] reject: unknown format`);
+            const response = { event: ipcBusEvent, err: 'unknown format' };
+            this.reject(response);
+        }
+    }
+    ;
+}
+class IpcBusTransportImpl {
+    constructor(ipcBusContext) {
+        this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusContext };
+        this._requestFunctions = new Map();
+        this._requestNumber = 0;
+        this._localProcessId = IpcBusTransportImpl._lastLocalProcessId++;
+    }
+    get peer() {
+        return this._ipcBusPeer;
+    }
+    generateName() {
+        let name = `${this._ipcBusPeer.process.type}_${this._ipcBusPeer.process.pid}`;
+        if (this._ipcBusPeer.process.rid) {
+            name += `-${this._ipcBusPeer.process.rid}`;
+        }
+        name += `-${this._localProcessId}`;
+        return name;
+    }
+    generateReplyChannel() {
+        ++this._requestNumber;
+        return `${replyChannelPrefix}${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
+    }
+    ipcCallback(callback) {
+        this._ipcCallback = callback;
+    }
+    _onCommandSendMessage(ipcBusCommand, args) {
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
+        const ipcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
+        if (ipcBusCommand.request) {
+            ipcBusEvent.request = {
+                resolve: (payload) => {
+                    ipcBusCommand.request.resolve = true;
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
+                    this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
+                },
+                reject: (err) => {
+                    ipcBusCommand.request.reject = true;
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
+                    this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
+                }
+            };
+        }
+        this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
+    }
+    _onCommandRequestResponse(ipcBusCommand, args) {
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
+        const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
+        if (deferredRequest) {
+            this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
+            deferredRequest.fulFilled(ipcBusCommand, args);
+        }
+    }
+    _onCommandReceived(__ignore__, ipcBusCommand, args) {
+        switch (ipcBusCommand.kind) {
+            case IpcBusCommand_1.IpcBusCommand.Kind.BridgeSendMessage:
+            case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage: {
+                this._onCommandSendMessage(ipcBusCommand, args);
+                break;
+            }
+            case IpcBusCommand_1.IpcBusCommand.Kind.BridgeRequestResponse:
+            case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse: {
+                this._onCommandRequestResponse(ipcBusCommand, args);
+                break;
+            }
+        }
+    }
+    _onCommandPacketReceived(ipcBusCommand, ipcPacketBuffer) {
+        const args = ipcPacketBuffer.parseArrayAt(1);
+        this._onCommandReceived(undefined, ipcBusCommand, args);
+    }
+    ipcRequest(channel, timeoutDelay, args) {
+        if (timeoutDelay == null) {
+            timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
+        }
+        const ipcBusCommandRequest = { channel, replyChannel: this.generateReplyChannel() };
+        const deferredRequest = new DeferredRequest(channel);
+        this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
+        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.SendMessage, channel, ipcBusCommandRequest, args);
+        if (timeoutDelay >= 0) {
+            setTimeout(() => {
+                if (this._requestFunctions.delete(ipcBusCommandRequest.replyChannel)) {
+                    this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestCancel, channel, ipcBusCommandRequest);
+                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] reject: timeout`);
+                    const response = { event: { channel: channel, sender: this._ipcBusPeer }, err: 'timeout' };
+                    deferredRequest.reject(response);
+                }
+            }, timeoutDelay);
+        }
+        return deferredRequest.promise;
+    }
+    ipcSend(kind, channel, ipcBusCommandRequest, args) {
+        this.ipcPostCommand({ kind, channel, peer: this.peer, request: ipcBusCommandRequest }, args);
+    }
+    ipcConnect(options) {
+        let p = this._promiseConnected;
+        if (!p) {
+            p = this._promiseConnected = this.ipcHandshake(options)
+                .then(() => {
+                this._ipcBusPeer.name = options.peerName || this.generateName();
+                this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Connect, '');
+            });
+        }
+        return p;
+    }
+}
+exports.IpcBusTransportImpl = IpcBusTransportImpl;
+IpcBusTransportImpl._lastLocalProcessId = 0;
+
+},{"./IpcBusClient":2,"./IpcBusCommand":4,"./IpcBusUtils":6,"uuid":39}],6:[function(require,module,exports){
+(function (Buffer,process){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const events_1 = require("events");
+exports.IPC_BUS_TIMEOUT = 20000;
+const win32prefix1 = '\\\\.\\pipe';
+const win32prefix2 = '\\\\?\\pipe';
+function CleanPipeName(str) {
+    if (process.platform === 'win32') {
+        if ((str.lastIndexOf(win32prefix1, 0) === -1) && (str.lastIndexOf(win32prefix2, 0) === -1)) {
+            str = str.replace(/^\//, '');
+            str = str.replace(/\//g, '-');
+            str = win32prefix1 + '\\' + str;
+        }
+    }
+    return str;
+}
+function CheckConnectOptions(arg1, arg2, arg3) {
+    const options = (typeof arg1 === 'object' ? arg1 : typeof arg2 === 'object' ? arg2 : typeof arg3 === 'object' ? arg3 : {});
+    if (Number(arg1) >= 0) {
+        options.port = Number(arg1);
+        options.host = typeof arg2 === 'string' ? arg2 : undefined;
+    }
+    else if (typeof arg1 === 'string') {
+        const parts = arg1.split(':');
+        if ((parts.length === 2) && (Number(parts[1]) >= 0)) {
+            options.port = Number(parts[1]);
+            options.host = parts[0];
+        }
+        else {
+            options.path = arg1;
+        }
+    }
+    if (options.path) {
+        options.path = CleanPipeName(options.path);
+    }
+    if (options.timeoutDelay == null) {
+        options.timeoutDelay = exports.IPC_BUS_TIMEOUT;
+    }
+    return options;
+}
+exports.CheckConnectOptions = CheckConnectOptions;
+function JSON_stringify_array(data, maxLen, output) {
+    output += '[';
+    for (let i = 0, l = data.length; i < l; ++i) {
+        if (output.length >= maxLen) {
+            output += '\'__cut__\'';
+            break;
+        }
+        output += JSON_stringify(data[i], maxLen - output.length);
+        output += ',';
+    }
+    output += ']';
+    return output;
+}
+function JSON_stringify_object(data, maxLen, output) {
+    output += '{';
+    if (data) {
+        const keys = Object.keys(data);
+        for (let i = 0, l = keys.length; i < l; ++i) {
+            if (output.length >= maxLen) {
+                output += '\'__cut__\'';
+                break;
+            }
+            const key = keys[i];
+            output += key + ': ';
+            if (output.length >= maxLen) {
+                output += '\'__cut__\'';
+                break;
+            }
+            output += JSON_stringify(data[key], maxLen - output.length);
+            output += ',';
+        }
+    }
+    else {
+        output += 'null';
+    }
+    output += '}';
+    return output;
+}
+function JSON_stringify(data, maxLen) {
+    let output = '';
+    switch (typeof data) {
+        case 'object':
+            if (Buffer.isBuffer(data)) {
+                output = data.toString('utf8', 0, maxLen);
+            }
+            else if (Array.isArray(data)) {
+                output = JSON_stringify_array(data, maxLen, output);
+            }
+            else if (data instanceof Date) {
+                output = data.toISOString();
+            }
+            else {
+                output = JSON_stringify_object(data, maxLen, output);
+            }
+            break;
+        case 'string':
+            output = data.substr(0, maxLen);
+            break;
+        case 'number':
+            output = data.toString();
+            break;
+        case 'boolean':
+            output = data ? 'true' : 'false';
+            break;
+        case 'undefined':
+            break;
+    }
+    return output;
+}
+exports.JSON_stringify = JSON_stringify;
+class Logger {
+    static info(msg) {
+        console.log(msg);
+    }
+    static warn(msg) {
+        console.warn(msg);
+    }
+    static error(msg) {
+        console.error(msg);
+    }
+}
+exports.Logger = Logger;
+Logger.enable = false;
+Logger.service = false;
+;
+function ContainsWildCards(str) {
+    return str.charAt(str.length - 1) === '*';
+}
+exports.ContainsWildCards = ContainsWildCards;
+function WildCardsToRegex(str) {
+    return new RegExp(preg_quote(str).replace(/\\\*/g, '.*').replace(/\\\?/g, '.'), 'g');
+}
+exports.WildCardsToRegex = WildCardsToRegex;
+function preg_quote(str) {
+    return str.replace(new RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]', 'g'), '\\$&');
+}
+class ChannelConnectionMap extends events_1.EventEmitter {
+    constructor(name, emitter) {
+        super();
+        this._name = name;
+        this._emitter = emitter;
+        this._channelsMap = new Map();
+        this._requestChannels = new Map();
+    }
+    _info(str) {
+        Logger.enable && Logger.info(`[${this._name}] ${str}`);
+    }
+    _warn(str) {
+        Logger.enable && Logger.warn(`[${this._name}] ${str}`);
+    }
+    setRequestChannel(channel, conn, peer) {
+        this._requestChannels.set(channel, { conn, peer });
+    }
+    getRequestChannel(channel) {
+        return this._requestChannels.get(channel);
+    }
+    deleteRequestChannel(channel) {
+        return this._requestChannels.delete(channel);
+    }
+    hasChannel(channel) {
+        return this._channelsMap.has(channel);
+    }
+    getChannels() {
+        return Object.keys(this._channelsMap);
+    }
+    clear() {
+        this._channelsMap.clear();
+        this._requestChannels.clear();
+    }
+    addRef(channel, conn, peer) {
+        let channelAdded = false;
+        Logger.enable && this._info(`AddRef: '${channel}', peerId = ${peer.id}`);
+        let connsMap = this._channelsMap.get(channel);
+        if (connsMap == null) {
+            channelAdded = true;
+            connsMap = new Map();
+            this._channelsMap.set(channel, connsMap);
+        }
+        let connData = connsMap.get(conn);
+        if (connData == null) {
+            connData = new ConnectionPeers(conn, peer);
+            connsMap.set(conn, connData);
+        }
+        else {
+            connData.addPeer(peer);
+        }
+        Logger.enable && this._info(`AddRef: '${channel}', count = ${connData.peerRefCounts.size}`);
+        if (channelAdded) {
+            this._emitter && this.emit('channel-added', channel);
+        }
+        return connsMap.size;
+    }
+    _releaseConnData(channel, conn, connsMap, peer, all) {
+        let channelRemoved = false;
+        const connData = connsMap.get(conn);
+        if (connData == null) {
+            Logger.enable && this._warn(`Release '${channel}': conn is unknown`);
+            return 0;
+        }
+        else {
+            if (peer == null) {
+                connData.clearPeers();
+            }
+            else {
+                if (all) {
+                    if (connData.removePeer(peer) === false) {
+                        Logger.enable && this._warn(`Release '${channel}': peerId #${peer.id} is unknown`);
+                    }
+                }
+                else {
+                    connData.releasePeer(peer);
+                }
+            }
+            if (connData.peerRefCounts.size === 0) {
+                connsMap.delete(conn);
+                if (connsMap.size === 0) {
+                    channelRemoved = true;
+                    this._channelsMap.delete(channel);
+                }
+            }
+            Logger.enable && this._info(`Release '${channel}': count = ${connData.peerRefCounts.size}`);
+            if (channelRemoved) {
+                this._emitter && this.emit('channel-removed', channel);
+            }
+            return connsMap.size;
+        }
+    }
+    _release(channel, conn, peer, all) {
+        Logger.enable && this._info(`Release '${channel}' (${all}): peerId = ${peer.id}`);
+        const connsMap = this._channelsMap.get(channel);
+        if (connsMap == null) {
+            Logger.enable && this._warn(`Release '${channel}': '${channel}' is unknown`);
+            return 0;
+        }
+        else {
+            return this._releaseConnData(channel, conn, connsMap, peer, all);
+        }
+    }
+    release(channel, conn, peer) {
+        return this._release(channel, conn, peer, false);
+    }
+    releaseAll(channel, conn, peer) {
+        return this._release(channel, conn, peer, true);
+    }
+    releasePeer(conn, peer) {
+        Logger.enable && this._info(`releasePeerId: peerId = ${peer.id}`);
+        this._channelsMap.forEach((connsMap, channel) => {
+            this._releaseConnData(channel, conn, connsMap, peer, true);
+        });
+    }
+    releaseConnection(conn) {
+        Logger.enable && this._info(`ReleaseConn: conn = ${conn}`);
+        this._requestChannels.forEach((connData, channel) => {
+            if (connData.conn === conn) {
+                this._requestChannels.delete(channel);
+            }
+        });
+        this._channelsMap.forEach((connsMap, channel) => {
+            this._releaseConnData(channel, conn, connsMap, null, false);
+        });
+    }
+    forEachChannel(channel, callback) {
+        Logger.enable && this._info(`forEachChannel '${channel}'`);
+        const connsMap = this._channelsMap.get(channel);
+        if (connsMap == null) {
+            Logger.enable && this._warn(`forEachChannel: Unknown channel '${channel}' !`);
+        }
+        else {
+            connsMap.forEach((connData, conn) => {
+                Logger.enable && this._info(`forEachChannel '${channel}' - ${JSON.stringify(Array.from(connData.peerRefCounts.keys()))} (${connData.peerRefCounts.size})`);
+                callback(connData, channel);
+            });
+        }
+    }
+    forEach(callback) {
+        Logger.enable && this._info('forEach');
+        this._channelsMap.forEach((connsMap, channel) => {
+            connsMap.forEach((connData, conn) => {
+                Logger.enable && this._info(`forEach '${channel}' - ${JSON.stringify(Array.from(connData.peerRefCounts.keys()))} (${connData.peerRefCounts.size})`);
+                callback(connData, channel);
+            });
+        });
+    }
+    on(event, listener) {
+        return super.addListener(event, listener);
+    }
+    off(event, listener) {
+        return super.removeListener(event, listener);
+    }
+}
+exports.ChannelConnectionMap = ChannelConnectionMap;
+class ConnectionPeers {
+    constructor(conn, peer) {
+        this.peerRefCounts = new Map();
+        this.conn = conn;
+        const peerRefCount = { peer, refCount: 1 };
+        this.peerRefCounts.set(peer.id, peerRefCount);
+    }
+    addPeer(peer) {
+        let peerRefCount = this.peerRefCounts.get(peer.id);
+        if (peerRefCount == null) {
+            peerRefCount = { peer, refCount: 1 };
+            this.peerRefCounts.set(peer.id, peerRefCount);
+        }
+        else {
+            ++peerRefCount.refCount;
+        }
+        return peerRefCount.refCount;
+    }
+    clearPeers() {
+        this.peerRefCounts.clear();
+    }
+    removePeer(peer) {
+        return this.peerRefCounts.delete(peer.id);
+    }
+    releasePeer(peer) {
+        const peerRefCount = this.peerRefCounts.get(peer.id);
+        if (peerRefCount == null) {
+            return 0;
+        }
+        else {
+            if (--peerRefCount.refCount <= 0) {
+                this.peerRefCounts.delete(peer.id);
+            }
+        }
+        return peerRefCount.refCount;
+    }
+}
+exports.ConnectionPeers = ConnectionPeers;
+(function (ConnectionPeers) {
+    ;
+})(ConnectionPeers = exports.ConnectionPeers || (exports.ConnectionPeers = {}));
+;
+
+}).call(this,{"isBuffer":require("../../node_modules/is-buffer/index.js")},require('_process'))
+},{"../../node_modules/is-buffer/index.js":28,"_process":38,"events":26}],7:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 const uuid = require("uuid");
 const events_1 = require("events");
-const IpcBusTransportWindow_1 = require("./IpcBusTransportWindow");
+const IpcBusTransportIpc_1 = require("./IpcBusTransportIpc");
 const CrossFrameMessage_1 = require("./CrossFrameMessage");
 const trace = false;
 class CrossFrameEventEmitter extends events_1.EventEmitter {
@@ -159,12 +784,12 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
     }
     start() {
         super.start();
-        this._ipcWindow.addListener(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
-        this._ipcWindow.addListener(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
+        this._ipcWindow.addListener(IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._messageTransportHandlerConnect);
+        this._ipcWindow.addListener(IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
     }
     stop() {
-        this._ipcWindow.removeListener(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
-        this._ipcWindow.removeListener(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
+        this._ipcWindow.removeListener(IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._messageTransportHandlerConnect);
+        this._ipcWindow.removeListener(IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
         super.stop();
     }
     _messageHandler(event) {
@@ -181,14 +806,14 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
     }
     _messageTransportHandlerEvent(...args) {
         trace && console.log(`_messageTransportHandlerEvent ${JSON.stringify(args)}`);
-        const packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_EVENT, args);
+        const packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_EVENT, args);
         this._ports.forEach((port) => {
             port.postMessage(packet);
         });
     }
     _messageTransportHandlerConnect(...args) {
         trace && console.log(`_messageTransportHandlerConnect ${JSON.stringify(args)}`);
-        const packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_CONNECT, args);
+        const packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, args);
         this._ports.forEach((port) => {
             port.postMessage(packet);
         });
@@ -196,7 +821,7 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 }
 exports.IpcBusFrameBridge = IpcBusFrameBridge;
 
-},{"./CrossFrameMessage":2,"./IpcBusTransportWindow":10,"events":25,"uuid":49}],2:[function(require,module,exports){
+},{"./CrossFrameMessage":8,"./IpcBusTransportIpc":11,"events":26,"uuid":39}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const json_helpers_1 = require("json-helpers");
@@ -229,146 +854,21 @@ var CrossFrameMessage;
     CrossFrameMessage.Encode = Encode;
 })(CrossFrameMessage = exports.CrossFrameMessage || (exports.CrossFrameMessage = {}));
 
-},{"json-helpers":30}],3:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const IpcBusClient_1 = require("./IpcBusClient");
-exports.CreateIpcBusClient = (options, hostname) => {
-    const windowLocal = window;
-    if (windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.CreateIpcBusClient) {
-        return windowLocal.ElectronCommonIpc.CreateIpcBusClient(options, hostname);
-    }
-    return null;
-};
-IpcBusClient_1.IpcBusClient.Create = exports.CreateIpcBusClient;
-
-},{"./IpcBusClient":4}],4:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.IPCBUS_CHANNEL = '/electron-ipc-bus';
-exports.IPCBUS_CHANNEL_QUERY_STATE = `${exports.IPCBUS_CHANNEL}/queryState`;
-exports.ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH';
-exports.ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH';
-var IpcBusClient;
-(function (IpcBusClient) {
-})(IpcBusClient = exports.IpcBusClient || (exports.IpcBusClient = {}));
-
-},{}],5:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const events_1 = require("events");
-const IpcBusCommand_1 = require("./IpcBusCommand");
-class IpcBusClientImpl extends events_1.EventEmitter {
-    constructor(options, ipcBusClientTransport) {
-        super();
-        super.setMaxListeners(0);
-        this._transport = ipcBusClientTransport;
-        this._transport.ipcCallback((channel, ipcBusEvent, ...args) => {
-            super.emit(channel, ipcBusEvent, ...args);
-        });
-    }
-    get peer() {
-        return this._transport.peer;
-    }
-    connect(options) {
-        return this._transport.ipcConnect(options);
-    }
-    close(options) {
-        super.removeAllListeners();
-        return this._transport.ipcClose(options);
-    }
-    send(channel, ...args) {
-        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.SendMessage, channel, undefined, args);
-    }
-    request(channel, timeoutDelay, ...args) {
-        return this._transport.ipcRequest(channel, timeoutDelay, args);
-    }
-    emit(event, ...args) {
-        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.SendMessage, event, undefined, args);
-        return true;
-    }
-    addListener(channel, listener) {
-        super.addListener(channel, listener);
-        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.AddChannelListener, channel);
-        return this;
-    }
-    removeListener(channel, listener) {
-        super.removeListener(channel, listener);
-        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RemoveChannelListener, channel);
-        return this;
-    }
-    on(channel, listener) {
-        return this.addListener(channel, listener);
-    }
-    once(channel, listener) {
-        super.once(channel, listener);
-        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.AddChannelListener, channel);
-        return this;
-    }
-    off(channel, listener) {
-        return this.removeListener(channel, listener);
-    }
-    removeAllListeners(channel) {
-        super.removeAllListeners(channel);
-        if (channel) {
-            this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RemoveChannelAllListeners, channel);
-        }
-        else {
-            this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RemoveListeners, '');
-        }
-        return this;
-    }
-    prependListener(channel, listener) {
-        super.prependListener(channel, listener);
-        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.AddChannelListener, channel);
-        return this;
-    }
-    prependOnceListener(channel, listener) {
-        super.prependOnceListener(channel, listener);
-        this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.AddChannelListener, channel);
-        return this;
-    }
-}
-exports.IpcBusClientImpl = IpcBusClientImpl;
-
-},{"./IpcBusCommand":7,"events":25}],6:[function(require,module,exports){
+},{"json-helpers":31}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusTransportWindow_1 = require("./IpcBusTransportWindow");
-const IpcBusClientImpl_1 = require("./IpcBusClientImpl");
-function Create(contextType, options, ipcWindow) {
-    const transport = new IpcBusTransportWindow_1.IpcBusTransportWindow(contextType, options, ipcWindow);
-    const ipcClient = new IpcBusClientImpl_1.IpcBusClientImpl(options, transport);
+const IpcBusClientImpl_1 = require("../IpcBusClientImpl");
+function Create(contextType, ipcWindow) {
+    const transport = new IpcBusTransportWindow_1.IpcBusTransportWindow(contextType, ipcWindow);
+    const ipcClient = new IpcBusClientImpl_1.IpcBusClientImpl(transport);
     return ipcClient;
 }
 exports.Create = Create;
 
-},{"./IpcBusClientImpl":5,"./IpcBusTransportWindow":10}],7:[function(require,module,exports){
+},{"../IpcBusClientImpl":3,"./IpcBusTransportWindow":12}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var IpcBusCommand;
-(function (IpcBusCommand) {
-    let Kind;
-    (function (Kind) {
-        Kind["Connect"] = "COO";
-        Kind["Disconnect"] = "COD";
-        Kind["Close"] = "COC";
-        Kind["AddChannelListener"] = "LICA";
-        Kind["RemoveChannelListener"] = "LICR";
-        Kind["RemoveChannelAllListeners"] = "LICRA";
-        Kind["RemoveListeners"] = "LIR";
-        Kind["SendMessage"] = "MES";
-        Kind["RequestMessage"] = "RQM";
-        Kind["RequestResponse"] = "RQR";
-        Kind["RequestCancel"] = "RQC";
-    })(Kind = IpcBusCommand.Kind || (IpcBusCommand.Kind = {}));
-    ;
-})(IpcBusCommand = exports.IpcBusCommand || (exports.IpcBusCommand = {}));
-
-},{}],8:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const IpcBusUtils = require("./IpcBusUtils");
 const IpcBusClientWindow_1 = require("./IpcBusClientWindow");
 const CrossFrameEventEmitter2_1 = require("./CrossFrameEventEmitter2");
 const trace = false;
@@ -389,10 +889,9 @@ function _PreloadElectronCommonIpc(context, iframeSupport = false) {
                 windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
                 if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
                     trace && console.log(`inject - ${context} - ElectronCommonIpc.CreateIpcBusClient`);
-                    windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
+                    windowLocal.ElectronCommonIpc.CreateIpcBusClient = () => {
                         trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
-                        const localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-                        const ipcBusClient = IpcBusClientWindow_1.Create('renderer', localOptions || {}, electron.ipcRenderer);
+                        const ipcBusClient = IpcBusClientWindow_1.Create('renderer', electron.ipcRenderer);
                         return ipcBusClient;
                     };
                 }
@@ -426,10 +925,9 @@ function _PreloadElectronCommonIpc(context, iframeSupport = false) {
             if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
                 trace && console.log(`${context} - Frame ElectronCommonIpc`);
                 const crossFrameEE = new CrossFrameEventEmitter2_1.CrossFrameEventEmitter(window.parent);
-                windowLocal.ElectronCommonIpc.CreateIpcBusClient = (options, hostname) => {
+                windowLocal.ElectronCommonIpc.CreateIpcBusClient = () => {
                     trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
-                    const localOptions = IpcBusUtils.CheckCreateOptions(options, hostname);
-                    const ipcBusClient = IpcBusClientWindow_1.Create('renderer-frame', localOptions || {}, crossFrameEE);
+                    const ipcBusClient = IpcBusClientWindow_1.Create('renderer-frame', crossFrameEE);
                     return ipcBusClient;
                 };
             }
@@ -450,156 +948,28 @@ function IsElectronCommonIpcAvailable() {
 }
 exports.IsElectronCommonIpcAvailable = IsElectronCommonIpcAvailable;
 
-},{"./CrossFrameEventEmitter2":1,"./IpcBusClientWindow":6,"./IpcBusUtils":11,"electron":"electron"}],9:[function(require,module,exports){
+},{"./CrossFrameEventEmitter2":7,"./IpcBusClientWindow":9,"electron":"electron"}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const uuid = require("uuid");
-const Client = require("./IpcBusClient");
-const IpcBusUtils = require("./IpcBusUtils");
-const IpcBusCommand_1 = require("./IpcBusCommand");
-const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
-const v1IdPattern = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
-class DeferredRequest {
-    constructor(channel) {
-        this._channel = channel;
-        this.promise = new Promise((resolve, reject) => {
-            this.reject = reject;
-            this.resolve = resolve;
-        });
-    }
-    fulFilled(ipcBusCommand, args) {
-        const ipcBusEvent = { channel: this._channel, sender: ipcBusCommand.peer };
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Peer #${ipcBusEvent.sender.name} replied to request on ${ipcBusCommand.request.replyChannel}`);
-        if (ipcBusCommand.request.resolve) {
-            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] resolve`);
-            const response = { event: ipcBusEvent, payload: args[0] };
-            this.resolve(response);
-        }
-        else if (ipcBusCommand.request.reject) {
-            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] reject`);
-            const response = { event: ipcBusEvent, err: args[0] };
-            this.reject(response);
-        }
-        else {
-            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] reject: unknown format`);
-            const response = { event: ipcBusEvent, err: 'unknown format' };
-            this.reject(response);
-        }
-    }
-    ;
-}
-class IpcBusTransportImpl {
-    constructor(ipcBusContext, options) {
-        this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusContext };
-        this._netOptions = options;
-        this._requestFunctions = new Map();
-        this._requestNumber = 0;
-    }
-    get peer() {
-        return this._ipcBusPeer;
-    }
-    generateReplyChannel() {
-        ++this._requestNumber;
-        return `${replyChannelPrefix}${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
-    }
-    extractPeerIdFromReplyChannel(replyChannel) {
-        return replyChannel.substr(replyChannelPrefix.length, v1IdPattern.length);
-    }
-    ipcCallback(callback) {
-        this._ipcCallback = callback;
-    }
-    _onCommandReceived(ipcBusCommand, ipcPacketBuffer) {
-        switch (ipcBusCommand.kind) {
-            case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage: {
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
-                const ipcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
-                const args = ipcPacketBuffer.parseArrayAt(1);
-                this._ipcCallback(ipcBusCommand.emit || ipcBusCommand.channel, ipcBusEvent, ...args);
-                break;
-            }
-            case IpcBusCommand_1.IpcBusCommand.Kind.RequestMessage: {
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-                const ipcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
-                ipcBusEvent.request = {
-                    resolve: (payload) => {
-                        ipcBusCommand.request.resolve = true;
-                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
-                        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
-                    },
-                    reject: (err) => {
-                        ipcBusCommand.request.reject = true;
-                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
-                        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
-                    }
-                };
-                const args = ipcPacketBuffer.parseArrayAt(1);
-                this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
-                break;
-            }
-            case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse: {
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-                const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
-                if (deferredRequest) {
-                    this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
-                    const args = ipcPacketBuffer.parseArrayAt(1);
-                    deferredRequest.fulFilled(ipcBusCommand, args);
-                }
-                break;
-            }
-        }
-    }
-    ipcRequest(channel, timeoutDelay, args) {
-        if (timeoutDelay == null) {
-            timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
-        }
-        const ipcBusCommandRequest = { replyChannel: this.generateReplyChannel() };
-        const deferredRequest = new DeferredRequest(channel);
-        this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
-        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestMessage, channel, ipcBusCommandRequest, args);
-        if (timeoutDelay >= 0) {
-            setTimeout(() => {
-                if (this._requestFunctions.delete(ipcBusCommandRequest.replyChannel)) {
-                    this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestCancel, channel, ipcBusCommandRequest);
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] reject: timeout`);
-                    const response = { event: { channel: channel, sender: this._ipcBusPeer }, err: 'timeout' };
-                    deferredRequest.reject(response);
-                }
-            }, timeoutDelay);
-        }
-        return deferredRequest.promise;
-    }
-    ipcSend(kind, channel, ipcBusCommandRequest, args) {
-        this.ipcPostCommand({ kind, channel, peer: this.peer, request: ipcBusCommandRequest }, args);
-    }
-}
-exports.IpcBusTransportImpl = IpcBusTransportImpl;
-
-},{"./IpcBusClient":4,"./IpcBusCommand":7,"./IpcBusUtils":11,"uuid":49}],10:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const assert = require("assert");
-const socket_serializer_1 = require("socket-serializer");
-const IpcBusUtils = require("./IpcBusUtils");
-const IpcBusTransportImpl_1 = require("./IpcBusTransportImpl");
-const IpcBusCommand_1 = require("./IpcBusCommand");
-exports.IPCBUS_TRANSPORT_RENDERER_CONNECT = 'IpcBusRenderer:Connect';
-exports.IPCBUS_TRANSPORT_RENDERER_COMMAND = 'IpcBusRenderer:Command';
-exports.IPCBUS_TRANSPORT_RENDERER_EVENT = 'IpcBusRenderer:Event';
-class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
-    constructor(contextType, options, ipcWindow) {
-        assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
-        super({ type: contextType, pid: -1 }, options);
+const IpcBusUtils = require("../IpcBusUtils");
+const IpcBusTransportImpl_1 = require("../IpcBusTransportImpl");
+const IpcBusCommand_1 = require("../IpcBusCommand");
+exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Connect';
+exports.IPCBUS_TRANSPORT_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:Command';
+exports.IPCBUS_TRANSPORT_RENDERER_EVENT = 'ECIPC:IpcBusRenderer:Event';
+class IpcBusTransportIpc extends IpcBusTransportImpl_1.IpcBusTransportImpl {
+    constructor(ipcBusContext, ipcWindow) {
+        super(ipcBusContext);
         this._ipcWindow = ipcWindow;
-        this._packetOut = new socket_serializer_1.IpcPacketBufferWrap();
-        this._packetIn = new socket_serializer_1.IpcPacketBuffer();
     }
     _reset() {
         this._promiseConnected = null;
         if (this._connected) {
+            this._connected = false;
             if (this._onIpcEventReceived) {
                 this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+                this._onIpcEventReceived = null;
             }
-            this._connected = false;
         }
     }
     _onConnect(eventOrPeer, peerOrUndefined) {
@@ -607,10 +977,7 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
             if (peerOrUndefined.id === this._ipcBusPeer.id) {
                 this._ipcBusPeer = peerOrUndefined;
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Standard listening for #${this._ipcBusPeer.name}`);
-                this._onIpcEventReceived = (eventEmitter, ipcBusCommand, buffer) => {
-                    this._packetIn.decodeFromBuffer(buffer);
-                    this._onCommandReceived(ipcBusCommand, this._packetIn);
-                };
+                this._onIpcEventReceived = this._onCommandReceived.bind(this);
                 this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
                 return true;
             }
@@ -619,10 +986,7 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
             if (eventOrPeer.id === this._ipcBusPeer.id) {
                 this._ipcBusPeer = eventOrPeer;
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
-                this._onIpcEventReceived = (ipcBusCommand, buffer) => {
-                    this._packetIn.decodeFromBuffer(buffer);
-                    this._onCommandReceived(ipcBusCommand, this._packetIn);
-                };
+                this._onIpcEventReceived = this._onCommandReceived.bind(this, undefined);
                 this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
                 return true;
             }
@@ -630,42 +994,35 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
         return false;
     }
     ;
-    ipcConnect(options) {
-        let p = this._promiseConnected;
-        if (!p) {
-            options = options || {};
-            if (options.timeoutDelay == null) {
-                options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
-            }
-            p = this._promiseConnected = new Promise((resolve, reject) => {
-                let timer;
-                const onIpcConnect = (eventOrPeer, peerOrUndefined) => {
-                    if (this._connected) {
-                        if (this._onConnect(eventOrPeer, peerOrUndefined)) {
-                            this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
-                            clearTimeout(timer);
-                            resolve();
-                        }
+    ipcHandshake(options) {
+        return new Promise((resolve, reject) => {
+            options = IpcBusUtils.CheckConnectOptions(options);
+            let timer;
+            const onIpcConnect = (eventOrPeer, peerOrUndefined) => {
+                if (this._connected) {
+                    if (this._onConnect(eventOrPeer, peerOrUndefined)) {
+                        this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
+                        clearTimeout(timer);
+                        resolve();
                     }
-                    else {
-                        this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
-                        reject('cancelled');
-                    }
-                };
-                if (options.timeoutDelay >= 0) {
-                    timer = setTimeout(() => {
-                        timer = null;
-                        this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
-                        this._reset();
-                        reject('timeout');
-                    }, options.timeoutDelay);
                 }
-                this._connected = true;
-                this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_CONNECT, onIpcConnect);
-                this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Connect, '', undefined, [options.peerName]);
-            });
-        }
-        return p;
+                else {
+                    this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
+                    reject('cancelled');
+                }
+            };
+            if (options.timeoutDelay >= 0) {
+                timer = setTimeout(() => {
+                    timer = null;
+                    this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
+                    this._reset();
+                    reject('timeout');
+                }, options.timeoutDelay);
+            }
+            this._connected = true;
+            this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
+            this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Handshake, '');
+        });
     }
     ipcClose(options) {
         if (this._connected) {
@@ -676,339 +1033,27 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
     }
     ipcPostCommand(ipcBusCommand, args) {
         if (this._connected) {
-            const bufferWriter = new socket_serializer_1.BufferListWriter();
-            if (args) {
-                this._packetOut.writeArray(bufferWriter, [ipcBusCommand, args]);
-            }
-            else {
-                this._packetOut.writeArray(bufferWriter, [ipcBusCommand]);
-            }
-            this._ipcWindow.send(exports.IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, bufferWriter.buffer);
+            ipcBusCommand.kind = ('B' + ipcBusCommand.kind);
+            this._ipcWindow.send(exports.IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, args);
         }
+    }
+}
+exports.IpcBusTransportIpc = IpcBusTransportIpc;
+
+},{"../IpcBusCommand":4,"../IpcBusTransportImpl":5,"../IpcBusUtils":6}],12:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const assert = require("assert");
+const IpcBusTransportIpc_1 = require("./IpcBusTransportIpc");
+class IpcBusTransportWindow extends IpcBusTransportIpc_1.IpcBusTransportIpc {
+    constructor(contextType, ipcWindow) {
+        assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
+        super({ type: contextType, pid: -1 }, ipcWindow);
     }
 }
 exports.IpcBusTransportWindow = IpcBusTransportWindow;
 
-},{"./IpcBusCommand":7,"./IpcBusTransportImpl":9,"./IpcBusUtils":11,"assert":19,"socket-serializer":47}],11:[function(require,module,exports){
-(function (Buffer,process){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const events_1 = require("events");
-exports.IPC_BUS_TIMEOUT = 2000;
-const win32prefix1 = '\\\\.\\pipe';
-const win32prefix2 = '\\\\?\\pipe';
-function CleanPipeName(str) {
-    if (process.platform === 'win32') {
-        if ((str.lastIndexOf(win32prefix1, 0) === -1) && (str.lastIndexOf(win32prefix2, 0) === -1)) {
-            str = str.replace(/^\//, '');
-            str = str.replace(/\//g, '-');
-            str = win32prefix1 + '\\' + str;
-        }
-    }
-    return str;
-}
-function CheckCreateOptions(options, hostName) {
-    if (Number(options) >= 0) {
-        return { port: Number(options), host: hostName };
-    }
-    else if (typeof options === 'string') {
-        const parts = options.split(':');
-        if (parts.length === 2) {
-            if (Number(parts[1]) >= 0) {
-                return { port: Number(parts[1]), host: parts[0] };
-            }
-        }
-        return { path: CleanPipeName(options) };
-    }
-    else if (typeof options === 'object') {
-        const localOptions = options || {};
-        if (localOptions.port) {
-            return localOptions;
-        }
-        if (localOptions.path) {
-            localOptions.path = CleanPipeName(localOptions.path);
-            return localOptions;
-        }
-    }
-    return null;
-}
-exports.CheckCreateOptions = CheckCreateOptions;
-function JSON_stringify_array(data, maxLen, output) {
-    output += '[';
-    for (let i = 0, l = data.length; i < l; ++i) {
-        if (output.length >= maxLen) {
-            output += '\'__cut__\'';
-            break;
-        }
-        output += JSON_stringify(data[i], maxLen - output.length);
-        output += ',';
-    }
-    output += ']';
-    return output;
-}
-function JSON_stringify_object(data, maxLen, output) {
-    output += '{';
-    if (data) {
-        const keys = Object.keys(data);
-        for (let i = 0, l = keys.length; i < l; ++i) {
-            if (output.length >= maxLen) {
-                output += '\'__cut__\'';
-                break;
-            }
-            const key = keys[i];
-            output += key + ': ';
-            if (output.length >= maxLen) {
-                output += '\'__cut__\'';
-                break;
-            }
-            output += JSON_stringify(data[key], maxLen - output.length);
-            output += ',';
-        }
-    }
-    else {
-        output += 'null';
-    }
-    output += '}';
-    return output;
-}
-function JSON_stringify(data, maxLen) {
-    let output = '';
-    switch (typeof data) {
-        case 'object':
-            if (Buffer.isBuffer(data)) {
-                output = data.toString('utf8', 0, maxLen);
-            }
-            else if (Array.isArray(data)) {
-                output = JSON_stringify_array(data, maxLen, output);
-            }
-            else if (data instanceof Date) {
-                output = data.toISOString();
-            }
-            else {
-                output = JSON_stringify_object(data, maxLen, output);
-            }
-            break;
-        case 'string':
-            output = data.substr(0, maxLen);
-            break;
-        case 'number':
-            output = data.toString();
-            break;
-        case 'boolean':
-            output = data ? 'true' : 'false';
-            break;
-        case 'undefined':
-            break;
-    }
-    return output;
-}
-exports.JSON_stringify = JSON_stringify;
-class Logger {
-    static info(msg) {
-        console.log(msg);
-    }
-    static warn(msg) {
-        console.warn(msg);
-    }
-    static error(msg) {
-        console.error(msg);
-    }
-}
-exports.Logger = Logger;
-Logger.enable = false;
-Logger.service = false;
-;
-function ContainsWildCards(str) {
-    return str.charAt(str.length - 1) === '*';
-}
-exports.ContainsWildCards = ContainsWildCards;
-function WildCardsToRegex(str) {
-    return new RegExp(preg_quote(str).replace(/\\\*/g, '.*').replace(/\\\?/g, '.'), 'g');
-}
-exports.WildCardsToRegex = WildCardsToRegex;
-function preg_quote(str) {
-    return str.replace(new RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]', 'g'), '\\$&');
-}
-class ChannelConnectionMap extends events_1.EventEmitter {
-    constructor(name) {
-        super();
-        this._name = name;
-        this._channelsMap = new Map();
-        this._requestChannels = new Map();
-    }
-    _info(str) {
-        Logger.enable && Logger.info(`[${this._name}] ${str}`);
-    }
-    _warn(str) {
-        Logger.enable && Logger.warn(`[${this._name}] ${str}`);
-    }
-    setRequestChannel(channel, conn) {
-        this._requestChannels.set(channel, conn);
-    }
-    getRequestChannel(channel) {
-        return this._requestChannels.get(channel);
-    }
-    deleteRequestChannel(channel) {
-        return this._requestChannels.delete(channel);
-    }
-    hasChannel(channel) {
-        return this._channelsMap.has(channel);
-    }
-    clear() {
-        this._channelsMap.clear();
-        this._requestChannels.clear();
-    }
-    addRef(channel, conn, peerId) {
-        Logger.enable && this._info(`AddRef: '${channel}', peerId = ${peerId}`);
-        let connsMap = this._channelsMap.get(channel);
-        if (connsMap == null) {
-            connsMap = new Map();
-            this._channelsMap.set(channel, connsMap);
-        }
-        let connData = connsMap.get(conn);
-        if (connData == null) {
-            connData = new ConnectionData(conn, peerId);
-            connsMap.set(conn, connData);
-        }
-        else {
-            connData.addPeerId(peerId);
-        }
-        Logger.enable && this._info(`AddRef: '${channel}', count = ${connData.peerIds.size}`);
-        return connsMap.size;
-    }
-    _releaseConnData(channel, conn, connsMap, peerId, all) {
-        const connData = connsMap.get(conn);
-        if (connData == null) {
-            Logger.enable && this._warn(`Release '${channel}': conn is unknown`);
-            return 0;
-        }
-        else {
-            if (peerId == null) {
-                connData.clearPeerIds();
-            }
-            else {
-                if (all) {
-                    if (connData.removePeerId(peerId) === false) {
-                        Logger.enable && this._warn(`Release '${channel}': peerId #${peerId} is unknown`);
-                    }
-                }
-                else {
-                    connData.releasePeerId(peerId);
-                }
-            }
-            if (connData.peerIds.size === 0) {
-                connsMap.delete(conn);
-                if (connsMap.size === 0) {
-                    this._channelsMap.delete(channel);
-                }
-            }
-            Logger.enable && this._info(`Release '${channel}': count = ${connData.peerIds.size}`);
-            return connsMap.size;
-        }
-    }
-    _release(channel, conn, peerId, all) {
-        Logger.enable && this._info(`Release '${channel}' (${all}): peerId = ${peerId}`);
-        const connsMap = this._channelsMap.get(channel);
-        if (connsMap == null) {
-            Logger.enable && this._warn(`Release '${channel}': '${channel}' is unknown`);
-            return 0;
-        }
-        else {
-            return this._releaseConnData(channel, conn, connsMap, peerId, all);
-        }
-    }
-    release(channel, conn, peerId) {
-        return this._release(channel, conn, peerId, false);
-    }
-    releaseAll(channel, conn, peerId) {
-        return this._release(channel, conn, peerId, true);
-    }
-    releasePeerId(conn, peerId) {
-        Logger.enable && this._info(`releasePeerId: peerId = ${peerId}`);
-        this._channelsMap.forEach((connsMap, channel) => {
-            this._releaseConnData(channel, conn, connsMap, peerId, true);
-        });
-    }
-    releaseConnection(conn) {
-        Logger.enable && this._info(`ReleaseConn: conn = ${conn}`);
-        this._requestChannels.forEach((connCurrent, channel) => {
-            if (connCurrent === conn) {
-                this._requestChannels.delete(channel);
-            }
-        });
-        this._channelsMap.forEach((connsMap, channel) => {
-            this._releaseConnData(channel, conn, connsMap, null, false);
-        });
-    }
-    forEachChannel(channel, callback) {
-        Logger.enable && this._info(`forEachChannel '${channel}'`);
-        const connsMap = this._channelsMap.get(channel);
-        if (connsMap == null) {
-            Logger.enable && this._warn(`forEachChannel: Unknown channel '${channel}' !`);
-        }
-        else {
-            connsMap.forEach((connData, conn) => {
-                Logger.enable && this._info(`forEachChannel '${channel}' - ${JSON.stringify(Array.from(connData.peerIds.keys()))} (${connData.peerIds.size})`);
-                callback(connData, channel);
-            });
-        }
-    }
-    forEach(callback) {
-        Logger.enable && this._info('forEach');
-        this._channelsMap.forEach((connsMap, channel) => {
-            connsMap.forEach((connData, conn) => {
-                Logger.enable && this._info(`forEach '${channel}' - ${JSON.stringify(Array.from(connData.peerIds.keys()))} (${connData.peerIds.size})`);
-                callback(connData, channel);
-            });
-        });
-    }
-}
-exports.ChannelConnectionMap = ChannelConnectionMap;
-class ConnectionData {
-    constructor(conn, peerId) {
-        this.peerIds = new Map();
-        this.conn = conn;
-        const peerIdRefCount = { peerId, refCount: 1 };
-        this.peerIds.set(peerId, peerIdRefCount);
-    }
-    addPeerId(peerId) {
-        let peerIdRefCount = this.peerIds.get(peerId);
-        if (peerIdRefCount == null) {
-            peerIdRefCount = { peerId, refCount: 1 };
-            this.peerIds.set(peerId, peerIdRefCount);
-        }
-        else {
-            ++peerIdRefCount.refCount;
-        }
-        return peerIdRefCount.refCount;
-    }
-    clearPeerIds() {
-        this.peerIds.clear();
-    }
-    removePeerId(peerId) {
-        return this.peerIds.delete(peerId);
-    }
-    releasePeerId(peerId) {
-        const peerIdRefCount = this.peerIds.get(peerId);
-        if (peerIdRefCount == null) {
-            return null;
-        }
-        else {
-            if (--peerIdRefCount.refCount <= 0) {
-                this.peerIds.delete(peerId);
-            }
-        }
-        return peerIdRefCount.refCount;
-    }
-}
-exports.ConnectionData = ConnectionData;
-(function (ConnectionData_1) {
-    ;
-})(ConnectionData = exports.ConnectionData || (exports.ConnectionData = {}));
-;
-
-}).call(this,{"isBuffer":require("../../node_modules/is-buffer/index.js")},require('_process'))
-},{"../../node_modules/is-buffer/index.js":27,"_process":37,"events":25}],12:[function(require,module,exports){
+},{"./IpcBusTransportIpc":11,"assert":20}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusService_1 = require("./IpcBusService");
@@ -1023,7 +1068,7 @@ exports.CreateIpcBusServiceProxy = (client, serviceName, options) => {
 };
 IpcBusService_1.IpcBusServiceProxy.Create = exports.CreateIpcBusServiceProxy;
 
-},{"./IpcBusService":13,"./IpcBusServiceImpl":14,"./IpcBusServiceProxyImpl":15}],13:[function(require,module,exports){
+},{"./IpcBusService":14,"./IpcBusServiceImpl":15,"./IpcBusServiceProxyImpl":16}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IPCBUS_SERVICE_EVENT_START = 'service-event-start';
@@ -1035,7 +1080,7 @@ var IpcBusServiceProxy;
 (function (IpcBusServiceProxy) {
 })(IpcBusServiceProxy = exports.IpcBusServiceProxy || (exports.IpcBusServiceProxy = {}));
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
@@ -1186,7 +1231,7 @@ class IpcBusServiceImpl {
 }
 exports.IpcBusServiceImpl = IpcBusServiceImpl;
 
-},{"../IpcBusUtils":11,"./IpcBusService":13,"./IpcBusServiceUtils":16,"events":25}],15:[function(require,module,exports){
+},{"../IpcBusUtils":6,"./IpcBusService":14,"./IpcBusServiceUtils":17,"events":26}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
@@ -1407,7 +1452,7 @@ class IpcBusServiceProxyImpl extends events_1.EventEmitter {
 }
 exports.IpcBusServiceProxyImpl = IpcBusServiceProxyImpl;
 
-},{"../IpcBusUtils":11,"./IpcBusService":13,"./IpcBusServiceUtils":16,"events":25}],16:[function(require,module,exports){
+},{"../IpcBusUtils":6,"./IpcBusService":14,"./IpcBusServiceUtils":17,"events":26}],17:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Client = require("../IpcBusClient");
@@ -1428,7 +1473,7 @@ function getServiceEventChannel(serviceName) {
 }
 exports.getServiceEventChannel = getServiceEventChannel;
 
-},{"../IpcBusClient":4}],17:[function(require,module,exports){
+},{"../IpcBusClient":2}],18:[function(require,module,exports){
 "use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
@@ -1436,10 +1481,10 @@ function __export(m) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __export(require("./electron-common-ipc-common"));
 __export(require("./IpcBus/IpcBusClient-factory-browser"));
-const IpcBusRendererPreload_1 = require("./IpcBus/IpcBusRendererPreload");
+const IpcBusRendererPreload_1 = require("./IpcBus/renderer/IpcBusRendererPreload");
 IpcBusRendererPreload_1.PreloadElectronCommonIpcAutomatic();
 
-},{"./IpcBus/IpcBusClient-factory-browser":3,"./IpcBus/IpcBusRendererPreload":8,"./electron-common-ipc-common":18}],18:[function(require,module,exports){
+},{"./IpcBus/IpcBusClient-factory-browser":1,"./IpcBus/renderer/IpcBusRendererPreload":10,"./electron-common-ipc-common":19}],19:[function(require,module,exports){
 "use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
@@ -1448,7 +1493,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __export(require("./IpcBus/IpcBusClient"));
 __export(require("./IpcBus/service/IpcBusService"));
 __export(require("./IpcBus/service/IpcBusService-factory"));
-__export(require("./IpcBus/IpcBusRendererPreload"));
+__export(require("./IpcBus/renderer/IpcBusRendererPreload"));
 const IpcBusUtils = require("./IpcBus/IpcBusUtils");
 function ActivateIpcBusTrace(enable) {
     IpcBusUtils.Logger.enable = enable;
@@ -1459,7 +1504,7 @@ function ActivateServiceTrace(enable) {
 }
 exports.ActivateServiceTrace = ActivateServiceTrace;
 
-},{"./IpcBus/IpcBusClient":4,"./IpcBus/IpcBusRendererPreload":8,"./IpcBus/IpcBusUtils":11,"./IpcBus/service/IpcBusService":13,"./IpcBus/service/IpcBusService-factory":12}],19:[function(require,module,exports){
+},{"./IpcBus/IpcBusClient":2,"./IpcBus/IpcBusUtils":6,"./IpcBus/renderer/IpcBusRendererPreload":10,"./IpcBus/service/IpcBusService":14,"./IpcBus/service/IpcBusService-factory":13}],20:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -1969,7 +2014,7 @@ var objectKeys = Object.keys || function (obj) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"object-assign":36,"util/":22}],20:[function(require,module,exports){
+},{"object-assign":37,"util/":23}],21:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -1994,14 +2039,14 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -2591,7 +2636,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":21,"_process":37,"inherits":20}],23:[function(require,module,exports){
+},{"./support/isBuffer":22,"_process":38,"inherits":21}],24:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -2745,7 +2790,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 (function (Buffer){
 /*!
  * The buffer module from node.js, for the browser.
@@ -4548,7 +4593,7 @@ var hexSliceLookupTable = (function () {
 })()
 
 }).call(this,require("buffer").Buffer)
-},{"base64-js":23,"buffer":24,"ieee754":26}],25:[function(require,module,exports){
+},{"base64-js":24,"buffer":25,"ieee754":27}],26:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -5073,7 +5118,7 @@ function functionBindPolyfill(context) {
   };
 }
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -5159,7 +5204,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 /*!
  * Determine if an object is a Buffer
  *
@@ -5182,7 +5227,7 @@ function isSlowBuffer (obj) {
   return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0))
 }
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5194,7 +5239,7 @@ exports.bufferJSONSupport = new json_formatter_1.JSONFormatter('Buffer', Buffer,
 exports.bufferJSONSupportBinary = new json_formatter_1.JSONFormatter('Buffer', Buffer, (t) => t.toString('binary'), (data) => Buffer.from(data, 'binary'));
 
 }).call(this,require("buffer").Buffer)
-},{"./json-formatter":29,"buffer":24}],29:[function(require,module,exports){
+},{"./json-formatter":30,"buffer":25}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class JSONFormatter {
@@ -5247,7 +5292,7 @@ class JSONFormatter {
 }
 exports.JSONFormatter = JSONFormatter;
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 "use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
@@ -5259,7 +5304,7 @@ v1;
 const v2 = require("./tojson-v2");
 v2;
 
-},{"./json-parser":31,"./tojson-v1":33,"./tojson-v2":34}],31:[function(require,module,exports){
+},{"./json-parser":32,"./tojson-v1":34,"./tojson-v2":35}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const tojson_1 = require("./tojson");
@@ -5290,7 +5335,7 @@ var JSONParserV2;
     JSONParserV2.parse = parse;
 })(JSONParserV2 = exports.JSONParserV2 || (exports.JSONParserV2 = {}));
 
-},{"./tojson":35}],32:[function(require,module,exports){
+},{"./tojson":36}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const tojson_1 = require("./tojson");
@@ -5374,7 +5419,7 @@ class ToJSONReviverImpl {
 }
 exports.ToJSONReviverImpl = ToJSONReviverImpl;
 
-},{"./tojson":35}],33:[function(require,module,exports){
+},{"./tojson":36}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const tojson_1 = require("./tojson");
@@ -5394,7 +5439,7 @@ tojson_1.ToJSONReviver.Get = tojson_1.ToJSONReviver.GetV1 = () => {
     return jsonReviver;
 };
 
-},{"./json-formatter-default":28,"./tojson":35,"./tojson-impl":32}],34:[function(require,module,exports){
+},{"./json-formatter-default":29,"./tojson":36,"./tojson-impl":33}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const tojson_1 = require("./tojson");
@@ -5414,7 +5459,7 @@ tojson_1.ToJSONReviver.GetV2 = () => {
     return jsonReviver;
 };
 
-},{"./json-formatter-default":28,"./tojson":35,"./tojson-impl":32}],35:[function(require,module,exports){
+},{"./json-formatter-default":29,"./tojson":36,"./tojson-impl":33}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ToJSONConstants;
@@ -5428,7 +5473,7 @@ var ToJSONReviver;
 (function (ToJSONReviver) {
 })(ToJSONReviver = exports.ToJSONReviver || (exports.ToJSONReviver = {}));
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 /*
 object-assign
 (c) Sindre Sorhus
@@ -5520,7 +5565,7 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 	return to;
 };
 
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -5706,1161 +5751,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],38:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const buffer_1 = require("buffer");
-const reader_1 = require("./reader");
-class BufferListReader extends reader_1.ReaderBase {
-    constructor(buffers, offset) {
-        super();
-        this._contexts = [];
-        this._buffers = buffers || [];
-        this._length = this._buffers.reduce((sum, buffer) => sum + buffer.length, 0);
-        this._offset = 0;
-        this._curOffset = 0;
-        this._curBufferIndex = 0;
-        this.seek(offset || 0);
-    }
-    appendBuffer(buffer) {
-        this._buffers.push(buffer);
-        this._length += buffer.length;
-    }
-    get length() {
-        return this._length;
-    }
-    get offset() {
-        return this._offset;
-    }
-    pushd() {
-        this._contexts.push({ offset: this._offset, curOffset: this._curOffset, curBufferIndex: this._curBufferIndex });
-        return this._contexts.length;
-    }
-    popd() {
-        const context = this._contexts.pop();
-        this._offset = context.offset;
-        this._curOffset = context.curOffset;
-        this._curBufferIndex = context.curBufferIndex;
-        return this._contexts.length;
-    }
-    seek(offset) {
-        if (this._offset !== offset) {
-            let curBuffer = this._buffers[this._curBufferIndex];
-            this._curOffset += (offset - this._offset);
-            this._offset = offset;
-            while (this._curOffset >= curBuffer.length) {
-                if (this._curBufferIndex >= this._buffers.length - 1) {
-                    if (!this._noAssert) {
-                        throw new RangeError('Index out of range');
-                    }
-                    return false;
-                }
-                ++this._curBufferIndex;
-                curBuffer = this._buffers[this._curBufferIndex];
-                this._curOffset -= curBuffer.length;
-            }
-            while (this._curOffset < 0) {
-                if (this._curBufferIndex <= 0) {
-                    if (!this._noAssert) {
-                        throw new RangeError('Index out of range');
-                    }
-                    return false;
-                }
-                --this._curBufferIndex;
-                curBuffer = this._buffers[this._curBufferIndex];
-                this._curOffset += curBuffer.length;
-            }
-        }
-        return this.checkEOF();
-    }
-    reduce() {
-        if (this.checkEOF(1)) {
-            this._buffers = [];
-            this._offset = 0;
-            this._length = 0;
-            this._curOffset = 0;
-            this._curBufferIndex = 0;
-        }
-        else {
-            if (this._curBufferIndex > 0) {
-                this._buffers.splice(0, this._curBufferIndex);
-                this._length -= (this._offset - this._curOffset);
-                this._offset = this._curOffset;
-                this._curBufferIndex = 0;
-            }
-        }
-    }
-    _consolidate(offsetStep, noAssert) {
-        let curBuffer = this._buffers[this._curBufferIndex];
-        let newOffset = this._curOffset + offsetStep;
-        if (newOffset > curBuffer.length) {
-            let bufferLength = 0;
-            const buffers = [];
-            for (let endBufferIndex = this._curBufferIndex; endBufferIndex < this._buffers.length; ++endBufferIndex) {
-                buffers.push(this._buffers[endBufferIndex]);
-                bufferLength += this._buffers[endBufferIndex].length;
-                if (newOffset <= bufferLength) {
-                    break;
-                }
-            }
-            curBuffer = this._buffers[this._curBufferIndex] = buffer_1.Buffer.concat(buffers, bufferLength);
-            this._buffers.splice(this._curBufferIndex + 1, buffers.length - 1);
-            if (!noAssert && (newOffset > curBuffer.length)) {
-            }
-        }
-        this._offset += offsetStep;
-        this._curOffset = newOffset;
-        return curBuffer;
-    }
-    _readNumber(bufferFunction, byteSize, noAssert) {
-        const start = this._curOffset;
-        const currBuffer = this._consolidate(byteSize, noAssert);
-        return bufferFunction.call(currBuffer, start, noAssert);
-    }
-    readByte(noAssert) {
-        return this._readNumber(buffer_1.Buffer.prototype.readUInt8, 1, noAssert);
-    }
-    readUInt32(noAssert) {
-        return this._readNumber(buffer_1.Buffer.prototype.readUInt32LE, 4, noAssert);
-    }
-    readDouble(noAssert) {
-        return this._readNumber(buffer_1.Buffer.prototype.readDoubleLE, 8, noAssert);
-    }
-    readString(encoding, len) {
-        const end = reader_1.Reader.AdjustEnd(this._offset, this._length, len);
-        if (this._offset === end) {
-            return '';
-        }
-        else {
-            const start = this._curOffset;
-            len = end - this._offset;
-            const currBuffer = this._consolidate(len);
-            return currBuffer.toString(encoding, start, end);
-        }
-    }
-    readBuffer(len) {
-        const end = reader_1.Reader.AdjustEnd(this._offset, this._length, len);
-        if (this._offset === end) {
-            return buffer_1.Buffer.alloc(0);
-        }
-        else {
-            const start = this._curOffset;
-            len = end - this._offset;
-            const currBuffer = this._consolidate(len);
-            if ((start === 0) && (len === currBuffer.length)) {
-                return currBuffer;
-            }
-            else {
-                return currBuffer.slice(start, end);
-            }
-        }
-    }
-}
-exports.BufferListReader = BufferListReader;
-
-},{"./reader":45,"buffer":24}],39:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const buffer_1 = require("buffer");
-const writer_1 = require("./writer");
-class BufferListWriterBase extends writer_1.WriterBase {
-    constructor() {
-        super();
-        this._length = 0;
-    }
-    get length() {
-        return this._length;
-    }
-    writeBytes(dataArray) {
-        const uint8Array = new Uint8Array(dataArray);
-        const buffer = buffer_1.Buffer.from(uint8Array.buffer);
-        return this._appendBuffer(buffer.length, buffer);
-    }
-    _writeNumber(bufferFunction, data, byteSize) {
-        let buffer = buffer_1.Buffer.allocUnsafe(byteSize);
-        bufferFunction.call(buffer, data, 0, this._noAssert);
-        return this._appendBuffer(byteSize, buffer);
-    }
-    writeByte(data) {
-        return this._writeNumber(buffer_1.Buffer.prototype.writeUInt8, data, 1);
-    }
-    writeUInt32(data) {
-        return this._writeNumber(buffer_1.Buffer.prototype.writeUInt32LE, data, 4);
-    }
-    writeDouble(data) {
-        return this._writeNumber(buffer_1.Buffer.prototype.writeDoubleLE, data, 8);
-    }
-    writeString(data, encoding, len) {
-        if (len != null) {
-            data = data.substring(0, len);
-        }
-        const buffer = buffer_1.Buffer.from(data, encoding);
-        return this._appendBuffer(buffer.length, buffer);
-    }
-    writeBuffer(buffer, sourceStart, sourceEnd) {
-        if ((sourceStart != null) || (sourceEnd != null)) {
-            buffer = buffer.slice(sourceStart, sourceEnd);
-        }
-        return this._appendBuffer(buffer.length, buffer);
-    }
-    write(writer) {
-        return this._appendBuffers(writer.length, writer.buffers);
-    }
-    pushContext() {
-    }
-    popContext() {
-    }
-}
-exports.BufferListWriterBase = BufferListWriterBase;
-class BufferListWriter extends BufferListWriterBase {
-    constructor() {
-        super();
-        this._buffers = [];
-    }
-    get buffer() {
-        if (this._buffers.length === 0) {
-            return buffer_1.Buffer.allocUnsafe(0);
-        }
-        if (this._buffers.length > 1) {
-            this._buffers = [buffer_1.Buffer.concat(this._buffers, this._length)];
-        }
-        return this._buffers[0];
-    }
-    get buffers() {
-        return this._buffers;
-    }
-    _appendBuffer(length, buffer) {
-        this._buffers.push(buffer);
-        this._length += length;
-        return this._length;
-    }
-    _appendBuffers(length, buffers) {
-        this._buffers = this._buffers.concat(buffers);
-        this._length += length;
-        return this._length;
-    }
-}
-exports.BufferListWriter = BufferListWriter;
-
-},{"./writer":46,"buffer":24}],40:[function(require,module,exports){
-(function (Buffer){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const reader_1 = require("./reader");
-class BufferReader extends reader_1.ReaderBase {
-    constructor(buffer, offset) {
-        super();
-        this._buffer = buffer;
-        this._offset = offset || 0;
-        this._contexts = [];
-    }
-    get length() {
-        return this._buffer.length;
-    }
-    get offset() {
-        return this._offset;
-    }
-    pushd() {
-        this._contexts.push(this._offset);
-        return this._contexts.length;
-    }
-    popd() {
-        this._offset = this._contexts.pop();
-        return this._contexts.length;
-    }
-    seek(offset) {
-        this._offset = offset;
-        return this.checkEOF();
-    }
-    _readNumber(bufferFunction, byteSize) {
-        const start = this._offset;
-        this._offset += byteSize;
-        return bufferFunction.call(this._buffer, start, this._noAssert);
-    }
-    readByte() {
-        return this._readNumber(Buffer.prototype.readUInt8, 1);
-    }
-    readUInt32() {
-        return this._readNumber(Buffer.prototype.readUInt32LE, 4);
-    }
-    readDouble() {
-        return this._readNumber(Buffer.prototype.readDoubleLE, 8);
-    }
-    readString(encoding, len) {
-        const end = reader_1.Reader.AdjustEnd(this._offset, this._buffer.length, len);
-        if (this._offset === end) {
-            return '';
-        }
-        else {
-            const start = this._offset;
-            this._offset = end;
-            return this._buffer.toString(encoding, start, end);
-        }
-    }
-    readBuffer(len) {
-        const end = reader_1.Reader.AdjustEnd(this._offset, this._buffer.length, len);
-        if (this._offset === end) {
-            return Buffer.allocUnsafe(0);
-        }
-        else {
-            const start = this._offset;
-            len = end - this._offset;
-            this._offset = end;
-            if ((start === 0) && (len === this._buffer.length)) {
-                return this._buffer;
-            }
-            else {
-                return this._buffer.slice(start, end);
-            }
-        }
-    }
-    reduce() {
-    }
-}
-exports.BufferReader = BufferReader;
-
-}).call(this,require("buffer").Buffer)
-},{"./reader":45,"buffer":24}],41:[function(require,module,exports){
-(function (Buffer){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const writer_1 = require("./writer");
-class BufferWriter extends writer_1.WriterBase {
-    constructor(buffer, offset) {
-        super();
-        this._buffer = buffer;
-        this._offset = offset || 0;
-    }
-    get buffer() {
-        return this._buffer;
-    }
-    get buffers() {
-        return [this._buffer];
-    }
-    get length() {
-        return this._buffer.length;
-    }
-    get offset() {
-        return this._offset;
-    }
-    writeBytes(dataArray) {
-        for (let i = 0, l = dataArray.length; i < l; ++i) {
-            this._writeNumber(Buffer.prototype.writeUInt8, dataArray[i], 1);
-        }
-        return this._offset;
-    }
-    _writeNumber(bufferFunction, data, byteSize) {
-        this._offset = bufferFunction.call(this._buffer, data, this._offset, this._noAssert);
-        return this._offset;
-    }
-    writeByte(data) {
-        return this._writeNumber(Buffer.prototype.writeUInt8, data, 1);
-    }
-    writeUInt32(data) {
-        return this._writeNumber(Buffer.prototype.writeUInt32LE, data, 4);
-    }
-    writeDouble(data) {
-        return this._writeNumber(Buffer.prototype.writeDoubleLE, data, 8);
-    }
-    writeString(data, encoding, len) {
-        this._offset += this._buffer.write(data, this._offset, len, encoding);
-        return this._offset;
-    }
-    writeBuffer(data, sourceStart, sourceEnd) {
-        this._offset += data.copy(this._buffer, this._offset, sourceStart, sourceEnd);
-        return this._offset;
-    }
-    write(writer) {
-        const buffers = writer.buffers;
-        for (let i = 0, l = buffers.length; i < l; ++i) {
-            this.writeBuffer(buffers[i]);
-        }
-        return this._offset;
-    }
-    pushContext() {
-    }
-    popContext() {
-    }
-}
-exports.BufferWriter = BufferWriter;
-
-}).call(this,require("buffer").Buffer)
-},{"./writer":46,"buffer":24}],42:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
-const bufferListWriter_1 = require("./bufferListWriter");
-const bufferReader_1 = require("./bufferReader");
-class IpcPacketSerializer {
-    constructor() {
-        this._writer = new bufferListWriter_1.BufferListWriter();
-        this._packet = new ipcPacketBufferWrap_1.IpcPacketBufferWrap();
-    }
-    serialize(data) {
-        this._packet.write(this._writer, data);
-        return this;
-    }
-    get buffer() {
-        return this._writer.buffer;
-    }
-    get buffers() {
-        return this._writer.buffers;
-    }
-}
-exports.IpcPacketSerializer = IpcPacketSerializer;
-;
-class IpcPacketParser {
-    constructor(buffer) {
-        this._reader = new bufferReader_1.BufferReader(buffer);
-        this._packet = new ipcPacketBufferWrap_1.IpcPacketBufferWrap();
-    }
-    parse() {
-        return this._packet.read(this._reader);
-    }
-}
-exports.IpcPacketParser = IpcPacketParser;
-
-},{"./bufferListWriter":39,"./bufferReader":40,"./ipcPacketBufferWrap":44}],43:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
-const bufferReader_1 = require("./bufferReader");
-const bufferListWriter_1 = require("./bufferListWriter");
-class IpcPacketBuffer extends ipcPacketBufferWrap_1.IpcPacketBufferWrap {
-    constructor() {
-        super();
-    }
-    get buffer() {
-        return this._buffer;
-    }
-    decodeFromReader(bufferReader) {
-        bufferReader.pushd();
-        let result = this._readHeader(bufferReader);
-        bufferReader.popd();
-        if (result) {
-            this._buffer = bufferReader.readBuffer(this.packetSize);
-        }
-        return result;
-    }
-    decodeFromBuffer(buffer) {
-        const result = this._readHeader(new bufferReader_1.BufferReader(buffer));
-        if (result) {
-            this._buffer = buffer;
-        }
-        return result;
-    }
-    _serializeAndCheck(checker, dataNumber) {
-        const bufferWriter = new bufferListWriter_1.BufferListWriter();
-        this.write(bufferWriter, dataNumber);
-        this._buffer = bufferWriter.buffer;
-        return checker.call(this);
-    }
-    serializeNumber(dataNumber) {
-        return this._serializeAndCheck(this.isNumber, dataNumber);
-    }
-    serializeBoolean(dataBoolean) {
-        return this._serializeAndCheck(this.isBoolean, dataBoolean);
-    }
-    serializeDate(dataDate) {
-        return this._serializeAndCheck(this.isDate, dataDate);
-    }
-    serializeString(data, encoding) {
-        const bufferWriter = new bufferListWriter_1.BufferListWriter();
-        this.writeString(bufferWriter, data, encoding);
-        this._buffer = bufferWriter.buffer;
-        return this.isString();
-    }
-    serializeObject(dataObject) {
-        return this._serializeAndCheck(this.isObject, dataObject);
-    }
-    serializeBuffer(dataBuffer) {
-        return this._serializeAndCheck(this.isBuffer, dataBuffer);
-    }
-    serializeArray(args) {
-        return this._serializeAndCheck(this.isArray, args);
-    }
-    serialize(data) {
-        return this._serializeAndCheck(this.isComplete, data);
-    }
-    _parseAndCheck(checker) {
-        if (checker.call(this)) {
-            const bufferReader = new bufferReader_1.BufferReader(this._buffer, this._headerSize);
-            return this._readContent(0, bufferReader);
-        }
-        return null;
-    }
-    parse() {
-        return this._parseAndCheck(this.isComplete);
-    }
-    parseBoolean() {
-        return this._parseAndCheck(this.isBoolean);
-    }
-    parseNumber() {
-        return this._parseAndCheck(this.isNumber);
-    }
-    parseDate() {
-        return this._parseAndCheck(this.isDate);
-    }
-    parseObject() {
-        return this._parseAndCheck(this.isObject);
-    }
-    parseBuffer() {
-        return this._parseAndCheck(this.isBuffer);
-    }
-    parseArray() {
-        return this._parseAndCheck(this.isArray);
-    }
-    parseString() {
-        return this._parseAndCheck(this.isString);
-    }
-    parseArrayLength() {
-        if (this.isArray()) {
-            const bufferReader = new bufferReader_1.BufferReader(this._buffer, this._headerSize);
-            return this._readArrayLength(bufferReader);
-        }
-        return null;
-    }
-    parseArrayAt(index) {
-        if (this.isArray()) {
-            const bufferReader = new bufferReader_1.BufferReader(this._buffer, this._headerSize);
-            return this._readArrayAt(bufferReader, index);
-        }
-        return null;
-    }
-    parseArraySlice(start, end) {
-        if (this.isArray()) {
-            const bufferReader = new bufferReader_1.BufferReader(this._buffer, this._headerSize);
-            return this._readArraySlice(bufferReader, start, end);
-        }
-        return null;
-    }
-}
-exports.IpcPacketBuffer = IpcPacketBuffer;
-
-},{"./bufferListWriter":39,"./bufferReader":40,"./ipcPacketBufferWrap":44}],44:[function(require,module,exports){
-(function (Buffer){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const bufferListWriter_1 = require("./bufferListWriter");
-const bufferWriter_1 = require("./bufferWriter");
-const json_helpers_1 = require("json-helpers");
-const headerSeparator = '['.charCodeAt(0);
-const footerSeparator = ']'.charCodeAt(0);
-const FooterLength = 1;
-const FixedHeaderSize = 2;
-const DynamicHeaderSize = FixedHeaderSize + 4;
-var BufferType;
-(function (BufferType) {
-    BufferType[BufferType["NotValid"] = 'X'.charCodeAt(0)] = "NotValid";
-    BufferType[BufferType["Partial"] = 'P'.charCodeAt(0)] = "Partial";
-    BufferType[BufferType["String"] = 's'.charCodeAt(0)] = "String";
-    BufferType[BufferType["Buffer"] = 'B'.charCodeAt(0)] = "Buffer";
-    BufferType[BufferType["BooleanTrue"] = 'T'.charCodeAt(0)] = "BooleanTrue";
-    BufferType[BufferType["BooleanFalse"] = 'F'.charCodeAt(0)] = "BooleanFalse";
-    BufferType[BufferType["ArrayWithSize"] = 'A'.charCodeAt(0)] = "ArrayWithSize";
-    BufferType[BufferType["PositiveInteger"] = '+'.charCodeAt(0)] = "PositiveInteger";
-    BufferType[BufferType["NegativeInteger"] = '-'.charCodeAt(0)] = "NegativeInteger";
-    BufferType[BufferType["Double"] = 'd'.charCodeAt(0)] = "Double";
-    BufferType[BufferType["Object"] = 'O'.charCodeAt(0)] = "Object";
-    BufferType[BufferType["ObjectSTRINGIFY"] = 'o'.charCodeAt(0)] = "ObjectSTRINGIFY";
-    BufferType[BufferType["Null"] = 'N'.charCodeAt(0)] = "Null";
-    BufferType[BufferType["Undefined"] = 'U'.charCodeAt(0)] = "Undefined";
-    BufferType[BufferType["Date"] = 'D'.charCodeAt(0)] = "Date";
-})(BufferType = exports.BufferType || (exports.BufferType = {}));
-;
-class IpcPacketBufferWrap {
-    constructor() {
-        this.writeArray = this.writeArrayWithSize;
-        this.writeObject = this.writeObjectSTRINGIFY2;
-        this._type = BufferType.NotValid;
-    }
-    get type() {
-        return this._type;
-    }
-    get packetSize() {
-        return this._contentSize + (this._headerSize + FooterLength);
-    }
-    get contentSize() {
-        return this._contentSize;
-    }
-    get footerSize() {
-        return FooterLength;
-    }
-    get headerSize() {
-        return this._headerSize;
-    }
-    setTypeAndContentSize(bufferType, contentSize) {
-        this._type = bufferType;
-        switch (bufferType) {
-            case BufferType.Date:
-            case BufferType.Double:
-                this._headerSize = FixedHeaderSize;
-                this._contentSize = 8;
-                break;
-            case BufferType.NegativeInteger:
-            case BufferType.PositiveInteger:
-                this._headerSize = FixedHeaderSize;
-                this._contentSize = 4;
-                break;
-            case BufferType.Object:
-            case BufferType.ObjectSTRINGIFY:
-            case BufferType.String:
-            case BufferType.Buffer:
-            case BufferType.ArrayWithSize:
-                this._headerSize = DynamicHeaderSize;
-                this._contentSize = contentSize;
-                break;
-            case BufferType.BooleanTrue:
-            case BufferType.BooleanFalse:
-            case BufferType.Null:
-            case BufferType.Undefined:
-                this._headerSize = FixedHeaderSize;
-                this._contentSize = 0;
-                break;
-            default:
-                this._type = BufferType.NotValid;
-                break;
-        }
-    }
-    setPacketSize(packetSize) {
-        this._contentSize = packetSize - (this._headerSize + FooterLength);
-    }
-    isNotValid() {
-        return (this._type === BufferType.NotValid);
-    }
-    isPartial() {
-        return (this._type === BufferType.Partial);
-    }
-    isComplete() {
-        return (this._type !== BufferType.NotValid) && (this._type !== BufferType.Partial);
-    }
-    isNull() {
-        return (this._type === BufferType.Null);
-    }
-    isUndefined() {
-        return (this._type === BufferType.Undefined);
-    }
-    isArray() {
-        return (this._type === BufferType.ArrayWithSize);
-    }
-    isObject() {
-        switch (this._type) {
-            case BufferType.Object:
-            case BufferType.ObjectSTRINGIFY:
-                return true;
-            default:
-                return false;
-        }
-    }
-    isString() {
-        return (this._type === BufferType.String);
-    }
-    isBuffer() {
-        return (this._type === BufferType.Buffer);
-    }
-    isDate() {
-        return (this._type === BufferType.Date);
-    }
-    isNumber() {
-        switch (this._type) {
-            case BufferType.NegativeInteger:
-            case BufferType.PositiveInteger:
-            case BufferType.Double:
-                return true;
-            default:
-                return false;
-        }
-    }
-    isBoolean() {
-        switch (this._type) {
-            case BufferType.BooleanTrue:
-            case BufferType.BooleanFalse:
-                return true;
-            default:
-                return false;
-        }
-    }
-    isFixedSize() {
-        return (this._headerSize === FixedHeaderSize);
-    }
-    _skipHeader(bufferReader) {
-        return bufferReader.skip(this._headerSize);
-    }
-    _readHeader(bufferReader) {
-        if (bufferReader.checkEOF(2)) {
-            this._type = BufferType.Partial;
-            return false;
-        }
-        if (bufferReader.readByte() !== headerSeparator) {
-            this._type = BufferType.NotValid;
-            return false;
-        }
-        this.setTypeAndContentSize(bufferReader.readByte(), 0);
-        if (this._type === BufferType.NotValid) {
-            return false;
-        }
-        if (bufferReader.checkEOF(this._headerSize - 2)) {
-            this._type = BufferType.Partial;
-            return false;
-        }
-        else {
-            if (this.isFixedSize() === false) {
-                this.setPacketSize(bufferReader.readUInt32());
-            }
-            if (bufferReader.checkEOF(this._contentSize + this.footerSize)) {
-                this._type = BufferType.Partial;
-                return false;
-            }
-        }
-        return true;
-    }
-    writeHeader(bufferWriter) {
-        bufferWriter.pushContext();
-        const bufferWriterHeader = new bufferWriter_1.BufferWriter(Buffer.allocUnsafe(this._headerSize));
-        bufferWriterHeader.writeByte(headerSeparator);
-        bufferWriterHeader.writeByte(this._type);
-        if (this.isFixedSize() === false) {
-            bufferWriterHeader.writeUInt32(this.packetSize);
-        }
-        bufferWriter.writeBuffer(bufferWriterHeader.buffer);
-    }
-    writeFooter(bufferWriter) {
-        bufferWriter.writeByte(footerSeparator);
-        bufferWriter.popContext();
-    }
-    writeFixedSize(bufferWriter, bufferType, num) {
-        bufferWriter.pushContext();
-        this.setTypeAndContentSize(bufferType);
-        const bufferWriteAllInOne = new bufferWriter_1.BufferWriter(Buffer.allocUnsafe(this.packetSize));
-        bufferWriteAllInOne.writeByte(headerSeparator);
-        bufferWriteAllInOne.writeByte(this._type);
-        switch (bufferType) {
-            case BufferType.NegativeInteger:
-            case BufferType.PositiveInteger:
-                bufferWriteAllInOne.writeUInt32(num);
-                break;
-            case BufferType.Double:
-            case BufferType.Date:
-                bufferWriteAllInOne.writeDouble(num);
-                break;
-        }
-        bufferWriteAllInOne.writeByte(footerSeparator);
-        bufferWriter.writeBuffer(bufferWriteAllInOne.buffer);
-        bufferWriter.popContext();
-    }
-    write(bufferWriter, data) {
-        switch (typeof data) {
-            case 'object':
-                if (Buffer.isBuffer(data)) {
-                    this.writeBuffer(bufferWriter, data);
-                }
-                else if (Array.isArray(data)) {
-                    this.writeArray(bufferWriter, data);
-                }
-                else if (data instanceof Date) {
-                    this.writeDate(bufferWriter, data);
-                }
-                else {
-                    this.writeObject(bufferWriter, data);
-                }
-                break;
-            case 'string':
-                this.writeString(bufferWriter, data);
-                break;
-            case 'number':
-                this.writeNumber(bufferWriter, data);
-                break;
-            case 'boolean':
-                this.writeBoolean(bufferWriter, data);
-                break;
-            case 'undefined':
-                this.writeFixedSize(bufferWriter, BufferType.Undefined);
-                break;
-            case 'symbol':
-            default:
-                break;
-        }
-    }
-    writeBoolean(bufferWriter, dataBoolean) {
-        this.writeFixedSize(bufferWriter, dataBoolean ? BufferType.BooleanTrue : BufferType.BooleanFalse);
-    }
-    writeNumber(bufferWriter, dataNumber) {
-        if (Number.isInteger(dataNumber)) {
-            const absDataNumber = Math.abs(dataNumber);
-            if (absDataNumber <= 0xFFFFFFFF) {
-                if (dataNumber < 0) {
-                    this.writeFixedSize(bufferWriter, BufferType.NegativeInteger, absDataNumber);
-                }
-                else {
-                    this.writeFixedSize(bufferWriter, BufferType.PositiveInteger, absDataNumber);
-                }
-                return;
-            }
-        }
-        this.writeFixedSize(bufferWriter, BufferType.Double, dataNumber);
-    }
-    writeDate(bufferWriter, data) {
-        const t = data.getTime();
-        this.writeFixedSize(bufferWriter, BufferType.Date, t);
-    }
-    writeString(bufferWriter, data, encoding) {
-        const buffer = Buffer.from(data, 'utf8');
-        this.setTypeAndContentSize(BufferType.String, buffer.length);
-        this.writeHeader(bufferWriter);
-        bufferWriter.writeBuffer(buffer);
-        this.writeFooter(bufferWriter);
-    }
-    writeBuffer(bufferWriter, buffer) {
-        this.setTypeAndContentSize(BufferType.Buffer, buffer.length);
-        this.writeHeader(bufferWriter);
-        bufferWriter.writeBuffer(buffer);
-        this.writeFooter(bufferWriter);
-    }
-    writeObjectDirect1(bufferWriter, dataObject) {
-        if (dataObject === null) {
-            this.writeFixedSize(bufferWriter, BufferType.Null);
-        }
-        else {
-            const contentBufferWriter = new bufferListWriter_1.BufferListWriter();
-            for (let [key, value] of Object.entries(dataObject)) {
-                const buffer = Buffer.from(key, 'utf8');
-                contentBufferWriter.writeUInt32(buffer.length);
-                contentBufferWriter.writeBuffer(buffer);
-                this.write(contentBufferWriter, value);
-            }
-            this.setTypeAndContentSize(BufferType.Object, contentBufferWriter.length);
-            this.writeHeader(bufferWriter);
-            bufferWriter.write(contentBufferWriter);
-            this.writeFooter(bufferWriter);
-        }
-    }
-    writeObjectDirect2(bufferWriter, dataObject) {
-        if (dataObject === null) {
-            this.writeFixedSize(bufferWriter, BufferType.Null);
-        }
-        else {
-            const contentBufferWriter = new bufferListWriter_1.BufferListWriter();
-            const keys = Object.keys(dataObject);
-            for (let i = 0, l = keys.length; i < l; ++i) {
-                const key = keys[i];
-                const desc = Object.getOwnPropertyDescriptor(dataObject, key);
-                if (desc && (typeof desc.value !== 'function')) {
-                    const buffer = Buffer.from(key, 'utf8');
-                    contentBufferWriter.writeUInt32(buffer.length);
-                    contentBufferWriter.writeBuffer(buffer);
-                    this.write(contentBufferWriter, desc.value);
-                }
-            }
-            this.setTypeAndContentSize(BufferType.Object, contentBufferWriter.length);
-            this.writeHeader(bufferWriter);
-            bufferWriter.write(contentBufferWriter);
-            this.writeFooter(bufferWriter);
-        }
-    }
-    writeObjectSTRINGIFY1(bufferWriter, dataObject) {
-        if (dataObject === null) {
-            this.writeFixedSize(bufferWriter, BufferType.Null);
-        }
-        else {
-            const stringifycation = JSON.stringify(dataObject);
-            const buffer = Buffer.from(stringifycation);
-            this.setTypeAndContentSize(BufferType.ObjectSTRINGIFY, buffer.length);
-            this.writeHeader(bufferWriter);
-            bufferWriter.writeBuffer(buffer);
-            this.writeFooter(bufferWriter);
-        }
-    }
-    writeObjectSTRINGIFY2(bufferWriter, dataObject) {
-        if (dataObject === null) {
-            this.writeFixedSize(bufferWriter, BufferType.Null);
-        }
-        else {
-            const stringifycation = json_helpers_1.JSONParser.stringify(dataObject);
-            const buffer = Buffer.from(stringifycation, 'utf8');
-            this.setTypeAndContentSize(BufferType.ObjectSTRINGIFY, buffer.length);
-            this.writeHeader(bufferWriter);
-            bufferWriter.writeBuffer(buffer);
-            this.writeFooter(bufferWriter);
-        }
-    }
-    writeArrayWithSize(bufferWriter, args) {
-        const contentBufferWriter = new bufferListWriter_1.BufferListWriter();
-        for (let i = 0, l = args.length; i < l; ++i) {
-            this.write(contentBufferWriter, args[i]);
-        }
-        this.setTypeAndContentSize(BufferType.ArrayWithSize, contentBufferWriter.length + 4);
-        this.writeHeader(bufferWriter);
-        bufferWriter.writeUInt32(args.length);
-        bufferWriter.write(contentBufferWriter);
-        this.writeFooter(bufferWriter);
-    }
-    read(bufferReader) {
-        return this._read(0, bufferReader);
-    }
-    _read(depth, bufferReader) {
-        this._readHeader(bufferReader);
-        const arg = this._readContent(depth, bufferReader);
-        bufferReader.skip(this.footerSize);
-        return arg;
-    }
-    _readContent(depth, bufferReader) {
-        let arg;
-        switch (this.type) {
-            case BufferType.ArrayWithSize:
-                arg = this._readArray(depth, bufferReader);
-                break;
-            case BufferType.Object:
-                arg = this._readObjectDirect(depth, bufferReader);
-                break;
-            case BufferType.ObjectSTRINGIFY:
-                arg = this._readObjectSTRINGIFY2(depth, bufferReader);
-                break;
-            case BufferType.Null:
-                arg = null;
-                break;
-            case BufferType.Undefined:
-                arg = undefined;
-                break;
-            case BufferType.String:
-                arg = this._readString(bufferReader, this._contentSize);
-                break;
-            case BufferType.Buffer:
-                arg = bufferReader.readBuffer(this._contentSize);
-                break;
-            case BufferType.Date:
-                arg = new Date(bufferReader.readDouble());
-                break;
-            case BufferType.Double:
-                arg = bufferReader.readDouble();
-                break;
-            case BufferType.NegativeInteger:
-                arg = -bufferReader.readUInt32();
-                break;
-            case BufferType.PositiveInteger:
-                arg = +bufferReader.readUInt32();
-                break;
-            case BufferType.BooleanTrue:
-                arg = true;
-                break;
-            case BufferType.BooleanFalse:
-                arg = false;
-                break;
-        }
-        return arg;
-    }
-    _readString(bufferReader, len) {
-        return bufferReader.readString('utf8', len);
-    }
-    _readObjectSTRINGIFY2(depth, bufferReader) {
-        const data = bufferReader.readString('utf8', this._contentSize);
-        return json_helpers_1.JSONParser.parse(data);
-    }
-    _readObjectDirect(depth, bufferReader) {
-        let context;
-        if (depth === 0) {
-            context = { type: this._type, headerSize: this._headerSize, contentSize: this._contentSize };
-        }
-        const offsetContentSize = bufferReader.offset + this._contentSize;
-        const dataObject = {};
-        while (bufferReader.offset < offsetContentSize) {
-            let keyLen = bufferReader.readUInt32();
-            let key = bufferReader.readString('utf8', keyLen);
-            dataObject[key] = this._read(depth + 1, bufferReader);
-        }
-        if (context) {
-            this._type = context.type;
-            this._headerSize = context.headerSize;
-            this._contentSize = context.contentSize;
-        }
-        return dataObject;
-    }
-    _readArray(depth, bufferReader) {
-        let context;
-        if (depth === 0) {
-            context = { type: this._type, headerSize: this._headerSize, contentSize: this._contentSize };
-        }
-        let argsLen = bufferReader.readUInt32();
-        const args = [];
-        while (argsLen > 0) {
-            let arg = this._read(depth + 1, bufferReader);
-            args.push(arg);
-            --argsLen;
-        }
-        if (context) {
-            this._type = context.type;
-            this._headerSize = context.headerSize;
-            this._contentSize = context.contentSize;
-        }
-        return args;
-    }
-    _readArrayLength(bufferReader) {
-        return bufferReader.readUInt32();
-    }
-    readArrayLength(bufferReader) {
-        this._readHeader(bufferReader);
-        if (this.isArray()) {
-            return this._readArrayLength(bufferReader);
-        }
-        return null;
-    }
-    byPass(bufferReader) {
-        this._readHeader(bufferReader);
-        bufferReader.skip(this._contentSize + this.footerSize);
-    }
-    _readArrayAt(bufferReader, index) {
-        const argsLen = bufferReader.readUInt32();
-        if (index >= argsLen) {
-            return null;
-        }
-        const headerArg = new IpcPacketBufferWrap();
-        while (index > 0) {
-            headerArg.byPass(bufferReader);
-            --index;
-        }
-        return headerArg.read(bufferReader);
-    }
-    readArrayAt(bufferReader, index) {
-        this._readHeader(bufferReader);
-        if (this.isArray()) {
-            return this._readArrayAt(bufferReader, index);
-        }
-        return null;
-    }
-    _readArraySlice(bufferReader, start, end) {
-        const argsLen = bufferReader.readUInt32();
-        if (start == null) {
-            start = 0;
-        }
-        else if (start < 0) {
-            start = argsLen + start;
-        }
-        if (start >= argsLen) {
-            return [];
-        }
-        if (end == null) {
-            end = argsLen;
-        }
-        else if (end < 0) {
-            end = argsLen + end;
-        }
-        else {
-            end = Math.min(end, argsLen);
-        }
-        if (end <= start) {
-            return [];
-        }
-        const headerArg = new IpcPacketBufferWrap();
-        while (start > 0) {
-            headerArg.byPass(bufferReader);
-            --start;
-            --end;
-        }
-        const args = [];
-        while (end > 0) {
-            let arg = headerArg.read(bufferReader);
-            args.push(arg);
-            --end;
-        }
-        return args;
-    }
-    readArraySlice(bufferReader, start, end) {
-        this._readHeader(bufferReader);
-        if (this.isArray()) {
-            return this._readArraySlice(bufferReader, start, end);
-        }
-        return null;
-    }
-}
-exports.IpcPacketBufferWrap = IpcPacketBufferWrap;
-
-}).call(this,require("buffer").Buffer)
-},{"./bufferListWriter":39,"./bufferWriter":41,"buffer":24,"json-helpers":30}],45:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var Reader;
-(function (Reader) {
-    function AdjustEnd(offset, maxLen, len) {
-        let end;
-        if (len == null) {
-            end = maxLen;
-        }
-        else if (len <= 0) {
-            end = offset;
-        }
-        else {
-            end = Math.min(offset + len, maxLen);
-        }
-        return end;
-    }
-    Reader.AdjustEnd = AdjustEnd;
-})(Reader = exports.Reader || (exports.Reader = {}));
-class ReaderBase {
-    constructor() {
-        this._noAssert = true;
-    }
-    get noAssert() {
-        return this._noAssert;
-    }
-    set noAssert(noAssert) {
-        this._noAssert = noAssert;
-    }
-    checkEOF(offsetStep) {
-        return (this.offset + (offsetStep || 0) > this.length);
-    }
-    skip(offsetStep) {
-        return this.seek(this.offset + (offsetStep || 1));
-    }
-}
-exports.ReaderBase = ReaderBase;
-
-},{}],46:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-class WriterBase {
-    constructor() {
-        this._noAssert = true;
-    }
-    get noAssert() {
-        return this._noAssert;
-    }
-    set noAssert(noAssert) {
-        this._noAssert = noAssert;
-    }
-}
-exports.WriterBase = WriterBase;
-
-},{}],47:[function(require,module,exports){
-"use strict";
-function __export(m) {
-    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
-}
-Object.defineProperty(exports, "__esModule", { value: true });
-__export(require("./socket-serializer-common"));
-
-},{"./socket-serializer-common":48}],48:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var ipcPacketBuffer_1 = require("./code/ipcPacketBuffer");
-exports.IpcPacketBuffer = ipcPacketBuffer_1.IpcPacketBuffer;
-var ipcPacketBufferWrap_1 = require("./code/ipcPacketBufferWrap");
-exports.IpcPacketBufferWrap = ipcPacketBufferWrap_1.IpcPacketBufferWrap;
-var ipcPacketBufferWrap_2 = require("./code/ipcPacketBufferWrap");
-exports.BufferType = ipcPacketBufferWrap_2.BufferType;
-var bufferWriter_1 = require("./code/bufferWriter");
-exports.BufferWriter = bufferWriter_1.BufferWriter;
-var bufferListWriter_1 = require("./code/bufferListWriter");
-exports.BufferListWriter = bufferListWriter_1.BufferListWriter;
-var reader_1 = require("./code/reader");
-exports.Reader = reader_1.Reader;
-var bufferReader_1 = require("./code/bufferReader");
-exports.BufferReader = bufferReader_1.BufferReader;
-var bufferListReader_1 = require("./code/bufferListReader");
-exports.BufferListReader = bufferListReader_1.BufferListReader;
-var ipcPacket_1 = require("./code/ipcPacket");
-exports.IpcPacketSerializer = ipcPacket_1.IpcPacketSerializer;
-exports.IpcPacketParser = ipcPacket_1.IpcPacketParser;
-
-},{"./code/bufferListReader":38,"./code/bufferListWriter":39,"./code/bufferReader":40,"./code/bufferWriter":41,"./code/ipcPacket":42,"./code/ipcPacketBuffer":43,"./code/ipcPacketBufferWrap":44,"./code/reader":45}],49:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 var v1 = require('./v1');
 var v4 = require('./v4');
 
@@ -6870,7 +5761,7 @@ uuid.v4 = v4;
 
 module.exports = uuid;
 
-},{"./v1":52,"./v4":53}],50:[function(require,module,exports){
+},{"./v1":42,"./v4":43}],40:[function(require,module,exports){
 /**
  * Convert array of 16 byte values to UUID string format of the form:
  * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
@@ -6896,7 +5787,7 @@ function bytesToUuid(buf, offset) {
 
 module.exports = bytesToUuid;
 
-},{}],51:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 // Unique ID creation requires a high quality random # generator.  In the
 // browser this is a little complicated due to unknown quality of Math.random()
 // and inconsistent support for the `crypto` API.  We do the best we can via
@@ -6932,7 +5823,7 @@ if (getRandomValues) {
   };
 }
 
-},{}],52:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -7043,7 +5934,7 @@ function v1(options, buf, offset) {
 
 module.exports = v1;
 
-},{"./lib/bytesToUuid":50,"./lib/rng":51}],53:[function(require,module,exports){
+},{"./lib/bytesToUuid":40,"./lib/rng":41}],43:[function(require,module,exports){
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -7074,7 +5965,8 @@ function v4(options, buf, offset) {
 
 module.exports = v4;
 
-},{"./lib/bytesToUuid":50,"./lib/rng":51}],54:[function(require,module,exports){
+},{"./lib/bytesToUuid":40,"./lib/rng":41}],44:[function(require,module,exports){
+(function (Buffer){
 const uuid = require('uuid');
 
 function GetQueryStringParams(sParam) {
@@ -7115,7 +6007,7 @@ window.addEventListener('load', () => {
         console.log(`IsElectronCommonIpcAvailable=${result}`);
     }
 
-    const electronCommonIpcModuleCFEE = require('../../lib/IpcBus/CrossFrameEventEmitter2');
+    const electronCommonIpcModuleCFEE = require('../../lib/IpcBus/renderer/CrossFrameEventEmitter2');
     if (window.self === window.top) {
         // console.log('Create Parent CrossFrameEventEmitter');
         // let crossFrameEE = new electronCommonIpcModuleCFEE.CrossFrameEventEmitter(window);
@@ -7127,8 +6019,8 @@ window.addEventListener('load', () => {
         //     crossFrameEE.send('test-frame', 'hello frame');
         // }, 100);
         const window_id = GetWindowId();
-        const ipcBus = electronCommonIpcModule.CreateIpcBusClient({ peerName: `client-parent-${window_id}` });
-        ipcBus.connect()
+        const ipcBus = electronCommonIpcModule.CreateIpcBusClient();
+        ipcBus.connect({ peerName: `client-parent-${window_id}` })
         .then(() => {
             ipcBus.on(`test-parent-${window_id}`, (...args) => {
                 console.log(`ipcBus - Parent receive message : ${args}`);
@@ -7137,9 +6029,12 @@ window.addEventListener('load', () => {
                 console.log(`ipcBus - self receive message : ${args}`);
             });
             setTimeout(() => {
+                const buffer = Buffer.from('ceci et un test');
                 console.log('ipcBus - Parent send message');
                 ipcBus.send(`test-frame-${window_id}`, 'hello frame');
                 ipcBus.send(`test-myself-${window_id}`, 'hello myself');
+                ipcBus.send(`test-frame-${window_id}`,buffer);
+                ipcBus.send(`test-myself-${window_id}`, buffer);
             }, 100);
         })
         .catch((err) => {
@@ -7160,8 +6055,8 @@ window.addEventListener('load', () => {
         //     crossFrameEE.send('test-parent', 'hello parent');
         // }, 200);
 
-        const ipcBus = electronCommonIpcModule.CreateIpcBusClient({ peerName: `client-frame-${window_id}` });
-        ipcBus.connect({ timeoutDelay: 8000})
+        const ipcBus = electronCommonIpcModule.CreateIpcBusClient();
+        ipcBus.connect({ peerName: `client-frame-${window_id}`, timeoutDelay: 8000 })
         .then(() => {
             ipcBus.on(`test-frame-${window_id}`, (...args) => {
                 console.log(`ipcBus - Frame receive message : ${args}`);
@@ -7179,4 +6074,5 @@ window.addEventListener('load', () => {
 
 })
 
-},{"../..":17,"../../lib/IpcBus/CrossFrameEventEmitter2":1,"uuid":49}]},{},[54]);
+}).call(this,require("buffer").Buffer)
+},{"../..":18,"../../lib/IpcBus/renderer/CrossFrameEventEmitter2":7,"buffer":25,"uuid":39}]},{},[44]);

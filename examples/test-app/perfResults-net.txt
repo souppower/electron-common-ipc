@@ -1,0 +1,202 @@
+Row Labels	Sum of Net	Sum of Local
+Send args (1000000)	2184	931
+Send args (1000000) browser => browser	316	1
+Send args (1000000) browser => node	-67	73
+Send args (1000000) browser => renderer	102	14
+Send args (1000000) node => browser	491	169
+Send args (1000000) node => node	79	117
+Send args (1000000) node => renderer	257	201
+Send args (1000000) renderer => browser	543	84
+Send args (1000000) renderer => node	314	195
+Send args (1000000) renderer => renderer	149	77
+Send args (10000000)	25629	6185
+Send args (10000000) browser => browser	3876	0
+Send args (10000000) browser => node	2622	525
+Send args (10000000) browser => renderer	3949	163
+Send args (10000000) node => browser	3514	1157
+Send args (10000000) node => node	2233	857
+Send args (10000000) node => renderer	2913	1310
+Send args (10000000) renderer => browser	3611	488
+Send args (10000000) renderer => node	1969	1113
+Send args (10000000) renderer => renderer	942	572
+Send args (3000000)	7339	1882
+Send args (3000000) browser => browser	1081	0
+Send args (3000000) browser => node	855	174
+Send args (3000000) browser => renderer	1179	50
+Send args (3000000) node => browser	791	341
+Send args (3000000) node => node	519	262
+Send args (3000000) node => renderer	780	386
+Send args (3000000) renderer => browser	969	152
+Send args (3000000) renderer => node	871	332
+Send args (3000000) renderer => renderer	294	185
+Send args (5000000)	12128	3440
+Send args (5000000) browser => browser	1870	0
+Send args (5000000) browser => node	796	287
+Send args (5000000) browser => renderer	1424	84
+Send args (5000000) node => browser	2042	688
+Send args (5000000) node => node	935	486
+Send args (5000000) node => renderer	1497	717
+Send args (5000000) renderer => browser	1963	278
+Send args (5000000) renderer => node	1158	605
+Send args (5000000) renderer => renderer	443	295
+Send args (7000000)	16933	4953
+Send args (7000000) browser => browser	2649	0
+Send args (7000000) browser => node	1597	408
+Send args (7000000) browser => renderer	2672	114
+Send args (7000000) node => browser	2432	959
+Send args (7000000) node => node	1356	695
+Send args (7000000) node => renderer	1932	1057
+Send args (7000000) renderer => browser	2456	390
+Send args (7000000) renderer => node	1291	895
+Send args (7000000) renderer => renderer	548	435
+Send buffer (1000000)	2068	757
+Send buffer (1000000) browser => browser	317	0
+Send buffer (1000000) browser => node	-82	52
+Send buffer (1000000) browser => renderer	94	11
+Send buffer (1000000) node => browser	488	141
+Send buffer (1000000) node => node	59	91
+Send buffer (1000000) node => renderer	244	160
+Send buffer (1000000) renderer => browser	524	69
+Send buffer (1000000) renderer => node	291	173
+Send buffer (1000000) renderer => renderer	133	60
+Send buffer (10000000)	17883	5663
+Send buffer (10000000) browser => browser	3053	0
+Send buffer (10000000) browser => node	1687	439
+Send buffer (10000000) browser => renderer	2675	129
+Send buffer (10000000) node => browser	2574	1173
+Send buffer (10000000) node => node	1342	921
+Send buffer (10000000) node => renderer	2250	1163
+Send buffer (10000000) renderer => browser	2693	369
+Send buffer (10000000) renderer => node	1185	975
+Send buffer (10000000) renderer => renderer	424	494
+Send buffer (3000000)	5658	1868
+Send buffer (3000000) browser => browser	900	0
+Send buffer (3000000) browser => node	666	138
+Send buffer (3000000) browser => renderer	1079	37
+Send buffer (3000000) node => browser	594	396
+Send buffer (3000000) node => node	325	228
+Send buffer (3000000) node => renderer	575	379
+Send buffer (3000000) renderer => browser	728	161
+Send buffer (3000000) renderer => node	613	367
+Send buffer (3000000) renderer => renderer	178	162
+Send buffer (5000000)	9102	3420
+Send buffer (5000000) browser => browser	1610	0
+Send buffer (5000000) browser => node	586	242
+Send buffer (5000000) browser => renderer	1003	59
+Send buffer (5000000) node => browser	1588	770
+Send buffer (5000000) node => node	577	512
+Send buffer (5000000) node => renderer	902	689
+Send buffer (5000000) renderer => browser	1612	273
+Send buffer (5000000) renderer => node	951	604
+Send buffer (5000000) renderer => renderer	273	271
+Send buffer (7000000)	13020	4572
+Send buffer (7000000) browser => browser	2246	1
+Send buffer (7000000) browser => node	955	346
+Send buffer (7000000) browser => renderer	2037	94
+Send buffer (7000000) node => browser	2057	985
+Send buffer (7000000) node => node	780	709
+Send buffer (7000000) node => renderer	1357	978
+Send buffer (7000000) renderer => browser	2200	332
+Send buffer (7000000) renderer => node	1048	759
+Send buffer (7000000) renderer => renderer	340	368
+Send object (1000000)	2551	892
+Send object (1000000) browser => browser	350	0
+Send object (1000000) browser => node	22	81
+Send object (1000000) browser => renderer	144	16
+Send object (1000000) node => browser	509	150
+Send object (1000000) node => node	103	95
+Send object (1000000) node => renderer	293	200
+Send object (1000000) renderer => browser	597	80
+Send object (1000000) renderer => node	351	202
+Send object (1000000) renderer => renderer	182	68
+Send object (10000000)	28148	7682
+Send object (10000000) browser => browser	4253	0
+Send object (10000000) browser => node	2827	625
+Send object (10000000) browser => renderer	4340	195
+Send object (10000000) node => browser	3821	1485
+Send object (10000000) node => node	2381	1131
+Send object (10000000) node => renderer	3237	1687
+Send object (10000000) renderer => browser	3998	625
+Send object (10000000) renderer => node	2213	1297
+Send object (10000000) renderer => renderer	1078	637
+Send object (3000000)	8286	2430
+Send object (3000000) browser => browser	1166	0
+Send object (3000000) browser => node	934	219
+Send object (3000000) browser => renderer	1258	54
+Send object (3000000) node => browser	912	454
+Send object (3000000) node => node	631	304
+Send object (3000000) node => renderer	868	505
+Send object (3000000) renderer => browser	1114	207
+Send object (3000000) renderer => node	1027	473
+Send object (3000000) renderer => renderer	376	214
+Send object (5000000)	13604	4010
+Send object (5000000) browser => browser	2108	1
+Send object (5000000) browser => node	1123	361
+Send object (5000000) browser => renderer	2059	93
+Send object (5000000) node => browser	1937	733
+Send object (5000000) node => node	980	574
+Send object (5000000) node => renderer	1541	829
+Send object (5000000) renderer => browser	2032	317
+Send object (5000000) renderer => node	1296	755
+Send object (5000000) renderer => renderer	528	347
+Send object (7000000)	19382	5326
+Send object (7000000) browser => browser	2916	1
+Send object (7000000) browser => node	1762	442
+Send object (7000000) browser => renderer	2920	134
+Send object (7000000) node => browser	2743	1003
+Send object (7000000) node => node	1568	790
+Send object (7000000) node => renderer	2264	1147
+Send object (7000000) renderer => browser	2889	418
+Send object (7000000) renderer => node	1574	952
+Send object (7000000) renderer => renderer	746	439
+Send string (1000000)	2153	804
+Send string (1000000) browser => browser	289	1
+Send string (1000000) browser => node	-41	60
+Send string (1000000) browser => renderer	131	17
+Send string (1000000) node => browser	457	145
+Send string (1000000) node => node	95	84
+Send string (1000000) node => renderer	261	179
+Send string (1000000) renderer => browser	536	68
+Send string (1000000) renderer => node	304	183
+Send string (1000000) renderer => renderer	121	67
+Send string (10000000)	23413	7423
+Send string (10000000) browser => browser	3839	0
+Send string (10000000) browser => node	2310	553
+Send string (10000000) browser => renderer	3785	175
+Send string (10000000) node => browser	3267	1505
+Send string (10000000) node => node	1843	1115
+Send string (10000000) node => renderer	2584	1550
+Send string (10000000) renderer => browser	3441	592
+Send string (10000000) renderer => node	1725	1315
+Send string (10000000) renderer => renderer	619	618
+Send string (3000000)	6910	2266
+Send string (3000000) browser => browser	1062	0
+Send string (3000000) browser => node	664	180
+Send string (3000000) browser => renderer	989	55
+Send string (3000000) node => browser	884	463
+Send string (3000000) node => node	476	325
+Send string (3000000) node => renderer	713	463
+Send string (3000000) renderer => browser	1061	184
+Send string (3000000) renderer => node	816	395
+Send string (3000000) renderer => renderer	245	201
+Send string (5000000)	11577	3815
+Send string (5000000) browser => browser	1902	2
+Send string (5000000) browser => node	913	299
+Send string (5000000) browser => renderer	1590	101
+Send string (5000000) node => browser	1777	815
+Send string (5000000) node => node	827	537
+Send string (5000000) node => renderer	1232	792
+Send string (5000000) renderer => browser	1774	327
+Send string (5000000) renderer => node	1141	628
+Send string (5000000) renderer => renderer	421	314
+Send string (7000000)	16180	5257
+Send string (7000000) browser => browser	2632	1
+Send string (7000000) browser => node	1432	392
+Send string (7000000) browser => renderer	2489	125
+Send string (7000000) node => browser	2425	1127
+Send string (7000000) node => node	1214	800
+Send string (7000000) node => renderer	1829	1148
+Send string (7000000) renderer => browser	2491	432
+Send string (7000000) renderer => node	1177	814
+Send string (7000000) renderer => renderer	491	418
+Grand Total	244148	73576
