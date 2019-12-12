@@ -13,6 +13,7 @@ export namespace IpcBusBroker {
     }
 
     export interface CreateFunction {
+        (): IpcBusBroker | null;
     }
     export let Create: CreateFunction;
 }

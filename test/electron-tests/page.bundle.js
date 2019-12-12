@@ -626,101 +626,9 @@ exports.ConnectionPeers = ConnectionPeers;
 },{"../../node_modules/is-buffer/index.js":28,"_process":38,"events":26}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const IpcBusUtils = require("../IpcBusUtils");
-const IpcBusTransportImpl_1 = require("../IpcBusTransportImpl");
-const IpcBusCommand_1 = require("../IpcBusCommand");
-exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Connect';
-exports.IPCBUS_TRANSPORT_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:Command';
-exports.IPCBUS_TRANSPORT_RENDERER_EVENT = 'ECIPC:IpcBusRenderer:Event';
-class IpcBusTransportIpc extends IpcBusTransportImpl_1.IpcBusTransportImpl {
-    constructor(ipcBusContext, ipcWindow) {
-        super(ipcBusContext);
-        this._ipcWindow = ipcWindow;
-    }
-    _reset() {
-        this._promiseConnected = null;
-        if (this._connected) {
-            this._connected = false;
-            if (this._onIpcEventReceived) {
-                this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
-                this._onIpcEventReceived = null;
-            }
-        }
-    }
-    _onConnect(eventOrPeer, peerOrUndefined) {
-        if (peerOrUndefined) {
-            if (peerOrUndefined.id === this._ipcBusPeer.id) {
-                this._ipcBusPeer = peerOrUndefined;
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Standard listening for #${this._ipcBusPeer.name}`);
-                this._onIpcEventReceived = this._onCommandReceived.bind(this);
-                this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
-                return true;
-            }
-        }
-        else {
-            if (eventOrPeer.id === this._ipcBusPeer.id) {
-                this._ipcBusPeer = eventOrPeer;
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
-                this._onIpcEventReceived = this._onCommandReceived.bind(this, undefined);
-                this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
-                return true;
-            }
-        }
-        return false;
-    }
-    ;
-    ipcHandshake(options) {
-        return new Promise((resolve, reject) => {
-            options = IpcBusUtils.CheckConnectOptions(options);
-            let timer;
-            const onIpcConnect = (eventOrPeer, peerOrUndefined) => {
-                if (this._connected) {
-                    if (this._onConnect(eventOrPeer, peerOrUndefined)) {
-                        this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                        clearTimeout(timer);
-                        resolve();
-                    }
-                }
-                else {
-                    this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                    reject('cancelled');
-                }
-            };
-            if (options.timeoutDelay >= 0) {
-                timer = setTimeout(() => {
-                    timer = null;
-                    this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                    this._reset();
-                    reject('timeout');
-                }, options.timeoutDelay);
-            }
-            this._connected = true;
-            this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-            this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Handshake, '');
-        });
-    }
-    ipcClose(options) {
-        if (this._connected) {
-            this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Close, '');
-            this._reset();
-        }
-        return Promise.resolve();
-    }
-    ipcPostCommand(ipcBusCommand, args) {
-        if (this._connected) {
-            ipcBusCommand.kind = ('B' + ipcBusCommand.kind);
-            this._ipcWindow.send(exports.IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, args);
-        }
-    }
-}
-exports.IpcBusTransportIpc = IpcBusTransportIpc;
-
-},{"../IpcBusCommand":4,"../IpcBusTransportImpl":5,"../IpcBusUtils":6}],8:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 const uuid = require("uuid");
 const events_1 = require("events");
-const IpcBusTransportIpc_1 = require("../main/IpcBusTransportIpc");
+const IpcBusTransportIpc_1 = require("./IpcBusTransportIpc");
 const CrossFrameMessage_1 = require("./CrossFrameMessage");
 const trace = false;
 class CrossFrameEventEmitter extends events_1.EventEmitter {
@@ -913,7 +821,7 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 }
 exports.IpcBusFrameBridge = IpcBusFrameBridge;
 
-},{"../main/IpcBusTransportIpc":7,"./CrossFrameMessage":9,"events":26,"uuid":39}],9:[function(require,module,exports){
+},{"./CrossFrameMessage":8,"./IpcBusTransportIpc":11,"events":26,"uuid":39}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const json_helpers_1 = require("json-helpers");
@@ -946,7 +854,7 @@ var CrossFrameMessage;
     CrossFrameMessage.Encode = Encode;
 })(CrossFrameMessage = exports.CrossFrameMessage || (exports.CrossFrameMessage = {}));
 
-},{"json-helpers":31}],10:[function(require,module,exports){
+},{"json-helpers":31}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusTransportWindow_1 = require("./IpcBusTransportWindow");
@@ -958,7 +866,7 @@ function Create(contextType, ipcWindow) {
 }
 exports.Create = Create;
 
-},{"../IpcBusClientImpl":3,"./IpcBusTransportWindow":12}],11:[function(require,module,exports){
+},{"../IpcBusClientImpl":3,"./IpcBusTransportWindow":12}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusClientWindow_1 = require("./IpcBusClientWindow");
@@ -1040,11 +948,103 @@ function IsElectronCommonIpcAvailable() {
 }
 exports.IsElectronCommonIpcAvailable = IsElectronCommonIpcAvailable;
 
-},{"./CrossFrameEventEmitter2":8,"./IpcBusClientWindow":10,"electron":"electron"}],12:[function(require,module,exports){
+},{"./CrossFrameEventEmitter2":7,"./IpcBusClientWindow":9,"electron":"electron"}],11:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const IpcBusUtils = require("../IpcBusUtils");
+const IpcBusTransportImpl_1 = require("../IpcBusTransportImpl");
+const IpcBusCommand_1 = require("../IpcBusCommand");
+exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Connect';
+exports.IPCBUS_TRANSPORT_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:Command';
+exports.IPCBUS_TRANSPORT_RENDERER_EVENT = 'ECIPC:IpcBusRenderer:Event';
+class IpcBusTransportIpc extends IpcBusTransportImpl_1.IpcBusTransportImpl {
+    constructor(ipcBusContext, ipcWindow) {
+        super(ipcBusContext);
+        this._ipcWindow = ipcWindow;
+    }
+    _reset() {
+        this._promiseConnected = null;
+        if (this._connected) {
+            this._connected = false;
+            if (this._onIpcEventReceived) {
+                this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+                this._onIpcEventReceived = null;
+            }
+        }
+    }
+    _onConnect(eventOrPeer, peerOrUndefined) {
+        if (peerOrUndefined) {
+            if (peerOrUndefined.id === this._ipcBusPeer.id) {
+                this._ipcBusPeer = peerOrUndefined;
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Standard listening for #${this._ipcBusPeer.name}`);
+                this._onIpcEventReceived = this._onCommandReceived.bind(this);
+                this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+                return true;
+            }
+        }
+        else {
+            if (eventOrPeer.id === this._ipcBusPeer.id) {
+                this._ipcBusPeer = eventOrPeer;
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
+                this._onIpcEventReceived = this._onCommandReceived.bind(this, undefined);
+                this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+                return true;
+            }
+        }
+        return false;
+    }
+    ;
+    ipcHandshake(options) {
+        return new Promise((resolve, reject) => {
+            options = IpcBusUtils.CheckConnectOptions(options);
+            let timer;
+            const onIpcConnect = (eventOrPeer, peerOrUndefined) => {
+                if (this._connected) {
+                    if (this._onConnect(eventOrPeer, peerOrUndefined)) {
+                        this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
+                        clearTimeout(timer);
+                        resolve();
+                    }
+                }
+                else {
+                    this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
+                    reject('cancelled');
+                }
+            };
+            if (options.timeoutDelay >= 0) {
+                timer = setTimeout(() => {
+                    timer = null;
+                    this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
+                    this._reset();
+                    reject('timeout');
+                }, options.timeoutDelay);
+            }
+            this._connected = true;
+            this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
+            this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Handshake, '');
+        });
+    }
+    ipcClose(options) {
+        if (this._connected) {
+            this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Close, '');
+            this._reset();
+        }
+        return Promise.resolve();
+    }
+    ipcPostCommand(ipcBusCommand, args) {
+        if (this._connected) {
+            ipcBusCommand.kind = ('B' + ipcBusCommand.kind);
+            this._ipcWindow.send(exports.IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, args);
+        }
+    }
+}
+exports.IpcBusTransportIpc = IpcBusTransportIpc;
+
+},{"../IpcBusCommand":4,"../IpcBusTransportImpl":5,"../IpcBusUtils":6}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert = require("assert");
-const IpcBusTransportIpc_1 = require("../main/IpcBusTransportIpc");
+const IpcBusTransportIpc_1 = require("./IpcBusTransportIpc");
 class IpcBusTransportWindow extends IpcBusTransportIpc_1.IpcBusTransportIpc {
     constructor(contextType, ipcWindow) {
         assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
@@ -1053,7 +1053,7 @@ class IpcBusTransportWindow extends IpcBusTransportIpc_1.IpcBusTransportIpc {
 }
 exports.IpcBusTransportWindow = IpcBusTransportWindow;
 
-},{"../main/IpcBusTransportIpc":7,"assert":20}],13:[function(require,module,exports){
+},{"./IpcBusTransportIpc":11,"assert":20}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusService_1 = require("./IpcBusService");
@@ -1484,7 +1484,7 @@ __export(require("./IpcBus/IpcBusClient-factory-browser"));
 const IpcBusRendererPreload_1 = require("./IpcBus/renderer/IpcBusRendererPreload");
 IpcBusRendererPreload_1.PreloadElectronCommonIpcAutomatic();
 
-},{"./IpcBus/IpcBusClient-factory-browser":1,"./IpcBus/renderer/IpcBusRendererPreload":11,"./electron-common-ipc-common":19}],19:[function(require,module,exports){
+},{"./IpcBus/IpcBusClient-factory-browser":1,"./IpcBus/renderer/IpcBusRendererPreload":10,"./electron-common-ipc-common":19}],19:[function(require,module,exports){
 "use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
@@ -1504,7 +1504,7 @@ function ActivateServiceTrace(enable) {
 }
 exports.ActivateServiceTrace = ActivateServiceTrace;
 
-},{"./IpcBus/IpcBusClient":2,"./IpcBus/IpcBusUtils":6,"./IpcBus/renderer/IpcBusRendererPreload":11,"./IpcBus/service/IpcBusService":14,"./IpcBus/service/IpcBusService-factory":13}],20:[function(require,module,exports){
+},{"./IpcBus/IpcBusClient":2,"./IpcBus/IpcBusUtils":6,"./IpcBus/renderer/IpcBusRendererPreload":10,"./IpcBus/service/IpcBusService":14,"./IpcBus/service/IpcBusService-factory":13}],20:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -6075,4 +6075,4 @@ window.addEventListener('load', () => {
 })
 
 }).call(this,require("buffer").Buffer)
-},{"../..":18,"../../lib/IpcBus/renderer/CrossFrameEventEmitter2":8,"buffer":25,"uuid":39}]},{},[44]);
+},{"../..":18,"../../lib/IpcBus/renderer/CrossFrameEventEmitter2":7,"buffer":25,"uuid":39}]},{},[44]);

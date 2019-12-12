@@ -7,7 +7,7 @@ import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
 import { IpcBusBrokerJSONLogger } from './IpcBusBrokerJSONLogger';
 import { IpcBusBrokerCSVLogger } from './IpcBusBrokerCSVLogger';
 
-export const CreateIpcBusBroker: IpcBusBroker.CreateFunction = (): IpcBusBroker => {
+export const CreateIpcBusBroker: IpcBusBroker.CreateFunction = (): IpcBusBroker | null => {
     let ipcBusBroker: IpcBusBroker = null;
     const electronProcessType = GetElectronProcessType();
     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBroker process type = ${electronProcessType}`);
