@@ -60,7 +60,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     protected _promiseConnected: Promise<void>;
 
     private _localProcessId: number;
-    private _ipcCallback: Function;
+    private _ipcCallback: IpcBusTransport.Callback;
     private _requestFunctions: Map<string, DeferredRequest>;
     private _requestNumber: number;
 
@@ -92,7 +92,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         return `${replyChannelPrefix}${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
     }
 
-    ipcCallback(callback: (channel: string, ipcBusEvent: Client.IpcBusEvent, ...args: any[]) => void): void {
+    ipcCallback(callback: IpcBusTransport.Callback): void {
         this._ipcCallback = callback;
     }
 

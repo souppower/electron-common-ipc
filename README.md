@@ -1,23 +1,26 @@
 # electron-common-ipc
 An IPC (Inter-Process Communication) bus for applications built on [Node](https://nodejs.org/en/) or [Electron](https://electronjs.org/). 
 
-This bus offers a EventEmitter-like API for exchanging data between any processes (Node, Electron Master, Electron Renderer/s).
+This bus offers a EventEmitter-like API for exchanging data between any processes (Node process/s, Electron Master, Electron Renderer process/s).
 * Node to Node, 
 * Node to Electron (Master and Renderer processes), 
-* Electon to Node, 
+* Electron to Node, 
 * Electron to Electron.
 
-Node processes need to instanciate a "BusBroker" (Net server) in charge to commute messages to right listeners  
-Electron processes needs an additional broker : "BusBridge" in charge to commute messages between renderers (WebPages), Master and Node.
+For Node processes support, you need to instanciate a "BusBroker" (Net server) in charge to commute messages to right listeners  
+For Electron Main/Renderer processes, you need an additional broker : "BusBridge" in charge to commute messages between renderers (WebPages), Master and Node.
+
+You can have a pure Node bus, just using BusBroker (even working out of Electron)
+You can have a Electron Main/Renderer processes bus, just using BusBridge 
+You can have a dual-mode supporting all kind of processes by creating BusBroker/BusBridge.
 
 A WebPage is then able to dialog with a node process and vice-versa.
-
 
 # Features
 * EventEmitter oriented API
 * Works with Electron sandboxed renderer process
 * Support for Electron renderer affinity (several webpages hosted in the same renderer process)
-* Remote calls/events and pending messages management with Services
+* Basic remote API calls/events and pending messages management with Services
 
 # Installation
 ```Batchfile
@@ -50,24 +53,24 @@ const ipcBusPath = 50494;
 // Startup
 electronApp.on('ready', function () {
     // Create broker
-    const ipcBusBroker = ipcBusModule.IpcBusBroker.Create(ipcBusPath);
+    const ipcBusBroker = ipcBusModule.IpcBusBroker.Create();
     // Start broker
-    ipcBusBroker.start()
-        .then((msg) => {
+    ipcBusBroker.connect(ipcBusPath)
+        .then(() => {
             console.log('IpcBusBroker started');
 
             // Create bridge
             const ipcBusBridge = ipcBusModule.IpcBusBridge.Create(ipcBusPath);
             // Start bridge
-            ipcBusBridge.start()
-                .then((msg) => {
+            ipcBusBridge.connect(ipcBusPath)
+                .then(() => {
                     console.log('IpcBusBridge started');
 
                     // Create clients
                     const ipcBusClient1 = ipcBusModule.IpcBusClient.Create(ipcBusPath);
                     const ipcBusClient2 = ipcBusModule.IpcBusClient.Create(ipcBusPath);
                     Promise.all([ipcBusClient1.connect({ peerName: 'client1' }), ipcBusClient2.connect({ peerName: 'client2' })])
-                        .then((msg) => {
+                        .then(() => {
                             // Chatting on channel 'greeting'
                             ipcBusClient1.addListener('greeting', (ipcBusEvent, greetingMsg) => {
                                 // This is a request, we have to reply immediatly using request.resolve or request.reject
@@ -171,6 +174,17 @@ export interface IpcSocketBufferingOptions {
 - **socketBuffer** < 0 : message is serialized in objects (number, string, buffer...), each object is written immediatly to the socket
 - **socketBuffer** > 0 : message is serialized in objects, objects are written only in one shot when reaching a size of **socketBuffer** in bytes.
 
+```ts
+export interface IpcNetOptions {
+    port?: number;
+    host?: string;
+    path?: string;
+    useBridge?: boolean;
+}
+```
+See [NodeJS Net](https://nodejs.org/api/net.html#net_socket_connect)
+- **useBridge** : the client will use the BusBrige to discuss with the socket server (BusBroker). It is  more efficient to go to the bridge than connecting directly to the net server (BusBroker).
+
 # IpcBusBroker
 Dispatching of Node messages is managed by a broker. You can have only one single Broker for the whole application.  
 The broker can be instanciated in a node process or in the master process (not in renderer processes).  
@@ -179,8 +193,8 @@ For performance purpose, it is better to instanciate the broker in an independen
 ## Interface
 ```ts
 interface IpcBusBroker {
-    start(options?: IpcBusBroker.StartOptions): Promise<string>;
-    stop(): void;
+    connect(options?: IpcBusBroker.StartOptions): Promise<string>;
+    close(): void;
     queryState(): Object;
     isServiceAvailable(serviceName: string): boolean;
 }
@@ -197,31 +211,34 @@ The ***require()*** call loads the module and IpcBusBroker.Create setups the bro
 
 ```js
 // Socket path
-const ipcBusBroker = ipcBusModule.IpcBusBroker.Create('/my-ipc-bus-path');
-```
-
-```js
-// Port number
-const ipcBusBroker = ipcBusModule.IpcBusBroker.Create(58666);
+const ipcBusBroker = ipcBusModule.IpcBusBroker.Create();
 ```
 
 ## Methods
 
-### start(options?: IpcBusBroker.StartOptions) : Promise < string >
+### connect(options?: IpcBusBroker.StartOptions) : Promise < string >
 
 ```js
-ipcBusBroker.start() 
+// Socket path
+ipcBusBroker.connect('/my-ipc-bus-path') 
     .then(() => console.log('success'))
     .catch((err) => console.log(err))
-````
+```
+
+```js
+// Port number
+ipcBusBroker.connect(58666) 
+    .then(() => console.log('success'))
+    .catch((err) => console.log(err))
+```
 
 Starts the broker dispatcher.
 If failed (timeout or any other internal error), ***err*** contains the error message.
 
-### stop()
+### close()
 
 ```js
-ipcBusBroker.stop() 
+ipcBusBroker.close() 
 ```
 
 ### queryState() - for debugging purpose only
@@ -251,43 +268,39 @@ The bridge must be instanciated in the master process only. Without this bridge,
 ## Interface
 ```ts
 interface IpcBusBridge {
-    start(options?: IpcBusBridge.StartOptions): Promise<string>;
-    stop(): void;
+    connect(options?: IpcBusBridge.StartOptions): Promise<string>;
+    close(): void;
 }
 ```
 ## Initialization of the Bridge (in the master process)
 
 ```js
 const ipcBusModule = require("electron-common-ipc");
-const ipcBusBridge = ipcBusModule.IpcBusBridge.Create([busPath]);
-```
-
-The ***require()*** call loads the module and IpcBusBridge.Create setups the bridge with the ***busPath***.
-
-```js
-// Socket path
-const ipcBusBridge = ipcBusModule.IpcBusBridge.Create('/my-ipc-bus-path');
-```
-
-```js
-// Port number
-const ipcBusBridge = ipcBusModule.IpcBusBridge.Create(58666);
+const ipcBusBridge = ipcBusModule.IpcBusBridge.Create();
 ```
 
 ## Methods
 
-### start(options?: IpcBusBridge.StartOptions) : Promise < string >
+### connect(options?: IpcBusBridge.StartOptions) : Promise < string >
 
 ```js
-ipcBusBridge.start() 
-    .then((msg) => console.log('success'))
+// Socket path
+ipcBusBridge.connect('/my-ipc-bus-path') 
+    .then(() => console.log('success'))
     .catch((err) => console.log(err))
-````
+```
+
+```js
+// Port number
+ipcBusBridge.connect(58666) 
+    .then(() => console.log('success'))
+    .catch((err) => console.log(err))
+```
 
 Starts the bridge dispatcher.
 If failed (timeout or any other internal error), ***err*** contains the error message.
 
-### stop()
+### close()
 
 ```js
 ipcBusBridge.stop() 
@@ -328,19 +341,19 @@ interface IpcBusClient extends events.EventEmitter {
 
 ```js
 const ipcBusModule = require("electron-common-ipc");
-const ipcBus = ipcBusModule.IpcBusClient.Create([busPath]);
+const ipcBus = ipcBusModule.IpcBusClient.Create();
 ````
 
-The ***require()*** call loads the module. IpcBusClient.Create setups the client with the ***busPath*** that was used to start the broker.
-
 ```js
-const ipcBus = ipcBusModule.IpcBusClient.Create('/my-ipc-bus-path');
+ipcBus.connect([net options]);
 ```
+
+IpcBusClient.connect setups the client with the ***busPath*** that was used to connect the broker.
 
 ## Initialization in a Node single process
  
 ```js
-const ipcBus = ipcBusModule.IpcBusClient.Create('/my-ipc-bus-path');
+ipcBus.connect('/my-ipc-bus-path');
 ```
 
 ## Initialization in a Renderer process (either sandboxed or not)
@@ -360,7 +373,6 @@ if (electronCommonIpc.PreloadElectronCommonIpc()) {
     const ipcBus = window.ElectronCommonIpc.CreateIpcBusClient();
 }
 ```
-
 NOTE: There is no notion of port, buspath in a renderer. IpcBusRenderer connects automatically to the instance of the bridge.
 
 ## Property
@@ -592,7 +604,7 @@ NOTE : This constructor will automatically register all methods of ***myOuterSer
 ### start(): void
 This makes the service to listen and serve incoming remote calls.
 The service also sends the ***IPCBUS_SERVICE_EVENT_START*** event.
-NOTE : If an outerrouter service's instance has been specified at construction time, ***start()*** will overload its This method will overload
+NOTE : If an outerrouter service's instance has been specified at construction time, ***connect()*** will overload its This method will overload
 
 ### stop(): void
 This makes the service to stop listen and serve incoming remote calls.
@@ -720,12 +732,12 @@ npm run build
 
 To run the application:
 ```
-npm run start
+npm run connect
 ```
 
 To run the application in sandboxed mode:
 ```
-npm run start-sandboxed
+npm run connect-sandboxed
 ```
 
 
@@ -735,7 +747,7 @@ npm run start-sandboxed
 
 # MIT License
 
-Copyright (c) 2017 Emmanuel Kimmerlin and Michael Vasseur
+Copyright (c) 2020 Emmanuel Kimmerlin
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

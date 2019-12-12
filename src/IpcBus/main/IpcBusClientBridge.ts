@@ -9,7 +9,7 @@ class IpcBusClientBridge extends IpcBusClientImpl {
     connect(arg1: Client.IpcBusClient.ConnectOptions | string | number, arg2?: Client.IpcBusClient.ConnectOptions | string, arg3?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
         let classFactory: any;
-        if ((options.port == null) && (options.path == null)) {
+        if (options.useBridge || (options.port == null) && (options.path == null)) {
             classFactory = IpcBusTransportBridge;
         }
         else {

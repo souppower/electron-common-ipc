@@ -3,7 +3,6 @@ import { EventEmitter } from 'events';
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 
-import { IpcBusSender } from '../IpcBusTransport';
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import { IpcBusCommand } from '../IpcBusCommand';
 
@@ -11,7 +10,8 @@ export const IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Connect
 export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:Command';
 export const IPCBUS_TRANSPORT_RENDERER_EVENT = 'ECIPC:IpcBusRenderer:Event';
 
-export interface IpcWindow extends EventEmitter, IpcBusSender {
+export interface IpcWindow extends EventEmitter {
+    send(channel: string, ...args: any[]): void;
 }
 
 // Implementation for renderer process

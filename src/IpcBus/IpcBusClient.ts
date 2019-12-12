@@ -57,6 +57,7 @@ export interface IpcNetOptions {
     port?: number;
     host?: string;
     path?: string;
+    useBridge?: boolean;
 }
 
 export interface IpcConnectOptions extends IpcNetOptions, IpcTimeoutOptions {
