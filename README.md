@@ -344,9 +344,21 @@ const ipcBus = ipcBusModule.IpcBusClient.Create('/my-ipc-bus-path');
 ```
 
 ## Initialization in a Renderer process (either sandboxed or not)
+if use ***sandbox*** you have to preload code like this:
 ```js
-const ipcBusModule = require("electron-common-ipc");
-const ipcBus = ipcBusModule.IpcBusClient.Create();
+const electronCommonIpc = require('electron-common-ipc');
+if (electronCommonIpc.PreloadElectronCommonIpc()) {
+  electronCommonIpc.ActivateIpcBusTrace(true);
+  window.ipcBus = window.ElectronCommonIpc.CreateIpcBusClient();
+  window.ipcBus.IPCBUS_CHANNEL_QUERY_STATE = electronCommonIpc.IPCBUS_CHANNEL_QUERY_STATE;
+}
+```
+if not, just type this code in your renderer process:
+```js
+if (electronCommonIpc.PreloadElectronCommonIpc()) {
+    electronCommonIpc.ActivateIpcBusTrace(true);
+    const ipcBus = window.ElectronCommonIpc.CreateIpcBusClient();
+}
 ```
 
 NOTE: There is no notion of port, buspath in a renderer. IpcBusRenderer connects automatically to the instance of the bridge.
