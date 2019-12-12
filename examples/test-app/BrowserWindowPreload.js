@@ -4,10 +4,11 @@
 'use strict';
 
 const electronCommonIpc = require('electron-common-ipc');
-electronCommonIpc.PreloadElectronCommonIpc();
-electronCommonIpc.ActivateIpcBusTrace(true);
-window.ipcBus = electronCommonIpc.IpcBusClient.Create();
-window.ipcBus.IPCBUS_CHANNEL_QUERY_STATE = electronCommonIpc.IPCBUS_CHANNEL_QUERY_STATE;
+if (electronCommonIpc.PreloadElectronCommonIpc()) {
+  electronCommonIpc.ActivateIpcBusTrace(true);
+  window.ipcBus = window.ElectronCommonIpc.CreateIpcBusClient();
+  window.ipcBus.IPCBUS_CHANNEL_QUERY_STATE = electronCommonIpc.IPCBUS_CHANNEL_QUERY_STATE;
+}
 
 window.ipcRenderer = require('electron').ipcRenderer;
 
