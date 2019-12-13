@@ -57,24 +57,20 @@ export interface IpcNetOptions {
     port?: number;
     host?: string;
     path?: string;
-    useBridge?: boolean;
 }
 
 export interface IpcConnectOptions extends IpcNetOptions, IpcTimeoutOptions {
-}
-
-export interface IpcConnectFunction<T> {
-    (options: T): Promise<void>;
-    (path: string, options?: T): Promise<void>;
-    (port: number, options?: T): Promise<void>;
-    (port: number, hostname?: string, options?: T): Promise<void>;
 }
 
 export namespace IpcBusClient {
     export interface ConnectOptions extends IpcConnectOptions, IpcSocketBufferingOptions {
         peerName?: string;
     }
-    export interface ConnectFunction extends IpcConnectFunction<IpcBusClient.ConnectOptions> {
+    export interface ConnectFunction {
+        (options?: ConnectOptions): Promise<void>;
+        (path?: string, options?: ConnectOptions): Promise<void>;
+        (port?: number, options?: ConnectOptions): Promise<void>;
+        (port?: number, hostname?: string, options?: ConnectOptions): Promise<void>;
     }
 
     export interface CloseOptions extends IpcTimeoutOptions {

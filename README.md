@@ -41,6 +41,51 @@ Dependencies
 
 # Usage
 
+## Scenarii
+### Electron App
+Main Process  
+- ipcBusBridge = IpcBusBridge.Create
+- ipcBusBridge.connect
+- ipcBusClientElectronMain = IpcBusClient.Create
+- ipcBusClientElectronMain.connect
+
+Renderer Process (nodeIintegration = true)
+- ipcBusClientRenderer1 = IpcBusClient.Create
+- ipcBusClientRenderer1.connect
+
+Sandboxed Renderer Process (sandbox = true)
+- load ipcbus library in the preload file
+- ipcBusClientRenderer2 = IpcBusClient.Create
+- ipcBusClientRenderer2.connect
+
+done  
+ipcBusClientElectronMain, ipcBusClientRenderer1 and ipcBusClientRenderer2 can exchange data.
+
+### NodeJS App
+Main Process  
+- find a free port (using [Socket port helpers](https://github.com/emmkimme/socket-port-helpers) for instance)
+- ipcBusBroker = IpcBusBroker.Create
+- ipcBusBroker.connect [free port]
+- ipcBusClientNodeMain = IpcBusClient.Create
+- ipcBusClientNodeMain.connect [free port]
+
+Child process
+- retrieve free port through commandline or environment variable
+- ipcBusClientNodeChild = IpcBusClient.Create
+- ipcBusClientNodeChild.connect [free port]
+
+done  
+ipcBusClientNodeMain and ipcBusClientNodeChild can exchange data.
+
+### Hybrid App (NodeJS and Electron)
+Main Process
+- ipBusBridge.connect [same port as the ipcBusBroker]
+
+done  
+ipcBusClientElectronMain, ipcBusClientRenderer1 and ipcBusClientRenderer2, ipcBusClientNodeMain and ipcBusClientNodeChild can exchange data.
+
+
+
 ```js
 // Load modules
 const ipcBusModule = require("electron-ipc-bus");
@@ -52,25 +97,25 @@ const ipcBusPath = 50494;
 
 // Startup
 electronApp.on('ready', function () {
-    // Create broker
+    // Create broker if you want to interact with NodeJS process
     const ipcBusBroker = ipcBusModule.IpcBusBroker.Create();
     // Start broker
     ipcBusBroker.connect(ipcBusPath)
-        .then(() => {
+        .then((msg) => {
             console.log('IpcBusBroker started');
 
             // Create bridge
-            const ipcBusBridge = ipcBusModule.IpcBusBridge.Create(ipcBusPath);
-            // Start bridge
+            const ipcBusBridge = ipcBusModule.IpcBusBridge.Create();
+            // Connect using a busPath if you want to interact with NodeJS process
             ipcBusBridge.connect(ipcBusPath)
-                .then(() => {
+                .then((msg) => {
                     console.log('IpcBusBridge started');
 
                     // Create clients
-                    const ipcBusClient1 = ipcBusModule.IpcBusClient.Create(ipcBusPath);
-                    const ipcBusClient2 = ipcBusModule.IpcBusClient.Create(ipcBusPath);
+                    const ipcBusClient1 = ipcBusModule.IpcBusClient.Create();
+                    const ipcBusClient2 = ipcBusModule.IpcBusClient.Create();
                     Promise.all([ipcBusClient1.connect({ peerName: 'client1' }), ipcBusClient2.connect({ peerName: 'client2' })])
-                        .then(() => {
+                        .then((msg) => {
                             // Chatting on channel 'greeting'
                             ipcBusClient1.addListener('greeting', (ipcBusEvent, greetingMsg) => {
                                 // This is a request, we have to reply immediatly using request.resolve or request.reject

@@ -159,7 +159,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     connect(arg1: Broker.IpcBusBroker.ConnectOptions | string | number, arg2?: Broker.IpcBusBroker.ConnectOptions | string, arg3?: Broker.IpcBusBroker.ConnectOptions): Promise<void> {
         const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
         if ((options.port == null) && (options.path == null)) {
-            return Promise.reject('Wrong options');
+            return Promise.reject('Connection options not provided');
         }
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseStarted;

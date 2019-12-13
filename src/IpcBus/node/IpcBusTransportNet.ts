@@ -97,7 +97,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
         return new Promise((resolve, reject) => {
             options = IpcBusUtils.CheckConnectOptions(options);
             if ((options.port == null) && (options.path == null)) {
-                return reject('Wrong options');
+                return reject('Connection options not provided');
             }
 
             this._socketBuffer = options.socketBuffer;
