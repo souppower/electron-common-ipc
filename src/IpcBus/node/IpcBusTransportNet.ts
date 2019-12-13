@@ -228,9 +228,9 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
         }
     }
 
-    // ipcPostBuffer(buffer: Buffer) {
-    //     if (this._socketWriter) {
-    //         this._socketWriter.writeBuffer(buffer);
-    //     }
-    // }
+    ipcPostBuffer(buffer: Buffer) {
+        if (this._socketWriter) {
+            this._socketWriter.writeBuffer(buffer);
+        }
+    }
 }

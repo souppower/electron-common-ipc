@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as Client from '../IpcBusClient';
 
@@ -18,12 +19,14 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
     private _ipcMain: Electron.IpcMain;
 
     private _ipcBusBridge: IpcBusBridgeImpl;
+    private _packetOut: IpcPacketBuffer;
 
     constructor(contextType: Client.IpcBusProcessType) {
         assert(contextType === 'main');
         super({ type: contextType, pid: process.pid });
 
         this._ipcMain = require('electron').ipcMain;
+        this._packetOut = new IpcPacketBuffer();
     }
 
     protected _reset() {
@@ -33,9 +36,9 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
         }
     }
 
-    send(channel: string, ipcBusCommand: IpcBusCommand, args: any[]) {
+    send(channel: string, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
         // if (channel === IPCBUS_TRANSPORT_RENDERER_EVENT) {
-            this._onCommandReceived(undefined, ipcBusCommand, args);
+            this._onCommandBufferReceived(undefined, ipcBusCommand, buffer);
         // }
     }
 
@@ -83,7 +86,13 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
     ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._ipcBusBridge) {
             ipcBusCommand.kind = ('B' + ipcBusCommand.kind) as IpcBusCommand.Kind;
-            this._ipcBusBridge._onMainMessage(this, ipcBusCommand, args);
+            if (args) {
+                this._packetOut.serializeArray([ipcBusCommand, args]);
+            }
+            else {
+                this._packetOut.serializeArray([ipcBusCommand]);
+            }
+            this._ipcBusBridge._onMainMessage(this, ipcBusCommand, this._packetOut);
         }
     }
 }

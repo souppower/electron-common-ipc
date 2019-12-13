@@ -63,12 +63,14 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     private _ipcCallback: IpcBusTransport.Callback;
     private _requestFunctions: Map<string, DeferredRequest>;
     private _requestNumber: number;
+    private _packetDecoder: IpcPacketBuffer;
 
     constructor(ipcBusContext: Client.IpcBusProcess) {
         this._ipcBusPeer = { id: uuid.v1(), name: '', process: ipcBusContext };
         this._requestFunctions = new Map<string, DeferredRequest>();
         this._requestNumber = 0;
         this._localProcessId = IpcBusTransportImpl._lastLocalProcessId++;
+        this._packetDecoder = new IpcPacketBuffer();
     }
 
     // ----------------------
@@ -145,6 +147,16 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     protected _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         const args = ipcPacketBuffer.parseArrayAt(1);
         this._onCommandReceived(undefined, ipcBusCommand, args);
+    }
+
+    protected _onCommandBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
+        this._packetDecoder.decodeFromBuffer(buffer);
+        this._onCommandReceived(undefined, this._packetDecoder.parseArrayAt(0), this._packetDecoder.parseArrayAt(1));
+    }
+
+    protected decodeBuffer(buffer: Buffer): IpcPacketBuffer {
+        this._packetDecoder.decodeFromBuffer(buffer);
+        return this._packetDecoder;
     }
 
     ipcRequest(channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {

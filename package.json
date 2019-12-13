@@ -55,7 +55,7 @@
     "del": "^5.1.0",
     "del-cli": "^3.0.0",
     "dts-bundle": "^0.7.3",
-    "electron": "^6.0.0",
+    "electron": "^7.0.0",
     "electron-mocha": "^6.0.2",
     "expect": "^24.9.0",
     "minimist": "^1.2.0",

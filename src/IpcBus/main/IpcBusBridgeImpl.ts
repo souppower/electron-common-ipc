@@ -125,22 +125,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         return queryStateResult;
     }
 
-    protected _onCommandSendMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
-        this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-            connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, args);
-        });
-    }
-
-    protected _onCommandRequestResponse(ipcBusCommand: IpcBusCommand, args: any[]) {
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-        const connData = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
-        if (connData) {
-            this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
-            connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, args);
-        }
-    }
-
     // This is coming from the Socket broker
     protected _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
@@ -206,7 +190,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         }
     }
 
-    _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
+    _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
         const webContents: Electron.WebContents = event.sender;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.BridgeHandshake:
@@ -222,12 +206,12 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 break;
 
             default :
-                this._onCommonMessage(webContents, ipcBusCommand, args);
+                this._onCommonMessage(webContents, ipcBusCommand, this.decodeBuffer(buffer));
                 break;
         }
     }
 
-    _onCommonMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, args: any[]) {
+    _onCommonMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.BridgeAddChannelListener:
                 this._subscriptions.addRef(ipcBusCommand.channel, sender, ipcBusCommand.peer);
@@ -245,27 +229,37 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 this._senderCleanup(sender);
                 break;
 
-            case IpcBusCommand.Kind.BridgeSendMessage:
+            case IpcBusCommand.Kind.BridgeSendMessage: {
                 if (ipcBusCommand.request) {
                     this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, sender, ipcBusCommand.peer);
                 }
-                this._onCommandSendMessage(ipcBusCommand, args);
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, ipcPacketBuffer.buffer);
+                });
                 if (this._brokerChannels.has(ipcBusCommand.channel)) {
-                    super.ipcPostCommand(ipcBusCommand, args);
+                    super.ipcPostBuffer(ipcPacketBuffer.buffer);
                 }
                 break;
+            }
                 
-            case IpcBusCommand.Kind.BridgeRequestResponse:
-                this._onCommandRequestResponse(ipcBusCommand, args);
+            case IpcBusCommand.Kind.BridgeRequestResponse: {
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
+                const connData = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
+                if (connData) {
+                    this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, ipcPacketBuffer.buffer);
+                }
                 if (this._brokerChannels.has(ipcBusCommand.request.channel)) {
-                    super.ipcPostCommand(ipcBusCommand, args);
+                    super.ipcPostBuffer(ipcPacketBuffer.buffer);
                 }
                 break;
+            }
 
             case IpcBusCommand.Kind.BridgeRequestCancel:
                 this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                 if (this._brokerChannels.has(ipcBusCommand.request.channel)) {
-                    super.ipcPostCommand(ipcBusCommand, args);
+                    super.ipcPostBuffer(ipcPacketBuffer.buffer);
                 }
                 break;
 
@@ -278,8 +272,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         this._ipcMain.emit(replyChannel, { sender: null }, this);
     }
 
-    _onMainMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, args: any[]) {
-        this._onCommonMessage(sender, ipcBusCommand, args);
+    _onMainMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+        this._onCommonMessage(sender, ipcBusCommand, ipcPacketBuffer);
     }
 }
 

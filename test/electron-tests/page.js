@@ -59,13 +59,14 @@ window.addEventListener('load', () => {
             ipcBus.on(`test-myself-${window_id}`, (...args) => {
                 console.log(`ipcBus - self receive message : ${args}`);
             });
+            const buffer = Buffer.from('ceci est un test');
+            ipcBus.send(`test-main-buffer`, buffer);
+            const date = new Date();
+            ipcBus.send(`test-main-date`, date);
             setTimeout(() => {
-                const buffer = Buffer.from('ceci et un test');
                 console.log('ipcBus - Parent send message');
                 ipcBus.send(`test-frame-${window_id}`, 'hello frame');
                 ipcBus.send(`test-myself-${window_id}`, 'hello myself');
-                ipcBus.send(`test-frame-${window_id}`,buffer);
-                ipcBus.send(`test-myself-${window_id}`, buffer);
             }, 100);
         })
         .catch((err) => {
