@@ -2,7 +2,7 @@ import * as uuid from 'uuid';
 import { EventEmitter } from 'events';
 
 import { IpcWindow } from './IpcBusTransportWindow';
-import { IPCBUS_TRANSPORT_RENDERER_CONNECT, IPCBUS_TRANSPORT_RENDERER_EVENT } from './IpcBusTransportWindow';
+import { IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, IPCBUS_TRANSPORT_RENDERER_EVENT } from './IpcBusTransportWindow';
 
 import { CrossFrameMessage } from './CrossFrameMessage';
 
@@ -106,7 +106,7 @@ export class IpcBusFrameBridge extends CrossFrameEventEmitter {
         this._messageTransportHandlerEvent = this._messageTransportHandlerEvent.bind(this);
         this._messageTransportHandlerConnect = this._messageTransportHandlerConnect.bind(this);
 
-        this._ipcWindow.on(IPCBUS_TRANSPORT_RENDERER_CONNECT, this._messageTransportHandlerConnect);
+        this._ipcWindow.on(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._messageTransportHandlerConnect);
         this._ipcWindow.on(IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
     }
 
@@ -123,7 +123,7 @@ export class IpcBusFrameBridge extends CrossFrameEventEmitter {
 
     protected _messageTransportHandlerConnect(...args: any[]) {
         trace && console.log(`_messageTransportHandlerConnect ${args}`);
-        this.send(IPCBUS_TRANSPORT_RENDERER_CONNECT, ...args);
+        this.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ...args);
     }
 }
 
