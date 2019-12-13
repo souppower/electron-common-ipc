@@ -54,9 +54,12 @@ function test(remoteBroker, busPath) {
 
   describe(`Node Client messages ${remoteBroker ? '(Broker in remote)' : ''}`, () => {
     let ipcClient1;
+    let brokers;
     before(() => {
-      return brokersLifeCycle.startBrokers(remoteBroker, busPath)
-        .then((ipcBusPath) => {
+      brokers = new brokersLifeCycle.Brokers(remoteBroker, busPath);
+      return brokers.start()
+        .then(() => {
+          let ipcBusPath = brokers.getBusPath();
           ipcClient1 = ipcBusModule.CreateIpcBusClient();
           return Promise.all([ipcClient1.connect(ipcBusPath, { peerName: 'client1', timeoutDelay })])
             .then(() => {
@@ -64,7 +67,7 @@ function test(remoteBroker, busPath) {
                 let options = { stdio: ['pipe', 'pipe', 'pipe', 'ipc'] };
                 // nodeChildProcess = child_process.fork(path.join(__dirname, 'nodeClient.js'), ['--inspect-brk=9229', `--busPath=${ipcBusPath}`], options);
                 nodeChildProcess = child_process.fork(path.join(__dirname, 'nodeClient.js'), [
-                  '--inspect-brk=9229', 
+                  // '--inspect-brk=9000', 
                   `--busPath=${ipcBusPath}`, 
                   `--busTimeout=${timeoutDelay}`
                 ], 
@@ -96,9 +99,11 @@ function test(remoteBroker, busPath) {
       return Promise.all([ipcClient1.close({ timeoutDelay })])
         .then(() => {
           nodeChildProcess.kill('SIGTERM');
-          return brokersLifeCycle.stopBrokers(remoteBroker);
-        });
+          return brokers.stop();
+        })
+        .catch(() => { });
     });
+
 
     it('test', (done) => {
       done();

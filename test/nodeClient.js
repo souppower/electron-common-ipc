@@ -1,8 +1,6 @@
 const minimist = require('minimist');
 
 // busPath
-console.log(argv);
-
 let args = minimist(process.argv.slice(1));
 let timeoutDelay = 30000;
 if (args.busTimeout) {

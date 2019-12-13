@@ -6,6 +6,7 @@ export interface IpcBusCommand {
     channel: string;
     peer: IpcBusPeer;
     request?: IpcBusCommand.Request;
+    bridge?: boolean;
 }
 
 /** @internal */
@@ -24,17 +25,17 @@ export namespace IpcBusCommand {
         RequestResponse             = 'RQR',
         RequestCancel               = 'RQC',
 
-        BridgeHandshake                   = 'BHAN',
+        // BridgeHandshake                   = 'BHAN',
         BridgeConnect                     = 'BCOO',    // COnnexion
-        // BridgeDisconnect                  = 'BCOD',
+        // // BridgeDisconnect                  = 'BCOD',
         BridgeClose                       = 'BCOC',
-        BridgeAddChannelListener          = 'BLICA',   // LIstener
-        BridgeRemoveChannelListener       = 'BLICR',
-        BridgeRemoveChannelAllListeners   = 'BLICRA',
-        BridgeRemoveListeners             = 'BLIR',
-        BridgeSendMessage                 = 'BMES',    // MEssage
-        BridgeRequestResponse             = 'BRQR',
-        BridgeRequestCancel               = 'BRQC',
+        // BridgeAddChannelListener          = 'BLICA',   // LIstener
+        // BridgeRemoveChannelListener       = 'BLICR',
+        // BridgeRemoveChannelAllListeners   = 'BLICRA',
+        // BridgeRemoveListeners             = 'BLIR',
+        // BridgeSendMessage                 = 'BMES',    // MEssage
+        // BridgeRequestResponse             = 'BRQR',
+        // BridgeRequestCancel               = 'BRQC',
 
         AddBrokerChannels                 = 'BOCAS',
         RemoveBrokerChannels              = 'BOCRS',

@@ -362,25 +362,17 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 if (ipcBusCommand.request) {
                     this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, socket, ipcBusCommand.peer);
                 }
-                if (this._bridgeChannels.has(ipcBusCommand.channel)) {
-                    this._socketBridge && this._socketBridge.write(packet.buffer);
-                }
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-                    connData.conn.write(packet.buffer);
-                });
-                break;
-            case IpcBusCommand.Kind.BridgeSendMessage:
-                // Register the replyChannel
-                if (ipcBusCommand.request) {
-                    this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, this._socketBridge, ipcBusCommand.peer);
+                if (!ipcBusCommand.bridge) {
+                    if (this._bridgeChannels.has(ipcBusCommand.channel)) {
+                        this._socketBridge && this._socketBridge.write(packet.buffer);
+                    }
                 }
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.write(packet.buffer);
                 });
                 break;
 
-            case IpcBusCommand.Kind.RequestResponse:
-            case IpcBusCommand.Kind.BridgeRequestResponse: {
+            case IpcBusCommand.Kind.RequestResponse: {
                 const connData = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
                     this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
@@ -390,7 +382,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             }
 
             case IpcBusCommand.Kind.RequestCancel:
-            case IpcBusCommand.Kind.BridgeRequestCancel:
                 this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                 break;
 

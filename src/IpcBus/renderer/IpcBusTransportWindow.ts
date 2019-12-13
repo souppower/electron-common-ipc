@@ -116,7 +116,7 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._connected) {
-            ipcBusCommand.kind = ('B' + ipcBusCommand.kind) as IpcBusCommand.Kind;
+            ipcBusCommand.bridge = true;
             if (args) {
                 this._packetOut.serializeArray([ipcBusCommand, args]);
             }

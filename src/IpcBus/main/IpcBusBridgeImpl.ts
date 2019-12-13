@@ -133,17 +133,39 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 channels.forEach(channel => {
                     this._brokerChannels.add(channel);
                 });
-                return;
+                break;
             }
             case IpcBusCommand.Kind.RemoveBrokerChannels: {
                 const channels: string[] = ipcPacketBuffer.parseArrayAt(1);
                 channels.forEach(channel => {
                     this._brokerChannels.delete(channel);
                 });
-                return;
+                break;
             }
+            case IpcBusCommand.Kind.SendMessage: {
+                if (ipcBusCommand.request) {
+                    this._brokerChannels.add(ipcBusCommand.request.replyChannel);
+                }
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, ipcPacketBuffer.buffer);
+                });
+                break;
+            }
+            case IpcBusCommand.Kind.RequestResponse: {
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
+                const connData = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
+                if (connData) {
+                    this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, ipcPacketBuffer.buffer);
+                }
+                break;
+            }
+            case IpcBusCommand.Kind.RequestCancel:
+                this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
+                this._brokerChannels.delete(ipcBusCommand.request.replyChannel);
+                break;
         }
-        return super._onCommandPacketReceived(ipcBusCommand, ipcPacketBuffer);
     }
 
     private _senderCleanup(sender: IpcBusSender): void {
@@ -192,7 +214,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
         const webContents: Electron.WebContents = event.sender;
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.BridgeHandshake:
+            case IpcBusCommand.Kind.Handshake:
                 this._onRendererHandshake(webContents, ipcBusCommand);
                 break;
             default :
@@ -203,33 +225,33 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     _onCommonMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
         switch (ipcBusCommand.kind) {
-            // case IpcBusCommand.Kind.BridgeConnect:
+            // case IpcBusCommand.Kind.Connect:
             //     break;
 
-            // case IpcBusCommand.Kind.BridgeDisconnect:
+            // case IpcBusCommand.Kind.Disconnect:
             //     break;
 
-            case IpcBusCommand.Kind.BridgeClose:
+            case IpcBusCommand.Kind.Close:
                 this._subscriptions.removePeer(sender, ipcBusCommand.peer);
                 break;
 
-            case IpcBusCommand.Kind.BridgeAddChannelListener:
+            case IpcBusCommand.Kind.AddChannelListener:
                 this._subscriptions.addRef(ipcBusCommand.channel, sender, ipcBusCommand.peer);
                 break;
 
-            case IpcBusCommand.Kind.BridgeRemoveChannelAllListeners:
+            case IpcBusCommand.Kind.RemoveChannelAllListeners:
                 this._subscriptions.releaseAll(ipcBusCommand.channel, sender, ipcBusCommand.peer);
                 break;
 
-            case IpcBusCommand.Kind.BridgeRemoveChannelListener:
+            case IpcBusCommand.Kind.RemoveChannelListener:
                 this._subscriptions.release(ipcBusCommand.channel, sender, ipcBusCommand.peer);
                 break;
 
-            case IpcBusCommand.Kind.BridgeRemoveListeners:
+            case IpcBusCommand.Kind.RemoveListeners:
                 this._subscriptions.removePeer(sender, ipcBusCommand.peer);
                 break;
 
-            case IpcBusCommand.Kind.BridgeSendMessage: {
+            case IpcBusCommand.Kind.SendMessage: {
                 if (ipcBusCommand.request) {
                     this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, sender, ipcBusCommand.peer);
                 }
@@ -243,20 +265,20 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 break;
             }
                 
-            case IpcBusCommand.Kind.BridgeRequestResponse: {
+            case IpcBusCommand.Kind.RequestResponse: {
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
                 const connData = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
                     this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                     connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, buffer);
                 }
-                if (this._brokerChannels.has(ipcBusCommand.request.channel)) {
+                if (this._brokerChannels.delete(ipcBusCommand.request.replyChannel)) {
                     super.ipcPostBuffer(buffer);
                 }
                 break;
             }
 
-            case IpcBusCommand.Kind.BridgeRequestCancel:
+            case IpcBusCommand.Kind.RequestCancel:
                 this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                 if (this._brokerChannels.has(ipcBusCommand.request.channel)) {
                     super.ipcPostBuffer(buffer);

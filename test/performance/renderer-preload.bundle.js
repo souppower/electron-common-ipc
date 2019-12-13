@@ -122,16 +122,8 @@ var IpcBusCommand;
         Kind["SendMessage"] = "MES";
         Kind["RequestResponse"] = "RQR";
         Kind["RequestCancel"] = "RQC";
-        Kind["BridgeHandshake"] = "BHAN";
         Kind["BridgeConnect"] = "BCOO";
         Kind["BridgeClose"] = "BCOC";
-        Kind["BridgeAddChannelListener"] = "BLICA";
-        Kind["BridgeRemoveChannelListener"] = "BLICR";
-        Kind["BridgeRemoveChannelAllListeners"] = "BLICRA";
-        Kind["BridgeRemoveListeners"] = "BLIR";
-        Kind["BridgeSendMessage"] = "BMES";
-        Kind["BridgeRequestResponse"] = "BRQR";
-        Kind["BridgeRequestCancel"] = "BRQC";
         Kind["AddBrokerChannels"] = "BOCAS";
         Kind["RemoveBrokerChannels"] = "BOCRS";
         Kind["AddBridgeChannels"] = "BICAS";
@@ -233,16 +225,12 @@ class IpcBusTransportImpl {
     }
     _onCommandReceived(__ignore__, ipcBusCommand, args) {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand_1.IpcBusCommand.Kind.BridgeSendMessage:
-            case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage: {
+            case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage:
                 this._onCommandSendMessage(ipcBusCommand, args);
                 break;
-            }
-            case IpcBusCommand_1.IpcBusCommand.Kind.BridgeRequestResponse:
-            case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse: {
+            case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse:
                 this._onCommandRequestResponse(ipcBusCommand, args);
                 break;
-            }
         }
     }
     _onCommandPacketReceived(ipcBusCommand, ipcPacketBuffer) {
@@ -300,7 +288,7 @@ IpcBusTransportImpl._lastLocalProcessId = 0;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
-exports.IPC_BUS_TIMEOUT = 20000;
+exports.IPC_BUS_TIMEOUT = 2000;
 const win32prefix1 = '\\\\.\\pipe';
 const win32prefix2 = '\\\\?\\pipe';
 function CleanPipeName(str) {
@@ -423,17 +411,6 @@ exports.Logger = Logger;
 Logger.enable = false;
 Logger.service = false;
 ;
-function ContainsWildCards(str) {
-    return str.charAt(str.length - 1) === '*';
-}
-exports.ContainsWildCards = ContainsWildCards;
-function WildCardsToRegex(str) {
-    return new RegExp(preg_quote(str).replace(/\\\*/g, '.*').replace(/\\\?/g, '.'), 'g');
-}
-exports.WildCardsToRegex = WildCardsToRegex;
-function preg_quote(str) {
-    return str.replace(new RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]', 'g'), '\\$&');
-}
 class ChannelConnectionMap extends events_1.EventEmitter {
     constructor(name, emitter) {
         super();
@@ -1052,7 +1029,7 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
     }
     ipcPostCommand(ipcBusCommand, args) {
         if (this._connected) {
-            ipcBusCommand.kind = ('B' + ipcBusCommand.kind);
+            ipcBusCommand.bridge = true;
             if (args) {
                 this._packetOut.serializeArray([ipcBusCommand, args]);
             }

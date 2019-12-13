@@ -131,16 +131,13 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     // or directly from our code.
     protected _onCommandReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, args: any[]) {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.BridgeSendMessage:
-            case IpcBusCommand.Kind.SendMessage: {
+            case IpcBusCommand.Kind.SendMessage:
                 this._onCommandSendMessage(ipcBusCommand, args);
                 break;
-            }
-            case IpcBusCommand.Kind.BridgeRequestResponse:
-            case IpcBusCommand.Kind.RequestResponse: {
+
+            case IpcBusCommand.Kind.RequestResponse:
                 this._onCommandRequestResponse(ipcBusCommand, args);
                 break;
-            }
         }
     }
 
