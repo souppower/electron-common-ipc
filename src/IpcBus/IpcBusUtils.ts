@@ -310,8 +310,14 @@ export class ChannelConnectionMap<T> extends EventEmitter {
         return this._release(channel, conn, peer, true);
     }
 
-    releasePeer(conn: T, peer: IpcBusPeer) {
+    removePeer(conn: T, peer: IpcBusPeer) {
         Logger.enable && this._info(`releasePeerId: peerId = ${peer.id}`);
+
+        this._requestChannels.forEach((connData, channel) => {
+            if (connData.peer === peer) {
+                this._requestChannels.delete(channel);
+            }
+        });
 
         // ForEach is supposed to support deletion during the iteration !
         this._channelsMap.forEach((connsMap, channel) => {
@@ -319,7 +325,7 @@ export class ChannelConnectionMap<T> extends EventEmitter {
         });
     }
 
-    releaseConnection(conn: T) {
+    removeConnection(conn: T) {
         Logger.enable && this._info(`ReleaseConn: conn = ${conn}`);
 
         // ForEach is supposed to support deletion during the iteration !

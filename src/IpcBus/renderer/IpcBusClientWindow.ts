@@ -1,7 +1,7 @@
 import * as Client from '../IpcBusClient';
 
 import { IpcBusTransportWindow  } from './IpcBusTransportWindow';
-import { IpcWindow } from '../renderer/IpcBusTransportIpc';
+import { IpcWindow } from '../renderer/IpcBusTransportWindow';
 import { IpcBusClientImpl} from '../IpcBusClientImpl';
 
 // Implementation for Renderer process

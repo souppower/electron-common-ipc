@@ -11,7 +11,7 @@ import { IpcBusSender } from '../IpcBusTransport';
 import { 
     IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, 
     IPCBUS_TRANSPORT_RENDERER_COMMAND, 
-    IPCBUS_TRANSPORT_RENDERER_EVENT } from '../renderer/IpcBusTransportIpc';
+    IPCBUS_TRANSPORT_RENDERER_EVENT } from '../renderer/IpcBusTransportWindow';
 
 export const IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE = 'ECIPC:IpcBusBridge:RequestInstance';
 export const IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE = 'ECIPC:IpcBusBridge:BroadcastInstance';
@@ -147,7 +147,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     }
 
     private _senderCleanup(sender: IpcBusSender): void {
-        this._subscriptions.releaseConnection(sender);
+        this._subscriptions.removeConnection(sender);
     }
 
     private _completePeerInfo(webContents: Electron.WebContents, ipcBusPeer: Client.IpcBusPeer): void {
@@ -196,15 +196,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
             case IpcBusCommand.Kind.BridgeHandshake:
                 this._onRendererHandshake(webContents, ipcBusCommand);
                 break;
-
-            case IpcBusCommand.Kind.BridgeConnect:
-                break;
-
-            // case IpcBusCommand.Kind.BridgeDisconnect:
-            case IpcBusCommand.Kind.BridgeClose:
-                this._senderCleanup(webContents);
-                break;
-
             default :
                 this._onCommonMessage(webContents, ipcBusCommand, this.decodeBuffer(buffer));
                 break;
@@ -213,6 +204,16 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     _onCommonMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
+            // case IpcBusCommand.Kind.BridgeConnect:
+            //     break;
+
+            // case IpcBusCommand.Kind.BridgeDisconnect:
+            //     break;
+
+            case IpcBusCommand.Kind.BridgeClose:
+                this._subscriptions.removePeer(sender, ipcBusCommand.peer);
+                break;
+
             case IpcBusCommand.Kind.BridgeAddChannelListener:
                 this._subscriptions.addRef(ipcBusCommand.channel, sender, ipcBusCommand.peer);
                 break;
@@ -226,7 +227,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 break;
 
             case IpcBusCommand.Kind.BridgeRemoveListeners:
-                this._senderCleanup(sender);
+                this._subscriptions.removePeer(sender, ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.BridgeSendMessage: {

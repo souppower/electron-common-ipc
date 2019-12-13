@@ -28,14 +28,14 @@ export class IpcBusBridgeJSONLogger extends IpcBusBridgeLogger {
         });
     }
 
-    protected addLog(peer: Client.IpcBusPeer, ipcBusCommand: IpcBusCommand, args: any[]): any {
+    protected addLog(ipcBusCommand: IpcBusCommand, args: any[]): any {
         const log: any = { command: ipcBusCommand };
         if (args) {
             for (let i = 0, l = args.length; i < l; ++i) {
                 log[`arg${i}`] = args[i];
             }
         }
-        log.peer = peer;
+        log.peer = ipcBusCommand.peer;
         this._logger.info(ipcBusCommand.kind, log);
     }
 }

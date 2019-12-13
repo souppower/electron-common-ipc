@@ -26,12 +26,10 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
         this._logger = csvWriter({ separator: ';', headers: [
             '#',
             'kind',
-            'size',
             'peer id',
             'peer context',
-            'webContent',
-            'from peer id',
-            'arg0', 'arg1',
+            'arg0',
+            'arg1',
             'arg2',
             'arg3',
             'arg4',
@@ -40,19 +38,14 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
         this._logger.pipe(fs.createWriteStream(path.join(logPath, 'electron-common-ipcbus-bridge.csv')));
     }
 
-    protected addLog(peer: Client.IpcBusPeer, ipcBusCommand: IpcBusCommand, args: any[]): any {
+    protected addLog(ipcBusCommand: IpcBusCommand, args: any[]): any {
+        const peer = ipcBusCommand.peer;
         ++this._line;
         const log: string[] = [
             this._line.toString(),
             ipcBusCommand.kind,
             peer.id, JSON.stringify(peer.process)
         ];
-        if (peer.id !== ipcBusCommand.peer.id) {
-            log.push(ipcBusCommand.peer.id);
-        }
-        else {
-            log.push('');
-        }
         if (args) {
             for (let i = 0, l = args.length; i < l; ++i) {
                 log.push(JSON_stringify(args[i], 255));

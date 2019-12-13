@@ -105,7 +105,7 @@ class IpcBusClientImpl extends events_1.EventEmitter {
 }
 exports.IpcBusClientImpl = IpcBusClientImpl;
 
-},{"./IpcBusCommand":4,"./IpcBusUtils":6,"events":26}],4:[function(require,module,exports){
+},{"./IpcBusCommand":4,"./IpcBusUtils":6,"events":25}],4:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var IpcBusCommand;
@@ -295,7 +295,7 @@ class IpcBusTransportImpl {
 exports.IpcBusTransportImpl = IpcBusTransportImpl;
 IpcBusTransportImpl._lastLocalProcessId = 0;
 
-},{"./IpcBusClient":2,"./IpcBusCommand":4,"./IpcBusUtils":6,"socket-serializer":48,"uuid":50}],6:[function(require,module,exports){
+},{"./IpcBusClient":2,"./IpcBusCommand":4,"./IpcBusUtils":6,"socket-serializer":47,"uuid":49}],6:[function(require,module,exports){
 (function (Buffer,process){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -542,13 +542,18 @@ class ChannelConnectionMap extends events_1.EventEmitter {
     releaseAll(channel, conn, peer) {
         return this._release(channel, conn, peer, true);
     }
-    releasePeer(conn, peer) {
+    removePeer(conn, peer) {
         Logger.enable && this._info(`releasePeerId: peerId = ${peer.id}`);
+        this._requestChannels.forEach((connData, channel) => {
+            if (connData.peer === peer) {
+                this._requestChannels.delete(channel);
+            }
+        });
         this._channelsMap.forEach((connsMap, channel) => {
             this._releaseConnData(channel, conn, connsMap, peer, true);
         });
     }
-    releaseConnection(conn) {
+    removeConnection(conn) {
         Logger.enable && this._info(`ReleaseConn: conn = ${conn}`);
         this._requestChannels.forEach((connData, channel) => {
             if (connData.conn === conn) {
@@ -633,12 +638,12 @@ exports.ConnectionPeers = ConnectionPeers;
 ;
 
 }).call(this,{"isBuffer":require("../../node_modules/is-buffer/index.js")},require('_process'))
-},{"../../node_modules/is-buffer/index.js":28,"_process":38,"events":26}],7:[function(require,module,exports){
+},{"../../node_modules/is-buffer/index.js":27,"_process":37,"events":25}],7:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const uuid = require("uuid");
 const events_1 = require("events");
-const IpcBusTransportIpc_1 = require("./IpcBusTransportIpc");
+const IpcBusTransportWindow_1 = require("./IpcBusTransportWindow");
 const CrossFrameMessage_1 = require("./CrossFrameMessage");
 const trace = false;
 class CrossFrameEventEmitter extends events_1.EventEmitter {
@@ -794,12 +799,12 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
     }
     start() {
         super.start();
-        this._ipcWindow.addListener(IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._messageTransportHandlerConnect);
-        this._ipcWindow.addListener(IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
+        this._ipcWindow.addListener(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._messageTransportHandlerConnect);
+        this._ipcWindow.addListener(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
     }
     stop() {
-        this._ipcWindow.removeListener(IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._messageTransportHandlerConnect);
-        this._ipcWindow.removeListener(IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
+        this._ipcWindow.removeListener(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._messageTransportHandlerConnect);
+        this._ipcWindow.removeListener(IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_EVENT, this._messageTransportHandlerEvent);
         super.stop();
     }
     _messageHandler(event) {
@@ -816,14 +821,14 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
     }
     _messageTransportHandlerEvent(...args) {
         trace && console.log(`_messageTransportHandlerEvent ${JSON.stringify(args)}`);
-        const packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_EVENT, args);
+        const packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_EVENT, args);
         this._ports.forEach((port) => {
             port.postMessage(packet);
         });
     }
     _messageTransportHandlerConnect(...args) {
         trace && console.log(`_messageTransportHandlerConnect ${JSON.stringify(args)}`);
-        const packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusTransportIpc_1.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, args);
+        const packet = CrossFrameMessage_1.CrossFrameMessage.Encode('dispatcher', IpcBusTransportWindow_1.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, args);
         this._ports.forEach((port) => {
             port.postMessage(packet);
         });
@@ -831,7 +836,7 @@ class IpcBusFrameBridge extends CrossFrameEventDispatcher {
 }
 exports.IpcBusFrameBridge = IpcBusFrameBridge;
 
-},{"./CrossFrameMessage":8,"./IpcBusTransportIpc":11,"events":26,"uuid":50}],8:[function(require,module,exports){
+},{"./CrossFrameMessage":8,"./IpcBusTransportWindow":11,"events":25,"uuid":49}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const json_helpers_1 = require("json-helpers");
@@ -864,7 +869,7 @@ var CrossFrameMessage;
     CrossFrameMessage.Encode = Encode;
 })(CrossFrameMessage = exports.CrossFrameMessage || (exports.CrossFrameMessage = {}));
 
-},{"json-helpers":31}],9:[function(require,module,exports){
+},{"json-helpers":30}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusTransportWindow_1 = require("./IpcBusTransportWindow");
@@ -876,7 +881,7 @@ function Create(contextType, ipcWindow) {
 }
 exports.Create = Create;
 
-},{"../IpcBusClientImpl":3,"./IpcBusTransportWindow":12}],10:[function(require,module,exports){
+},{"../IpcBusClientImpl":3,"./IpcBusTransportWindow":11}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusClientWindow_1 = require("./IpcBusClientWindow");
@@ -959,98 +964,6 @@ function IsElectronCommonIpcAvailable() {
 exports.IsElectronCommonIpcAvailable = IsElectronCommonIpcAvailable;
 
 },{"./CrossFrameEventEmitter2":7,"./IpcBusClientWindow":9,"electron":"electron"}],11:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const IpcBusUtils = require("../IpcBusUtils");
-const IpcBusTransportImpl_1 = require("../IpcBusTransportImpl");
-const IpcBusCommand_1 = require("../IpcBusCommand");
-exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Connect';
-exports.IPCBUS_TRANSPORT_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:Command';
-exports.IPCBUS_TRANSPORT_RENDERER_EVENT = 'ECIPC:IpcBusRenderer:Event';
-class IpcBusTransportIpc extends IpcBusTransportImpl_1.IpcBusTransportImpl {
-    constructor(ipcBusContext, ipcWindow) {
-        super(ipcBusContext);
-        this._ipcWindow = ipcWindow;
-    }
-    _reset() {
-        this._promiseConnected = null;
-        if (this._connected) {
-            this._connected = false;
-            if (this._onIpcEventReceived) {
-                this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
-                this._onIpcEventReceived = null;
-            }
-        }
-    }
-    _onConnect(eventOrPeer, peerOrUndefined) {
-        if (peerOrUndefined) {
-            if (peerOrUndefined.id === this._ipcBusPeer.id) {
-                this._ipcBusPeer = peerOrUndefined;
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Standard listening for #${this._ipcBusPeer.name}`);
-                this._onIpcEventReceived = this._onCommandReceived.bind(this);
-                this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
-                return true;
-            }
-        }
-        else {
-            if (eventOrPeer.id === this._ipcBusPeer.id) {
-                this._ipcBusPeer = eventOrPeer;
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._ipcBusPeer.name}`);
-                this._onIpcEventReceived = this._onCommandReceived.bind(this, undefined);
-                this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
-                return true;
-            }
-        }
-        return false;
-    }
-    ;
-    ipcHandshake(options) {
-        return new Promise((resolve, reject) => {
-            options = IpcBusUtils.CheckConnectOptions(options);
-            let timer;
-            const onIpcConnect = (eventOrPeer, peerOrUndefined) => {
-                if (this._connected) {
-                    if (this._onConnect(eventOrPeer, peerOrUndefined)) {
-                        this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                        clearTimeout(timer);
-                        resolve();
-                    }
-                }
-                else {
-                    this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                    reject('cancelled');
-                }
-            };
-            if (options.timeoutDelay >= 0) {
-                timer = setTimeout(() => {
-                    timer = null;
-                    this._ipcWindow.removeListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                    this._reset();
-                    reject('timeout');
-                }, options.timeoutDelay);
-            }
-            this._connected = true;
-            this._ipcWindow.addListener(exports.IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-            this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Handshake, '');
-        });
-    }
-    ipcClose(options) {
-        if (this._connected) {
-            this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Close, '');
-            this._reset();
-        }
-        return Promise.resolve();
-    }
-    ipcPostCommand(ipcBusCommand, args) {
-        if (this._connected) {
-            ipcBusCommand.kind = ('B' + ipcBusCommand.kind);
-            this._ipcWindow.send(exports.IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, args);
-        }
-    }
-}
-exports.IpcBusTransportIpc = IpcBusTransportIpc;
-
-},{"../IpcBusCommand":4,"../IpcBusTransportImpl":5,"../IpcBusUtils":6}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const assert = require("assert");
@@ -1152,7 +1065,7 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
 }
 exports.IpcBusTransportWindow = IpcBusTransportWindow;
 
-},{"../IpcBusCommand":4,"../IpcBusTransportImpl":5,"../IpcBusUtils":6,"assert":20,"socket-serializer":48}],13:[function(require,module,exports){
+},{"../IpcBusCommand":4,"../IpcBusTransportImpl":5,"../IpcBusUtils":6,"assert":19,"socket-serializer":47}],12:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const IpcBusService_1 = require("./IpcBusService");
@@ -1167,7 +1080,7 @@ exports.CreateIpcBusServiceProxy = (client, serviceName, options) => {
 };
 IpcBusService_1.IpcBusServiceProxy.Create = exports.CreateIpcBusServiceProxy;
 
-},{"./IpcBusService":14,"./IpcBusServiceImpl":15,"./IpcBusServiceProxyImpl":16}],14:[function(require,module,exports){
+},{"./IpcBusService":13,"./IpcBusServiceImpl":14,"./IpcBusServiceProxyImpl":15}],13:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IPCBUS_SERVICE_EVENT_START = 'service-event-start';
@@ -1179,7 +1092,7 @@ var IpcBusServiceProxy;
 (function (IpcBusServiceProxy) {
 })(IpcBusServiceProxy = exports.IpcBusServiceProxy || (exports.IpcBusServiceProxy = {}));
 
-},{}],15:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
@@ -1330,7 +1243,7 @@ class IpcBusServiceImpl {
 }
 exports.IpcBusServiceImpl = IpcBusServiceImpl;
 
-},{"../IpcBusUtils":6,"./IpcBusService":14,"./IpcBusServiceUtils":17,"events":26}],16:[function(require,module,exports){
+},{"../IpcBusUtils":6,"./IpcBusService":13,"./IpcBusServiceUtils":16,"events":25}],15:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
@@ -1551,7 +1464,7 @@ class IpcBusServiceProxyImpl extends events_1.EventEmitter {
 }
 exports.IpcBusServiceProxyImpl = IpcBusServiceProxyImpl;
 
-},{"../IpcBusUtils":6,"./IpcBusService":14,"./IpcBusServiceUtils":17,"events":26}],17:[function(require,module,exports){
+},{"../IpcBusUtils":6,"./IpcBusService":13,"./IpcBusServiceUtils":16,"events":25}],16:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Client = require("../IpcBusClient");
@@ -1572,7 +1485,7 @@ function getServiceEventChannel(serviceName) {
 }
 exports.getServiceEventChannel = getServiceEventChannel;
 
-},{"../IpcBusClient":2}],18:[function(require,module,exports){
+},{"../IpcBusClient":2}],17:[function(require,module,exports){
 "use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
@@ -1583,7 +1496,7 @@ __export(require("./IpcBus/IpcBusClient-factory-browser"));
 const IpcBusRendererPreload_1 = require("./IpcBus/renderer/IpcBusRendererPreload");
 IpcBusRendererPreload_1.PreloadElectronCommonIpcAutomatic();
 
-},{"./IpcBus/IpcBusClient-factory-browser":1,"./IpcBus/renderer/IpcBusRendererPreload":10,"./electron-common-ipc-common":19}],19:[function(require,module,exports){
+},{"./IpcBus/IpcBusClient-factory-browser":1,"./IpcBus/renderer/IpcBusRendererPreload":10,"./electron-common-ipc-common":18}],18:[function(require,module,exports){
 "use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
@@ -1603,7 +1516,7 @@ function ActivateServiceTrace(enable) {
 }
 exports.ActivateServiceTrace = ActivateServiceTrace;
 
-},{"./IpcBus/IpcBusClient":2,"./IpcBus/IpcBusUtils":6,"./IpcBus/renderer/IpcBusRendererPreload":10,"./IpcBus/service/IpcBusService":14,"./IpcBus/service/IpcBusService-factory":13}],20:[function(require,module,exports){
+},{"./IpcBus/IpcBusClient":2,"./IpcBus/IpcBusUtils":6,"./IpcBus/renderer/IpcBusRendererPreload":10,"./IpcBus/service/IpcBusService":13,"./IpcBus/service/IpcBusService-factory":12}],19:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -2113,7 +2026,7 @@ var objectKeys = Object.keys || function (obj) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"object-assign":37,"util/":23}],21:[function(require,module,exports){
+},{"object-assign":36,"util/":22}],20:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -2138,14 +2051,14 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],22:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],23:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -2735,7 +2648,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":22,"_process":38,"inherits":21}],24:[function(require,module,exports){
+},{"./support/isBuffer":21,"_process":37,"inherits":20}],23:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -2889,7 +2802,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],25:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 (function (Buffer){
 /*!
  * The buffer module from node.js, for the browser.
@@ -4692,7 +4605,7 @@ var hexSliceLookupTable = (function () {
 })()
 
 }).call(this,require("buffer").Buffer)
-},{"base64-js":24,"buffer":25,"ieee754":27}],26:[function(require,module,exports){
+},{"base64-js":23,"buffer":24,"ieee754":26}],25:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -5217,7 +5130,7 @@ function functionBindPolyfill(context) {
   };
 }
 
-},{}],27:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -5303,7 +5216,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],28:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 /*!
  * Determine if an object is a Buffer
  *
@@ -5326,7 +5239,7 @@ function isSlowBuffer (obj) {
   return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0))
 }
 
-},{}],29:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -5338,7 +5251,7 @@ exports.bufferJSONSupport = new json_formatter_1.JSONFormatter('Buffer', Buffer,
 exports.bufferJSONSupportBinary = new json_formatter_1.JSONFormatter('Buffer', Buffer, (t) => t.toString('binary'), (data) => Buffer.from(data, 'binary'));
 
 }).call(this,require("buffer").Buffer)
-},{"./json-formatter":30,"buffer":25}],30:[function(require,module,exports){
+},{"./json-formatter":29,"buffer":24}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class JSONFormatter {
@@ -5391,7 +5304,7 @@ class JSONFormatter {
 }
 exports.JSONFormatter = JSONFormatter;
 
-},{}],31:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 "use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
@@ -5403,7 +5316,7 @@ v1;
 const v2 = require("./tojson-v2");
 v2;
 
-},{"./json-parser":32,"./tojson-v1":34,"./tojson-v2":35}],32:[function(require,module,exports){
+},{"./json-parser":31,"./tojson-v1":33,"./tojson-v2":34}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const tojson_1 = require("./tojson");
@@ -5434,7 +5347,7 @@ var JSONParserV2;
     JSONParserV2.parse = parse;
 })(JSONParserV2 = exports.JSONParserV2 || (exports.JSONParserV2 = {}));
 
-},{"./tojson":36}],33:[function(require,module,exports){
+},{"./tojson":35}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const tojson_1 = require("./tojson");
@@ -5518,7 +5431,7 @@ class ToJSONReviverImpl {
 }
 exports.ToJSONReviverImpl = ToJSONReviverImpl;
 
-},{"./tojson":36}],34:[function(require,module,exports){
+},{"./tojson":35}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const tojson_1 = require("./tojson");
@@ -5538,7 +5451,7 @@ tojson_1.ToJSONReviver.Get = tojson_1.ToJSONReviver.GetV1 = () => {
     return jsonReviver;
 };
 
-},{"./json-formatter-default":29,"./tojson":36,"./tojson-impl":33}],35:[function(require,module,exports){
+},{"./json-formatter-default":28,"./tojson":35,"./tojson-impl":32}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const tojson_1 = require("./tojson");
@@ -5558,7 +5471,7 @@ tojson_1.ToJSONReviver.GetV2 = () => {
     return jsonReviver;
 };
 
-},{"./json-formatter-default":29,"./tojson":36,"./tojson-impl":33}],36:[function(require,module,exports){
+},{"./json-formatter-default":28,"./tojson":35,"./tojson-impl":32}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ToJSONConstants;
@@ -5572,7 +5485,7 @@ var ToJSONReviver;
 (function (ToJSONReviver) {
 })(ToJSONReviver = exports.ToJSONReviver || (exports.ToJSONReviver = {}));
 
-},{}],37:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 /*
 object-assign
 (c) Sindre Sorhus
@@ -5664,7 +5577,7 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 	return to;
 };
 
-},{}],38:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -5850,7 +5763,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],39:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const buffer_1 = require("buffer");
@@ -6002,7 +5915,7 @@ class BufferListReader extends reader_1.ReaderBase {
 }
 exports.BufferListReader = BufferListReader;
 
-},{"./reader":46,"buffer":25}],40:[function(require,module,exports){
+},{"./reader":45,"buffer":24}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const buffer_1 = require("buffer");
@@ -6086,7 +5999,7 @@ class BufferListWriter extends BufferListWriterBase {
 }
 exports.BufferListWriter = BufferListWriter;
 
-},{"./writer":47,"buffer":25}],41:[function(require,module,exports){
+},{"./writer":46,"buffer":24}],40:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -6164,7 +6077,7 @@ class BufferReader extends reader_1.ReaderBase {
 exports.BufferReader = BufferReader;
 
 }).call(this,require("buffer").Buffer)
-},{"./reader":46,"buffer":25}],42:[function(require,module,exports){
+},{"./reader":45,"buffer":24}],41:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -6229,7 +6142,7 @@ class BufferWriter extends writer_1.WriterBase {
 exports.BufferWriter = BufferWriter;
 
 }).call(this,require("buffer").Buffer)
-},{"./writer":47,"buffer":25}],43:[function(require,module,exports){
+},{"./writer":46,"buffer":24}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
@@ -6264,7 +6177,7 @@ class IpcPacketParser {
 }
 exports.IpcPacketParser = IpcPacketParser;
 
-},{"./bufferListWriter":40,"./bufferReader":41,"./ipcPacketBufferWrap":45}],44:[function(require,module,exports){
+},{"./bufferListWriter":39,"./bufferReader":40,"./ipcPacketBufferWrap":44}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
@@ -6381,7 +6294,7 @@ class IpcPacketBuffer extends ipcPacketBufferWrap_1.IpcPacketBufferWrap {
 }
 exports.IpcPacketBuffer = IpcPacketBuffer;
 
-},{"./bufferListWriter":40,"./bufferReader":41,"./ipcPacketBufferWrap":45}],45:[function(require,module,exports){
+},{"./bufferListWriter":39,"./bufferReader":40,"./ipcPacketBufferWrap":44}],44:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -6918,7 +6831,7 @@ class IpcPacketBufferWrap {
 exports.IpcPacketBufferWrap = IpcPacketBufferWrap;
 
 }).call(this,require("buffer").Buffer)
-},{"./bufferListWriter":40,"./bufferWriter":42,"buffer":25,"json-helpers":31}],46:[function(require,module,exports){
+},{"./bufferListWriter":39,"./bufferWriter":41,"buffer":24,"json-helpers":30}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Reader;
@@ -6957,7 +6870,7 @@ class ReaderBase {
 }
 exports.ReaderBase = ReaderBase;
 
-},{}],47:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class WriterBase {
@@ -6973,7 +6886,7 @@ class WriterBase {
 }
 exports.WriterBase = WriterBase;
 
-},{}],48:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 "use strict";
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
@@ -6981,7 +6894,7 @@ function __export(m) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __export(require("./socket-serializer-common"));
 
-},{"./socket-serializer-common":49}],49:[function(require,module,exports){
+},{"./socket-serializer-common":48}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ipcPacketBuffer_1 = require("./code/ipcPacketBuffer");
@@ -7004,7 +6917,7 @@ var ipcPacket_1 = require("./code/ipcPacket");
 exports.IpcPacketSerializer = ipcPacket_1.IpcPacketSerializer;
 exports.IpcPacketParser = ipcPacket_1.IpcPacketParser;
 
-},{"./code/bufferListReader":39,"./code/bufferListWriter":40,"./code/bufferReader":41,"./code/bufferWriter":42,"./code/ipcPacket":43,"./code/ipcPacketBuffer":44,"./code/ipcPacketBufferWrap":45,"./code/reader":46}],50:[function(require,module,exports){
+},{"./code/bufferListReader":38,"./code/bufferListWriter":39,"./code/bufferReader":40,"./code/bufferWriter":41,"./code/ipcPacket":42,"./code/ipcPacketBuffer":43,"./code/ipcPacketBufferWrap":44,"./code/reader":45}],49:[function(require,module,exports){
 var v1 = require('./v1');
 var v4 = require('./v4');
 
@@ -7014,7 +6927,7 @@ uuid.v4 = v4;
 
 module.exports = uuid;
 
-},{"./v1":53,"./v4":54}],51:[function(require,module,exports){
+},{"./v1":52,"./v4":53}],50:[function(require,module,exports){
 /**
  * Convert array of 16 byte values to UUID string format of the form:
  * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
@@ -7040,7 +6953,7 @@ function bytesToUuid(buf, offset) {
 
 module.exports = bytesToUuid;
 
-},{}],52:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 // Unique ID creation requires a high quality random # generator.  In the
 // browser this is a little complicated due to unknown quality of Math.random()
 // and inconsistent support for the `crypto` API.  We do the best we can via
@@ -7076,7 +6989,7 @@ if (getRandomValues) {
   };
 }
 
-},{}],53:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -7187,7 +7100,7 @@ function v1(options, buf, offset) {
 
 module.exports = v1;
 
-},{"./lib/bytesToUuid":51,"./lib/rng":52}],54:[function(require,module,exports){
+},{"./lib/bytesToUuid":50,"./lib/rng":51}],53:[function(require,module,exports){
 var rng = require('./lib/rng');
 var bytesToUuid = require('./lib/bytesToUuid');
 
@@ -7218,10 +7131,10 @@ function v4(options, buf, offset) {
 
 module.exports = v4;
 
-},{"./lib/bytesToUuid":51,"./lib/rng":52}],55:[function(require,module,exports){
+},{"./lib/bytesToUuid":50,"./lib/rng":51}],54:[function(require,module,exports){
 const electronCommonIpcModule = require('../..');
 electronCommonIpcModule.PreloadElectronCommonIpc();
 
 console.log(`IsElectronCommonIpcAvailable=${electronCommonIpcModule.IsElectronCommonIpcAvailable()}`);
 
-},{"../..":18}]},{},[55]);
+},{"../..":17}]},{},[54]);
