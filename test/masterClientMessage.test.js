@@ -166,6 +166,10 @@ function test(remoteBroker, busPath) {
       testSerialization(paramArray, ArrayEqual);
     });
 
+    describe('Date', () => {
+      const date = new Date();
+      testSerialization(date, ObjectEqual);
+    });
 
     describe('Buffer', () => {
       const paramBuffer = Buffer.alloc(128);
