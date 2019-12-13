@@ -81,7 +81,6 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
         return Promise.resolve();
     }
 
-    // We serialize in renderer process to save master CPU.
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._ipcBusBridge) {
@@ -92,7 +91,7 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
             else {
                 this._packetOut.serializeArray([ipcBusCommand]);
             }
-            this._ipcBusBridge._onMainMessage(this, ipcBusCommand, this._packetOut);
+            this._ipcBusBridge._onMainMessage(this, ipcBusCommand, this._packetOut.buffer);
         }
     }
 }

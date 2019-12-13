@@ -152,14 +152,13 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     private _completePeerInfo(webContents: Electron.WebContents, ipcBusPeer: Client.IpcBusPeer): void {
         ipcBusPeer.process.wcid = webContents.id;
-        // Hidden function, may disappear
+        // Following functions are not implemented in all Electrons
         try {
-            ipcBusPeer.process.rid = (webContents as any).getProcessId();
+            ipcBusPeer.process.rid = webContents.getProcessId();
         }
         catch (err) {
             ipcBusPeer.process.rid = -1;
         }
-        // >= Electron 1.7.1
         try {
             ipcBusPeer.process.pid = webContents.getOSProcessId();
         }
@@ -178,7 +177,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         });
         // We get back to the webContents
         // - to confirm the connection
-        // - to provide peerName and id/s
+        // - to provide id/s
         // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
         if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
             webContents.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcBusPeer);
@@ -197,12 +196,12 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 this._onRendererHandshake(webContents, ipcBusCommand);
                 break;
             default :
-                this._onCommonMessage(webContents, ipcBusCommand, this.decodeBuffer(buffer));
+                this._onCommonMessage(webContents, ipcBusCommand, buffer);
                 break;
         }
     }
 
-    _onCommonMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+    _onCommonMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
         switch (ipcBusCommand.kind) {
             // case IpcBusCommand.Kind.BridgeConnect:
             //     break;
@@ -236,10 +235,10 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 }
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, ipcPacketBuffer.buffer);
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, buffer);
                 });
                 if (this._brokerChannels.has(ipcBusCommand.channel)) {
-                    super.ipcPostBuffer(ipcPacketBuffer.buffer);
+                    super.ipcPostBuffer(buffer);
                 }
                 break;
             }
@@ -249,10 +248,10 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 const connData = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
                     this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, ipcPacketBuffer.buffer);
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, buffer);
                 }
                 if (this._brokerChannels.has(ipcBusCommand.request.channel)) {
-                    super.ipcPostBuffer(ipcPacketBuffer.buffer);
+                    super.ipcPostBuffer(buffer);
                 }
                 break;
             }
@@ -260,7 +259,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
             case IpcBusCommand.Kind.BridgeRequestCancel:
                 this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                 if (this._brokerChannels.has(ipcBusCommand.request.channel)) {
-                    super.ipcPostBuffer(ipcPacketBuffer.buffer);
+                    super.ipcPostBuffer(buffer);
                 }
                 break;
 
@@ -273,8 +272,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         this._ipcMain.emit(replyChannel, { sender: null }, this);
     }
 
-    _onMainMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        this._onCommonMessage(sender, ipcBusCommand, ipcPacketBuffer);
+    _onMainMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
+        this._onCommonMessage(sender, ipcBusCommand, buffer);
     }
 }
 

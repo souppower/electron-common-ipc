@@ -3,7 +3,7 @@ import { EventEmitter } from 'events';
 
 import { IpcConnectOptions, IpcBusPeer } from './IpcBusClient';
 
-export const IPC_BUS_TIMEOUT = 20000;// 2000;
+export const IPC_BUS_TIMEOUT = 2000;// 20000;
 
 const win32prefix1 = '\\\\.\\pipe';
 const win32prefix2 = '\\\\?\\pipe';
@@ -140,31 +140,6 @@ export class Logger {
         console.error(msg);
     }
 };
-
-export function ContainsWildCards(str: string): boolean {
-    // return str.includes('*') || str.includes('?');
-    return str.charAt(str.length - 1) === '*';
-}
-
-export function WildCardsToRegex(str: string): RegExp {
-    return new RegExp(preg_quote(str).replace(/\\\*/g, '.*').replace(/\\\?/g, '.'), 'g');
-}
-
-function preg_quote(str: string): string {
-    // http://kevin.vanzonneveld.net
-    // +   original by: booeyOH
-    // +   improved by: Ates Goral (http://magnetiq.com)
-    // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-    // +   bugfixed by: Onno Marsman
-    // +   improved by: Brett Zamir (http://brett-zamir.me)
-    // *     example 1: preg_quote("$40");
-    // *     returns 1: '\$40'
-    // *     example 2: preg_quote("*RRRING* Hello?");
-    // *     returns 2: '\*RRRING\* Hello\?'
-    // *     example 3: preg_quote("\\.+*?[^]$(){}=!<>|:");
-    // *     returns 3: '\\\.\+\*\?\[\^\]\$\(\)\{\}\=\!\<\>\|\:'
-    return str.replace(new RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]', 'g'), '\\$&');
-}
 
 // Structure
 // Channel has key
