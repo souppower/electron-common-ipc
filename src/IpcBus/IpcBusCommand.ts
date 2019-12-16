@@ -25,17 +25,8 @@ export namespace IpcBusCommand {
         RequestResponse             = 'RQR',
         RequestCancel               = 'RQC',
 
-        // BridgeHandshake                   = 'BHAN',
         BridgeConnect                     = 'BCOO',    // COnnexion
-        // // BridgeDisconnect                  = 'BCOD',
         BridgeClose                       = 'BCOC',
-        // BridgeAddChannelListener          = 'BLICA',   // LIstener
-        // BridgeRemoveChannelListener       = 'BLICR',
-        // BridgeRemoveChannelAllListeners   = 'BLICRA',
-        // BridgeRemoveListeners             = 'BLIR',
-        // BridgeSendMessage                 = 'BMES',    // MEssage
-        // BridgeRequestResponse             = 'BRQR',
-        // BridgeRequestCancel               = 'BRQC',
 
         AddBrokerChannels                 = 'BOCAS',
         RemoveBrokerChannels              = 'BOCRS',
