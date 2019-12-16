@@ -278,6 +278,9 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     }
 
     protected _socketCleanUp(socket: any): void {
+        if (this._socketBridge === socket) {
+            this._socketBridge = null;
+        }
         this._subscriptions.removeConnection(socket);
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Connection closed !`);
     }
@@ -297,9 +300,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     onSocketClose(socket: net.Socket): void {
         // Not closing server
         if (this._server) {
-            if (this._socketBridge === socket) {
-                this._socketBridge = null;
-            }
             this._socketClients.delete(socket);
             this._socketCleanUp(socket);
         }
@@ -330,8 +330,8 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     onSocketPacket(socket: net.Socket, packet: IpcPacketBuffer): void {
         const ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.Connect:
-                break;
+            // case IpcBusCommand.Kind.Connect:
+            //     break;
 
             // case IpcBusCommand.Kind.Disconnect:
             //     this._subscriptions.releasePeer(socket, ipcBusCommand.peer);
@@ -362,6 +362,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 if (ipcBusCommand.request) {
                     this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, socket, ipcBusCommand.peer);
                 }
+                // If this message does not come from the IpcBusBridge, send it to it
                 if (!ipcBusCommand.bridge) {
                     if (this._bridgeChannels.has(ipcBusCommand.channel)) {
                         this._socketBridge && this._socketBridge.write(packet.buffer);
@@ -401,7 +402,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
             }
 
-            // Only BridgeClose/Connect received are coming from IpcBusBridge !
+            // BridgeClose/Connect received are coming from IpcBusBridge only !
             case IpcBusCommand.Kind.BridgeConnect: {
                 this._socketBridge = socket;
                 this._bridgeChannels.clear();

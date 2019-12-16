@@ -31,3 +31,5 @@ ipcClient.connect(ipcBusPath, { peerName: 'client Node', timeoutDelay })
         process.send(JSON.stringify({ reject: true, error: err }));
     });
 
+    // Keep process alive
+    process.stdin.on("data", () => {});
