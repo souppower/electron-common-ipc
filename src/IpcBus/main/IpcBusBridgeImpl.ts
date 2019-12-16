@@ -30,6 +30,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         super(contextType);
 
         this._ipcMain = require('electron').ipcMain;
+        this._connected = false;
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<IpcBusSender>('IPCBus:Bridge', true);
         this._subscriptions.on('channel-added', channel => {
@@ -125,7 +126,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         return queryStateResult;
     }
 
-    // This is coming from the Socket broker
+    // This is coming from the Bus broker (socket)
+    // =================================================================================================
     protected _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.AddBrokerChannels: {
@@ -168,10 +170,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         }
     }
 
-    private _senderCleanup(sender: IpcBusSender): void {
-        this._subscriptions.removeConnection(sender);
-    }
-
+    // This is coming from the Electron Renderer Proces/s (Electron ipc)
+    // =================================================================================================
     private _completePeerInfo(webContents: Electron.WebContents, ipcBusPeer: Client.IpcBusPeer): void {
         ipcBusPeer.process.wcid = webContents.id;
         // Following functions are not implemented in all Electrons
@@ -194,8 +194,9 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         const ipcBusPeer = ipcBusCommand.peer;
         this._completePeerInfo(webContents, ipcBusPeer);
 
+        // if we have several clients within the same webcontents, the callback may be called several times !
         webContents.addListener('destroyed', () => {
-            this._senderCleanup(webContents);
+            this._subscriptions.removeConnection(webContents);
         });
         // We get back to the webContents
         // - to confirm the connection
@@ -223,6 +224,18 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         }
     }
 
+    // This is coming from the Electron Main Process (Electron ipc)
+    // =================================================================================================
+    _onMainConnect(event: any, replyChannel: string) {
+        this._ipcMain.emit(replyChannel, { sender: null }, this);
+    }
+
+    _onMainMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
+        this._onCommonMessage(sender, ipcBusCommand, buffer);
+    }
+
+    // Common Electron Process/s
+    // =================================================================================================
     _onCommonMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
         switch (ipcBusCommand.kind) {
             // case IpcBusCommand.Kind.Connect:
@@ -290,12 +303,5 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         }
     }
 
-    _onMainConnect(event: any, replyChannel: string) {
-        this._ipcMain.emit(replyChannel, { sender: null }, this);
-    }
-
-    _onMainMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
-        this._onCommonMessage(sender, ipcBusCommand, buffer);
-    }
 }
 

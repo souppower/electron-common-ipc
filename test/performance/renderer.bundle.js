@@ -438,7 +438,7 @@ class ChannelConnectionMap extends events_1.EventEmitter {
         return this._channelsMap.has(channel);
     }
     getChannels() {
-        return Object.keys(this._channelsMap);
+        return Array.from(this._channelsMap.keys());
     }
     clear() {
         this._channelsMap.clear();

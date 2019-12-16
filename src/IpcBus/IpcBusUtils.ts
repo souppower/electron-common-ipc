@@ -190,7 +190,7 @@ export class ChannelConnectionMap<T> extends EventEmitter {
     }
 
     getChannels(): string[] {
-        return Object.keys(this._channelsMap);
+        return Array.from(this._channelsMap.keys());
     }
 
     clear() {
