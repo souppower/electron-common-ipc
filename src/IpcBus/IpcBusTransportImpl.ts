@@ -20,10 +20,7 @@ class DeferredRequest {
     public resolve: (value: Client.IpcBusRequestResponse) => void;
     public reject: (err: Client.IpcBusRequestResponse) => void;
 
-    private _channel: string;
-
-    constructor(channel: string) {
-        this._channel = channel;
+    constructor() {
         this.promise = new Promise<Client.IpcBusRequestResponse>((resolve, reject) => {
             this.reject = reject;
             this.resolve = resolve;
@@ -31,8 +28,7 @@ class DeferredRequest {
     }
 
     fulFilled(ipcBusCommand: IpcBusCommand, args: any[]) {
-        // The channel is not generated one
-        const ipcBusEvent: Client.IpcBusEvent = { channel: this._channel, sender: ipcBusCommand.peer };
+        const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.request.channel, sender: ipcBusCommand.peer };
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Peer #${ipcBusEvent.sender.name} replied to request on ${ipcBusCommand.request.replyChannel}`);
         if (ipcBusCommand.request.resolve) {
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] resolve`);
@@ -162,7 +158,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         }
         const ipcBusCommandRequest: IpcBusCommand.Request = {channel, replyChannel: this.generateReplyChannel() };
 
-        const deferredRequest = new DeferredRequest(channel);
+        const deferredRequest = new DeferredRequest();
         // Register locally
          this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
          // Execute request

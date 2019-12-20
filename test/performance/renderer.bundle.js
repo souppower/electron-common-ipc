@@ -142,15 +142,14 @@ const IpcBusUtils = require("./IpcBusUtils");
 const IpcBusCommand_1 = require("./IpcBusCommand");
 const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
 class DeferredRequest {
-    constructor(channel) {
-        this._channel = channel;
+    constructor() {
         this.promise = new Promise((resolve, reject) => {
             this.reject = reject;
             this.resolve = resolve;
         });
     }
     fulFilled(ipcBusCommand, args) {
-        const ipcBusEvent = { channel: this._channel, sender: ipcBusCommand.peer };
+        const ipcBusEvent = { channel: ipcBusCommand.request.channel, sender: ipcBusCommand.peer };
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Peer #${ipcBusEvent.sender.name} replied to request on ${ipcBusCommand.request.replyChannel}`);
         if (ipcBusCommand.request.resolve) {
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] resolve`);
@@ -250,7 +249,7 @@ class IpcBusTransportImpl {
             timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
         const ipcBusCommandRequest = { channel, replyChannel: this.generateReplyChannel() };
-        const deferredRequest = new DeferredRequest(channel);
+        const deferredRequest = new DeferredRequest();
         this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
         this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.SendMessage, channel, ipcBusCommandRequest, args);
         if (timeoutDelay >= 0) {
