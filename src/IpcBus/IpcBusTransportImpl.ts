@@ -51,12 +51,13 @@ class DeferredRequest {
 /** @internal */
 export abstract class IpcBusTransportImpl implements IpcBusTransport {
     private static _lastLocalProcessId: number = 0;
+    private _localProcessId: number;
 
     protected _peer: Client.IpcBusPeer;
     protected _promiseConnected: Promise<void>;
 
-    private _localProcessId: number;
     private _client: Client.IpcBusClient;
+
     private _requestFunctions: Map<string, DeferredRequest>;
     private _requestNumber: number;
     private _packetDecoder: IpcPacketBuffer;
