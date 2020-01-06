@@ -1,5 +1,4 @@
 import * as uuid from 'uuid';
-import { EventEmitter } from 'events';
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as Client from './IpcBusClient';
@@ -57,7 +56,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     protected _promiseConnected: Promise<void>;
 
     private _localProcessId: number;
-    private _ipcEventEmitter: EventEmitter;
+    private _client: Client.IpcBusClient;
     private _requestFunctions: Map<string, DeferredRequest>;
     private _requestNumber: number;
     private _packetDecoder: IpcPacketBuffer;
@@ -92,7 +91,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     }
 
     protected _onCommandSendMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
-        const listeners = this._ipcEventEmitter && this._ipcEventEmitter.listeners(ipcBusCommand.channel);
+        const listeners = this._client && this._client.listeners(ipcBusCommand.channel);
         if (listeners && listeners.length) {
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
             const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
@@ -111,7 +110,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
                 };
             }
             for (let i = 0; i < listeners.length; ++i) {
-                listeners[i].call(this._ipcEventEmitter, ipcBusEvent, ...args);
+                listeners[i].call(this._client, ipcBusEvent, ...args);
             }
         }
     }
@@ -184,13 +183,13 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         this.ipcPostCommand({ kind, channel, peer: this.peer, request: ipcBusCommandRequest }, args);
     }
 
-    ipcConnect(eventEmitter: EventEmitter | null, options: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    ipcConnect(eventEmitter: Client.IpcBusClient | null, options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
         if (!p) {
             p = this._promiseConnected = this.ipcHandshake(options)
             .then(() => {
-                this._ipcEventEmitter = eventEmitter;
+                this._client = eventEmitter;
                 this._peer.name = options.peerName || this.generateName();
                 this.ipcSend(IpcBusCommand.Kind.Connect, '');
             })
@@ -198,11 +197,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         return p;
     }
 
-    ipcClose(eventEmitter: EventEmitter | null, options: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    ipcClose(eventEmitter: Client.IpcBusClient | null, options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         if (this._promiseConnected) {
             this.ipcSend(IpcBusCommand.Kind.Close, '');
-            this._ipcEventEmitter = null;
+            this._client = null;
             this._promiseConnected = null;
             return this.ipcShutdown(options);
         }
