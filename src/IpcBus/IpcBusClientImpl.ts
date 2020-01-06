@@ -15,9 +15,6 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         super();
         super.setMaxListeners(0);
         this._transport = ipcBusClientTransport;
-        this._transport.ipcCallback((channel, ipcBusEvent, ...args) => {
-            this._eventEmitterEmit(channel, ipcBusEvent, ...args);
-        });
     }
 
     protected _eventEmitterEmit(channel: string, ...args: any[]) {
@@ -30,12 +27,12 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
 
     connect(arg1: Client.IpcBusClient.ConnectOptions | string | number, arg2?: Client.IpcBusClient.ConnectOptions | string, arg3?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
-        return this._transport.ipcConnect(options);
+        return this._transport.ipcConnect(this, options);
     }
 
     close(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         super.removeAllListeners();
-        return this._transport.ipcClose(options);
+        return this._transport.ipcClose(this, options);
     }
 
     send(channel: string, ...args: any[]) {

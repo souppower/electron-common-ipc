@@ -112,9 +112,8 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
         });
     }
 
-    ipcClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    ipcShutdown(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         if (this._connected) {
-            this.ipcSend(IpcBusCommand.Kind.Close, '');
             this._reset();
         }
         return Promise.resolve();

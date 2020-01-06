@@ -73,9 +73,8 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
         });
     }
 
-    ipcClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    ipcShutdown(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         if (this._ipcBusBridge) {
-            this.ipcSend(IpcBusCommand.Kind.Close, '');
             this._reset();
         }
         return Promise.resolve();

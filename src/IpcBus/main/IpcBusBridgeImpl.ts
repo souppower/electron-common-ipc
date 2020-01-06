@@ -87,7 +87,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
             if ((options.port != null) || (options.path != null)) {
                 this._connected = true;
                 this._brokerChannels.clear();
-                return super.ipcConnect({ peerName: `IpcBusBridge`, ...options })
+                return super.ipcConnect(null, { peerName: `IpcBusBridge`, ...options })
                     .then(() => {
                         super.ipcSend(IpcBusCommand.Kind.BridgeConnect, null);
                         this.bridgeAddChannels(this._subscriptions.getChannels());
@@ -100,7 +100,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         }
         else {
             if ((options.port == null) && (options.path == null)) {
-                return super.ipcClose(options);
+                return super.ipcClose(null, options);
             }
         }
         return Promise.resolve();
@@ -110,7 +110,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessage);
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, this._onMainConnect);
         if (this._connected) {
-            return super.ipcClose(options);
+            return super.ipcClose(null, options);
         }
         return Promise.resolve();
     }

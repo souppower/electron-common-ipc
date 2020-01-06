@@ -176,7 +176,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
         });
     }
 
-    ipcClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    ipcShutdown(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         options = options || {};
         if (options.timeoutDelay == null) {
             options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;

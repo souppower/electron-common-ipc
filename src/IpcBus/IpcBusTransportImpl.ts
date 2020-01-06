@@ -1,4 +1,5 @@
 import * as uuid from 'uuid';
+import { EventEmitter } from 'events';
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as Client from './IpcBusClient';
@@ -56,7 +57,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     protected _promiseConnected: Promise<void>;
 
     private _localProcessId: number;
-    private _ipcCallback: IpcBusTransport.Callback;
+    private _ipcEventEmitter: EventEmitter;
     private _requestFunctions: Map<string, DeferredRequest>;
     private _requestNumber: number;
     private _packetDecoder: IpcPacketBuffer;
@@ -90,28 +91,29 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         return `${replyChannelPrefix}${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
     }
 
-    ipcCallback(callback: IpcBusTransport.Callback): void {
-        this._ipcCallback = callback;
-    }
-
     protected _onCommandSendMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
-        const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
-        if (ipcBusCommand.request) {
-            ipcBusEvent.request = {
-                resolve: (payload: Object | string) => {
-                    ipcBusCommand.request.resolve = true;
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
-                    this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
-                },
-                reject: (err: string) => {
-                    ipcBusCommand.request.reject = true;
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
-                    this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
-                }
-            };
+        const listeners = this._ipcEventEmitter && this._ipcEventEmitter.listeners(ipcBusCommand.channel);
+        if (listeners && listeners.length) {
+            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
+            const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
+            if (ipcBusCommand.request) {
+                ipcBusEvent.request = {
+                    resolve: (payload: Object | string) => {
+                        ipcBusCommand.request.resolve = true;
+                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
+                        this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
+                    },
+                    reject: (err: string) => {
+                        ipcBusCommand.request.reject = true;
+                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
+                        this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
+                    }
+                };
+            }
+            for (let i = 0; i < listeners.length; ++i) {
+                listeners[i].call(this._ipcEventEmitter, ipcBusEvent, ...args);
+            }
         }
-        this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
     }
 
     protected _onCommandRequestResponse(ipcBusCommand: IpcBusCommand, args: any[]) {
@@ -182,12 +184,13 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         this.ipcPostCommand({ kind, channel, peer: this.peer, request: ipcBusCommandRequest }, args);
     }
 
-    ipcConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    ipcConnect(eventEmitter: EventEmitter | null, options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         let p = this._promiseConnected;
         if (!p) {
             p = this._promiseConnected = this.ipcHandshake(options)
             .then(() => {
+                this._ipcEventEmitter = eventEmitter;
                 this._ipcBusPeer.name = options.peerName || this.generateName();
                 this.ipcSend(IpcBusCommand.Kind.Connect, '');
             })
@@ -195,7 +198,18 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         return p;
     }
 
+    ipcClose(eventEmitter: EventEmitter | null, options: Client.IpcBusClient.ConnectOptions): Promise<void> {
+        // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
+        if (this._promiseConnected) {
+            this.ipcSend(IpcBusCommand.Kind.Close, '');
+            this._ipcEventEmitter = null;
+            this._promiseConnected = null;
+            return this.ipcShutdown(options);
+        }
+        return Promise.resolve();
+    }
+
     abstract ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<void>;
-    abstract ipcClose(options?: Client.IpcBusClient.CloseOptions): Promise<void>;
+    abstract ipcShutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
     abstract ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
 }

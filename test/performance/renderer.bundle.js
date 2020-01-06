@@ -33,9 +33,6 @@ class IpcBusClientImpl extends events_1.EventEmitter {
         super();
         super.setMaxListeners(0);
         this._transport = ipcBusClientTransport;
-        this._transport.ipcCallback((channel, ipcBusEvent, ...args) => {
-            this._eventEmitterEmit(channel, ipcBusEvent, ...args);
-        });
     }
     _eventEmitterEmit(channel, ...args) {
         super.emit(channel, ...args);
@@ -45,11 +42,11 @@ class IpcBusClientImpl extends events_1.EventEmitter {
     }
     connect(arg1, arg2, arg3) {
         const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
-        return this._transport.ipcConnect(options);
+        return this._transport.ipcConnect(this, options);
     }
     close(options) {
         super.removeAllListeners();
-        return this._transport.ipcClose(options);
+        return this._transport.ipcClose(this, options);
     }
     send(channel, ...args) {
         this._transport.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.SendMessage, channel, undefined, args);
@@ -192,27 +189,29 @@ class IpcBusTransportImpl {
         ++this._requestNumber;
         return `${replyChannelPrefix}${this._ipcBusPeer.id}-${this._requestNumber.toString()}`;
     }
-    ipcCallback(callback) {
-        this._ipcCallback = callback;
-    }
     _onCommandSendMessage(ipcBusCommand, args) {
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
-        const ipcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
-        if (ipcBusCommand.request) {
-            ipcBusEvent.request = {
-                resolve: (payload) => {
-                    ipcBusCommand.request.resolve = true;
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
-                    this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
-                },
-                reject: (err) => {
-                    ipcBusCommand.request.reject = true;
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
-                    this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
-                }
-            };
+        const listeners = this._ipcEventEmitter && this._ipcEventEmitter.listeners(ipcBusCommand.channel);
+        if (listeners && listeners.length) {
+            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
+            const ipcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
+            if (ipcBusCommand.request) {
+                ipcBusEvent.request = {
+                    resolve: (payload) => {
+                        ipcBusCommand.request.resolve = true;
+                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
+                        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
+                    },
+                    reject: (err) => {
+                        ipcBusCommand.request.reject = true;
+                        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
+                        this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
+                    }
+                };
+            }
+            for (let i = 0; i < listeners.length; ++i) {
+                listeners[i].call(this._ipcEventEmitter, ipcBusEvent, ...args);
+            }
         }
-        this._ipcCallback(ipcBusCommand.channel, ipcBusEvent, ...args);
     }
     _onCommandRequestResponse(ipcBusCommand, args) {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
@@ -267,16 +266,26 @@ class IpcBusTransportImpl {
     ipcSend(kind, channel, ipcBusCommandRequest, args) {
         this.ipcPostCommand({ kind, channel, peer: this.peer, request: ipcBusCommandRequest }, args);
     }
-    ipcConnect(options) {
+    ipcConnect(eventEmitter, options) {
         let p = this._promiseConnected;
         if (!p) {
             p = this._promiseConnected = this.ipcHandshake(options)
                 .then(() => {
+                this._ipcEventEmitter = eventEmitter;
                 this._ipcBusPeer.name = options.peerName || this.generateName();
                 this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Connect, '');
             });
         }
         return p;
+    }
+    ipcClose(eventEmitter, options) {
+        if (this._promiseConnected) {
+            this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Close, '');
+            this._ipcEventEmitter = null;
+            this._promiseConnected = null;
+            return this.ipcShutdown(options);
+        }
+        return Promise.resolve();
     }
 }
 exports.IpcBusTransportImpl = IpcBusTransportImpl;
@@ -1019,9 +1028,8 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
             this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Handshake, '');
         });
     }
-    ipcClose(options) {
+    ipcShutdown(options) {
         if (this._connected) {
-            this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Close, '');
             this._reset();
         }
         return Promise.resolve();
