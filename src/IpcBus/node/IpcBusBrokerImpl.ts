@@ -330,12 +330,12 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     onSocketPacket(socket: net.Socket, packet: IpcPacketBuffer): void {
         const ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
         switch (ipcBusCommand.kind) {
+            // case IpcBusCommand.Kind.Handshake:
+            // case IpcBusCommand.Kind.Shutdown:
+            //     break;
+
             case IpcBusCommand.Kind.Connect:
                 break;
-
-            // case IpcBusCommand.Kind.Disconnect:
-            //     this._subscriptions.releasePeer(socket, ipcBusCommand.peer);
-            //     break;
 
             case IpcBusCommand.Kind.Close:
                 this._socketCleanUp(socket);

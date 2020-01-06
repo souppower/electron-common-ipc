@@ -184,21 +184,18 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     }
 
     ipcConnect(eventEmitter: Client.IpcBusClient | null, options: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
-        let p = this._promiseConnected;
-        if (!p) {
-            p = this._promiseConnected = this.ipcHandshake(options)
+        if (this._promiseConnected == null) {
+            this._promiseConnected = this.ipcHandshake(options)
             .then(() => {
                 this._client = eventEmitter;
                 this._peer.name = options.peerName || this.generateName();
                 this.ipcSend(IpcBusCommand.Kind.Connect, '');
-            })
+            });
         }
-        return p;
+        return this._promiseConnected;
     }
 
     ipcClose(eventEmitter: Client.IpcBusClient | null, options: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        // Store in a local variable, in case it is set to null (paranoid code as it is asynchronous!)
         if (this._promiseConnected) {
             this.ipcSend(IpcBusCommand.Kind.Close, '');
             this._client = null;

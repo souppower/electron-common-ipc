@@ -61,7 +61,6 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
             if (options.timeoutDelay >= 0) {
                 timer = setTimeout(() => {
                     timer = null;
-                    this._promiseConnected = null;
                     this._ipcMain.removeListener(replyChannel, replyListener);
                     this._ipcMain.removeListener(IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE, replyListener);
                     this._reset();
