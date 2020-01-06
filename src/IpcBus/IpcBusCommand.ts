@@ -15,7 +15,7 @@ export namespace IpcBusCommand {
     export enum Kind {
         Handshake                   = 'HAN',    // COnnexion
         Connect                     = 'COO',    // COnnexion
-        // Disconnect                  = 'COD',
+        Shutdown                    = 'SHT',
         Close                       = 'COC',
         AddChannelListener          = 'LICA',   // LIstener
         RemoveChannelListener       = 'LICR',

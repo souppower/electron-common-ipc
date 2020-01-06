@@ -11,14 +11,10 @@ import * as IpcBusUtils from './IpcBusUtils';
 export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClient {
     protected _transport: IpcBusTransport;
 
-    constructor(ipcBusClientTransport: IpcBusTransport) {
+    constructor(transport: IpcBusTransport) {
         super();
         super.setMaxListeners(0);
-        this._transport = ipcBusClientTransport;
-    }
-
-    protected _eventEmitterEmit(channel: string, ...args: any[]) {
-        super.emit(channel, ...args);
+        this._transport = transport;
     }
 
     get peer(): Client.IpcBusPeer {
