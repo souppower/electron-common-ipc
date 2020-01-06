@@ -265,16 +265,15 @@ class IpcBusTransportImpl {
         this.ipcPostCommand({ kind, channel, peer: this.peer, request: ipcBusCommandRequest }, args);
     }
     ipcConnect(eventEmitter, options) {
-        let p = this._promiseConnected;
-        if (!p) {
-            p = this._promiseConnected = this.ipcHandshake(options)
+        if (this._promiseConnected == null) {
+            this._promiseConnected = this.ipcHandshake(options)
                 .then(() => {
                 this._client = eventEmitter;
                 this._peer.name = options.peerName || this.generateName();
                 this.ipcSend(IpcBusCommand_1.IpcBusCommand.Kind.Connect, '');
             });
         }
-        return p;
+        return this._promiseConnected;
     }
     ipcClose(eventEmitter, options) {
         if (this._promiseConnected) {
@@ -451,30 +450,30 @@ class ChannelConnectionMap extends events_1.EventEmitter {
         this._requestChannels.clear();
     }
     addRef(channel, conn, peer) {
-        let channelAdded = false;
         Logger.enable && this._info(`AddRef: '${channel}', peerId = ${peer.id}`);
+        let connData;
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
-            channelAdded = true;
             connsMap = new Map();
             this._channelsMap.set(channel, connsMap);
-        }
-        let connData = connsMap.get(conn);
-        if (connData == null) {
             connData = new ConnectionPeers(conn, peer);
             connsMap.set(conn, connData);
-        }
-        else {
-            connData.addPeer(peer);
-        }
-        Logger.enable && this._info(`AddRef: '${channel}', count = ${connData.peerRefCounts.size}`);
-        if (channelAdded) {
             this._emitter && this.emit('channel-added', channel);
         }
+        else {
+            connData = connsMap.get(conn);
+            if (connData == null) {
+                connData = new ConnectionPeers(conn, peer);
+                connsMap.set(conn, connData);
+            }
+            else {
+                connData.addPeer(peer);
+            }
+        }
+        Logger.enable && this._info(`AddRef: '${channel}', count = ${connData.peerRefCounts.size}`);
         return connsMap.size;
     }
     _releaseConnData(channel, conn, connsMap, peer, all) {
-        let channelRemoved = false;
         const connData = connsMap.get(conn);
         if (connData == null) {
             Logger.enable && this._warn(`Release '${channel}': conn is unknown`);
@@ -497,14 +496,11 @@ class ChannelConnectionMap extends events_1.EventEmitter {
             if (connData.peerRefCounts.size === 0) {
                 connsMap.delete(conn);
                 if (connsMap.size === 0) {
-                    channelRemoved = true;
                     this._channelsMap.delete(channel);
+                    this._emitter && this.emit('channel-removed', channel);
                 }
             }
             Logger.enable && this._info(`Release '${channel}': count = ${connData.peerRefCounts.size}`);
-            if (channelRemoved) {
-                this._emitter && this.emit('channel-removed', channel);
-            }
             return connsMap.size;
         }
     }
