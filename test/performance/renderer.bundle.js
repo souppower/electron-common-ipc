@@ -29,13 +29,10 @@ const events_1 = require("events");
 const IpcBusCommand_1 = require("./IpcBusCommand");
 const IpcBusUtils = require("./IpcBusUtils");
 class IpcBusClientImpl extends events_1.EventEmitter {
-    constructor(ipcBusClientTransport) {
+    constructor(transport) {
         super();
         super.setMaxListeners(0);
-        this._transport = ipcBusClientTransport;
-    }
-    _eventEmitterEmit(channel, ...args) {
-        super.emit(channel, ...args);
+        this._transport = transport;
     }
     get peer() {
         return this._transport.peer;
@@ -111,6 +108,7 @@ var IpcBusCommand;
     (function (Kind) {
         Kind["Handshake"] = "HAN";
         Kind["Connect"] = "COO";
+        Kind["Shutdown"] = "SHT";
         Kind["Close"] = "COC";
         Kind["AddChannelListener"] = "LICA";
         Kind["RemoveChannelListener"] = "LICR";

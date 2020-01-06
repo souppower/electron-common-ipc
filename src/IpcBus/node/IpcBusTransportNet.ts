@@ -41,7 +41,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
 
     // https://nodejs.org/api/net.html#net_event_error_1
     protected _onSocketError(err: any) {
-        const msg = `[IPCBusTransport:Net ${this._ipcBusPeer.id}] socket error ${err}`;
+        const msg = `[IPCBusTransport:Net ${this._peer.id}] socket error ${err}`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
         // this._socket.destroy();
         this._reset(false);
@@ -49,14 +49,14 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
 
     // https://nodejs.org/api/net.html#net_event_close_1
     protected _onSocketClose() {
-        const msg = `[IPCBusTransport:Net ${this._ipcBusPeer.id}] socket close`;
+        const msg = `[IPCBusTransport:Net ${this._peer.id}] socket close`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(msg);
         this._reset(false);
     }
 
     // https://nodejs.org/api/net.html#net_event_end
     protected _onSocketEnd() {
-        const msg = `[IPCBusTransport:Net ${this._ipcBusPeer.id}] socket end`;
+        const msg = `[IPCBusTransport:Net ${this._peer.id}] socket end`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(msg);
         this._reset(false);
     }
@@ -70,7 +70,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
                 this._onCommandPacketReceived(ipcBusCommand, this._packetIn);
             }
             else {
-                throw `[IPCBusTransport:Net ${this._ipcBusPeer.id}] Not valid packet !`;
+                throw `[IPCBusTransport:Net ${this._peer.id}] Not valid packet !`;
             }
             // Remove read buffer
             this._bufferListReader.reduce();
@@ -108,18 +108,18 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
             if (options.timeoutDelay >= 0) {
                 timer = setTimeout(() => {
                     timer = null;
-                    const msg = `[IPCBusTransport:Net ${this._ipcBusPeer.id}] error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(options)}`;
+                    const msg = `[IPCBusTransport:Net ${this._peer.id}] error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(options)}`;
                     fctReject(msg);
                 }, options.timeoutDelay);
             }
 
             const catchError = (err: any) => {
-                const msg = `[IPCBusTransport:Net ${this._ipcBusPeer.id}] socket error = ${err} on ${JSON.stringify(options)}`;
+                const msg = `[IPCBusTransport:Net ${this._peer.id}] socket error = ${err} on ${JSON.stringify(options)}`;
                 fctReject(msg);
             };
 
             const catchClose = () => {
-                const msg = `[IPCBusTransport:Net ${this._ipcBusPeer.id}] socket close`;
+                const msg = `[IPCBusTransport:Net ${this._peer.id}] socket close`;
                 fctReject(msg);
             };
 
@@ -136,7 +136,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
                     this._socket.addListener(key, this._netBinds[key]);
                 }
 
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Net ${this._ipcBusPeer.id}] connected on ${JSON.stringify(options)}`);
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Net ${this._peer.id}] connected on ${JSON.stringify(options)}`);
                 if ((this._socketBuffer == null) || (this._socketBuffer === 0)) {
                     this._socketWriter = new SocketWriter(this._socket);
                 }
@@ -199,7 +199,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
                         for (let key in socketLocalBinds) {
                             socket.removeListener(key, socketLocalBinds[key]);
                         }
-                        const msg = `[IPCBusTransport:Net ${this._ipcBusPeer.id}] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(options)}`;
+                        const msg = `[IPCBusTransport:Net ${this._peer.id}] stop, error = timeout (${options.timeoutDelay} ms) on ${JSON.stringify(options)}`;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
                         reject(msg);
                     }, options.timeoutDelay);
