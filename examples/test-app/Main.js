@@ -61,7 +61,7 @@ function spawnNodeInstance(scriptPath) {
 }
 
 // Window const
-const preloadFile = path.join(__dirname, 'BrowserWindowPreload.js');
+const preloadFile = path.join(__dirname, 'BundledBrowserWindowPreload.js');
 const commonViewUrl = 'file://' + path.join(__dirname, 'CommonView.html');
 const perfViewUrl = 'file://' + path.join(__dirname, 'PerfView.html');
 const width = 1000;
