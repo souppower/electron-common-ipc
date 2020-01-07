@@ -91,7 +91,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         return `${replyChannelPrefix}${this._peer.id}-${this._requestNumber.toString()}`;
     }
 
-    protected _onCommandSendMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
+    private _onCommandSendMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
         const listeners = this._client && this._client.listeners(ipcBusCommand.channel);
         if (listeners && listeners.length) {
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
@@ -116,7 +116,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         }
     }
 
-    protected _onCommandRequestResponse(ipcBusCommand: IpcBusCommand, args: any[]) {
+    private _onCommandRequestResponse(ipcBusCommand: IpcBusCommand, args: any[]) {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
         const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
         if (deferredRequest) {
@@ -125,33 +125,38 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         }
     }
 
-    // We have to simulate a fake first parameter as this function can be called from an Electron ipc with an event
-    // or directly from our code.
-    protected _onCommandReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, args: any[]) {
+    protected _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.SendMessage:
+            case IpcBusCommand.Kind.SendMessage: {
+                const args = ipcPacketBuffer.parseArrayAt(1);
                 this._onCommandSendMessage(ipcBusCommand, args);
                 break;
-
-            case IpcBusCommand.Kind.RequestResponse:
+            }
+            case IpcBusCommand.Kind.RequestResponse: {
+                const args = ipcPacketBuffer.parseArrayAt(1);
                 this._onCommandRequestResponse(ipcBusCommand, args);
                 break;
+            }
         }
     }
 
-    protected _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        const args = ipcPacketBuffer.parseArrayAt(1);
-        this._onCommandReceived(undefined, ipcBusCommand, args);
-    }
-
+    // We have to simulate a fake first parameter as this function can be called from an Electron ipc with an event
+    // or directly from our code.
     protected _onCommandBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
-        this._packetDecoder.decodeFromBuffer(buffer);
-        this._onCommandReceived(undefined, this._packetDecoder.parseArrayAt(0), this._packetDecoder.parseArrayAt(1));
-    }
-
-    protected decodeBuffer(buffer: Buffer): IpcPacketBuffer {
-        this._packetDecoder.decodeFromBuffer(buffer);
-        return this._packetDecoder;
+        switch (ipcBusCommand.kind) {
+            case IpcBusCommand.Kind.SendMessage: {
+                this._packetDecoder.decodeFromBuffer(buffer);
+                const args = this._packetDecoder.parseArrayAt(1);
+                this._onCommandSendMessage(ipcBusCommand, args);
+                break;
+            }
+            case IpcBusCommand.Kind.RequestResponse: {
+                this._packetDecoder.decodeFromBuffer(buffer);
+                const args = this._packetDecoder.parseArrayAt(1);
+                this._onCommandRequestResponse(ipcBusCommand, args);
+                break;
+            }
+        }
     }
 
     ipcRequest(channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {

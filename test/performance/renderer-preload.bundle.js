@@ -219,27 +219,35 @@ class IpcBusTransportImpl {
             deferredRequest.fulFilled(ipcBusCommand, args);
         }
     }
-    _onCommandReceived(__ignore__, ipcBusCommand, args) {
+    _onCommandPacketReceived(ipcBusCommand, ipcPacketBuffer) {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage:
+            case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage: {
+                const args = ipcPacketBuffer.parseArrayAt(1);
                 this._onCommandSendMessage(ipcBusCommand, args);
                 break;
-            case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse:
+            }
+            case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse: {
+                const args = ipcPacketBuffer.parseArrayAt(1);
                 this._onCommandRequestResponse(ipcBusCommand, args);
                 break;
+            }
         }
     }
-    _onCommandPacketReceived(ipcBusCommand, ipcPacketBuffer) {
-        const args = ipcPacketBuffer.parseArrayAt(1);
-        this._onCommandReceived(undefined, ipcBusCommand, args);
-    }
     _onCommandBufferReceived(__ignore__, ipcBusCommand, buffer) {
-        this._packetDecoder.decodeFromBuffer(buffer);
-        this._onCommandReceived(undefined, this._packetDecoder.parseArrayAt(0), this._packetDecoder.parseArrayAt(1));
-    }
-    decodeBuffer(buffer) {
-        this._packetDecoder.decodeFromBuffer(buffer);
-        return this._packetDecoder;
+        switch (ipcBusCommand.kind) {
+            case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage: {
+                this._packetDecoder.decodeFromBuffer(buffer);
+                const args = this._packetDecoder.parseArrayAt(1);
+                this._onCommandSendMessage(ipcBusCommand, args);
+                break;
+            }
+            case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse: {
+                this._packetDecoder.decodeFromBuffer(buffer);
+                const args = this._packetDecoder.parseArrayAt(1);
+                this._onCommandRequestResponse(ipcBusCommand, args);
+                break;
+            }
+        }
     }
     ipcRequest(channel, timeoutDelay, args) {
         if (timeoutDelay == null) {

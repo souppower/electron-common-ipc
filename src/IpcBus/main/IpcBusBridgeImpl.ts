@@ -236,34 +236,36 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     // Common Electron Process/s
     // =================================================================================================
-    _onCommonMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
+    _onAdminMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand): boolean {
         switch (ipcBusCommand.kind) {
-            // case IpcBusCommand.Kind.Connect:
-            //     break;
-
-            // case IpcBusCommand.Kind.Disconnect:
-            //     break;
+            case IpcBusCommand.Kind.Connect:
+                return true;
 
             case IpcBusCommand.Kind.Close:
                 this._subscriptions.removePeer(sender, ipcBusCommand.peer);
-                break;
+                return true;
 
             case IpcBusCommand.Kind.AddChannelListener:
                 this._subscriptions.addRef(ipcBusCommand.channel, sender, ipcBusCommand.peer);
-                break;
+                return true;
 
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
                 this._subscriptions.releaseAll(ipcBusCommand.channel, sender, ipcBusCommand.peer);
-                break;
+                return true;
 
             case IpcBusCommand.Kind.RemoveChannelListener:
                 this._subscriptions.release(ipcBusCommand.channel, sender, ipcBusCommand.peer);
-                break;
+                return true;
 
             case IpcBusCommand.Kind.RemoveListeners:
                 this._subscriptions.removePeer(sender, ipcBusCommand.peer);
-                break;
+                return true;
+        }
+        return false;
+    }
 
+    _onCommonMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
+        switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 if (ipcBusCommand.request) {
                     this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, sender, ipcBusCommand.peer);
@@ -299,6 +301,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 break;
 
             default:
+                this._onAdminMessage(sender, ipcBusCommand);
                 break;
         }
     }
