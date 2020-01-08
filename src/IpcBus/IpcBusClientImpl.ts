@@ -32,28 +32,26 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
     }
 
     send(channel: string, ...args: any[]) {
-        this._transport.ipcSend(IpcBusCommand.Kind.SendMessage, channel, undefined, args);
+        this._transport.ipcSendMessage(channel, args);
     }
 
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<Client.IpcBusRequestResponse> {
-        return this._transport.ipcRequest(channel, timeoutDelay, args);
+        return this._transport.ipcRequestMessage(channel, timeoutDelay, args);
     }
 
     emit(event: string, ...args: any[]): boolean {
-        this._transport.ipcSend(IpcBusCommand.Kind.SendMessage, event, undefined, args);
+        this._transport.ipcSendMessage(event, args);
         return true;
     }
 
     addListener(channel: string, listener: Client.IpcBusListener): this {
-        super.addListener(channel, listener);
-        this._transport.ipcSend(IpcBusCommand.Kind.AddChannelListener, channel);
-        return this;
+        this._transport.ipcPost(IpcBusCommand.Kind.AddChannelListener, channel);
+        return super.addListener(channel, listener);
     }
 
     removeListener(channel: string, listener: Client.IpcBusListener): this {
-        super.removeListener(channel, listener);
-        this._transport.ipcSend(IpcBusCommand.Kind.RemoveChannelListener, channel);
-        return this;
+        this._transport.ipcPost(IpcBusCommand.Kind.RemoveChannelListener, channel);
+        return super.removeListener(channel, listener);
     }
 
     on(channel: string, listener: Client.IpcBusListener): this {
@@ -61,10 +59,9 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
     }
 
     once(channel: string, listener: Client.IpcBusListener): this {
-        super.once(channel, listener);
         // removeListener will be automatically called by NodeJS when callback has been triggered
-        this._transport.ipcSend(IpcBusCommand.Kind.AddChannelListener, channel);
-        return this;
+        this._transport.ipcPost(IpcBusCommand.Kind.AddChannelListener, channel);
+        return super.once(channel, listener);
     }
 
     off(channel: string, listener: Client.IpcBusListener): this {
@@ -72,26 +69,23 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
     }
 
     removeAllListeners(channel?: string): this {
-        super.removeAllListeners(channel);
         if (channel) {
-            this._transport.ipcSend(IpcBusCommand.Kind.RemoveChannelAllListeners, channel);
+            this._transport.ipcPost(IpcBusCommand.Kind.RemoveChannelAllListeners, channel);
         }
         else {
-            this._transport.ipcSend(IpcBusCommand.Kind.RemoveListeners, '');
+            this._transport.ipcPost(IpcBusCommand.Kind.RemoveListeners, '');
         }
-        return this;
+        return super.removeAllListeners(channel);
     }
 
     // Added in Node 6...
     prependListener(channel: string, listener: Client.IpcBusListener): this {
-        super.prependListener(channel, listener);
-        this._transport.ipcSend(IpcBusCommand.Kind.AddChannelListener, channel);
-        return this;
+        this._transport.ipcPost(IpcBusCommand.Kind.AddChannelListener, channel);
+        return super.prependListener(channel, listener);
     }
 
     prependOnceListener(channel: string, listener: Client.IpcBusListener): this {
-        super.prependOnceListener(channel, listener);
-        this._transport.ipcSend(IpcBusCommand.Kind.AddChannelListener, channel);
-        return this;
+        this._transport.ipcPost(IpcBusCommand.Kind.AddChannelListener, channel);
+        return super.prependOnceListener(channel, listener);
     }
 }

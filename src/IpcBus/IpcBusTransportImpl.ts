@@ -7,11 +7,6 @@ import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusTransport } from './IpcBusTransport';
 
 const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
-// const v1IdPattern = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
-
-// export function extractPeerIdFromReplyChannel(replyChannel: string): string {
-//     return replyChannel.substr(replyChannelPrefix.length, v1IdPattern.length);
-// }
 
 /** @internal */
 class DeferredRequest {
@@ -102,12 +97,12 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
                     resolve: (payload: Object | string) => {
                         ipcBusCommand.request.resolve = true;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
-                        this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
+                        this.ipcPost(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
                     },
                     reject: (err: string) => {
                         ipcBusCommand.request.reject = true;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
-                        this.ipcSend(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
+                        this.ipcPost(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
                     }
                 };
             }
@@ -157,7 +152,15 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         }
     }
 
-    ipcRequest(channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
+    ipcSendMessage(channel: string, args: any[]): void {
+        this.ipcPostCommand({ 
+            kind: IpcBusCommand.Kind.SendMessage,
+            channel,
+            peer: this.peer
+        }, args);
+    }
+
+    ipcRequestMessage(channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
         if (timeoutDelay == null) {
             timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
@@ -166,13 +169,13 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         // Register locally
          this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
          // Execute request
-         this.ipcSend(IpcBusCommand.Kind.SendMessage, channel, ipcBusCommandRequest, args);
+         this.ipcPost(IpcBusCommand.Kind.SendMessage, channel, ipcBusCommandRequest, args);
         // Clean-up
         if (timeoutDelay >= 0) {
             setTimeout(() => {
                 if (this._requestFunctions.delete(ipcBusCommandRequest.replyChannel)) {
                     // Unregister remotely
-                    this.ipcSend(IpcBusCommand.Kind.RequestCancel, channel, ipcBusCommandRequest);
+                    this.ipcPost(IpcBusCommand.Kind.RequestCancel, channel, ipcBusCommandRequest);
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] reject: timeout`);
                     const response: Client.IpcBusRequestResponse = { event: { channel: channel, sender: this._peer }, err: 'timeout' };
                     deferredRequest.reject(response);
@@ -182,7 +185,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         return deferredRequest.promise;
     }
 
-    ipcSend(kind: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void {
+    ipcPost(kind: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void {
         this.ipcPostCommand({ kind, channel, peer: this.peer, request: ipcBusCommandRequest }, args);
     }
 
@@ -192,7 +195,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
             .then(() => {
                 this._client = eventEmitter;
                 this._peer.name = options.peerName || this.generateName();
-                this.ipcSend(IpcBusCommand.Kind.Connect, '');
+                this.ipcPost(IpcBusCommand.Kind.Connect, '');
             });
         }
         return this._promiseConnected;
@@ -200,7 +203,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
 
     ipcClose(eventEmitter: Client.IpcBusClient | null, options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         if (this._promiseConnected) {
-            this.ipcSend(IpcBusCommand.Kind.Close, '');
+            this.ipcPost(IpcBusCommand.Kind.Close, '');
             this._client = null;
             this._promiseConnected = null;
             return this.ipcShutdown(options);
