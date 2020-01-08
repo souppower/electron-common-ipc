@@ -91,9 +91,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         return `${replyChannelPrefix}${this._peer.id}-${this._requestNumber.toString()}`;
     }
 
-    private _onCommandSendMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
+    private _onCommandSendMessage(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         const listeners = this._client && this._client.listeners(ipcBusCommand.channel);
         if (listeners && listeners.length) {
+            const args = ipcPacketBuffer.parseArrayAt(1);
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
             const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
             if (ipcBusCommand.request) {
@@ -116,11 +117,12 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         }
     }
 
-    private _onCommandRequestResponse(ipcBusCommand: IpcBusCommand, args: any[]) {
+    private _onCommandRequestResponse(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
         const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
         if (deferredRequest) {
             this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
+            const args = ipcPacketBuffer.parseArrayAt(1);
             deferredRequest.fulFilled(ipcBusCommand, args);
         }
     }
@@ -128,13 +130,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     protected _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                const args = ipcPacketBuffer.parseArrayAt(1);
-                this._onCommandSendMessage(ipcBusCommand, args);
+                this._onCommandSendMessage(ipcBusCommand, ipcPacketBuffer);
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                const args = ipcPacketBuffer.parseArrayAt(1);
-                this._onCommandRequestResponse(ipcBusCommand, args);
+                this._onCommandRequestResponse(ipcBusCommand, ipcPacketBuffer);
                 break;
             }
         }
@@ -146,14 +146,12 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 this._packetDecoder.decodeFromBuffer(buffer);
-                const args = this._packetDecoder.parseArrayAt(1);
-                this._onCommandSendMessage(ipcBusCommand, args);
+                this._onCommandSendMessage(ipcBusCommand, this._packetDecoder);
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
                 this._packetDecoder.decodeFromBuffer(buffer);
-                const args = this._packetDecoder.parseArrayAt(1);
-                this._onCommandRequestResponse(ipcBusCommand, args);
+                this._onCommandRequestResponse(ipcBusCommand, this._packetDecoder);
                 break;
             }
         }
@@ -164,7 +162,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
             timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
         const ipcBusCommandRequest: IpcBusCommand.Request = {channel, replyChannel: this.generateReplyChannel() };
-
         const deferredRequest = new DeferredRequest();
         // Register locally
          this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
