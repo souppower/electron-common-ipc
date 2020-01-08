@@ -89,7 +89,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     private _onCommandSendMessage(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         const listeners = this._client && this._client.listeners(ipcBusCommand.channel);
         if (listeners && listeners.length) {
-            const args = ipcPacketBuffer.parseArrayAt(1);
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
             const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
             if (ipcBusCommand.request) {
@@ -106,6 +105,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
                     }
                 };
             }
+            const args = ipcPacketBuffer.parseArrayAt(1);
             for (let i = 0; i < listeners.length; ++i) {
                 listeners[i].call(this._client, ipcBusEvent, ...args);
             }
@@ -137,15 +137,15 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
 
     // We have to simulate a fake first parameter as this function can be called from an Electron ipc with an event
     // or directly from our code.
-    protected _onCommandBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
+    protected _onCommandBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                this._packetDecoder.decodeFromBuffer(buffer);
+                this._packetDecoder.setRawContent(rawContent);
                 this._onCommandSendMessage(ipcBusCommand, this._packetDecoder);
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                this._packetDecoder.decodeFromBuffer(buffer);
+                this._packetDecoder.setRawContent(rawContent);
                 this._onCommandRequestResponse(ipcBusCommand, this._packetDecoder);
                 break;
             }

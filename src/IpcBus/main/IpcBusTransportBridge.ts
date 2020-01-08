@@ -36,9 +36,9 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
         }
     }
 
-    send(channel: string, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
+    send(channel: string, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         // if (channel === IPCBUS_TRANSPORT_RENDERER_EVENT) {
-            this._onCommandBufferReceived(undefined, ipcBusCommand, buffer);
+            this._onCommandBufferReceived(undefined, ipcBusCommand, rawContent);
         // }
     }
 
@@ -89,7 +89,7 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
             else {
                 this._packetOut.serializeArray([ipcBusCommand]);
             }
-            this._ipcBusBridge._onMainMessage(this, ipcBusCommand, this._packetOut.buffer);
+            this._ipcBusBridge._onMainMessage(this, ipcBusCommand, this._packetOut.getRawContent());
         }
     }
 }

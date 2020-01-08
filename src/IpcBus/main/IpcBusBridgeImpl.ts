@@ -149,8 +149,9 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                     this._brokerChannels.add(ipcBusCommand.request.replyChannel);
                 }
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
+                const rawContent = ipcPacketBuffer.getRawContent();
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, ipcPacketBuffer.buffer);
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                 });
                 break;
             }
@@ -159,7 +160,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 const connData = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
                     this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, ipcPacketBuffer.buffer);
+                    const rawContent = ipcPacketBuffer.getRawContent();
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                 }
                 break;
             }
@@ -212,14 +214,14 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         }
     }
 
-    _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
+    _onRendererMessage(event: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         const webContents: Electron.WebContents = event.sender;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.Handshake:
                 this._onRendererHandshake(webContents, ipcBusCommand);
                 break;
             default :
-                this._onCommonMessage(webContents, ipcBusCommand, buffer);
+                this._onCommonMessage(webContents, ipcBusCommand, rawContent);
                 break;
         }
     }
@@ -230,8 +232,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         this._ipcMain.emit(replyChannel, { sender: null }, this);
     }
 
-    _onMainMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
-        this._onCommonMessage(sender, ipcBusCommand, buffer);
+    _onMainMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
+        this._onCommonMessage(sender, ipcBusCommand, rawContent);
     }
 
     // Common Electron Process/s
@@ -264,7 +266,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         return false;
     }
 
-    _onCommonMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
+    _onCommonMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 if (ipcBusCommand.request) {
@@ -272,10 +274,10 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 }
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, buffer);
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                 });
                 if (this._brokerChannels.has(ipcBusCommand.channel)) {
-                    super.ipcPostBuffer(buffer);
+                    super.ipcPostBuffer(rawContent.buffer);
                 }
                 break;
             }
@@ -285,10 +287,10 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 const connData = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
                     this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, buffer);
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                 }
                 if (this._brokerChannels.delete(ipcBusCommand.request.replyChannel)) {
-                    super.ipcPostBuffer(buffer);
+                    super.ipcPostBuffer(rawContent.buffer);
                 }
                 break;
             }
@@ -296,7 +298,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
             case IpcBusCommand.Kind.RequestCancel:
                 this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                 if (this._brokerChannels.has(ipcBusCommand.request.channel)) {
-                    super.ipcPostBuffer(buffer);
+                    super.ipcPostBuffer(rawContent.buffer);
                 }
                 break;
 

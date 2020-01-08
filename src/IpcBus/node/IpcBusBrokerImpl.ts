@@ -384,6 +384,12 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
             case IpcBusCommand.Kind.RequestCancel:
                 this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
+                // If this message does not come from the IpcBusBridge, send it to it
+                if (!ipcBusCommand.bridge) {
+                    if (this._bridgeChannels.has(ipcBusCommand.channel)) {
+                        this._socketBridge && this._socketBridge.write(packet.buffer);
+                    }
+                }
                 break;
 
             case IpcBusCommand.Kind.AddBridgeChannels: {

@@ -1,6 +1,6 @@
 {
   "name": "electron-common-ipc",
-  "version": "7.1.5",
+  "version": "7.2.0",
   "description": "A safe IPC bus for applications built on Node or Electron.",
   "repository": {
     "type": "git",
@@ -42,7 +42,7 @@
     "csv-write-stream": "^2.0.0",
     "electron-process-type": "^4.1.0",
     "json-helpers": "^2.1.0",
-    "socket-serializer": "^3.5.0",
+    "socket-serializer": "^3.6.0",
     "uuid": "^3.3.3",
     "winston": "^2.4.1"
   },
