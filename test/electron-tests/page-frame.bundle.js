@@ -227,15 +227,15 @@ class IpcBusTransportImpl {
             }
         }
     }
-    _onCommandBufferReceived(__ignore__, ipcBusCommand, buffer) {
+    _onCommandBufferReceived(__ignore__, ipcBusCommand, rawContent) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand_1.IpcBusCommand.Kind.SendMessage: {
-                this._packetDecoder.decodeFromBuffer(buffer);
+                this._packetDecoder.setRawContent(rawContent);
                 this._onCommandSendMessage(ipcBusCommand, this._packetDecoder);
                 break;
             }
             case IpcBusCommand_1.IpcBusCommand.Kind.RequestResponse: {
-                this._packetDecoder.decodeFromBuffer(buffer);
+                this._packetDecoder.setRawContent(rawContent);
                 this._onCommandRequestResponse(ipcBusCommand, this._packetDecoder);
                 break;
             }
@@ -1044,7 +1044,7 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
             else {
                 this._packetOut.serializeArray([ipcBusCommand]);
             }
-            this._ipcWindow.send(exports.IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, this._packetOut.buffer);
+            this._ipcWindow.send(exports.IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, this._packetOut.getRawContent());
         }
     }
 }
@@ -6169,15 +6169,30 @@ const ipcPacketBufferWrap_1 = require("./ipcPacketBufferWrap");
 const bufferReader_1 = require("./bufferReader");
 const bufferListWriter_1 = require("./bufferListWriter");
 class IpcPacketBuffer extends ipcPacketBufferWrap_1.IpcPacketBufferWrap {
-    constructor() {
-        super();
+    constructor(rawContent) {
+        super(rawContent);
+        if (rawContent) {
+            this._buffer = rawContent.buffer;
+        }
     }
     get buffer() {
         return this._buffer;
     }
+    setRawContent(rawContent) {
+        super.setRawContent(rawContent);
+        this._buffer = rawContent.buffer;
+    }
+    getRawContent() {
+        const rawContent = {
+            type: this._type,
+            contentSize: this._contentSize,
+            buffer: this._buffer
+        };
+        return rawContent;
+    }
     decodeFromReader(bufferReader) {
         bufferReader.pushd();
-        let result = this._readHeader(bufferReader);
+        const result = this._readHeader(bufferReader);
         bufferReader.popd();
         if (result) {
             this._buffer = bufferReader.readBuffer(this.packetSize);
@@ -6191,9 +6206,9 @@ class IpcPacketBuffer extends ipcPacketBufferWrap_1.IpcPacketBufferWrap {
         }
         return result;
     }
-    _serializeAndCheck(checker, dataNumber) {
+    _serializeAndCheck(checker, data) {
         const bufferWriter = new bufferListWriter_1.BufferListWriter();
-        this.write(bufferWriter, dataNumber);
+        this.write(bufferWriter, data);
         this._buffer = bufferWriter.buffer;
         return checker.call(this);
     }
@@ -6311,10 +6326,25 @@ var BufferType;
 })(BufferType = exports.BufferType || (exports.BufferType = {}));
 ;
 class IpcPacketBufferWrap {
-    constructor() {
+    constructor(rawContent) {
         this.writeArray = this.writeArrayWithSize;
         this.writeObject = this.writeObjectSTRINGIFY2;
-        this._type = BufferType.NotValid;
+        if (rawContent) {
+            this.setTypeAndContentSize(rawContent.type, rawContent.contentSize);
+        }
+        else {
+            this._type = BufferType.NotValid;
+        }
+    }
+    setRawContent(rawContent) {
+        this.setTypeAndContentSize(rawContent.type, rawContent.contentSize);
+    }
+    getRawContent() {
+        const rawContent = {
+            type: this._type,
+            contentSize: this._contentSize,
+        };
+        return rawContent;
     }
     get type() {
         return this._type;
@@ -6445,14 +6475,12 @@ class IpcPacketBufferWrap {
             this._type = BufferType.Partial;
             return false;
         }
-        else {
-            if (this.isFixedSize() === false) {
-                this.setPacketSize(bufferReader.readUInt32());
-            }
-            if (bufferReader.checkEOF(this._contentSize + this.footerSize)) {
-                this._type = BufferType.Partial;
-                return false;
-            }
+        if (this.isFixedSize() === false) {
+            this.setPacketSize(bufferReader.readUInt32());
+        }
+        if (bufferReader.checkEOF(this._contentSize + this.footerSize)) {
+            this._type = BufferType.Partial;
+            return false;
         }
         return true;
     }

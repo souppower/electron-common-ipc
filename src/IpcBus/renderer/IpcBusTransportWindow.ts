@@ -130,7 +130,7 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
             else {
                 this._packetOut.serializeArray([ipcBusCommand]);
             }
-            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, this._packetOut.buffer);
+            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, this._packetOut.getRawContent());
         }
     }
 }

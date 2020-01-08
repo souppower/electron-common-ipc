@@ -137,15 +137,15 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
 
     // We have to simulate a fake first parameter as this function can be called from an Electron ipc with an event
     // or directly from our code.
-    protected _onCommandBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, buffer: Buffer) {
+    protected _onCommandBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                this._packetDecoder.decodeFromBuffer(buffer);
+                this._packetDecoder.setRawContent(rawContent);
                 this._onCommandSendMessage(ipcBusCommand, this._packetDecoder);
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                this._packetDecoder.decodeFromBuffer(buffer);
+                this._packetDecoder.setRawContent(rawContent);
                 this._onCommandRequestResponse(ipcBusCommand, this._packetDecoder);
                 break;
             }
