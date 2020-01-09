@@ -56,7 +56,8 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
         // In sandbox mode, 1st parameter is no more the event, but directly arguments !!!
         if (peerOrUndefined) {
             if ((peerOrUndefined as Client.IpcBusPeer).id === this._peer.id) {
-                this._peer = peerOrUndefined;
+                const peer = peerOrUndefined;
+                this._peer.process = peer.process;
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Standard listening for #${this._peer.name}`);
                 this._onIpcEventReceived = this._onCommandBufferReceived.bind(this);
                 this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
@@ -65,7 +66,8 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
         }
         else {
             if ((eventOrPeer as Client.IpcBusPeer).id === this._peer.id) {
-                this._peer = eventOrPeer;
+                const peer = eventOrPeer;
+                this._peer.process = peer.process;
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._peer.name}`);
                 this._onIpcEventReceived = this._onCommandBufferReceived.bind(this, undefined);
                 this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);

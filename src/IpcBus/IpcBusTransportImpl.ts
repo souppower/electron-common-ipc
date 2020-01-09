@@ -92,16 +92,22 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
             const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
             if (ipcBusCommand.request) {
+                const ipcBusCommandResponse = {
+                    kind: IpcBusCommand.Kind.RequestResponse,
+                    channel: ipcBusCommand.request.replyChannel,
+                    peer: this._peer,
+                    request: ipcBusCommand.request
+                };
                 ipcBusEvent.request = {
                     resolve: (payload: Object | string) => {
                         ipcBusCommand.request.resolve = true;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Resolve request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - payload: ${JSON.stringify(payload)}`);
-                        this.ipcPost(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [payload]);
+                        this.ipcPostCommand(ipcBusCommandResponse, [payload]);
                     },
                     reject: (err: string) => {
                         ipcBusCommand.request.reject = true;
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
-                        this.ipcPost(IpcBusCommand.Kind.RequestResponse, ipcBusCommand.request.replyChannel, ipcBusCommand.request, [err]);
+                        this.ipcPostCommand(ipcBusCommandResponse, [err]);
                     }
                 };
             }
@@ -156,7 +162,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         this.ipcPostCommand({ 
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
-            peer: this.peer
+            peer: this._peer
         }, args);
     }
 
@@ -185,10 +191,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         return deferredRequest.promise;
     }
 
-    ipcPost(kind: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void {
-        this.ipcPostCommand({ kind, channel, peer: this.peer, request: ipcBusCommandRequest }, args);
-    }
-
     ipcConnect(eventEmitter: Client.IpcBusClient | null, options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         if (this._promiseConnected == null) {
             this._promiseConnected = this.ipcHandshake(options)
@@ -209,6 +211,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
             return this.ipcShutdown(options);
         }
         return Promise.resolve();
+    }
+
+    ipcPost(kind: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void {
+        this.ipcPostCommand({ kind, channel, peer: this._peer, request: ipcBusCommandRequest }, args);
     }
 
     abstract ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<void>;
