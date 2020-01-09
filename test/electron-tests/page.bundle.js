@@ -32,22 +32,37 @@ class IpcBusClientImpl extends events_1.EventEmitter {
         super();
         super.setMaxListeners(0);
         this._transport = transport;
+        this._waitForClosed = Promise.resolve();
     }
     get peer() {
         return this._peer;
     }
     connect(arg1, arg2, arg3) {
-        const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
-        return this._transport.ipcConnect(this, options)
-            .then((peer) => {
-            this._peer = peer;
-        });
+        if (this._waitForConnected == null) {
+            const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
+            this._waitForConnected = this._waitForClosed
+                .then(() => {
+                return this._transport.ipcConnect(this, options);
+            })
+                .then((peer) => {
+                this._peer = peer;
+            });
+        }
+        return this._waitForConnected;
     }
     close(options) {
-        return this._transport.ipcClose(this, options)
-            .then(() => {
-            this._peer = null;
-        });
+        if (this._waitForConnected) {
+            const waitForConnected = this._waitForConnected;
+            this._waitForConnected = null;
+            this._waitForClosed = waitForConnected
+                .then(() => {
+                return this._transport.ipcClose(this, options);
+            })
+                .then(() => {
+                this._peer = null;
+            });
+        }
+        return this._waitForClosed;
     }
     send(channel, ...args) {
         this._transport.ipcSendMessage(this, channel, args);
@@ -298,9 +313,9 @@ class IpcBusTransportImpl {
     ipcClose(client, options) {
         if (this._promiseConnected) {
             this.ipcPost(client.peer, IpcBusCommand_1.IpcBusCommand.Kind.Close, '');
+            this._ipcPostCommand = this.ipcPostCommandFake;
             this._client = null;
             this._promiseConnected = null;
-            this._ipcPostCommand = this.ipcPostCommandFake;
             return this.ipcShutdown(options);
         }
         return Promise.resolve();
@@ -1064,16 +1079,14 @@ class IpcBusTransportWindow extends IpcBusTransportImpl_1.IpcBusTransportImpl {
         return Promise.resolve();
     }
     ipcPostCommand(ipcBusCommand, args) {
-        if (this._connected) {
-            ipcBusCommand.bridge = true;
-            if (args) {
-                this._packetOut.serializeArray([ipcBusCommand, args]);
-            }
-            else {
-                this._packetOut.serializeArray([ipcBusCommand]);
-            }
-            this._ipcWindow.send(exports.IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, this._packetOut.getRawContent());
+        ipcBusCommand.bridge = true;
+        if (args) {
+            this._packetOut.serializeArray([ipcBusCommand, args]);
         }
+        else {
+            this._packetOut.serializeArray([ipcBusCommand]);
+        }
+        this._ipcWindow.send(exports.IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, this._packetOut.getRawContent());
     }
 }
 exports.IpcBusTransportWindow = IpcBusTransportWindow;

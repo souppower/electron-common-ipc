@@ -8,13 +8,16 @@ import * as IpcBusUtils from './IpcBusUtils';
 // Implementation for a common IpcBusClient
 /** @internal */
 export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClient, IpcBusTransportClient {
-    protected _transport: IpcBusTransport;
     protected _peer: Client.IpcBusPeer;
+    protected _transport: IpcBusTransport;
+    protected _waitForConnected: Promise<void>;
+    protected _waitForClosed: Promise<void>;
 
     constructor(transport: IpcBusTransport) {
         super();
         super.setMaxListeners(0);
         this._transport = transport;
+        this._waitForClosed = Promise.resolve();
     }
 
     get peer(): Client.IpcBusPeer | null {
@@ -22,18 +25,32 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
     }
 
     connect(arg1: Client.IpcBusClient.ConnectOptions | string | number, arg2?: Client.IpcBusClient.ConnectOptions | string, arg3?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
-        return this._transport.ipcConnect(this, options)
-        .then((peer) => {
-            this._peer = peer;
-        });
+        if (this._waitForConnected == null) {
+            const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
+            this._waitForConnected = this._waitForClosed
+            .then(() => {
+                return this._transport.ipcConnect(this, options)
+            })
+            .then((peer) => {
+                this._peer = peer;
+            });
+        }
+        return this._waitForConnected;
     }
 
     close(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        return this._transport.ipcClose(this, options)
-        .then(() => {
-            this._peer = null;
-        });
+        if (this._waitForConnected) {
+            const waitForConnected = this._waitForConnected;
+            this._waitForConnected = null;
+            this._waitForClosed = waitForConnected
+            .then(() => {
+                return this._transport.ipcClose(this, options);
+            })
+            .then(() => {
+                this._peer = null;
+            });
+        }
+        return this._waitForClosed;
     }
 
     send(channel: string, ...args: any[]) {

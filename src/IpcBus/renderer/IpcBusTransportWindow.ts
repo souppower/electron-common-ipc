@@ -116,15 +116,13 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
     // We serialize in renderer process to save master CPU.
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        if (this._connected) {
-            ipcBusCommand.bridge = true;
-            if (args) {
-                this._packetOut.serializeArray([ipcBusCommand, args]);
-            }
-            else {
-                this._packetOut.serializeArray([ipcBusCommand]);
-            }
-            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, this._packetOut.getRawContent());
+        ipcBusCommand.bridge = true;
+        if (args) {
+            this._packetOut.serializeArray([ipcBusCommand, args]);
         }
+        else {
+            this._packetOut.serializeArray([ipcBusCommand]);
+        }
+        this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, this._packetOut.getRawContent());
     }
 }

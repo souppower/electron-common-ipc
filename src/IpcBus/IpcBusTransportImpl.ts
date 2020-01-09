@@ -50,7 +50,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
 
     protected _peer: Client.IpcBusPeer;
     protected _promiseConnected: Promise<Client.IpcBusPeer>;
-    protected _connected: boolean;
 
     private _client: IpcBusTransportClient;
 
@@ -244,10 +243,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         this._ipcPostCommand({ kind, channel, peer }, args);
     }
 
-    ipcPostCommandFake(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    protected ipcPostCommandFake(ipcBusCommand: IpcBusCommand, args?: any[]): void {
     }
+    protected abstract ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
 
     abstract ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<void>;
     abstract ipcShutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
-    abstract ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
 }
