@@ -16,3 +16,4 @@ node_modules/
 debug.log
 npm-debug.log
 Bundled*.js
+test/**/*.bundle.*

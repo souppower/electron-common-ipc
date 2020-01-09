@@ -78,7 +78,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
     }
 
     protected _reset(endSocket: boolean) {
-        this._promiseConnected = null;
+        this._waitForConnected = null;
         this._socketWriter = null;
         if (this._socket) {
             const socket = this._socket;

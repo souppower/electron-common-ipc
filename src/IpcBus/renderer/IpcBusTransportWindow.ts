@@ -40,7 +40,7 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
     }
 
     protected _reset() {
-        this._promiseConnected = null;
+        this._waitForConnected = null;
         if (this._onIpcEventReceived) {
             this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             this._onIpcEventReceived = null;
@@ -82,7 +82,7 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
             let timer: NodeJS.Timer;
             const onIpcConnect = (eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer) => {
                 this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                if (this._promiseConnected) {
+                if (this._waitForConnected) {
                     if (this._onConnect(eventOrPeer, peerOrUndefined)) {
                         clearTimeout(timer);
                         resolve();

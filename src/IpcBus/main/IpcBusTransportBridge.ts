@@ -30,7 +30,6 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
     }
 
     protected _reset() {
-        this._promiseConnected = null;
         if (this._ipcBusBridge) {
             this._ipcBusBridge = null;
         }

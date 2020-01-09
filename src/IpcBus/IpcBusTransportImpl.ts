@@ -49,7 +49,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     private _localProcessId: number;
 
     protected _peer: Client.IpcBusPeer;
-    protected _promiseConnected: Promise<Client.IpcBusPeer>;
+    protected _waitForConnected: Promise<Client.IpcBusPeer>;
+    protected _waitForClosed: Promise<void>;
 
     private _client: IpcBusTransportClient;
 
@@ -65,6 +66,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         this._localProcessId = IpcBusTransportImpl._lastLocalProcessId++;
         this._packetDecoder = new IpcPacketBuffer();
         this._ipcPostCommand = this.ipcPostCommandFake;
+        this._waitForClosed = Promise.resolve();
     }
 
     protected generateName(): string {
@@ -196,8 +198,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     }
 
     ipcConnect(client: IpcBusTransportClient | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
-        if (this._promiseConnected == null) {
-            this._promiseConnected = this.ipcHandshake(options)
+        if (this._waitForConnected == null) {
+            this._waitForConnected = this._waitForClosed
+            .then(() => {
+                return this.ipcHandshake(options);
+            })
             .then(() => {
                 this._client = client;
                 const peer = { id: uuid.v1(), name: '', process: this._peer.process };
@@ -208,16 +213,20 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
                 return peer;
             });
         }
-        return this._promiseConnected;
+        return this._waitForConnected;
     }
 
     ipcClose(client: IpcBusTransportClient | null, options: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        if (this._promiseConnected) {
-            this.ipcPost(client.peer, IpcBusCommand.Kind.Close, '');
-            this._ipcPostCommand = this.ipcPostCommandFake;
-            this._client = null;
-            this._promiseConnected = null;
-            return this.ipcShutdown(options);
+        if (this._waitForConnected) {
+            const waitForConnected = this._waitForConnected;
+            this._waitForConnected = null;
+            this._waitForClosed = waitForConnected
+            .then(() => {
+                this.ipcPost(client.peer, IpcBusCommand.Kind.Close, '');
+                this._ipcPostCommand = this.ipcPostCommandFake;
+                this._client = null;
+                return this.ipcShutdown(options);
+            });
         }
         return Promise.resolve();
     }
