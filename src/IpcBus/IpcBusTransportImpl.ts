@@ -207,7 +207,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
                 this._client = client;
                 const peer = { id: uuid.v1(), name: '', process: this._peer.process };
                 peer.name = options.peerName || this.generateName();
-                const eventNames = client.eventNames();
+                // Browserify 16.5.0 does not yet use events 3.0.0 which implements eventNames()
+                const events = (client as any)._events ? (client as any)._events : [];
+                const eventNames = client.eventNames ? client.eventNames() : Object.keys(events);
                 this._ipcPostCommand = this.ipcPostCommand;
                 this.ipcPost(client.peer, IpcBusCommand.Kind.Connect, '', eventNames);
                 return peer;

@@ -104,7 +104,11 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
             }
             // We wait for the bridge confirmation
             this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-            this.ipcPost(this._peer, IpcBusCommand.Kind.Handshake, '');
+            this.ipcPostCommand({
+                kind: IpcBusCommand.Kind.Handshake,
+                channel: '',
+                peer: this._peer
+            });
         });
     }
 
