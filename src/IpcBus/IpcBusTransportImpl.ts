@@ -57,6 +57,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     private _requestFunctions: Map<string, DeferredRequest>;
     private _requestNumber: number;
     private _packetDecoder: IpcPacketBuffer;
+    private _ipcPostCommand: Function;
 
     constructor(ipcBusContext: Client.IpcBusProcess) {
         this._peer = { id: uuid.v1(), name: '', process: ipcBusContext };
@@ -64,6 +65,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         this._requestNumber = 0;
         this._localProcessId = IpcBusTransportImpl._lastLocalProcessId++;
         this._packetDecoder = new IpcPacketBuffer();
+        this._ipcPostCommand = this.ipcPostCommandFake;
     }
 
     protected generateName(): string {
@@ -153,7 +155,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     }
 
     ipcSendMessage(client: IpcBusTransportClient, channel: string, args: any[]): void {
-        this._connected && this.ipcPostCommand({ 
+        this._ipcPostCommand({ 
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer
@@ -176,7 +178,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
                     const response: Client.IpcBusRequestResponse = { event: { channel: channel, sender: this._peer }, err: 'timeout' };
                     deferredRequest.reject(response);
                     // Unregister remotely
-                    this._connected && this.ipcPostCommand({ 
+                    this._ipcPostCommand({ 
                         kind: IpcBusCommand.Kind.RequestCancel,
                         channel,
                         peer: client.peer
@@ -185,7 +187,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
             }, timeoutDelay);
         }
          // Execute request
-         this._connected && this.ipcPostCommand({ 
+         this._ipcPostCommand({ 
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer,
@@ -202,8 +204,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
                 const peer = { id: uuid.v1(), name: '', process: this._peer.process };
                 peer.name = options.peerName || this.generateName();
                 const eventNames = client.eventNames();
+                this._ipcPostCommand = this.ipcPostCommand;
                 this.ipcPost(client.peer, IpcBusCommand.Kind.Connect, '', eventNames);
-                this._connected  = true;
                 return peer;
             });
         }
@@ -215,7 +217,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
             this.ipcPost(client.peer, IpcBusCommand.Kind.Close, '');
             this._client = null;
             this._promiseConnected = null;
-            this._connected = false;
+            this._ipcPostCommand = this.ipcPostCommandFake;
             return this.ipcShutdown(options);
         }
         return Promise.resolve();
@@ -239,7 +241,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     }
     
     ipcPost(peer: Client.IpcBusPeer, kind: IpcBusCommand.Kind, channel: string, args?: any[]): void {
-        this._connected && this.ipcPostCommand({ kind, channel, peer }, args);
+        this._ipcPostCommand({ kind, channel, peer }, args);
+    }
+
+    ipcPostCommandFake(ipcBusCommand: IpcBusCommand, args?: any[]): void {
     }
 
     abstract ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<void>;

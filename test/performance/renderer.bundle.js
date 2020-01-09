@@ -39,13 +39,13 @@ class IpcBusClientImpl extends events_1.EventEmitter {
     connect(arg1, arg2, arg3) {
         const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
         return this._transport.ipcConnect(this, options)
-            .then(peer => {
+            .then((peer) => {
             this._peer = peer;
         });
     }
     close(options) {
         return this._transport.ipcClose(this, options)
-            .then(peer => {
+            .then(() => {
             this._peer = null;
         });
     }
@@ -164,6 +164,7 @@ class IpcBusTransportImpl {
         this._requestNumber = 0;
         this._localProcessId = IpcBusTransportImpl._lastLocalProcessId++;
         this._packetDecoder = new socket_serializer_1.IpcPacketBuffer();
+        this._ipcPostCommand = this.ipcPostCommandFake;
     }
     generateName() {
         let name = `${this._peer.process.type}_${this._peer.process.pid}`;
@@ -244,7 +245,7 @@ class IpcBusTransportImpl {
         }
     }
     ipcSendMessage(client, channel, args) {
-        this._connected && this.ipcPostCommand({
+        this._ipcPostCommand({
             kind: IpcBusCommand_1.IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer
@@ -263,7 +264,7 @@ class IpcBusTransportImpl {
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] reject: timeout`);
                     const response = { event: { channel: channel, sender: this._peer }, err: 'timeout' };
                     deferredRequest.reject(response);
-                    this._connected && this.ipcPostCommand({
+                    this._ipcPostCommand({
                         kind: IpcBusCommand_1.IpcBusCommand.Kind.RequestCancel,
                         channel,
                         peer: client.peer
@@ -271,7 +272,7 @@ class IpcBusTransportImpl {
                 }
             }, timeoutDelay);
         }
-        this._connected && this.ipcPostCommand({
+        this._ipcPostCommand({
             kind: IpcBusCommand_1.IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer,
@@ -287,8 +288,8 @@ class IpcBusTransportImpl {
                 const peer = { id: uuid.v1(), name: '', process: this._peer.process };
                 peer.name = options.peerName || this.generateName();
                 const eventNames = client.eventNames();
+                this._ipcPostCommand = this.ipcPostCommand;
                 this.ipcPost(client.peer, IpcBusCommand_1.IpcBusCommand.Kind.Connect, '', eventNames);
-                this._connected = true;
                 return peer;
             });
         }
@@ -299,7 +300,7 @@ class IpcBusTransportImpl {
             this.ipcPost(client.peer, IpcBusCommand_1.IpcBusCommand.Kind.Close, '');
             this._client = null;
             this._promiseConnected = null;
-            this._connected = false;
+            this._ipcPostCommand = this.ipcPostCommandFake;
             return this.ipcShutdown(options);
         }
         return Promise.resolve();
@@ -319,7 +320,9 @@ class IpcBusTransportImpl {
         }
     }
     ipcPost(peer, kind, channel, args) {
-        this._connected && this.ipcPostCommand({ kind, channel, peer }, args);
+        this._ipcPostCommand({ kind, channel, peer }, args);
+    }
+    ipcPostCommandFake(ipcBusCommand, args) {
     }
 }
 exports.IpcBusTransportImpl = IpcBusTransportImpl;
