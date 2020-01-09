@@ -30,7 +30,6 @@ export interface IpcWindow extends EventEmitter {
 export class IpcBusTransportWindow extends IpcBusTransportImpl {
     private _ipcWindow: IpcWindow;
     private _onIpcEventReceived: (...args: any[]) => void;
-    private _connected: boolean;
     private _packetOut: IpcPacketBuffer;
 
     constructor(contextType: Client.IpcBusProcessType, ipcWindow: IpcWindow) {
@@ -42,12 +41,9 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
 
     protected _reset() {
         this._promiseConnected = null;
-        if (this._connected) {
-            this._connected = false;
-            if (this._onIpcEventReceived) {
-                this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
-                this._onIpcEventReceived = null;
-            }
+        if (this._onIpcEventReceived) {
+            this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+            this._onIpcEventReceived = null;
         }
     }
 
@@ -85,15 +81,14 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
             // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
             let timer: NodeJS.Timer;
             const onIpcConnect = (eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer) => {
-                if (this._connected) {
+                this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
+                if (this._promiseConnected) {
                     if (this._onConnect(eventOrPeer, peerOrUndefined)) {
-                        this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
                         clearTimeout(timer);
                         resolve();
                     }
                 }
                 else {
-                    this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
                     reject('cancelled');
                 }
             };
@@ -108,16 +103,13 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
                 }, options.timeoutDelay);
             }
             // We wait for the bridge confirmation
-            this._connected = true;
             this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-            this.ipcPost(IpcBusCommand.Kind.Handshake, '');
+            this.ipcPost(this._peer, IpcBusCommand.Kind.Handshake, '');
         });
     }
 
     ipcShutdown(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        if (this._connected) {
-            this._reset();
-        }
+        this._reset();
         return Promise.resolve();
     }
 

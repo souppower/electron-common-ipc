@@ -52,26 +52,16 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     protected _reset(endSocket: boolean) {
         this._brokerChannels.clear();
         this._connected = false;
-        super.ipcPost(IpcBusCommand.Kind.BridgeClose, null);
+        super.ipcPost(this._peer, IpcBusCommand.Kind.BridgeClose, null);
         super._reset(endSocket);
     }
 
     private bridgeAddChannels(channels: string[]) {
-        const ipcBusCommand: IpcBusCommand = {
-            kind: IpcBusCommand.Kind.AddBridgeChannels,
-            channel: '',
-            peer: this.peer
-        };
-        super.ipcPostCommand(ipcBusCommand, channels);
+        super.ipcPost(this._peer, IpcBusCommand.Kind.AddBridgeChannels, '', channels);
     }
 
     private bridgeRemoveChannels(channels: string[]) {
-        const ipcBusCommand: IpcBusCommand = {
-            kind: IpcBusCommand.Kind.RemoveBridgeChannels,
-            channel: '',
-            peer: this.peer
-        };
-        super.ipcPostCommand(ipcBusCommand, channels);
+        super.ipcPost(this._peer, IpcBusCommand.Kind.RemoveBridgeChannels, '', channels);
     }
 
     // IpcBusBridge API
@@ -89,7 +79,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 this._brokerChannels.clear();
                 return super.ipcConnect(null, { peerName: `IpcBusBridge`, ...options })
                     .then(() => {
-                        super.ipcPost(IpcBusCommand.Kind.BridgeConnect, null);
+                        super.ipcPost(this._peer, IpcBusCommand.Kind.BridgeConnect, null);
                         this.bridgeAddChannels(this._subscriptions.getChannels());
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
                     })

@@ -1,21 +1,28 @@
 import * as Client from './IpcBusClient';
 import { IpcBusCommand } from './IpcBusCommand';
+import { EventEmitter } from 'events';
 
 export interface IpcBusSender {
     send(channel: string, ...args: any[]): void;
 }
 
+export interface IpcBusTransportClient extends EventEmitter {
+    peer: Client.IpcBusPeer;
+}
+
 /** @internal */
 export interface IpcBusTransport {
-    readonly peer: Client.IpcBusPeer;
-
     ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<void>;
     ipcShutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
 
-    ipcConnect(client: Client.IpcBusClient | null, options: Client.IpcBusClient.ConnectOptions): Promise<void>;
-    ipcClose(client: Client.IpcBusClient | null, options?: Client.IpcBusClient.CloseOptions): Promise<void>;
+    ipcConnect(client: IpcBusTransportClient, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer>;
+    ipcClose(client: IpcBusTransportClient, options?: Client.IpcBusClient.CloseOptions): Promise<void>;
 
-    ipcRequestMessage(channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse>;
-    ipcSendMessage(channel: string, args: any[]): void;
-    ipcPost(kind: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void;
+    ipcAddChannelListener(client: IpcBusTransportClient, channel: string): void;
+    ipcRemoveChannelListener(client: IpcBusTransportClient, channel: string): void;
+    ipcRemoveAllListeners(client: IpcBusTransportClient, channel?: string): void;
+
+    ipcRequestMessage(client: IpcBusTransportClient, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse>;
+    ipcSendMessage(client: IpcBusTransportClient, channel: string, args: any[]): void;
+    ipcPost(peer: Client.IpcBusPeer, kind: IpcBusCommand.Kind, channel: string, args?: any[]): void;
 }

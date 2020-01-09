@@ -208,7 +208,6 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
                 for (let key in socketLocalBinds) {
                     socket.addListener(key, socketLocalBinds[key]);
                 }
-                this.ipcPost(IpcBusCommand.Kind.Close, '');
                 this._reset(true);
             }
             else {
