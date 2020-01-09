@@ -223,12 +223,14 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
             this._waitForClosed = waitForConnected
             .then(() => {
                 this.ipcPost(client.peer, IpcBusCommand.Kind.Close, '');
-                this._ipcPostCommand = this.ipcPostCommandFake;
                 this._client = null;
                 return this.ipcShutdown(options);
+            })
+            .then(() => {
+                this._ipcPostCommand = this.ipcPostCommandFake;
             });
         }
-        return Promise.resolve();
+        return this._waitForClosed;
     }
 
     ipcAddChannelListener(client: IpcBusTransportClient, channel: string) {
