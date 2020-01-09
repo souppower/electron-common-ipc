@@ -215,9 +215,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     ipcClose(client: IpcBusTransportClient | null, options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         if (this._promiseConnected) {
             this.ipcPost(client.peer, IpcBusCommand.Kind.Close, '');
+            this._ipcPostCommand = this.ipcPostCommandFake;
             this._client = null;
             this._promiseConnected = null;
-            this._ipcPostCommand = this.ipcPostCommandFake;
             return this.ipcShutdown(options);
         }
         return Promise.resolve();
