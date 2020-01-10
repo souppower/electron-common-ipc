@@ -45,7 +45,7 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
     ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             let timer: NodeJS.Timer;
-            const replyChannel = this.generateReplyChannel();
+            const replyChannel = IpcBusTransportImpl.generateReplyChannel(this._peer);
             const replyListener = (event: Electron.IpcMainEvent, ipcBusBridge: IpcBusBridgeImpl) => {
                 clearTimeout(timer);
                 this._ipcBusBridge = ipcBusBridge;

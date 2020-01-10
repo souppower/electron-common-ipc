@@ -23,7 +23,7 @@ export namespace IpcBusCommand {
         RemoveListeners             = 'LIR',
         SendMessage                 = 'MES',    // MEssage
         RequestResponse             = 'RQR',
-        RequestCancel               = 'RQC',
+        RequestClose                = 'RQC',
 
         BridgeConnect                     = 'BCOO',    // COnnexion
         BridgeClose                       = 'BCOC',

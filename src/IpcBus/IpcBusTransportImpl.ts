@@ -45,8 +45,8 @@ class DeferredRequest {
 
 /** @internal */
 export abstract class IpcBusTransportImpl implements IpcBusTransport {
-    private static _lastLocalProcessId: number = 0;
-    private _localProcessId: number;
+    private static s_clientId: number = 0;
+    private static s_requestNumber: number;
 
     protected _peer: Client.IpcBusPeer;
     protected _waitForConnected: Promise<Client.IpcBusPeer>;
@@ -55,36 +55,34 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     private _client: IpcBusTransportClient;
 
     private _requestFunctions: Map<string, DeferredRequest>;
-    private _requestNumber: number;
     private _packetDecoder: IpcPacketBuffer;
     private _ipcPostCommand: Function;
 
     constructor(ipcBusContext: Client.IpcBusProcess) {
         this._peer = { id: uuid.v1(), name: '', process: ipcBusContext };
         this._requestFunctions = new Map<string, DeferredRequest>();
-        this._requestNumber = 0;
-        this._localProcessId = IpcBusTransportImpl._lastLocalProcessId++;
         this._packetDecoder = new IpcPacketBuffer();
         this._ipcPostCommand = this.ipcPostCommandFake;
         this._waitForClosed = Promise.resolve();
     }
 
-    protected generateName(): string {
-        let name = `${this._peer.process.type}_${this._peer.process.pid}`;
-        if (this._peer.process.rid) {
-            name += `-${this._peer.process.rid}`;
+    protected static generateName(peer: Client.IpcBusPeer): string {
+        let name = `${peer.process.type}_${peer.process.pid}`;
+        if (peer.process.rid) {
+            name += `-${peer.process.rid}`;
         }
-        name += `-${this._localProcessId}`;
+        ++IpcBusTransportImpl.s_clientId;
+        name += `-${IpcBusTransportImpl.s_clientId}`;
         return name;
     }
 
-    protected generateReplyChannel(): string {
-        ++this._requestNumber;
-        return `${replyChannelPrefix}${this._peer.id}-${this._requestNumber.toString()}`;
+    protected static generateReplyChannel(peer: Client.IpcBusPeer): string {
+        ++IpcBusTransportImpl.s_requestNumber;
+        return `${replyChannelPrefix}${peer.id}-${IpcBusTransportImpl.s_requestNumber.toString()}`;
     }
 
-    private _onCommandSendMessage(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        const listeners = this._client && this._client.listeners(ipcBusCommand.channel);
+    protected _onCommandMessageReceived(client: IpcBusTransportClient, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean {
+        const listeners = client && client.listeners(ipcBusCommand.channel);
         if (listeners && listeners.length) {
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
             const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
@@ -92,7 +90,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
                 const ipcBusCommandResponse = {
                     kind: IpcBusCommand.Kind.RequestResponse,
                     channel: ipcBusCommand.request.replyChannel,
-                    peer: this._peer,
+                    peer: client.peer,
                     request: ipcBusCommand.request
                 };
                 ipcBusEvent.request = {
@@ -110,29 +108,33 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
             }
             const args = ipcPacketBuffer.parseArrayAt(1);
             for (let i = 0; i < listeners.length; ++i) {
-                listeners[i].call(this._client, ipcBusEvent, ...args);
+                listeners[i].call(client, ipcBusEvent, ...args);
             }
+            return true;
         }
+        return false;
     }
 
-    private _onCommandRequestResponse(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+    protected _onCommandResponseReceived(client: IpcBusTransportClient, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
         const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
         if (deferredRequest) {
             this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
             const args = ipcPacketBuffer.parseArrayAt(1);
             deferredRequest.fulFilled(ipcBusCommand, args);
+            return true;
         }
+        return false;
     }
 
     protected _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                this._onCommandSendMessage(ipcBusCommand, ipcPacketBuffer);
+                this._onCommandMessageReceived(this._client, ipcBusCommand, ipcPacketBuffer);
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                this._onCommandRequestResponse(ipcBusCommand, ipcPacketBuffer);
+                this._onCommandResponseReceived(this._client, ipcBusCommand, ipcPacketBuffer);
                 break;
             }
         }
@@ -144,12 +146,12 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 this._packetDecoder.setRawContent(rawContent);
-                this._onCommandSendMessage(ipcBusCommand, this._packetDecoder);
+                this._onCommandMessageReceived(this._client, ipcBusCommand, this._packetDecoder);
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
                 this._packetDecoder.setRawContent(rawContent);
-                this._onCommandRequestResponse(ipcBusCommand, this._packetDecoder);
+                this._onCommandResponseReceived(this._client, ipcBusCommand, this._packetDecoder);
                 break;
             }
         }
@@ -167,7 +169,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         if (timeoutDelay == null) {
             timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
-        const ipcBusCommandRequest: IpcBusCommand.Request = {channel, replyChannel: this.generateReplyChannel() };
+        const ipcBusCommandRequest: IpcBusCommand.Request = {channel, replyChannel: IpcBusTransportImpl.generateReplyChannel(client.peer) };
         const deferredRequest = new DeferredRequest();
         // Register locally
          this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
@@ -180,7 +182,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
                     deferredRequest.reject(response);
                     // Unregister remotely
                     this._ipcPostCommand({ 
-                        kind: IpcBusCommand.Kind.RequestCancel,
+                        kind: IpcBusCommand.Kind.RequestClose,
                         channel,
                         peer: client.peer
                     });
@@ -206,11 +208,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
             .then(() => {
                 this._client = client;
                 const peer = { id: uuid.v1(), name: '', process: this._peer.process };
-                peer.name = options.peerName || this.generateName();
-                // Browserify 16.5.0 does not yet use events 3.0.0 which implements eventNames()
-                const events = (client as any)._events ? (client as any)._events : [];
-                const eventNames = client.eventNames ? client.eventNames() : Object.keys(events);
+                peer.name = options.peerName || IpcBusTransportImpl.generateName(peer);
                 this._ipcPostCommand = this.ipcPostCommand;
+                const eventNames = client.eventNames();
                 this.ipcPost(client.peer, IpcBusCommand.Kind.Connect, '', eventNames);
                 return peer;
             });

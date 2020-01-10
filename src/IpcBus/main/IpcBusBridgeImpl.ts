@@ -155,7 +155,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 }
                 break;
             }
-            case IpcBusCommand.Kind.RequestCancel:
+            case IpcBusCommand.Kind.RequestClose:
                 this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                 this._brokerChannels.delete(ipcBusCommand.request.replyChannel);
                 break;
@@ -285,7 +285,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 break;
             }
 
-            case IpcBusCommand.Kind.RequestCancel:
+            case IpcBusCommand.Kind.RequestClose:
                 this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                 if (this._brokerChannels.has(ipcBusCommand.request.channel)) {
                     super.ipcPostBuffer(rawContent.buffer);

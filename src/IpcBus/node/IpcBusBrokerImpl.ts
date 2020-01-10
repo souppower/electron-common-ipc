@@ -382,7 +382,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
             }
 
-            case IpcBusCommand.Kind.RequestCancel:
+            case IpcBusCommand.Kind.RequestClose:
                 this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
                 // If this message does not come from the IpcBusBridge, send it to it
                 if (!ipcBusCommand.bridge) {
