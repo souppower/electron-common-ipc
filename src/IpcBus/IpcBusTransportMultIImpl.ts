@@ -17,12 +17,11 @@ export abstract class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
     protected _onCommandSendMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
         this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-            const listeners = connData.conn.listeners(ipcBusCommand.channel);
-            this._onCommandMessageReceived(connData.conn, listeners, ipcBusCommand, args);
+            this._onCommandMessageReceived(connData.conn, ipcBusCommand, args);
         });
     }
 
-    protected _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+    _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 if (this._subscriptions.hasChannel(ipcBusCommand.channel)) {
@@ -37,7 +36,7 @@ export abstract class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
                     this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
                     const args = ipcPacketBuffer.parseArrayAt(1);
-                    deferredRequest.fulFilled(ipcBusCommand, args);
+                    deferredRequest.settled(ipcBusCommand, args);
                 }
                 break;
             }
@@ -46,7 +45,7 @@ export abstract class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
 
     // We have to simulate a fake first parameter as this function can be called from an Electron ipc with an event
     // or directly from our code.
-    protected _onCommandBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
+    _onCommandBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 if (this._subscriptions.hasChannel(ipcBusCommand.channel)) {
@@ -63,7 +62,7 @@ export abstract class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
                     this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
                     this._packetDecoder.setRawContent(rawContent);
                     const args = this._packetDecoder.parseArrayAt(1);
-                    deferredRequest.fulFilled(ipcBusCommand, args);
+                    deferredRequest.settled(ipcBusCommand, args);
                 }
                 break;
             }
@@ -102,30 +101,31 @@ export abstract class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         });
     }
 
-    ipcClose(client: Client.IpcBusClient, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        return super.ipcClose(client, options)
-        .then(() => {
-            this.ipcRemoveAllListeners(client);
-            if (this._subscriptions.getChannelsCount() === 0) {
+    ipcClose(client: IpcBusTransportClient, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+        this.ipcRemoveAllListeners(client);
+        if (this._subscriptions.getChannelsCount() === 0) {
+            return super.ipcClose(client, options)
+            .then(() => {
                 this._subscriptions = null;
                 this.ipcPost(this._peer, IpcBusCommand.Kind.Close, '');
                 return this.ipcShutdown(options)
                 .then(() => {
                     this._ipcPostCommand = this.ipcPostCommandFake;
                 });
-            }
-        });
+            });
+        }
+        return Promise.resolve();
     }
 
-    ipcAddChannelListener(client: Client.IpcBusClient, channel: string) {
+    ipcAddChannelListener(client: IpcBusTransportClient, channel: string) {
         this._subscriptions && this._subscriptions.addRef(channel, client, client.peer);
     }
 
-    ipcRemoveChannelListener(client: Client.IpcBusClient, channel: string) {
+    ipcRemoveChannelListener(client: IpcBusTransportClient, channel: string) {
         this._subscriptions && this._subscriptions.release(channel, client, client.peer);
     }
 
-    ipcRemoveAllListeners(client: Client.IpcBusClient, channel?: string) {
+    ipcRemoveAllListeners(client: IpcBusTransportClient, channel?: string) {
         if (channel) {
             this._subscriptions && this._subscriptions.releaseAll(channel, client, client.peer);
         }

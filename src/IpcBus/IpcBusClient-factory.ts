@@ -4,7 +4,7 @@ import { IpcBusClient } from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
 
 import { Create as CreateIpcBusClientNet } from './node/IpcBusClientNet';
-import { Create as CreateIpcBusClientMain } from './main/IpcBusClientBridge';
+import { Create as CreateIpcBusClientMain } from './main/IpcBusClientMain';
 
 export const CreateIpcBusClient: IpcBusClient.CreateFunction = (): IpcBusClient => {
     const electronProcessType = GetElectronProcessType();

@@ -13,11 +13,11 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
 
     protected abstract addLog(ipcBusCommand: IpcBusCommand, args: any[]): void;
 
-    _onCommonMessage(event: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
+    _onCommonMessage(origin: 'broker'| 'renderer'| 'main', event: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         const ipcPacketBuffer = new IpcPacketBuffer(rawContent);
         this.addLog(ipcBusCommand, ipcPacketBuffer.parseArrayAt(1));
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(log);
-        super._onCommonMessage(event, ipcBusCommand, rawContent);
+        super._onCommonMessage(origin, event, ipcBusCommand, rawContent);
     }
 }
 

@@ -7,7 +7,8 @@ import * as Client from '../IpcBusClient';
 import * as Bridge from './IpcBusBridge';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusTransportNet } from '../node/IpcBusTransportNet';
-import { IpcBusSender } from '../IpcBusTransport';
+import { CreateTransport as CreateMainTransport } from './IpcBusClientMain';
+import { IpcBusSender, IpcBusTransport } from '../IpcBusTransport';
 import { 
     IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, 
     IPCBUS_TRANSPORT_RENDERER_COMMAND, 
@@ -23,6 +24,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<IpcBusSender>;
     protected _brokerChannels: Set<string>;
+    protected _mainTransport: IpcBusTransport;
 
     protected _connected: boolean;
 
@@ -39,6 +41,8 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         this._subscriptions.on('channel-removed', channel => {
             this._connected && this.bridgeRemoveChannels([channel]);
         });
+
+        this._mainTransport = CreateMainTransport(contextType);
 
         this._brokerChannels = new Set<string>();
 
@@ -116,52 +120,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         return queryStateResult;
     }
 
-    // This is coming from the Bus broker (socket)
-    // =================================================================================================
-    protected _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.AddBrokerChannels: {
-                const channels: string[] = ipcPacketBuffer.parseArrayAt(1);
-                channels.forEach(channel => {
-                    this._brokerChannels.add(channel);
-                });
-                break;
-            }
-            case IpcBusCommand.Kind.RemoveBrokerChannels: {
-                const channels: string[] = ipcPacketBuffer.parseArrayAt(1);
-                channels.forEach(channel => {
-                    this._brokerChannels.delete(channel);
-                });
-                break;
-            }
-            case IpcBusCommand.Kind.SendMessage: {
-                if (ipcBusCommand.request) {
-                    this._brokerChannels.add(ipcBusCommand.request.replyChannel);
-                }
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
-                const rawContent = ipcPacketBuffer.getRawContent();
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
-                });
-                break;
-            }
-            case IpcBusCommand.Kind.RequestResponse: {
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-                const connData = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
-                if (connData) {
-                    this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
-                    const rawContent = ipcPacketBuffer.getRawContent();
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
-                }
-                break;
-            }
-            case IpcBusCommand.Kind.RequestClose:
-                this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
-                this._brokerChannels.delete(ipcBusCommand.request.replyChannel);
-                break;
-        }
-    }
-
     // This is coming from the Electron Renderer Proces/s (Electron ipc)
     // =================================================================================================
     private _completePeerInfo(webContents: Electron.WebContents, ipcBusPeer: Client.IpcBusPeer): void {
@@ -211,7 +169,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 this._onRendererHandshake(webContents, ipcBusCommand);
                 break;
             default :
-                this._onCommonMessage(webContents, ipcBusCommand, rawContent);
+                this._onCommonMessage('renderer', webContents, ipcBusCommand, rawContent);
                 break;
         }
     }
@@ -223,7 +181,90 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     }
 
     _onMainMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
-        this._onCommonMessage(sender, ipcBusCommand, rawContent);
+        this._onCommonMessage('main', sender, ipcBusCommand, rawContent);
+    }
+
+    // This is coming from the Bus broker (socket)
+    // =================================================================================================
+    _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+        switch (ipcBusCommand.kind) {
+            case IpcBusCommand.Kind.AddBrokerChannels: {
+                const channels: string[] = ipcPacketBuffer.parseArrayAt(1);
+                channels.forEach(channel => {
+                    this._brokerChannels.add(channel);
+                });
+                break;
+            }
+            case IpcBusCommand.Kind.RemoveBrokerChannels: {
+                const channels: string[] = ipcPacketBuffer.parseArrayAt(1);
+                channels.forEach(channel => {
+                    this._brokerChannels.delete(channel);
+                });
+                break;
+            }
+            default: {
+                const rawContent = ipcPacketBuffer.getRawContent();
+                return this._onCommonMessage('broker', null, ipcBusCommand, rawContent);
+                break;
+            }
+        }
+    }
+
+    _onCommonMessage(origin: 'broker'| 'renderer'| 'main', sender: IpcBusSender, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
+        switch (ipcBusCommand.kind) {
+            case IpcBusCommand.Kind.SendMessage: {
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
+                if (ipcBusCommand.request) {
+                    sender && this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, sender, ipcBusCommand.peer);
+                    if (origin === 'broker') {
+                        this._brokerChannels.add(ipcBusCommand.request.replyChannel);
+                    }
+                }
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                });
+                if (origin !== 'main') {
+                    this._mainTransport._onCommandBufferReceived(undefined, ipcBusCommand, rawContent);
+                }
+                if (origin !== 'broker') {
+                    if (this._brokerChannels.has(ipcBusCommand.channel)) {
+                        super.ipcPostBuffer(rawContent.buffer);
+                    }
+                }
+                break;
+            }
+                
+            case IpcBusCommand.Kind.RequestResponse: {
+                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
+                const connData = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
+                if (connData) {
+                    this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                }
+                if (origin !== 'main') {
+                    this._mainTransport._onCommandBufferReceived(undefined, ipcBusCommand, rawContent);
+                }
+                if (origin !== 'broker') {
+                    if (this._brokerChannels.delete(ipcBusCommand.request.replyChannel)) {
+                        super.ipcPostBuffer(rawContent.buffer);
+                    }
+                }
+                break;
+            }
+
+            case IpcBusCommand.Kind.RequestClose:
+                this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
+                if (this._brokerChannels.has(ipcBusCommand.request.channel)) {
+                    super.ipcPostBuffer(rawContent.buffer);
+                }
+                break;
+
+            default:
+                if (origin !== 'broker') {
+                    this._onAdminMessage(sender, ipcBusCommand);
+                }
+                break;
+        }
     }
 
     // Common Electron Process/s
@@ -254,48 +295,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
                 return true;
         }
         return false;
-    }
-
-    _onCommonMessage(sender: IpcBusSender, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
-        switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.SendMessage: {
-                if (ipcBusCommand.request) {
-                    this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, sender, ipcBusCommand.peer);
-                }
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
-                });
-                if (this._brokerChannels.has(ipcBusCommand.channel)) {
-                    super.ipcPostBuffer(rawContent.buffer);
-                }
-                break;
-            }
-                
-            case IpcBusCommand.Kind.RequestResponse: {
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-                const connData = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
-                if (connData) {
-                    this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
-                }
-                if (this._brokerChannels.delete(ipcBusCommand.request.replyChannel)) {
-                    super.ipcPostBuffer(rawContent.buffer);
-                }
-                break;
-            }
-
-            case IpcBusCommand.Kind.RequestClose:
-                this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
-                if (this._brokerChannels.has(ipcBusCommand.request.channel)) {
-                    super.ipcPostBuffer(rawContent.buffer);
-                }
-                break;
-
-            default:
-                this._onAdminMessage(sender, ipcBusCommand);
-                break;
-        }
     }
 
 }

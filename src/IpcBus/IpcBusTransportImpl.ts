@@ -22,7 +22,7 @@ class DeferredRequest {
         });
     }
 
-    fulFilled(ipcBusCommand: IpcBusCommand, args: any[]) {
+    settled(ipcBusCommand: IpcBusCommand, args: any[]) {
         const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.request.channel, sender: ipcBusCommand.peer };
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Peer #${ipcBusEvent.sender.name} replied to request on ${ipcBusCommand.request.replyChannel}`);
         if (ipcBusCommand.request.resolve) {
@@ -79,7 +79,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         return `${replyChannelPrefix}${peer.id}-${IpcBusTransportImpl.s_requestNumber.toString()}`;
     }
 
-    protected _onCommandMessageReceived(client: IpcBusTransportClient, listeners: Function[], ipcBusCommand: IpcBusCommand, args: any[]): void {
+    protected _onCommandMessageReceived(client: IpcBusTransportClient, ipcBusCommand: IpcBusCommand, args: any[]): void {
+        const listeners = client.listeners(ipcBusCommand.channel);
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
         const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
         if (ipcBusCommand.request) {
@@ -101,7 +102,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
                 if (deferredRequest) {
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
                     this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
-                    deferredRequest.fulFilled(ipcBusCommand, args);
+                    deferredRequest.settled(ipcBusCommand, args);
                 }
                 else {
                     this.ipcPostCommand(ipcBusCommandResponse, args);
@@ -152,7 +153,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
                 this._ipcPostCommand({ 
                     kind: IpcBusCommand.Kind.RequestClose,
                     channel,
-                    peer: client.peer
+                    peer: client.peer,
+                    request: ipcBusCommandRequest
                 });
             }, timeoutDelay);
         }
@@ -225,6 +227,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     abstract ipcShutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
 
     protected abstract ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
-    protected abstract _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void;
-    protected abstract _onCommandBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void;
+    abstract _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void;
+    abstract _onCommandBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void;
 }

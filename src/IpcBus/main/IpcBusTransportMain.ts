@@ -3,7 +3,9 @@ import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as Client from '../IpcBusClient';
 
-import { IpcBusTransportSingleImpl } from '../IpcBusTransportSingleImpl';
+// import { IpcBusTransportSingleImpl } from '../IpcBusTransportSingleImpl';
+import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultiImpl';
+import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 import { IpcBusSender } from '../IpcBusTransport';
@@ -15,7 +17,7 @@ import { IpcBusSender } from '../IpcBusTransport';
 
 // Implementation for renderer process
 /** @internal */
-export class IpcBusTransportBridge extends IpcBusTransportSingleImpl implements IpcBusSender {
+export class IpcBusTransportMain extends IpcBusTransportMultiImpl implements IpcBusSender {
     private _ipcMain: Electron.IpcMain;
 
     private _ipcBusBridge: IpcBusBridgeImpl;
@@ -37,7 +39,7 @@ export class IpcBusTransportBridge extends IpcBusTransportSingleImpl implements 
 
     send(channel: string, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         // if (channel === IPCBUS_TRANSPORT_RENDERER_EVENT) {
-            this._onCommandBufferReceived(undefined, ipcBusCommand, rawContent);
+            // this._onCommandBufferReceived(undefined, ipcBusCommand, rawContent);
         // }
     }
 
@@ -45,7 +47,7 @@ export class IpcBusTransportBridge extends IpcBusTransportSingleImpl implements 
     ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             let timer: NodeJS.Timer;
-            const replyChannel = IpcBusTransportSingleImpl.generateReplyChannel(this._peer);
+            const replyChannel = IpcBusTransportImpl.generateReplyChannel(this._peer);
             const replyListener = (event: Electron.IpcMainEvent, ipcBusBridge: IpcBusBridgeImpl) => {
                 clearTimeout(timer);
                 this._ipcBusBridge = ipcBusBridge;

@@ -1,6 +1,8 @@
+import { EventEmitter } from 'events';
+import { IpcPacketBuffer } from 'socket-serializer';
+
 import * as Client from './IpcBusClient';
 import { IpcBusCommand } from './IpcBusCommand';
-import { EventEmitter } from 'events';
 
 export interface IpcBusSender {
     send(channel: string, ...args: any[]): void;
@@ -25,4 +27,7 @@ export interface IpcBusTransport {
     ipcRequestMessage(client: IpcBusTransportClient, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse>;
     ipcSendMessage(client: IpcBusTransportClient, channel: string, args: any[]): void;
     ipcPost(peer: Client.IpcBusPeer, kind: IpcBusCommand.Kind, channel: string, args?: any[]): void;
+
+    _onCommandPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void;
+    _onCommandBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void;
 }

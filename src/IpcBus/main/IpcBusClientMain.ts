@@ -1,15 +1,16 @@
 import * as Client from '../IpcBusClient';
 
-import { IpcBusTransportNet } from './IpcBusTransportNet';
+import { IpcBusTransportMain } from './IpcBusTransportMain';
 import { IpcBusClientImpl}  from '../IpcBusClientImpl';
 import { IpcBusTransport } from '../IpcBusTransport';
 
+let g_transport: IpcBusTransportMain;
 export function CreateTransport(contextType: Client.IpcBusProcessType): IpcBusTransport {
-    const transport = new IpcBusTransportNet(contextType);
-    return transport;
+    g_transport = g_transport || new IpcBusTransportMain(contextType);
+    return g_transport;
 }
 
-// Implementation for Node process
+// Implementation for Electron Main process
 export function Create(contextType: Client.IpcBusProcessType): Client.IpcBusClient {
     const transport = CreateTransport(contextType);
     const ipcClient = new IpcBusClientImpl(transport);
