@@ -193,6 +193,10 @@ export class ChannelConnectionMap<T> extends EventEmitter {
         return Array.from(this._channelsMap.keys());
     }
 
+    getChannelsCount(): number {
+        return this._channelsMap.size;
+    }
+
     clear() {
         this._channelsMap.clear();
         this._requestChannels.clear();

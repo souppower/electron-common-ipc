@@ -6,7 +6,7 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 
-import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
+import { IpcBusTransportSingleImpl } from '../IpcBusTransportSingleImpl';
 import { IpcBusCommand } from '../IpcBusCommand';
 
 export const IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Connect';
@@ -27,7 +27,7 @@ export interface IpcWindow extends EventEmitter {
 
 // Implementation for renderer process
 /** @internal */
-export class IpcBusTransportWindow extends IpcBusTransportImpl {
+export class IpcBusTransportWindow extends IpcBusTransportSingleImpl {
     private _ipcWindow: IpcWindow;
     private _onIpcEventReceived: (...args: any[]) => void;
     private _packetOut: IpcPacketBuffer;

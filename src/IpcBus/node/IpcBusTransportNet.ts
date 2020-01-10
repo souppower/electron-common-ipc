@@ -6,12 +6,12 @@ import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSoc
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 
-import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
+import { IpcBusTransportSingleImpl } from '../IpcBusTransportSingleImpl';
 import { IpcBusCommand } from '../IpcBusCommand';
 
 // Implementation for Node process
 /** @internal */
-export class IpcBusTransportNet extends IpcBusTransportImpl {
+export class IpcBusTransportNet extends IpcBusTransportSingleImpl {
     protected _socket: net.Socket;
     protected _netBinds: { [key: string]: (...args: any[]) => void };
 
