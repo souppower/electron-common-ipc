@@ -52,7 +52,6 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     protected _reset(endSocket: boolean) {
         this._brokerChannels.clear();
         this._connected = false;
-        super.ipcPost(this._peer, IpcBusCommand.Kind.BridgeClose, null);
         super._reset(endSocket);
     }
 
@@ -100,6 +99,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererMessage);
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_BRIDGE_REQUEST_INSTANCE, this._onMainConnect);
         if (this._connected) {
+            super.ipcPost(this._peer, IpcBusCommand.Kind.BridgeClose, null);
             return super.ipcClose(null, options);
         }
         return Promise.resolve();
