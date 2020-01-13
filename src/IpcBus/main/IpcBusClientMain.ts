@@ -1,12 +1,24 @@
 import * as Client from '../IpcBusClient';
 
-import { IpcBusTransportMain } from './IpcBusTransportMain';
 import { IpcBusClientImpl}  from '../IpcBusClientImpl';
 import { IpcBusTransport } from '../IpcBusTransport';
+import { CreateIpcBusBridge } from './IpcBusBridge-factory';
+import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
+import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultIImpl';
+import { IpcBusConnector } from '../IpcBusConnector';
+import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 
-let g_transport: IpcBusTransportMain;
+export function CreateConnector(contextType: Client.IpcBusProcessType): IpcBusConnector {
+    const bridge = CreateIpcBusBridge() as IpcBusBridgeImpl;
+    const connector = bridge.mainConnector;
+    return connector;
+}
+
+let g_transport: IpcBusTransportImpl;
 export function CreateTransport(contextType: Client.IpcBusProcessType): IpcBusTransport {
-    g_transport = g_transport || new IpcBusTransportMain(contextType);
+    const connector = CreateConnector(contextType);
+    g_transport = g_transport || new IpcBusTransportMultiImpl(connector);
+    connector.addClient(g_transport);
     return g_transport;
 }
 

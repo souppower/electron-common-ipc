@@ -6,20 +6,13 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 
-import { IpcBusTransportSingleImpl } from '../IpcBusTransportSingleImpl';
 import { IpcBusCommand } from '../IpcBusCommand';
+import { IpcBusConnector } from '../IpcBusConnector';
+import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 
 export const IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Connect';
 export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:Command';
 export const IPCBUS_TRANSPORT_RENDERER_EVENT = 'ECIPC:IpcBusRenderer:Event';
-
-// export interface HandshakeInfo {
-//     process: {
-//         wcid: number;
-//         rid: number;
-//         pid: number;
-//     }
-// }
 
 export interface IpcWindow extends EventEmitter {
     send(channel: string, ...args: any[]): void;
@@ -27,70 +20,59 @@ export interface IpcWindow extends EventEmitter {
 
 // Implementation for renderer process
 /** @internal */
-export class IpcBusTransportWindow extends IpcBusTransportSingleImpl {
+export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     private _ipcWindow: IpcWindow;
+
     private _onIpcEventReceived: (...args: any[]) => void;
     private _packetOut: IpcPacketBuffer;
 
     constructor(contextType: Client.IpcBusProcessType, ipcWindow: IpcWindow) {
         assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
-        super({ type: contextType, pid: -1 });
+        super(contextType);
         this._ipcWindow = ipcWindow;
         this._packetOut = new IpcPacketBuffer();
     }
 
-    protected _reset() {
-        this._waitForConnected = null;
+    protected _onConnectorClosed() {
+        this._client.onConnectorClosed();
         if (this._onIpcEventReceived) {
             this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             this._onIpcEventReceived = null;
         }
     }
 
-    protected _onConnect(eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer): boolean {
+    protected _onConnect(eventOrPeer: any, peerOrArgs: Client.IpcBusPeer | any[], args: any[]): IpcBusConnector.Handshake {
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] _onConnect`);
         // In sandbox mode, 1st parameter is no more the event, but directly arguments !!!
-        if (peerOrUndefined) {
-            if ((peerOrUndefined as Client.IpcBusPeer).id === this._peer.id) {
-                const peer = peerOrUndefined;
-                this._peer.process = peer.process;
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Standard listening for #${this._peer.name}`);
-                this._onIpcEventReceived = this._onCommandBufferReceived.bind(this);
-                this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
-                return true;
-            }
+        if (args) {
+            const handshake = args[0] as IpcBusConnector.Handshake;
+            this._peer.process = handshake.process;
+            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Standard listening for #${this._peer.name}`);
+            this._onIpcEventReceived = this._client.onConnectorBufferReceived.bind(this);
+            this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+            return handshake;
         }
         else {
-            if ((eventOrPeer as Client.IpcBusPeer).id === this._peer.id) {
-                const peer = eventOrPeer;
-                this._peer.process = peer.process;
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._peer.name}`);
-                this._onIpcEventReceived = this._onCommandBufferReceived.bind(this, undefined);
-                this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
-                return true;
-            }
+            const handshake = (peerOrArgs as any[])[0] as IpcBusConnector.Handshake;
+            this._peer.process = handshake.process;
+            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._peer.name}`);
+            this._onIpcEventReceived = this._client.onConnectorBufferReceived.bind(this, undefined);
+            this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+            return handshake;
         }
-        return false;
     };
 
     /// IpcBusTrandport API
-    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            // this._ipcRendererReady.then(() => {
+    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
+        return new Promise<IpcBusConnector.Handshake>((resolve, reject) => {
             options = IpcBusUtils.CheckConnectOptions(options);
             // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
             let timer: NodeJS.Timer;
-            const onIpcConnect = (eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer) => {
+            const onIpcConnect = (eventOrPeer: any, peerOrArgs: Client.IpcBusPeer | any[], args: any[]) => {
                 this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                if (this._waitForConnected) {
-                    if (this._onConnect(eventOrPeer, peerOrUndefined)) {
-                        clearTimeout(timer);
-                        resolve();
-                    }
-                }
-                else {
-                    reject('cancelled');
-                }
+                const handshake = this._onConnect(eventOrPeer, peerOrArgs, args);
+                clearTimeout(timer);
+                resolve(handshake);
             };
 
             // Below zero = infinite
@@ -98,7 +80,7 @@ export class IpcBusTransportWindow extends IpcBusTransportSingleImpl {
                 timer = setTimeout(() => {
                     timer = null;
                     this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                    this._reset();
+                    this._onConnectorClosed();
                     reject('timeout');
                 }, options.timeoutDelay);
             }
@@ -113,7 +95,7 @@ export class IpcBusTransportWindow extends IpcBusTransportSingleImpl {
     }
 
     ipcShutdown(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        this._reset();
+        this._onConnectorClosed();
         return Promise.resolve();
     }
 

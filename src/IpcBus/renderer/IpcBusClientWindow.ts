@@ -1,12 +1,21 @@
 import * as Client from '../IpcBusClient';
 
-import { IpcBusTransportWindow  } from './IpcBusTransportWindow';
-import { IpcWindow } from '../renderer/IpcBusTransportWindow';
+import { IpcBusConnectorRenderer  } from './IpcBusConnectorRenderer';
+import { IpcWindow } from './IpcBusConnectorRenderer';
 import { IpcBusClientImpl} from '../IpcBusClientImpl';
 import { IpcBusTransport } from '../IpcBusTransport';
+import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultIImpl';
+import { IpcBusConnector } from '../IpcBusConnector';
+
+
+export function CreateConnector(contextType: Client.IpcBusProcessType, ipcWindow: IpcWindow): IpcBusConnector {
+    const connector = new IpcBusConnectorRenderer(contextType, ipcWindow);
+    return connector;
+}
 
 export function CreateTransport(contextType: Client.IpcBusProcessType, ipcWindow: IpcWindow): IpcBusTransport {
-    const transport = new IpcBusTransportWindow(contextType, ipcWindow);
+    const connector = CreateConnector(contextType, ipcWindow);
+    const transport = new IpcBusTransportMultiImpl(connector);
     return transport;
 }
 

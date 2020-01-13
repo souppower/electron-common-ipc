@@ -17,7 +17,7 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         const ipcPacketBuffer = new IpcPacketBuffer(rawContent);
         this.addLog(ipcBusCommand, ipcPacketBuffer.parseArrayAt(1));
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(log);
-        super._onCommonMessage(origin, event, ipcBusCommand, rawContent);
+        // super._onCommonMessage(origin, event, ipcBusCommand, rawContent);
     }
 }
 

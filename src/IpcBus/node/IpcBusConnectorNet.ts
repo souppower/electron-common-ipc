@@ -6,12 +6,13 @@ import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSoc
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 
-import { IpcBusTransportSingleImpl } from '../IpcBusTransportSingleImpl';
 import { IpcBusCommand } from '../IpcBusCommand';
+import { IpcBusConnector } from '../IpcBusConnector';
+import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 
 // Implementation for Node process
 /** @internal */
-export class IpcBusTransportNet extends IpcBusTransportSingleImpl {
+export class IpcBusConnectorNet extends IpcBusConnectorImpl {
     protected _socket: net.Socket;
     protected _netBinds: { [key: string]: (...args: any[]) => void };
 
@@ -25,8 +26,8 @@ export class IpcBusTransportNet extends IpcBusTransportSingleImpl {
 
     constructor(contextType: Client.IpcBusProcessType) {
         assert((contextType === 'main') || (contextType === 'node'), `IpcBusTransportNet: contextType must not be a ${contextType}`);
+        super(contextType);
 
-        super({ type: contextType, pid: process.pid });
         this._packetOut = new IpcPacketBufferWrap();
 
         this._bufferListReader = new BufferListReader();
@@ -38,7 +39,7 @@ export class IpcBusTransportNet extends IpcBusTransportSingleImpl {
         this._netBinds['data'] = this._onSocketData.bind(this);
         this._netBinds['end'] = this._onSocketEnd.bind(this);
     }
-
+    
     // https://nodejs.org/api/net.html#net_event_error_1
     protected _onSocketError(err: any) {
         const msg = `[IPCBusTransport:Net ${this._peer.id}] socket error ${err}`;
@@ -67,7 +68,7 @@ export class IpcBusTransportNet extends IpcBusTransportSingleImpl {
         while (this._packetIn.decodeFromReader(this._bufferListReader)) {
             const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
             if (ipcBusCommand && ipcBusCommand.peer) {
-                this._onCommandPacketReceived(ipcBusCommand, this._packetIn);
+                this._client.onConnectorPacketReceived(ipcBusCommand, this._packetIn);
             }
             else {
                 throw `[IPCBusTransport:Net ${this._peer.id}] Not valid packet !`;
@@ -78,7 +79,7 @@ export class IpcBusTransportNet extends IpcBusTransportSingleImpl {
     }
 
     protected _reset(endSocket: boolean) {
-        this._waitForConnected = null;
+        this._client.onConnectorClosed();
         this._socketWriter = null;
         if (this._socket) {
             const socket = this._socket;
@@ -93,7 +94,7 @@ export class IpcBusTransportNet extends IpcBusTransportSingleImpl {
     }
 
     /// IpcBusTransportImpl API
-    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         return new Promise((resolve, reject) => {
             options = IpcBusUtils.CheckConnectOptions(options);
             if ((options.port == null) && (options.path == null)) {
@@ -146,7 +147,9 @@ export class IpcBusTransportNet extends IpcBusTransportSingleImpl {
                 else if (this._socketBuffer > 0) {
                     this._socketWriter = new BufferedSocketWriter(this._socket, this._socketBuffer);
                 }
-                resolve();
+                resolve({
+                    process: this._peer.process
+                });
             };
 
             fctReject = (msg: string) => {

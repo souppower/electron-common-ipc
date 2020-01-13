@@ -2,12 +2,12 @@ import { EventEmitter } from 'events';
 
 import * as Client from './IpcBusClient';
 
-import { IpcBusTransport, IpcBusTransportClient } from './IpcBusTransport';
+import { IpcBusTransport } from './IpcBusTransport';
 import * as IpcBusUtils from './IpcBusUtils';
 
 // Implementation for a common IpcBusClient
 /** @internal */
-export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClient, IpcBusTransportClient {
+export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClient, IpcBusTransport.Client {
     protected _peer: Client.IpcBusPeer;
     protected _transport: IpcBusTransport;
     protected _waitForConnected: Promise<void>;
