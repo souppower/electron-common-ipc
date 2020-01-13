@@ -68,6 +68,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._waitForClosed = Promise.resolve();
     }
 
+    hasRequestChannel(channel: string): boolean {
+        return this._requestFunctions.get(channel) != null;
+    }
+
     protected static generateName(peer: Client.IpcBusPeer): string {
         let name = `${peer.process.type}_${peer.process.pid}`;
         if (peer.process.rid) {

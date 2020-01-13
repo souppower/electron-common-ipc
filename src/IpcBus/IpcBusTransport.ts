@@ -17,6 +17,7 @@ export interface IpcBusTransport {
     ipcClose(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void>;
 
     hasChannel(channel: string): boolean;
+    hasRequestChannel(channel: string): boolean;
 
     ipcAddChannelListener(client: IpcBusTransport.Client, channel: string): void;
     ipcRemoveChannelListener(client: IpcBusTransport.Client, channel: string): void;

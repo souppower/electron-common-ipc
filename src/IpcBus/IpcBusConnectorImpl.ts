@@ -17,7 +17,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
             name: '',
             process: {
                 type: contextType,
-                pid: -1
+                pid: process.pid
             }
         };
     }

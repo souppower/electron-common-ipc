@@ -30,6 +30,14 @@ export class IpcBusRendererBridge implements IpcBusConnector.Client {
         this._onRendererCommandReceived = this._onRendererCommandReceived.bind(this);
     }
 
+    hasChannel(channel: string): boolean {
+        return this._subscriptions.hasChannel(channel);
+    }
+
+    hasRequestChannel(channel: string): boolean {
+        return this._subscriptions.getRequestChannel(channel) != null;
+    }
+
     connect(): Promise<void> {
         // To manage re-entrance
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererCommandReceived);

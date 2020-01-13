@@ -40,17 +40,24 @@ class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     }
 }
 
-class IpcBusBridgeConnectorNet extends IpcBusConnectorNet {
+class IpcBusBridgeConnectorNet extends IpcBusConnectorNet implements IpcBusConnector.Client {
     protected _bridge: IpcBusBridgeImpl;
 
     constructor(contextType: Client.IpcBusProcessType, bridge: IpcBusBridgeImpl) {
        super(contextType);
        this._bridge = bridge;
+       this.addClient(this);
     }
 
-    // ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-    //     this._bridge._onNetMessage(ipcBusCommand, args);
-    // }
+    onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
+        this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
+    }
+
+    onConnectorBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
+    }
+
+    onConnectorClosed(): void {
+    }
 
     get client(): IpcBusConnector.Client {
         return this._client;
@@ -89,38 +96,45 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // IpcBusBridge API
     connect(arg1: Bridge.IpcBusBridge.ConnectOptions | string | number, arg2?: Bridge.IpcBusBridge.ConnectOptions | string, arg3?: Bridge.IpcBusBridge.ConnectOptions): Promise<void> {
         // To manage re-entrance
-        this._rendererConnector.connect();
-        const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
-        if (!this._connected) {
-            if ((options.port != null) || (options.path != null)) {
-                this._connected = true;
-                // this._brokerChannels.clear();
-                // return super.ipcConnect(null, { peerName: `IpcBusBridge`, ...options })
-                //     .then(() => {
-                //         super.ipcPost(this._peer, IpcBusCommand.Kind.BridgeConnect, null);
-                //         this.bridgeAddChannels(this._subscriptions.getChannels());
-                //         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
-                //     })
-                //     .catch(err => {
-                //         this._connected = false;
-                //     });
+        return this._rendererConnector.connect()
+        .then(() => {
+            const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
+            if (!this._connected) {
+                if ((options.port != null) || (options.path != null)) {
+                    this._connected = true;
+                    // this._brokerChannels.clear();
+                    return this._netConnector.ipcHandshake(options)
+                        .then((handshake) => {
+                            // this._netConnector.ipcPostCommand({
+                            //     kind: IpcBusCommand.Kind.BridgeConnect,
+                            //     peer: this._peer
+                            // },                            this.bridgeAddChannels(this._subscriptions.getChannels());
+                            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
+                        })
+                        .catch(err => {
+                            this._connected = false;
+                        });
+                }
             }
-        }
-        else {
-            if ((options.port == null) && (options.path == null)) {
-                // return super.ipcClose(null, options);
+            else {
+                if ((options.port == null) && (options.path == null)) {
+                    return this._netConnector.ipcShutdown();
+                }
             }
-        }
-        return Promise.resolve();
+            return Promise.resolve();
+        });
     }
 
     close(options?: Bridge.IpcBusBridge.CloseOptions): Promise<void> {
-        this._rendererConnector.close();
-        if (this._connected) {
-            // super.ipcPost(this._peer, IpcBusCommand.Kind.BridgeClose, null);
+        return this._rendererConnector.close()
+        .then(() => {
+            if (this._connected) {
+                // super.ipcPost(this._peer, IpcBusCommand.Kind.BridgeClose, null);
+                return this._netConnector.ipcShutdown(options);
             // return super.ipcClose(null, options);
-        }
-        return Promise.resolve();
+            }
+            return Promise.resolve();
+        });
     }
 
     // // Not exposed
@@ -141,41 +155,89 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // This is coming from the Electron Main Process (Electron ipc)
     // =================================================================================================
     _onMainMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]) {
-        if (args) {
-            this._packetOut.serializeArray([ipcBusCommand, args]);
+        // Prevent serializing for main
+        if (this._rendererConnector.hasChannel(ipcBusCommand.channel) || this._rendererConnector.hasRequestChannel(ipcBusCommand.channel)) {
+            if (args) {
+                this._packetOut.serializeArray([ipcBusCommand, args]);
+            }
+            else {
+                this._packetOut.serializeArray([ipcBusCommand]);
+            }
+            const rawContent = this._packetOut.getRawContent();
+            this._rendererConnector.onConnectorBufferReceived(null, ipcBusCommand, rawContent);
         }
-        else {
-            this._packetOut.serializeArray([ipcBusCommand]);
-        }
-        const rawContent = this._packetOut.getRawContent();
-        this._rendererConnector.onConnectorBufferReceived(null, ipcBusCommand, rawContent);
     }
 
-    // // This is coming from the Bus broker (socket)
-    // // =================================================================================================
-    // _onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-    //     switch (ipcBusCommand.kind) {
-    //         case IpcBusCommand.Kind.AddBrokerChannels: {
-    //             const channels: string[] = ipcPacketBuffer.parseArrayAt(1);
-    //             channels.forEach(channel => {
-    //                 this._brokerChannels.add(channel);
-    //             });
-    //             break;
-    //         }
-    //         case IpcBusCommand.Kind.RemoveBrokerChannels: {
-    //             const channels: string[] = ipcPacketBuffer.parseArrayAt(1);
-    //             channels.forEach(channel => {
-    //                 this._brokerChannels.delete(channel);
-    //             });
-    //             break;
-    //         }
-    //         default: {
-    //             const rawContent = ipcPacketBuffer.getRawContent();
-    //             return this._onCommonMessage('broker', null, ipcBusCommand, rawContent);
-    //             break;
-    //         }
-    //     }
-    // }
+    // This is coming from the Bus broker (socket)
+    // =================================================================================================
+    _onNetMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+        // switch (ipcBusCommand.kind) {
+        //     case IpcBusCommand.Kind.SendMessage: {
+        //         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
+        //         if (ipcBusCommand.request) {
+        //             if (origin === 'renderer') {
+        //                 this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, sender, ipcBusCommand.peer);
+        //             }
+        //             if (origin === 'broker') {
+        //                 this._brokerChannels.add(ipcBusCommand.request.replyChannel);
+        //             }
+        //         }
+        //         this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
+        //             connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+        //         });
+        //         if (origin !== 'main') {
+        //             this._mainTransport._onConnectorBufferReceived(undefined, ipcBusCommand, rawContent);
+        //         }
+        //         if (origin !== 'broker') {
+        //             if (this._brokerChannels.has(ipcBusCommand.channel)) {
+        //                 super.ipcPostBuffer(rawContent.buffer);
+        //             }
+        //         }
+        //         break;
+        //     }
+                
+        //     case IpcBusCommand.Kind.RequestResponse: {
+        //         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
+        //         const connData = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
+        //         if (connData) {
+        //             this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
+        //             connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+        //         }
+        //         if (origin !== 'main') {
+        //             this._mainTransport._onConnectorBufferReceived(undefined, ipcBusCommand, rawContent);
+        //         }
+        //         if (origin !== 'broker') {
+        //             if (this._brokerChannels.delete(ipcBusCommand.request.replyChannel)) {
+        //                 super.ipcPostBuffer(rawContent.buffer);
+        //             }
+        //         }
+        //         break;
+        //     }
+
+        //     case IpcBusCommand.Kind.RequestClose:
+        //         this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
+        //         if (this._brokerChannels.has(ipcBusCommand.request.channel)) {
+        //             super.ipcPostBuffer(rawContent.buffer);
+        //         }
+        //         break;
+        //     // case IpcBusCommand.Kind.AddBrokerChannels: {
+        //     //     const channels: string[] = ipcPacketBuffer.parseArrayAt(1);
+        //     //     channels.forEach(channel => {
+        //     //         this._brokerChannels.add(channel);
+        //     //     });
+        //     //     break;
+        //     // }
+        //     // case IpcBusCommand.Kind.RemoveBrokerChannels: {
+        //     //     const channels: string[] = ipcPacketBuffer.parseArrayAt(1);
+        //     //     channels.forEach(channel => {
+        //     //         this._brokerChannels.delete(channel);
+        //     //     });
+        //     //     break;
+        //     // }
+        //     default: {
+        //         break;
+        // }
+    }
 
     // _onCommonMessage(origin: 'broker'| 'renderer'| 'main', sender: IpcBusSender, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
     //     switch (ipcBusCommand.kind) {

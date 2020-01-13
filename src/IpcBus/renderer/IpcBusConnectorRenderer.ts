@@ -41,22 +41,22 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         }
     }
 
-    protected _onConnect(eventOrPeer: any, peerOrArgs: Client.IpcBusPeer | any[], args: any[]): IpcBusConnector.Handshake {
+    protected _onConnect(eventOrPeer: any, peerOrArgs: Client.IpcBusPeer | IpcBusConnector.Handshake, handshakeArg: IpcBusConnector.Handshake): IpcBusConnector.Handshake {
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] _onConnect`);
         // In sandbox mode, 1st parameter is no more the event, but directly arguments !!!
-        if (args) {
-            const handshake = args[0] as IpcBusConnector.Handshake;
+        if (handshakeArg) {
+            const handshake = handshakeArg;
             this._peer.process = handshake.process;
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Standard listening for #${this._peer.name}`);
-            this._onIpcEventReceived = this._client.onConnectorBufferReceived.bind(this);
+            this._onIpcEventReceived = this._client.onConnectorBufferReceived.bind(this._client);
             this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             return handshake;
         }
         else {
-            const handshake = (peerOrArgs as any[])[0] as IpcBusConnector.Handshake;
+            const handshake = peerOrArgs as IpcBusConnector.Handshake;
             this._peer.process = handshake.process;
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._peer.name}`);
-            this._onIpcEventReceived = this._client.onConnectorBufferReceived.bind(this, undefined);
+            this._onIpcEventReceived = this._client.onConnectorBufferReceived.bind(this._client, undefined);
             this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             return handshake;
         }
@@ -68,9 +68,9 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             options = IpcBusUtils.CheckConnectOptions(options);
             // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
             let timer: NodeJS.Timer;
-            const onIpcConnect = (eventOrPeer: any, peerOrArgs: Client.IpcBusPeer | any[], args: any[]) => {
+            const onIpcConnect = (eventOrPeer: any, peerOrArgs: Client.IpcBusPeer | IpcBusConnector.Handshake, handshakeArg: IpcBusConnector.Handshake) => {
                 this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                const handshake = this._onConnect(eventOrPeer, peerOrArgs, args);
+                const handshake = this._onConnect(eventOrPeer, peerOrArgs, handshakeArg);
                 clearTimeout(timer);
                 resolve(handshake);
             };
