@@ -1,7 +1,4 @@
-import { IpcPacketBuffer } from 'socket-serializer';
-
 import * as Client from './IpcBusClient';
-import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusTransport } from './IpcBusTransport';
 import { IpcBusTransportImpl } from './IpcBusTransportImpl';
@@ -16,59 +13,26 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
     }
 
     hasChannel(channel: string): boolean {
-        return this._client && (this._client.listenerCount(channel) > 0);
+        return (this._client && (this._client.listenerCount(channel) > 0)) || (this._requestFunctions.get(channel) != null);
     }
 
     getChannels(): string[] {
-        return this._client ? this._client.eventNames() as string[]: [];
+        const channels = this._client ? this._client.eventNames() as string[]: [];
+        if (this._requestFunctions.size) {
+            return channels.concat(Array.from(this._requestFunctions.keys()));
+        }
+        return channels;
     }
 
-    onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.SendMessage: {
-                if (this.hasChannel(ipcBusCommand.channel)) {
-                    const args = ipcPacketBuffer.parseArrayAt(1);
-                    this._onCommandMessageReceived(this._client, ipcBusCommand, args);
-                }
-                break;
-            }
-            case IpcBusCommand.Kind.RequestResponse: {
-                const deferredRequest = this._requestFunctions.get(ipcBusCommand.channel);
-                if (deferredRequest) {
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-                    this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
-                    const args = ipcPacketBuffer.parseArrayAt(1);
-                    deferredRequest.settled(ipcBusCommand, args);
-                }
-                break;
-            }
-        }
+    onConnectorMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+        this._client && this._onClientMessageReceived(this._client, ipcBusCommand, args);
     }
 
-    // We have to simulate a fake first parameter as this function can be called from an Electron ipc with an event
-    // or directly from our code.
-    onConnectorBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
-        switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.SendMessage: {
-                if (this.hasChannel(ipcBusCommand.channel)) {
-                    this._packetDecoder.setRawContent(rawContent);
-                    const args = this._packetDecoder.parseArrayAt(1);
-                    this._onCommandMessageReceived(this._client, ipcBusCommand, args);
-                }
-                break;
-            }
-            case IpcBusCommand.Kind.RequestResponse: {
-                const deferredRequest = this._requestFunctions.get(ipcBusCommand.channel);
-                if (deferredRequest) {
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-                    this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
-                    this._packetDecoder.setRawContent(rawContent);
-                    const args = this._packetDecoder.parseArrayAt(1);
-                    deferredRequest.settled(ipcBusCommand, args);
-                }
-                break;
-            }
+    protected ipcPostCommandMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+        if (this.hasChannel(ipcBusCommand.channel)) {
+            this._onClientMessageReceived(this._client, ipcBusCommand, args);
         }
+        this._ipcPostCommand(ipcBusCommand, args);
     }
 
     ipcConnect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
@@ -76,8 +40,6 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         .then((peer) => {
             if (client) {
                 this._client = client;
-                // const eventNames = client.eventNames();
-                // this.ipcPost(client.peer, IpcBusCommand.Kind.Connect, '', eventNames);
             }
             return peer;
         });
@@ -87,7 +49,6 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         return super.ipcClose(client, options)
         .then(() => {
             if (client) {
-                // this.ipcPost(client.peer, IpcBusCommand.Kind.Close, '');
                 this._client = null;
             }
             return this._connector.ipcShutdown(options);

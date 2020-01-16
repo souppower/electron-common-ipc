@@ -191,11 +191,15 @@ export class ChannelConnectionMap<T> extends EventEmitter {
     }
 
     getChannels(): string[] {
-        return Array.from(this._channelsMap.keys());
+        const channels = Array.from(this._channelsMap.keys())
+        if (this._requestChannels.size) {
+            return channels.concat(Array.from(this._requestChannels.keys()));
+        }
+        return channels;
     }
 
     getChannelsCount(): number {
-        return this._channelsMap.size;
+        return this._channelsMap.size + this._requestChannels.size;
     }
 
     clear() {
