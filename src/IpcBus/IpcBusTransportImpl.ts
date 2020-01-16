@@ -68,10 +68,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._waitForClosed = Promise.resolve();
     }
 
-    hasRequestChannel(channel: string): boolean {
-        return this._requestFunctions.get(channel) != null;
-    }
-
     protected static generateName(peer: Client.IpcBusPeer): string {
         let name = `${peer.process.type}_${peer.process.pid}`;
         if (peer.process.rid) {
@@ -233,6 +229,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     abstract hasChannel(channel: string): boolean;
+    abstract getChannels(): string[];
 
     abstract onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void;
     abstract onConnectorBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void;

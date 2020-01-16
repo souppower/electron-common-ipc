@@ -16,7 +16,12 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
     }
 
     hasChannel(channel: string): boolean {
-        return this._subscriptions.hasChannel(channel);
+        return this._subscriptions.hasChannel(channel) || (this._requestFunctions.get(channel) != null);
+    }
+
+    getChannels(): string[] {
+        const channels = this._subscriptions.getChannels();
+        return channels.concat(Array.from(this._requestFunctions.keys()));
     }
 
     protected _onCommandSendMessage(ipcBusCommand: IpcBusCommand, args: any[]) {
@@ -36,7 +41,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
+                const deferredRequest = this._requestFunctions.get(ipcBusCommand.channel);
                 if (deferredRequest) {
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
                     this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
@@ -61,7 +66,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
+                const deferredRequest = this._requestFunctions.get(ipcBusCommand.channel);
                 if (deferredRequest) {
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
                     this._requestFunctions.delete(ipcBusCommand.request.replyChannel);

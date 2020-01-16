@@ -62,7 +62,7 @@ export class IpcBusNetBridge implements IpcBusConnector.Client {
         const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
         return this._connector.ipcHandshake(options)
         .then(() => {
-
+            
         });
     }
 
