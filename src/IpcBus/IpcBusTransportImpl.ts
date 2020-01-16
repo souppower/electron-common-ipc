@@ -208,21 +208,12 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return this._waitForClosed;
     }
 
-    ipcAddChannelListener(client: IpcBusTransport.Client, channel: string) {
-        this.ipcPost(client.peer, IpcBusCommand.Kind.AddChannelListener, channel);
+    ipcAddChannels(client: IpcBusTransport.Client, channels: string[]) {
+        this.ipcPost(client.peer, IpcBusCommand.Kind.AddChannels, '', channels);
     }
 
-    ipcRemoveChannelListener(client: IpcBusTransport.Client, channel: string) {
-        this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannelListener, channel);
-    }
-
-    ipcRemoveAllListeners(client: IpcBusTransport.Client, channel?: string) {
-        if (channel) {
-            this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannelAllListeners, channel);
-        }
-        else {
-            this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveListeners, '');
-        }
+    ipcRemoveChannels(client: IpcBusTransport.Client, channels: string[]) {
+        this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannels, '', channels);
     }
     
     ipcPost(peer: Client.IpcBusPeer, kind: IpcBusCommand.Kind, channel: string, args?: any[]): void {

@@ -18,6 +18,21 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         super.setMaxListeners(0);
         this._transport = transport;
         this._waitForClosed = Promise.resolve();
+
+        this._newListener = this._newListener.bind(this);
+        this._removeListener = this._removeListener.bind(this);
+    }
+
+    protected _newListener(event: string, listener: Function) {
+        if (this.listenerCount(event) === 1) {
+            this._transport.ipcAddChannels(this, [event]);
+        }
+    }
+
+    protected _removeListener(event: string, listener: Function) {
+        if (this.listenerCount(event) === 0) {
+            this._transport.ipcRemoveChannels(this, [event]);
+        }
     }
 
     get peer(): Client.IpcBusPeer | null {
@@ -33,6 +48,9 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
             })
             .then((peer) => {
                 this._peer = peer;
+                this._transport.ipcAddChannels(this, this.eventNames() as string[])
+                super.addListener('newListener', this._newListener);
+                super.addListener('removeListener', this._removeListener);
             });
         }
         return this._waitForConnected;
@@ -44,6 +62,9 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
             this._waitForConnected = null;
             this._waitForClosed = waitForConnected
             .then(() => {
+                super.removeListener('newListener', this._newListener);
+                super.removeListener('removeListener', this._removeListener);
+                this._transport.ipcRemoveChannels(this, this.eventNames() as string[])
                 return this._transport.ipcClose(this, options);
             })
             .then(() => {
@@ -66,43 +87,11 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         return true;
     }
 
-    addListener(channel: string, listener: Client.IpcBusListener): this {
-        this._transport.ipcAddChannelListener(this, channel);
-        return super.addListener(channel, listener);
-    }
-
-    removeListener(channel: string, listener: Client.IpcBusListener): this {
-        this._transport.ipcRemoveChannelListener(this, channel);
-        return super.removeListener(channel, listener);
-    }
-
     on(channel: string, listener: Client.IpcBusListener): this {
         return this.addListener(channel, listener);
     }
 
-    once(channel: string, listener: Client.IpcBusListener): this {
-        // removeListener will be automatically called by NodeJS when callback has been triggered
-        this._transport.ipcAddChannelListener(this, channel);
-        return super.once(channel, listener);
-    }
-
     off(channel: string, listener: Client.IpcBusListener): this {
         return this.removeListener(channel, listener);
-    }
-
-    removeAllListeners(channel?: string): this {
-        this._transport.ipcRemoveAllListeners(this, channel);
-        return super.removeAllListeners(channel);
-    }
-
-    // Added in Node 6...
-    prependListener(channel: string, listener: Client.IpcBusListener): this {
-        this._transport.ipcAddChannelListener(this, channel);
-        return super.prependListener(channel, listener);
-    }
-
-    prependOnceListener(channel: string, listener: Client.IpcBusListener): this {
-        this._transport.ipcAddChannelListener(this, channel);
-        return super.prependOnceListener(channel, listener);
     }
 }

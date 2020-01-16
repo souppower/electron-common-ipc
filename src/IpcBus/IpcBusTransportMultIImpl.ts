@@ -82,37 +82,36 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
     ipcConnect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
         return super.ipcConnect(client, options)
         .then((peer) => {
-            const eventNames = client.eventNames();
+            // const eventNames = client.eventNames();
             if (this._subscriptions == null) {
-                this.ipcPost(this._peer, IpcBusCommand.Kind.Connect, '', eventNames);
+                // this.ipcPost(this._peer, IpcBusCommand.Kind.Connect, '', eventNames);
 
                 this._subscriptions = new IpcBusUtils.ChannelConnectionMap<IpcBusTransport.Client>(`IPCBus:Transport-${IpcBusTransportImpl.generateName(this._peer)}`, true);
-                eventNames.forEach(eventName => {
-                    this._subscriptions.addRef(eventName as string, client, client.peer);
+                // eventNames.forEach(eventName => {
+                //     this._subscriptions.addRef(eventName as string, client, client.peer);
+                // });
+                this._subscriptions.on('channels-added', (channels: string[]) => {
+                    this.ipcPost(this._peer, IpcBusCommand.Kind.AddChannels, '',channels);
                 });
-                this._subscriptions.on('channel-added', (channel: string) => {
-                    this.ipcPost(this._peer, IpcBusCommand.Kind.AddChannelListener, channel);
-                });
-                this._subscriptions.on('channel-removed', (channel: string) => {
-                    this.ipcPost(this._peer, IpcBusCommand.Kind.RemoveChannelListener, channel);
-                });
-            }
-            else {
-                eventNames.forEach(eventName => {
-                    this._subscriptions.addRef(eventName as string, client, client.peer);
+                this._subscriptions.on('channels-removed', (channels: string[]) => {
+                    this.ipcPost(this._peer, IpcBusCommand.Kind.RemoveChannels, '', channels);
                 });
             }
+            // else {
+            //     eventNames.forEach(eventName => {
+            //         this._subscriptions.addRef(eventName as string, client, client.peer);
+            //     });
+            // }
             return peer;
         });
     }
 
     ipcClose(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        this.ipcRemoveAllListeners(client);
         if (this._subscriptions.getChannelsCount() === 0) {
             return super.ipcClose(client, options)
             .then(() => {
                 this._subscriptions = null;
-                this.ipcPost(this._peer, IpcBusCommand.Kind.Close, '');
+                // this.ipcPost(this._peer, IpcBusCommand.Kind.Close, '');
                 return this._connector.ipcShutdown(options)
                 .then(() => {
                     this._connector.removeClient(this);
@@ -123,20 +122,11 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return Promise.resolve();
     }
 
-    ipcAddChannelListener(client: IpcBusTransport.Client, channel: string) {
-        this._subscriptions && this._subscriptions.addRef(channel, client, client.peer);
+    ipcAddChannels(client: IpcBusTransport.Client, channels: string[]) {
+        this._subscriptions && this._subscriptions.addRefs(channels, client, client.peer);
     }
 
-    ipcRemoveChannelListener(client: IpcBusTransport.Client, channel: string) {
-        this._subscriptions && this._subscriptions.release(channel, client, client.peer);
-    }
-
-    ipcRemoveAllListeners(client: IpcBusTransport.Client, channel?: string) {
-        if (channel) {
-            this._subscriptions && this._subscriptions.releaseAll(channel, client, client.peer);
-        }
-        else {
-            this._subscriptions && this._subscriptions.removePeer(client, client.peer);
-        }
+    ipcRemoveChannelListener(client: IpcBusTransport.Client, channels: string[]) {
+        this._subscriptions && this._subscriptions.releases(channels, client, client.peer);
     }
 }

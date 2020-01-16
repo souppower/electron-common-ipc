@@ -2,9 +2,9 @@ import { IpcBusPeer } from './IpcBusClient';
 
 /** @internal */
 export interface IpcBusCommand {
+    peer: IpcBusPeer;
     kind: IpcBusCommand.Kind;
     channel: string;
-    peer: IpcBusPeer;
     request?: IpcBusCommand.Request;
     bridge?: boolean;
 }
@@ -13,14 +13,16 @@ export interface IpcBusCommand {
 export namespace IpcBusCommand {
     /** @internal */
     export enum Kind {
-        Handshake                   = 'HAN',    // COnnexion
-        Connect                     = 'COO',    // COnnexion
+        Handshake                   = 'HAN',
         Shutdown                    = 'SHT',
-        Close                       = 'COC',
-        AddChannelListener          = 'LICA',   // LIstener
-        RemoveChannelListener       = 'LICR',
-        RemoveChannelAllListeners   = 'LICRA',
-        RemoveListeners             = 'LIR',
+        Connect                     = 'COO',    // Obsolete
+        Close                       = 'COC',    // Obsolete
+        AddChannels                 = 'CHA',
+        RemoveChannels              = 'CHR',
+        AddChannelListener          = 'LICA',   // Obsolete
+        RemoveChannelListener       = 'LICR',   // Obsolete
+        RemoveChannelAllListeners   = 'LICRA',  // Obsolete
+        RemoveListeners             = 'LIR',    // Obsolete
         SendMessage                 = 'MES',    // MEssage
         RequestResponse             = 'RQR',
         RequestClose                = 'RQC',

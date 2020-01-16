@@ -151,12 +151,13 @@ export class ChannelConnectionMap<T> extends EventEmitter {
     private _name: string;
     private _channelsMap: Map<string, Map<T, ConnectionPeers<T>>>;
     private _requestChannels: Map<string, ConnectionPeer<T>>;
-    private _emitter: boolean;
+    
+    public emitter: boolean;
 
     constructor(name: string, emitter: boolean) {
         super();
         this._name = name;
-        this._emitter = emitter;
+        this.emitter = emitter;
         this._channelsMap = new Map<string, Map<T, ConnectionPeers<T>>>();
         this._requestChannels = new Map<string,  ConnectionPeer<T>>();
     }
@@ -202,6 +203,36 @@ export class ChannelConnectionMap<T> extends EventEmitter {
         this._requestChannels.clear();
     }
 
+    addRefs(channels: string[], conn: T, peer: IpcBusPeer): void {
+        const emitChannels: string[] = [];
+        this.emit = (event, channels): boolean => {
+            emitChannels.push(channels[0]);
+            return true;
+        };
+        for (let i = 0, l = channels.length; i < l; ++i) {
+            this.addRef(channels[i], conn, peer);
+        }
+        this.emit = super.emit;
+        if (emitChannels.length) {
+            this.emit('channels-added', emitChannels);
+        }
+    }
+
+    releases(channels: string[], conn: T, peer: IpcBusPeer): void {
+        const emitChannels: string[] = [];
+        this.emit = (event, channels): boolean => {
+            emitChannels.push(channels[0]);
+            return true;
+        };
+        for (let i = 0, l = channels.length; i < l; ++i) {
+            this.release(channels[i], conn, peer);
+        }
+        this.emit = super.emit;
+        if (emitChannels.length) {
+            this.emit('channels-removed', emitChannels);
+        }
+    }
+
     addRef(channel: string, conn: T, peer: IpcBusPeer): number {
         Logger.enable && this._info(`AddRef: '${channel}', peerId = ${peer.id}`);
 
@@ -217,7 +248,7 @@ export class ChannelConnectionMap<T> extends EventEmitter {
             connData = new ConnectionPeers<T>(conn, peer);
             connsMap.set(conn, connData);
             
-            this._emitter && this.emit('channel-added', channel);
+            this.emitter && this.emit('channels-added', [channel]);
             // Logger.enable && this._info(`AddRef: channel '${channel}' is added`);
         }
         else {
@@ -261,7 +292,7 @@ export class ChannelConnectionMap<T> extends EventEmitter {
                 // Logger.enable && this._info(`Release: conn = ${conn} is released`);
                 if (connsMap.size === 0) {
                     this._channelsMap.delete(channel);
-                    this._emitter && this.emit('channel-removed', channel);
+                    this.emitter && this.emit('channels-removed', [channel]);
                     // Logger.enable && this._info(`Release: channel '${channel}' is released`);
                 }
             }
@@ -369,14 +400,18 @@ export class ChannelConnectionMap<T> extends EventEmitter {
         });
     }
 
-    on(event: 'channel-added', listener: (channel: string) => void): this;
-    on(event: 'channel-removed', listener: (channel: string) => void): this;
+    // on(event: 'channel-added', listener: (channel: string) => void): this;
+    // on(event: 'channel-removed', listener: (channel: string) => void): this;
+    on(event: 'channels-added', listener: (channels: string[]) => void): this;
+    on(event: 'channels-removed', listener: (channels: string[]) => void): this;
     on(event: symbol | string, listener: (...args: any[]) => void): this {
         return super.addListener(event, listener);
     }
 
-    off(event: 'channel-added', listener: (channel: string) => void): this;
-    off(event: 'channel-removed', listener: (channel: string) => void): this;
+    // off(event: 'channel-added', listener: (channel: string) => void): this;
+    // off(event: 'channel-removed', listener: (channel: string) => void): this;
+    off(event: 'channels-added', listener: (channels: string[]) => void): this;
+    off(event: 'channels-removed', listener: (channels: string[]) => void): this;
     off(event: symbol | string, listener: (...args: any[]) => void): this {
         return super.removeListener(event, listener);
     }
