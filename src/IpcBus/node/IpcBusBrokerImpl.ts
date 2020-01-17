@@ -110,12 +110,12 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
         this._bridgeChannels = new Set<string>();
 
-        this._subscriptions.on('channels-added', (channels) => {
-            this._socketBridge && this.brokerAddChannels(channels);
+        this._subscriptions.on('channel-added', (channel) => {
+            this._socketBridge && this.brokerAddChannels([channel]);
         });
 
-        this._subscriptions.on('channels-removed', (channels) => {
-            this._socketBridge && this.brokerRemoveChannels(channels);
+        this._subscriptions.on('channel-removed', (channel) => {
+            this._socketBridge && this.brokerRemoveChannels([channel]);
         });
 
         this._ipcBusBrokerClient = CreateIpcBusClientNet(contextType);
@@ -341,35 +341,33 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 this._socketCleanUp(socket);
                 break;
 
-            case IpcBusCommand.Kind.AddChannels: {
-                const channels: string[] = packet.parseArrayAt(1);
-                this._subscriptions.addRefs(channels, socket, ipcBusCommand.peer);
-                break;
-            }
+            // case IpcBusCommand.Kind.AddChannels: {
+            //     const channels: string[] = packet.parseArrayAt(1);
+            //     this._subscriptions.addRefs(channels, socket, ipcBusCommand.peer);
+            //     break;
+            // }
 
-            case IpcBusCommand.Kind.RemoveChannels: {
-                const channels: string[] = packet.parseArrayAt(1);
-                this._subscriptions.releases(channels, socket, ipcBusCommand.peer);
-                break;
-            }
+            // case IpcBusCommand.Kind.RemoveChannels: {
+            //     const channels: string[] = packet.parseArrayAt(1);
+            //     this._subscriptions.releases(channels, socket, ipcBusCommand.peer);
+            //     break;
+            // }
 
-            // Obsolete >>
             case IpcBusCommand.Kind.AddChannelListener:
                 this._subscriptions.addRef(ipcBusCommand.channel, socket, ipcBusCommand.peer);
-                break;
-
-            case IpcBusCommand.Kind.RemoveChannelAllListeners:
-                this._subscriptions.releaseAll(ipcBusCommand.channel, socket, ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.RemoveChannelListener:
                 this._subscriptions.release(ipcBusCommand.channel, socket, ipcBusCommand.peer);
                 break;
 
+            case IpcBusCommand.Kind.RemoveChannelAllListeners:
+                this._subscriptions.releaseAll(ipcBusCommand.channel, socket, ipcBusCommand.peer);
+                break;
+
             case IpcBusCommand.Kind.RemoveListeners:
                 this._subscriptions.removePeer(socket, ipcBusCommand.peer);
                 break;
-            // Obsolete <<
 
             case IpcBusCommand.Kind.SendMessage:
                 // Register the replyChannel

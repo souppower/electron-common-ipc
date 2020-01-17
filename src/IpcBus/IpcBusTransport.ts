@@ -19,8 +19,8 @@ export interface IpcBusTransport {
     hasChannel(channel: string): boolean;
     getChannels(): string[];
 
-    ipcAddChannels(client: IpcBusTransport.Client, channels: string[]): void;
-    ipcRemoveChannels(client: IpcBusTransport.Client, channels: string[]): void;
+    ipcAddChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
+    ipcRemoveChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;
 
     ipcRequestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse>;
     ipcSendMessage(client: IpcBusTransport.Client, channel: string, args: any[]): void;

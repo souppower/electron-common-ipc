@@ -177,6 +177,12 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             }
         }
     }
+
+    // IpcConnectorClient
+    onConnectorClosed() {
+        this._waitForConnected = null;
+    }
+
     ipcSendMessage(client: IpcBusTransport.Client, channel: string, args: any[]): void {
         this.ipcPostCommandMessage({ 
             kind: IpcBusCommand.Kind.SendMessage,
@@ -248,14 +254,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return this._waitForClosed;
     }
 
-    ipcAddChannels(client: IpcBusTransport.Client, channels: string[]) {
-        this.ipcPost(client.peer, IpcBusCommand.Kind.AddChannels, '', channels);
-    }
-
-    ipcRemoveChannels(client: IpcBusTransport.Client, channels: string[]) {
-        this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannels, '', channels);
-    }
-    
     ipcPost(peer: Client.IpcBusPeer, kind: IpcBusCommand.Kind, channel: string, args?: any[]): void {
         this._ipcPostCommand({ kind, channel, peer }, args);
     }
@@ -267,13 +265,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._connector.ipcPostCommand(ipcBusCommand, args);
     }
 
-    // IpcConnectorClient
-    onConnectorClosed() {
-        this._waitForConnected = null;
-    }
-
     abstract hasChannel(channel: string): boolean;
     abstract getChannels(): string[];
     abstract onConnectorMessageReceived(ipcBusCommand: IpcBusCommand, args: any[]): void;
+
     protected abstract ipcPostCommandMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void;
+    abstract ipcAddChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
+    abstract ipcRemoveChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;
 }

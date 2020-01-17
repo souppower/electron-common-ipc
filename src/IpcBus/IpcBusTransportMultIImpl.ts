@@ -42,11 +42,11 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         .then((peer) => {
             if (this._subscriptions == null) {
                 this._subscriptions = new IpcBusUtils.ChannelConnectionMap<IpcBusTransport.Client>(`IPCBus:Transport-${IpcBusTransportImpl.generateName(this._peer)}`, true);
-                this._subscriptions.on('channels-added', (channels: string[]) => {
-                    this.ipcPost(this._peer, IpcBusCommand.Kind.AddChannels, '',channels);
+                this._subscriptions.on('channel-added', (channel: string) => {
+                    this.ipcPost(this._peer, IpcBusCommand.Kind.AddChannelListener, channel);
                 });
-                this._subscriptions.on('channels-removed', (channels: string[]) => {
-                    this.ipcPost(this._peer, IpcBusCommand.Kind.RemoveChannels, '', channels);
+                this._subscriptions.on('channel-removed', (channel: string) => {
+                    this.ipcPost(this._peer, IpcBusCommand.Kind.RemoveChannelListener, channel);
                 });
             }
             return peer;
@@ -57,6 +57,8 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         if (this._subscriptions.getChannelsCount() === 0) {
             return super.ipcClose(client, options)
             .then(() => {
+                this._subscriptions.emitter = false;
+                this._subscriptions.clear();
                 this._subscriptions = null;
                 this._connector.removeClient(this);
                 return this._connector.ipcShutdown(options)
@@ -68,11 +70,32 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return Promise.resolve();
     }
 
-    ipcAddChannels(client: IpcBusTransport.Client, channels: string[]) {
-        this._subscriptions && this._subscriptions.addRefs(channels, client, client.peer);
+    ipcAddChannel(client: IpcBusTransport.Client, channel: string, count?: number) {
+        if (this._subscriptions == null) {
+            return;
+        }
+        this._subscriptions.addRefCount(channel, client, client.peer, count);
     }
 
-    ipcRemoveChannelListener(client: IpcBusTransport.Client, channels: string[]) {
-        this._subscriptions && this._subscriptions.releases(channels, client, client.peer);
+    ipcRemoveChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean) {
+        if (this._subscriptions == null) {
+            return;
+        }
+        this._subscriptions.emitter = false;
+        if (channel) {
+            if (all) {
+                this._subscriptions.releaseAll(channel, client, client.peer);
+                this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannelAllListeners, channel);
+            }
+            else {
+                this._subscriptions.release(channel, client, client.peer);
+                this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveListeners, channel);
+            }
+        }
+        else {
+            this._subscriptions.removePeer(client, client.peer);
+            this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannelListener, channel);
+        }
+        this._subscriptions.emitter = true;
     }
 }

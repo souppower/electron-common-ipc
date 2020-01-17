@@ -59,12 +59,25 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         });
     }
 
-    ipcAddChannels(client: IpcBusTransport.Client, channels: string[]) {
-        this.ipcPost(client.peer, IpcBusCommand.Kind.AddChannels, '', channels);
+    ipcAddChannel(client: IpcBusTransport.Client, channel: string, count?: number) {
+        let refCount = (count == null) ? 1 : count;
+        while (refCount-- > 0) {
+            this.ipcPost(client.peer, IpcBusCommand.Kind.AddChannelListener, channel);
+        }
     }
 
-    ipcRemoveChannels(client: IpcBusTransport.Client, channels: string[]) {
-        this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannels, '', channels);
+    ipcRemoveChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean) {
+        if (channel) {
+            if (all) {
+                this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannelAllListeners, channel);
+            }
+            else {
+                this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveListeners, channel);
+            }
+        }
+        else {
+            this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannelListener, channel);
+        }
     }
 
     ipcPost(peer: Client.IpcBusPeer, kind: IpcBusCommand.Kind, channel: string, args?: any[]): void {

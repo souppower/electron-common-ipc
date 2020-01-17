@@ -33,16 +33,16 @@ class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
 
     ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         switch(ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.AddChannels: {
-                const channels = args[0];
-                this._bridge._onMainAddChannels(channels);
-                break;
-            }
-            case IpcBusCommand.Kind.RemoveChannels: {
-                const channels = args[0];
-                this._bridge._onMainRemoveChannels(channels);
-                break;
-            }
+            // case IpcBusCommand.Kind.AddChannels: {
+            //     const channels = args[0];
+            //     this._bridge._onMainAddChannels(channels);
+            //     break;
+            // }
+            // case IpcBusCommand.Kind.RemoveChannels: {
+            //     const channels = args[0];
+            //     this._bridge._onMainRemoveChannels(channels);
+            //     break;
+            // }
     
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestResponse:

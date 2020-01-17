@@ -19,18 +19,18 @@ export class IpcBusRendererBridge implements IpcBusConnector.Client {
     private _ipcMain: Electron.IpcMain;
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<Electron.WebContents>;
     protected _bridge: IpcBusBridgeImpl;
-    private _packetDecoder: IpcPacketBuffer;
+    // private _packetDecoder: IpcPacketBuffer;
 
     constructor(bridge: IpcBusBridgeImpl) {
         this._bridge = bridge;
 
         this._ipcMain = require('electron').ipcMain;
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<Electron.WebContents>('IPCBus:RendererBridge', true);
-        this._subscriptions.on('channels-added', (channels) => {
-            this._bridge._onRendererAddChannels(channels);
+        this._subscriptions.on('channel-added', (channel) => {
+            this._bridge._onRendererAddChannels([channel]);
         });
-        this._subscriptions.on('channels-removed', (channels) => {
-            this._bridge._onRendererRemoveChannels(channels);
+        this._subscriptions.on('channel-removed', (channel) => {
+            this._bridge._onRendererRemoveChannels([channel]);
         });
 
         // callbacks
@@ -163,19 +163,19 @@ export class IpcBusRendererBridge implements IpcBusConnector.Client {
                 this._onRendererHandshake(webContents, ipcBusCommand);
                 break;
 
-            case IpcBusCommand.Kind.AddChannels: {
-                this._packetDecoder.setRawContent(rawContent);
-                const channels = this._packetDecoder.parseArrayAt(1);
-                this._subscriptions.addRefs(channels, webContents, ipcBusCommand.peer);
-                break;
-            }
+            // case IpcBusCommand.Kind.AddChannels: {
+            //     this._packetDecoder.setRawContent(rawContent);
+            //     const channels = this._packetDecoder.parseArrayAt(1);
+            //     this._subscriptions.addRefs(channels, webContents, ipcBusCommand.peer);
+            //     break;
+            // }
 
-            case IpcBusCommand.Kind.RemoveChannels: {
-                this._packetDecoder.setRawContent(rawContent);
-                const channels = this._packetDecoder.parseArrayAt(1);
-                this._subscriptions.releases(channels, webContents, ipcBusCommand.peer);
-                break;
-            }
+            // case IpcBusCommand.Kind.RemoveChannels: {
+            //     this._packetDecoder.setRawContent(rawContent);
+            //     const channels = this._packetDecoder.parseArrayAt(1);
+            //     this._subscriptions.releases(channels, webContents, ipcBusCommand.peer);
+            //     break;
+            // }
 
             default:
                 this._onCommandSendMessage(webContents, ipcBusCommand, rawContent);
