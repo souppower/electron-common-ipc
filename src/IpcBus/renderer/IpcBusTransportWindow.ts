@@ -7,6 +7,7 @@ import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
+import { IpcBusTransport } from '../IpcBusTransport';
 import { IpcBusCommand } from '../IpcBusCommand';
 
 export const IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Connect';
@@ -51,45 +52,45 @@ export class IpcBusTransportWindow extends IpcBusTransportImpl {
         }
     }
 
-    protected _onConnect(eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer): boolean {
+    protected _onConnect(eventOrHandshake: any, handshakeOrUndefined: IpcBusTransport.Handshake): IpcBusTransport.Handshake | null {
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] _onConnect`);
         // In sandbox mode, 1st parameter is no more the event, but directly arguments !!!
-        if (peerOrUndefined) {
-            if ((peerOrUndefined as Client.IpcBusPeer).id === this._peer.id) {
-                const peer = peerOrUndefined;
-                this._peer.process = peer.process;
+        let handshake: IpcBusTransport.Handshake;
+        if (handshakeOrUndefined) {
+            if (handshakeOrUndefined.peer && (handshakeOrUndefined.peer.id === this._peer.id)) {
+                handshake = handshakeOrUndefined;
+                this._peer.process = handshake.process;
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Standard listening for #${this._peer.name}`);
                 this._onIpcEventReceived = this._onCommandBufferReceived.bind(this);
                 this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
-                return true;
             }
         }
         else {
-            if ((eventOrPeer as Client.IpcBusPeer).id === this._peer.id) {
-                const peer = eventOrPeer;
-                this._peer.process = peer.process;
+            if (eventOrHandshake.peer && (eventOrHandshake.peer.id === this._peer.id)) {
+                handshake = eventOrHandshake;
+                this._peer.process = handshake.process;
                 IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._peer.name}`);
                 this._onIpcEventReceived = this._onCommandBufferReceived.bind(this, undefined);
                 this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
-                return true;
             }
         }
-        return false;
+        return handshake;
     };
 
     /// IpcBusTrandport API
-    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
+    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusTransport.Handshake> {
+        return new Promise<IpcBusTransport.Handshake>((resolve, reject) => {
             // this._ipcRendererReady.then(() => {
             options = IpcBusUtils.CheckConnectOptions(options);
             // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
             let timer: NodeJS.Timer;
-            const onIpcConnect = (eventOrPeer: any, peerOrUndefined: Client.IpcBusPeer) => {
+            const onIpcConnect = (eventOrHandshake: any, handshakeOrUndefined: IpcBusTransport.Handshake) => {
                 if (this._connected) {
-                    if (this._onConnect(eventOrPeer, peerOrUndefined)) {
+                    const handshake = this._onConnect(eventOrHandshake, handshakeOrUndefined);
+                    if (handshake) {
                         this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
                         clearTimeout(timer);
-                        resolve();
+                        resolve(handshake);
                     }
                 }
                 else {

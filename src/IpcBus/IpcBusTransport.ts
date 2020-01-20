@@ -5,11 +5,19 @@ export interface IpcBusSender {
     send(channel: string, ...args: any[]): void;
 }
 
+export namespace IpcBusTransport {
+    export interface Handshake {
+        peer: Client.IpcBusPeer,
+        process: Client.IpcBusProcess;
+        instance: number;
+    };
+}
+
 /** @internal */
 export interface IpcBusTransport {
     readonly peer: Client.IpcBusPeer;
 
-    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<void>;
+    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusTransport.Handshake>;
     ipcShutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
 
     ipcConnect(client: Client.IpcBusClient | null, options: Client.IpcBusClient.ConnectOptions): Promise<void>;

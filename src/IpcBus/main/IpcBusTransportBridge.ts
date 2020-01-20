@@ -4,6 +4,7 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as Client from '../IpcBusClient';
 
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
+import { IpcBusTransport } from '../IpcBusTransport';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 import { IpcBusSender } from '../IpcBusTransport';
@@ -43,8 +44,8 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
     }
 
     /// IpcBusTransport API
-    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
+    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusTransport.Handshake> {
+        return new Promise<IpcBusTransport.Handshake>((resolve, reject) => {
             let timer: NodeJS.Timer;
             const replyChannel = this.generateReplyChannel();
             const replyListener = (event: Electron.IpcMainEvent, ipcBusBridge: IpcBusBridgeImpl) => {
@@ -52,7 +53,12 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
                 this._ipcBusBridge = ipcBusBridge;
                 this._ipcMain.removeListener(replyChannel, replyListener);
                 this._ipcMain.removeListener(IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE, replyListener);
-                return resolve();
+                const handshake: IpcBusTransport.Handshake = {
+                    peer: this._peer,
+                    process: this._peer.process,
+                    instance: 0
+                }
+                return resolve(handshake);
             };
             this._ipcMain.addListener(replyChannel, replyListener);
             this._ipcMain.addListener(IPCBUS_TRANSPORT_BRIDGE_BROADCAST_INSTANCE, replyListener);

@@ -7,6 +7,7 @@ import * as Client from '../IpcBusClient';
 import * as Bridge from './IpcBusBridge';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusTransportNet } from '../node/IpcBusTransportNet';
+import { IpcBusTransport } from '../IpcBusTransport';
 import { IpcBusSender } from '../IpcBusTransport';
 import { 
     IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, 
@@ -25,12 +26,14 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     protected _brokerChannels: Set<string>;
 
     protected _connected: boolean;
+    protected _instance: number;
 
     constructor(contextType: Client.IpcBusProcessType) {
         super(contextType);
 
         this._ipcMain = require('electron').ipcMain;
         this._connected = false;
+        this._instance = 0;
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<IpcBusSender>('IPCBus:Bridge', true);
         this._subscriptions.on('channel-added', channel => {
@@ -174,27 +177,34 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
 
     // This is coming from the Electron Renderer Proces/s (Electron ipc)
     // =================================================================================================
-    private _completePeerInfo(webContents: Electron.WebContents, ipcBusPeer: Client.IpcBusPeer): void {
-        ipcBusPeer.process.wcid = webContents.id;
+    private _completePeerInfo(webContents: Electron.WebContents, peer: Client.IpcBusPeer): IpcBusTransport.Handshake {
+        this._instance++;
+        const handshake: IpcBusTransport.Handshake = {
+            peer,
+            process: peer.process,
+            instance: this._instance
+        };
+        handshake.process.wcid = webContents.id;
         // Following functions are not implemented in all Electrons
         try {
-            ipcBusPeer.process.rid = webContents.getProcessId();
+            handshake.process.rid = webContents.getProcessId();
         }
         catch (err) {
-            ipcBusPeer.process.rid = -1;
+            handshake.process.rid = -1;
         }
         try {
-            ipcBusPeer.process.pid = webContents.getOSProcessId();
+            handshake.process.pid = webContents.getOSProcessId();
         }
         catch (err) {
             // For backward we fill pid with webContents id
-            ipcBusPeer.process.pid = webContents.id;
+            handshake.process.pid = webContents.id;
         }
+        return handshake;
     }
 
     private _onRendererHandshake(webContents: Electron.WebContents, ipcBusCommand: IpcBusCommand): void {
         const ipcBusPeer = ipcBusCommand.peer;
-        this._completePeerInfo(webContents, ipcBusPeer);
+        const handshake = this._completePeerInfo(webContents, ipcBusPeer);
 
         // if we have several clients within the same webcontents, the callback may be called several times !
         webContents.addListener('destroyed', () => {
@@ -205,11 +215,11 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
         // - to provide id/s
         // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
         if (webContents.getURL() && !webContents.isLoadingMainFrame()) {
-            webContents.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcBusPeer);
+            webContents.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
         }
         else {
             webContents.on('did-finish-load', () => {
-                webContents.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcBusPeer);
+                webContents.send(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, handshake);
             });
         }
     }

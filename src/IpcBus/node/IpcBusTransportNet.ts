@@ -7,6 +7,7 @@ import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
+import { IpcBusTransport } from '../IpcBusTransport';
 import { IpcBusCommand } from '../IpcBusCommand';
 
 // Implementation for Node process
@@ -93,8 +94,8 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
     }
 
     /// IpcBusTransportImpl API
-    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return new Promise((resolve, reject) => {
+    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusTransport.Handshake> {
+        return new Promise<IpcBusTransport.Handshake>((resolve, reject) => {
             options = IpcBusUtils.CheckConnectOptions(options);
             if ((options.port == null) && (options.path == null)) {
                 return reject('Connection options not provided');
@@ -146,7 +147,12 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
                 else if (this._socketBuffer > 0) {
                     this._socketWriter = new BufferedSocketWriter(this._socket, this._socketBuffer);
                 }
-                resolve();
+                const handshake: IpcBusTransport.Handshake = {
+                    peer: this._peer,
+                    process: this._peer.process,
+                    instance: 0
+                }
+                resolve(handshake);
             };
 
             fctReject = (msg: string) => {

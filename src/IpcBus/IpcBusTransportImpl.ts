@@ -45,8 +45,7 @@ class DeferredRequest {
 
 /** @internal */
 export abstract class IpcBusTransportImpl implements IpcBusTransport {
-    private static _lastLocalProcessId: number = 0;
-    private _localProcessId: number;
+    private _localInstance: number;
 
     protected _peer: Client.IpcBusPeer;
     protected _promiseConnected: Promise<void>;
@@ -61,7 +60,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         this._peer = { id: uuid.v1(), name: '', process: ipcBusContext };
         this._requestFunctions = new Map<string, DeferredRequest>();
         this._requestNumber = 0;
-        this._localProcessId = IpcBusTransportImpl._lastLocalProcessId++;
         this._packetDecoder = new IpcPacketBuffer();
     }
 
@@ -73,7 +71,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     }
 
     protected generateName(): string {
-        let name = `${this._peer.process.type}-${this._localProcessId}`;
+        let name = `${this._peer.process.type}-${this._localInstance}`;
         if (this._peer.process.rid) {
             name += `-${this._peer.process.rid}`;
         }
@@ -194,8 +192,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     ipcConnect(eventEmitter: Client.IpcBusClient | null, options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         if (this._promiseConnected == null) {
             this._promiseConnected = this.ipcHandshake(options)
-            .then(() => {
+            .then((handshake) => {
                 this._client = eventEmitter;
+                this._localInstance = handshake.instance;
                 this._peer.name = options.peerName || this.generateName();
                 this.ipcPost(IpcBusCommand.Kind.Connect, '');
             });
@@ -217,7 +216,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
         this.ipcPostCommand({ kind, channel, peer: this._peer, request: ipcBusCommandRequest }, args);
     }
 
-    abstract ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<void>;
+    abstract ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusTransport.Handshake>;
     abstract ipcShutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
     abstract ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
 }
