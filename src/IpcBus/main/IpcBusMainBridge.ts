@@ -40,7 +40,6 @@ export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl {
     }
 
     protected ipcPostCommandMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        this.onConnectorMessageReceived(ipcBusCommand, args)
         this._bridge._onMainMessageReceived(ipcBusCommand, args);
     }
 }

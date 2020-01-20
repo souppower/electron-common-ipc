@@ -32,11 +32,6 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         });
     }
 
-    protected ipcPostCommandMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        this.onConnectorMessageReceived(ipcBusCommand, args)
-        this._ipcPostCommand(ipcBusCommand, args);
-    }
-
     ipcConnect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
         return super.ipcConnect(client, options)
         .then((peer) => {
@@ -62,7 +57,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
                 this._subscriptions = null;
                 this._requestFunctions.forEach(request => {
                     if (request.client === client) {
-                        this._ipcPostCommand({ 
+                        this.ipcPostCommandMessage({ 
                             kind: IpcBusCommand.Kind.RequestClose,
                             channel: request.request.channel,
                             peer: client.peer,
@@ -71,11 +66,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
                         this._requestFunctions.delete(request.request.replyChannel);
                     }
                 });
-                this._connector.removeClient(this);
-                return this._connector.ipcShutdown(options)
-                .then(() => {
-                    this._ipcPostCommand = this.ipcPostCommandFake;
-                });
+                return this.ipcCloseFinalize(client, options);
             });
         }
         return Promise.resolve();

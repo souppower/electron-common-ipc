@@ -104,16 +104,14 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         this._netBinds['connection'] = this._onServerConnection.bind(this);
 
         this._onQueryState = this._onQueryState.bind(this);
-
-        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<net.Socket>('IPCBus:Broker', true);
         this._socketClients = new Map<net.Socket, IpcBusBrokerSocket>();
 
         // this._bridgeChannels = new Set<string>();
 
+        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<net.Socket>('IPCBus:Broker', true);
         this._subscriptions.on('channel-added', (channel) => {
             this._socketBridge && this.brokerAddChannel(channel);
         });
-
         this._subscriptions.on('channel-removed', (channel) => {
             this._socketBridge && this.brokerRemoveChannel(channel);
         });
@@ -372,7 +370,9 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             case IpcBusCommand.Kind.SendMessage:
                 // Register the replyChannel
                 if (ipcBusCommand.request) {
-                    this._subscriptions.setRequestChannel(ipcBusCommand.request.replyChannel, socket, ipcBusCommand.peer);
+                    this._subscriptions.emitter = false;
+                    this._subscriptions.addRef(ipcBusCommand.request.replyChannel, socket, ipcBusCommand.peer);
+                    this._subscriptions.emitter = true;
                 }
                 // If this message does not come from the IpcBusBridge, send it to it
                 if (!ipcBusCommand.bridge) {
@@ -386,16 +386,19 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
 
             case IpcBusCommand.Kind.RequestResponse: {
-                const connData = this._subscriptions.getRequestChannel(ipcBusCommand.request.replyChannel);
-                if (connData) {
-                    this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
                     connData.conn.write(packet.buffer);
-                }
+                });
+                this._subscriptions.emitter = false;
+                this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                this._subscriptions.emitter = true;
                 break;
             }
 
             case IpcBusCommand.Kind.RequestClose:
-                this._subscriptions.deleteRequestChannel(ipcBusCommand.request.replyChannel);
+                this._subscriptions.emitter = false;
+                this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                this._subscriptions.emitter = true;
                 // If this message does not come from the IpcBusBridge, send it to it
                 if (!ipcBusCommand.bridge) {
                     // if (this._bridgeChannels.has(ipcBusCommand.channel)) {

@@ -150,7 +150,7 @@ export class Logger {
 export class ChannelConnectionMap<T> extends EventEmitter {
     private _name: string;
     private _channelsMap: Map<string, Map<T, ConnectionPeers<T>>>;
-    private _requestChannels: Map<string, ConnectionPeer<T>>;
+    // private _requestChannels: Map<string, ConnectionPeer<T>>;
     
     public emitter: boolean;
 
@@ -159,7 +159,7 @@ export class ChannelConnectionMap<T> extends EventEmitter {
         this._name = name;
         this.emitter = emitter;
         this._channelsMap = new Map<string, Map<T, ConnectionPeers<T>>>();
-        this._requestChannels = new Map<string,  ConnectionPeer<T>>();
+        // this._requestChannels = new Map<string,  ConnectionPeer<T>>();
     }
 
     private _info(str: string) {
@@ -174,17 +174,17 @@ export class ChannelConnectionMap<T> extends EventEmitter {
     //     Logger.enable && Logger.error(`[${this._name}] ${str}`);
     // }
 
-    setRequestChannel(channel: string, conn: T, peer: IpcBusPeer): void {
-        this._requestChannels.set(channel, { conn, peer });
-    }
+    // setRequestChannel(channel: string, conn: T, peer: IpcBusPeer): void {
+    //     this._requestChannels.set(channel, { conn, peer });
+    // }
 
-    getRequestChannel(channel: string): ConnectionPeer<T> {
-        return this._requestChannels.get(channel);
-    }
+    // getRequestChannel(channel: string): ConnectionPeer<T> {
+    //     return this._requestChannels.get(channel);
+    // }
 
-    deleteRequestChannel(channel: string): boolean {
-        return this._requestChannels.delete(channel);
-    }
+    // deleteRequestChannel(channel: string): boolean {
+    //     return this._requestChannels.delete(channel);
+    // }
 
     hasChannel(channel: string): boolean {
         return this._channelsMap.has(channel);
@@ -204,7 +204,7 @@ export class ChannelConnectionMap<T> extends EventEmitter {
 
     clear() {
         this._channelsMap.clear();
-        this._requestChannels.clear();
+        // this._requestChannels.clear();
     }
 
     addRefs(channels: string[], conn: T, peer: IpcBusPeer): void {
@@ -324,11 +324,11 @@ export class ChannelConnectionMap<T> extends EventEmitter {
     removePeer(conn: T, peer: IpcBusPeer) {
         Logger.enable && this._info(`releasePeerId: peerId = ${peer.id}`);
 
-        this._requestChannels.forEach((connData, channel) => {
-            if (connData.peer === peer) {
-                this._requestChannels.delete(channel);
-            }
-        });
+        // this._requestChannels.forEach((connData, channel) => {
+        //     if (connData.peer === peer) {
+        //         this._requestChannels.delete(channel);
+        //     }
+        // });
 
         // ForEach is supposed to support deletion during the iteration !
         this._channelsMap.forEach((connsMap, channel) => {
@@ -340,11 +340,11 @@ export class ChannelConnectionMap<T> extends EventEmitter {
         Logger.enable && this._info(`ReleaseConn: conn = ${conn}`);
 
         // ForEach is supposed to support deletion during the iteration !
-        this._requestChannels.forEach((connData, channel) => {
-            if (connData.conn === conn) {
-                this._requestChannels.delete(channel);
-            }
-        });
+        // this._requestChannels.forEach((connData, channel) => {
+        //     if (connData.conn === conn) {
+        //         this._requestChannels.delete(channel);
+        //     }
+        // });
 
         // ForEach is supposed to support deletion during the iteration !
         this._channelsMap.forEach((connsMap, channel) => {

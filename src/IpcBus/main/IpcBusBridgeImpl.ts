@@ -55,20 +55,17 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
                 if ((options.port != null) || (options.path != null)) {
                     this._connected = true;
                     // this._brokerChannels.clear();
-                    return this._netConnector.ipcHandshake(options)
-                        .then((handshake) => {
-                            this._netTransport.ipcPost(this._netTransport.peer, IpcBusCommand.Kind.BridgeConnect, '');
-                            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
-                        })
-                        .catch(err => {
-                            this._connected = false;
-                        });
+                    return this._netTransport.ipcConnect(null, options)
+                    .then(() => {
+                    })
+                    .catch(err => {
+                        this._connected = false;
+                    });
                 }
             }
             else {
                 if ((options.port == null) && (options.path == null)) {
-                    this._netTransport.ipcPost(this._netTransport.peer, IpcBusCommand.Kind.BridgeClose, '');
-                    return this._netConnector.ipcShutdown();
+                    return this._netTransport.ipcClose(null);
                 }
             }
             return Promise.resolve();
@@ -79,8 +76,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         return this._rendererConnector.close()
         .then(() => {
             if (this._connected) {
-                this._netTransport.ipcPost(this._netTransport.peer, IpcBusCommand.Kind.BridgeClose, '');
-                return this._netConnector.ipcShutdown(options);
+                return this._netTransport.ipcClose(null, options);
             }
             return Promise.resolve();
         });
@@ -100,21 +96,16 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     _onRendererMessagedReceived(webContents: Electron.WebContents, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         this._mainTransport.onConnectorBufferReceived(null, ipcBusCommand, rawContent);
         if (this._netTransport.hasChannel(ipcBusCommand.channel)) {
-            this._netConnector.ipcPostBuffer(rawContent.buffer);
+            this._netTransport.broadcastBuffer(ipcBusCommand, rawContent.buffer);
         }
-    }
-
-    _onRendererAddChannels(channels: string[]) {
-    }
-
-    _onRendererRemoveChannels(channels: string[]) {
     }
 
     // This is coming from the Electron Main Process (Electron ipc)
     // =================================================================================================
     _onMainMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]) {
         // Prevent serializing for main
-        if (this._rendererConnector.hasChannel(ipcBusCommand.channel) || this._rendererConnector.hasRequestChannel(ipcBusCommand.channel)) {
+        if (this._rendererConnector.hasChannel(ipcBusCommand.channel) ||
+            this._netTransport.hasChannel(ipcBusCommand.channel)) {
             if (args) {
                 this._packetOut.serializeArray([ipcBusCommand, args]);
             }
@@ -122,25 +113,18 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
                 this._packetOut.serializeArray([ipcBusCommand]);
             }
             const rawContent = this._packetOut.getRawContent();
-            this._rendererConnector.onConnectorBufferReceived(null, ipcBusCommand, rawContent);
+            this._rendererConnector.broadcastBuffer(ipcBusCommand, rawContent);
             if (this._netTransport.hasChannel(ipcBusCommand.channel)) {
-                this._netConnector.ipcPostBuffer(rawContent.buffer);
+                this._netTransport.broadcastBuffer(ipcBusCommand, rawContent.buffer);
             }
         }
     }
-
-    _onMainAddChannels(channels: string[]) {
-    }
-
-    _onMainRemoveChannels(channels: string[]) {
-    }
-
 
     // This is coming from the Bus broker (socket)
     // =================================================================================================
     _onNetMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         this._mainTransport.onConnectorPacketReceived(ipcBusCommand, ipcPacketBuffer);
-        this._rendererConnector.onConnectorPacketReceived(ipcBusCommand, ipcPacketBuffer);
+        this._rendererConnector.broadcastPacket(ipcBusCommand, ipcPacketBuffer);
     }
 }
 
