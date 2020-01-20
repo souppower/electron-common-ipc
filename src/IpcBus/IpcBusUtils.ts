@@ -317,7 +317,7 @@ export class ChannelConnectionMap<T> extends EventEmitter {
         return this._release(channel, conn, peer, true);
     }
 
-    removeChannel(channel: string) {
+    removeChannel(channel: string): void {
         this._release(channel, null, null, true);
     }
 
