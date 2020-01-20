@@ -77,7 +77,6 @@ class DeferredRequest {
 
 /** @internal */
 export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConnector.Client {
-    private static s_clientId: number = 0;
     private static s_requestNumber: number;
 
     protected _peer: Client.IpcBusPeer;
@@ -98,20 +97,21 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._ipcPostCommand = this.ipcPostCommandFake;
         this._waitForClosed = Promise.resolve();
     }
-
-    protected static generateName(peer: Client.IpcBusPeer): string {
-        let name = `${peer.process.type}_${peer.process.pid}`;
-        if (peer.process.rid) {
-            name += `-${peer.process.rid}`;
-        }
-        ++IpcBusTransportImpl.s_clientId;
-        name += `-${IpcBusTransportImpl.s_clientId}`;
-        return name;
-    }
-
+    
     protected static generateReplyChannel(peer: Client.IpcBusPeer): string {
         ++IpcBusTransportImpl.s_requestNumber;
         return `${replyChannelPrefix}${peer.id}-${IpcBusTransportImpl.s_requestNumber.toString()}`;
+    }
+
+    protected static generateName(peer: Client.IpcBusPeer): string {
+        let name = `${peer.process.type}-${peer.process.wcid}`;
+        if (peer.process.rid != peer.process.wcid) {
+            name += `-r${peer.process.rid}`;
+        }
+        if (peer.process.pid != peer.process.wcid) {
+            name += `_p${peer.process.pid}`;
+        }
+        return name;
     }
 
     // We assume prior to call this function client is not empty and have listeners for this channel !!
@@ -277,7 +277,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     ipcConnect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
         if (this._waitForConnected == null) {
             this._waitForConnected = this._waitForClosed
-            .then(() => {
+            .then((handshake) => {
                 this._connector.addClient(this);
                 return this._connector.ipcHandshake(options);
             })
