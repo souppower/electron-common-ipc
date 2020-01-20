@@ -111,4 +111,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         }
         this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, this._packetOut.getRawContent());
     }
+
+    ipcPostBuffer(buffer: Buffer) {
+    }
 }

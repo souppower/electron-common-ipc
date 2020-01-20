@@ -49,6 +49,15 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         return super.ipcClose(client, options)
         .then(() => {
             if (client) {
+                this._requestFunctions.forEach(request => {
+                    this._ipcPostCommand({ 
+                        kind: IpcBusCommand.Kind.RequestClose,
+                        channel: request.request.channel,
+                        peer: client.peer,
+                        request: request.request
+                    });
+                });
+                this._requestFunctions.clear();
                 this._client = null;
             }
             return this._connector.ipcShutdown(options);

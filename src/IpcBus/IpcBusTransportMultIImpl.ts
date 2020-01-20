@@ -60,6 +60,17 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
                 this._subscriptions.emitter = false;
                 this._subscriptions.clear();
                 this._subscriptions = null;
+                this._requestFunctions.forEach(request => {
+                    if (request.client === client) {
+                        this._ipcPostCommand({ 
+                            kind: IpcBusCommand.Kind.RequestClose,
+                            channel: request.request.channel,
+                            peer: client.peer,
+                            request: request.request
+                        });
+                        this._requestFunctions.delete(request.request.replyChannel);
+                    }
+                });
                 this._connector.removeClient(this);
                 return this._connector.ipcShutdown(options)
                 .then(() => {
@@ -81,21 +92,21 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         if (this._subscriptions == null) {
             return;
         }
-        this._subscriptions.emitter = false;
+        // this._subscriptions.emitter = false;
         if (channel) {
             if (all) {
                 this._subscriptions.releaseAll(channel, client, client.peer);
-                this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannelAllListeners, channel);
+                // this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannelAllListeners, channel);
             }
             else {
                 this._subscriptions.release(channel, client, client.peer);
-                this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveListeners, channel);
+                // this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveListeners, channel);
             }
         }
         else {
             this._subscriptions.removePeer(client, client.peer);
-            this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannelListener, channel);
+            // this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannelListener, channel);
         }
-        this._subscriptions.emitter = true;
+        // this._subscriptions.emitter = true;
     }
 }

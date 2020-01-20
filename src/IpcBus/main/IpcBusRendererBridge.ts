@@ -123,7 +123,7 @@ export class IpcBusRendererBridge implements IpcBusConnector.Client {
     onConnectorBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
         this._onCommandSendMessage(null, ipcBusCommand, rawContent);
     }
-    
+
     onConnectorClosed(): void {
     }
 
@@ -163,19 +163,21 @@ export class IpcBusRendererBridge implements IpcBusConnector.Client {
                 this._onRendererHandshake(webContents, ipcBusCommand);
                 break;
 
-            // case IpcBusCommand.Kind.AddChannels: {
-            //     this._packetDecoder.setRawContent(rawContent);
-            //     const channels = this._packetDecoder.parseArrayAt(1);
-            //     this._subscriptions.addRefs(channels, webContents, ipcBusCommand.peer);
-            //     break;
-            // }
+            case IpcBusCommand.Kind.AddChannelListener:
+                this._subscriptions.addRef(ipcBusCommand.channel, webContents, ipcBusCommand.peer);
+                break;
 
-            // case IpcBusCommand.Kind.RemoveChannels: {
-            //     this._packetDecoder.setRawContent(rawContent);
-            //     const channels = this._packetDecoder.parseArrayAt(1);
-            //     this._subscriptions.releases(channels, webContents, ipcBusCommand.peer);
-            //     break;
-            // }
+            case IpcBusCommand.Kind.RemoveChannelListener:
+                this._subscriptions.release(ipcBusCommand.channel, webContents, ipcBusCommand.peer);
+                break;
+
+            case IpcBusCommand.Kind.RemoveChannelAllListeners:
+                this._subscriptions.releaseAll(ipcBusCommand.channel, webContents, ipcBusCommand.peer);
+                break;
+
+            case IpcBusCommand.Kind.RemoveListeners:
+                this._subscriptions.removePeer(webContents, ipcBusCommand.peer);
+                break;
 
             default:
                 this._onCommandSendMessage(webContents, ipcBusCommand, rawContent);

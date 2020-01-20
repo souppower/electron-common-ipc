@@ -6,87 +6,20 @@ import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 import * as Bridge from './IpcBusBridge';
 import { IpcBusCommand } from '../IpcBusCommand';
-// import { IpcBusTransportNet } from '../node/IpcBusTransportNet';
+
 import { IpcBusRendererBridge } from './IpcBusRendererBridge';
-import { IpcBusConnector } from '../IpcBusConnector';
-import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 import { IpcBusConnectorNet } from '../node/IpcBusConnectorNet';
-
-class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
-    protected _bridge: IpcBusBridgeImpl;
-
-    constructor(contextType: Client.IpcBusProcessType, bridge: IpcBusBridgeImpl) {
-       super(contextType);
-       this._bridge = bridge;
-    }
-
-    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
-        const handshake: IpcBusConnector.Handshake = {
-            process: this.process
-        }
-        return Promise.resolve(handshake);
-    }
-
-    ipcShutdown(options: Client.IpcBusClient.CloseOptions): Promise<void> {
-        return Promise.resolve();
-    }
-
-    ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        switch(ipcBusCommand.kind) {
-            // case IpcBusCommand.Kind.AddChannels: {
-            //     const channels = args[0];
-            //     this._bridge._onMainAddChannels(channels);
-            //     break;
-            // }
-            // case IpcBusCommand.Kind.RemoveChannels: {
-            //     const channels = args[0];
-            //     this._bridge._onMainRemoveChannels(channels);
-            //     break;
-            // }
-    
-            case IpcBusCommand.Kind.SendMessage:
-            case IpcBusCommand.Kind.RequestResponse:
-            case IpcBusCommand.Kind.RequestClose:
-                this._bridge._onMainMessageReceived(ipcBusCommand, args);
-                break;
-        }
-    }
-
-    get client(): IpcBusConnector.Client {
-        return this._client;
-    }
-}
-
-class IpcBusBridgeConnectorNet extends IpcBusConnectorNet implements IpcBusConnector.Client {
-    protected _bridge: IpcBusBridgeImpl;
-
-    constructor(contextType: Client.IpcBusProcessType, bridge: IpcBusBridgeImpl) {
-       super(contextType);
-       this._bridge = bridge;
-       this.addClient(this);
-    }
-
-    onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
-        this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
-    }
-
-    onConnectorBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
-    }
-
-    onConnectorClosed(): void {
-    }
-
-    get client(): IpcBusConnector.Client {
-        return this._client;
-    }
-}
-
+import { IpcBusBridgeTransportNet } from './IpcBusNetBridge';
+import { IpcBusBridgeConnectorMain, IpcBusBridgeTransportMain } from './IpcBusMainBridge'; 
+import { IpcBusTransport } from '../IpcBusTransport'; 
+;
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
-    protected _mainConnector: IpcBusBridgeConnectorMain;
-    protected _netConnector: IpcBusBridgeConnectorNet;
+    protected _mainTransport: IpcBusBridgeTransportMain;
+    protected _netTransport: IpcBusBridgeTransportNet;
+    protected _netConnector: IpcBusConnectorNet;
     protected _rendererConnector: IpcBusRendererBridge;
 
     protected _connected: boolean;
@@ -96,8 +29,10 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         this._connected = false;
 
         this._packetOut = new IpcPacketBuffer();
-        this._mainConnector = new IpcBusBridgeConnectorMain(contextType, this);
-        this._netConnector = new IpcBusBridgeConnectorNet(contextType, this);
+        const mainConnector = new IpcBusBridgeConnectorMain(contextType);
+        this._mainTransport = new IpcBusBridgeTransportMain(mainConnector, this);
+        this._netConnector = new IpcBusConnectorNet(contextType);
+        this._netTransport = new IpcBusBridgeTransportNet(this._netConnector, this);
         this._rendererConnector = new IpcBusRendererBridge(this);
     }
 
@@ -106,8 +41,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         // super._reset(endSocket);
     }
 
-    get mainConnector(): IpcBusConnector {
-        return this._mainConnector;
+    get mainTransport(): IpcBusTransport {
+        return this._mainTransport;
     }
 
     // IpcBusBridge API
@@ -122,10 +57,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
                     // this._brokerChannels.clear();
                     return this._netConnector.ipcHandshake(options)
                         .then((handshake) => {
-                            // this._netConnector.ipcPostCommand({
-                            //     kind: IpcBusCommand.Kind.BridgeConnect,
-                            //     peer: this._peer
-                            // },                            this.bridgeAddChannels(this._subscriptions.getChannels());
+                            this._netTransport.ipcPost(this._netTransport.peer, IpcBusCommand.Kind.BridgeConnect, '');
                             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
                         })
                         .catch(err => {
@@ -135,6 +67,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             }
             else {
                 if ((options.port == null) && (options.path == null)) {
+                    this._netTransport.ipcPost(this._netTransport.peer, IpcBusCommand.Kind.BridgeClose, '');
                     return this._netConnector.ipcShutdown();
                 }
             }
@@ -146,9 +79,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         return this._rendererConnector.close()
         .then(() => {
             if (this._connected) {
-                // super.ipcPost(this._peer, IpcBusCommand.Kind.BridgeClose, null);
+                this._netTransport.ipcPost(this._netTransport.peer, IpcBusCommand.Kind.BridgeClose, '');
                 return this._netConnector.ipcShutdown(options);
-            // return super.ipcClose(null, options);
             }
             return Promise.resolve();
         });
@@ -166,9 +98,11 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // }
 
     _onRendererMessagedReceived(webContents: Electron.WebContents, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
-        this._mainConnector.client.onConnectorBufferReceived(null, ipcBusCommand, rawContent);
-            // this._netConnector.onConnectorBufferReceived
+        this._mainTransport.onConnectorBufferReceived(null, ipcBusCommand, rawContent);
+        if (this._netTransport.hasChannel(ipcBusCommand.channel)) {
+            this._netConnector.ipcPostBuffer(rawContent.buffer);
         }
+    }
 
     _onRendererAddChannels(channels: string[]) {
     }
@@ -180,7 +114,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // =================================================================================================
     _onMainMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]) {
         // Prevent serializing for main
-        // if (this._rendererConnector.hasChannel(ipcBusCommand.channel) || this._rendererConnector.hasRequestChannel(ipcBusCommand.channel)) {
+        if (this._rendererConnector.hasChannel(ipcBusCommand.channel) || this._rendererConnector.hasRequestChannel(ipcBusCommand.channel)) {
             if (args) {
                 this._packetOut.serializeArray([ipcBusCommand, args]);
             }
@@ -189,8 +123,10 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             }
             const rawContent = this._packetOut.getRawContent();
             this._rendererConnector.onConnectorBufferReceived(null, ipcBusCommand, rawContent);
-            this._netConnector.onConnectorBufferReceived(null, ipcBusCommand, rawContent);
-        // }
+            if (this._netTransport.hasChannel(ipcBusCommand.channel)) {
+                this._netConnector.ipcPostBuffer(rawContent.buffer);
+            }
+        }
     }
 
     _onMainAddChannels(channels: string[]) {
@@ -203,7 +139,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // This is coming from the Bus broker (socket)
     // =================================================================================================
     _onNetMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        this._mainConnector.client.onConnectorPacketReceived(ipcBusCommand, ipcPacketBuffer);
+        this._mainTransport.onConnectorPacketReceived(ipcBusCommand, ipcPacketBuffer);
         this._rendererConnector.onConnectorPacketReceived(ipcBusCommand, ipcPacketBuffer);
     }
 }

@@ -28,10 +28,10 @@ export namespace IpcBusCommand {
         BridgeConnect                     = 'BCOO',    // COnnexion
         BridgeClose                       = 'BCOC',
 
-        AddBrokerChannels                 = 'BOCAS',
-        RemoveBrokerChannels              = 'BOCRS',
-        AddBridgeChannels                 = 'BICAS',
-        RemoveBridgeChannels              = 'BICRS',
+        // AddBrokerChannels                 = 'BOCAS',
+        // RemoveBrokerChannels              = 'BOCRS',
+        // AddBridgeChannels                 = 'BICAS',
+        // RemoveBridgeChannels              = 'BICRS',
     };
 
     /** @internal */
