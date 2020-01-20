@@ -56,7 +56,7 @@ export class IpcBusTransportBridge extends IpcBusTransportImpl implements IpcBus
                 const handshake: IpcBusTransport.Handshake = {
                     peer: this._peer,
                     process: this._peer.process,
-                    instance: 0
+                    // instance: 0
                 }
                 return resolve(handshake);
             };

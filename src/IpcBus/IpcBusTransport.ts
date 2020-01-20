@@ -9,7 +9,7 @@ export namespace IpcBusTransport {
     export interface Handshake {
         peer: Client.IpcBusPeer,
         process: Client.IpcBusProcess;
-        instance: number;
+        // instance: number;
     };
 }
 

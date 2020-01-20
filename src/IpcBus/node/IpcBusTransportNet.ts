@@ -150,7 +150,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
                 const handshake: IpcBusTransport.Handshake = {
                     peer: this._peer,
                     process: this._peer.process,
-                    instance: 0
+                    // instance: 0
                 }
                 resolve(handshake);
             };
