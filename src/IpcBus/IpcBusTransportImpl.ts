@@ -73,10 +73,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     protected generateName(): string {
         let name = `${this._peer.process.type}-${this._peer.process.wcid}`;
         if (this._peer.process.rid != this._peer.process.wcid) {
-            name += `-${this._peer.process.rid}`;
+            name += `-r${this._peer.process.rid}`;
         }
         if (this._peer.process.pid != this._peer.process.wcid) {
-            name += `_${this._peer.process.pid}`;
+            name += `_p${this._peer.process.pid}`;
         }
         return name;
     }
