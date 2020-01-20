@@ -104,11 +104,14 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     protected static generateName(peer: Client.IpcBusPeer): string {
-        let name = `${peer.process.type}-${peer.process.wcid}`;
-        if (peer.process.rid != peer.process.wcid) {
+        let name = `${peer.process.type}`;
+        if (peer.process.wcid) {
+            name += `-${peer.process.wcid}`;
+        }
+        if (peer.process.rid && (peer.process.rid !== peer.process.wcid)) {
             name += `-r${peer.process.rid}`;
         }
-        if (peer.process.pid != peer.process.wcid) {
+        if (peer.process.pid) {
             name += `_p${peer.process.pid}`;
         }
         return name;
