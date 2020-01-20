@@ -29,7 +29,11 @@ export class IpcBusBridgeTransportNet extends IpcBusTransportImpl {
     ipcConnect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
         return super.ipcConnect(null, options)
         .then((peer) => {
-            this.ipcPost(this._peer, IpcBusCommand.Kind.BridgeConnect, '');
+            this.ipcPostAdmin({
+                peer: this._peer,
+                kind: IpcBusCommand.Kind.BridgeConnect,
+                channel: ''
+            });
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
             return peer;
         });
@@ -38,7 +42,11 @@ export class IpcBusBridgeTransportNet extends IpcBusTransportImpl {
     ipcClose(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         return super.ipcClose(client, options)
         .then(() => {
-            this.ipcPost(this._peer, IpcBusCommand.Kind.BridgeClose, '');
+            this.ipcPostAdmin({
+                peer: this._peer,
+                kind: IpcBusCommand.Kind.BridgeClose,
+                channel: ''
+            });
             return this.ipcCloseFinalize(client, options);
         });
     }
@@ -60,7 +68,7 @@ export class IpcBusBridgeTransportNet extends IpcBusTransportImpl {
     onConnectorMessageReceived(ipcBusCommand: IpcBusCommand, args: any[]): void {
     }
 
-    protected ipcPostCommandMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    protected ipcPostMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
     }
 
     broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void {

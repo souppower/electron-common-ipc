@@ -43,7 +43,7 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         .then(() => {
             if (client) {
                 this._requestFunctions.forEach(request => {
-                    this.ipcPostCommandMessage({ 
+                    this.ipcPostMessage({ 
                         kind: IpcBusCommand.Kind.RequestClose,
                         channel: request.request.channel,
                         peer: client.peer,
@@ -60,25 +60,37 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
     ipcAddChannel(client: IpcBusTransport.Client, channel: string, count?: number) {
         let refCount = (count == null) ? 1 : count;
         while (refCount-- > 0) {
-            this.ipcPost(client.peer, IpcBusCommand.Kind.AddChannelListener, channel);
+            this.ipcPostAdmin({
+                peer: client.peer,
+                kind: IpcBusCommand.Kind.AddChannelListener,
+                channel
+            });
         }
     }
 
     ipcRemoveChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean) {
         if (channel) {
             if (all) {
-                this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannelAllListeners, channel);
+                this.ipcPostAdmin({
+                    peer: client.peer,
+                    kind: IpcBusCommand.Kind.RemoveChannelAllListeners,
+                    channel
+                });
             }
             else {
-                this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveListeners, channel);
+                this.ipcPostAdmin({
+                    peer: client.peer,
+                    kind: IpcBusCommand.Kind.RemoveListeners,
+                    channel
+                });
             }
         }
         else {
-            this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannelListener, channel);
+            this.ipcPostAdmin({
+                peer: client.peer,
+                kind: IpcBusCommand.Kind.RemoveChannelListener,
+                channel
+            });
         }
-    }
-
-    ipcPost(peer: Client.IpcBusPeer, kind: IpcBusCommand.Kind, channel: string, args?: any[]): void {
-        this._ipcPostCommand({ kind, channel, peer }, args);
     }
 }

@@ -141,7 +141,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     deferredRequest.settled(ipcBusCommand, args);
                 }
                 else {
-                    this.ipcPostCommandMessage(ipcBusCommandResponse, args);
+                    this.ipcPostMessage(ipcBusCommandResponse, args);
                 }
             }
             ipcBusEvent.request = {
@@ -232,7 +232,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         if (this.hasChannel(channel)) {
             this.onConnectorMessageReceived(ipcMessage, args);
         }
-        this.ipcPostCommandMessage(ipcMessage, args);
+        this.ipcPostMessage(ipcMessage, args);
     }
 
     ipcRequestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
@@ -250,7 +250,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     deferredRequest.timeout();
                 }
                 // Unregister remotely
-                this.ipcPostCommandMessage({ 
+                this.ipcPostMessage({ 
                     kind: IpcBusCommand.Kind.RequestClose,
                     channel,
                     peer: client.peer,
@@ -269,7 +269,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             this.onConnectorMessageReceived(ipcMessage, args);
         }
         if (deferredRequest.isSettled() === false) {
-            this.ipcPostCommandMessage(ipcMessage, args);
+            this.ipcPostMessage(ipcMessage, args);
         }
         return deferredRequest.promise;
     }
@@ -310,11 +310,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         });
     }
 
-    ipcPost(peer: Client.IpcBusPeer, kind: IpcBusCommand.Kind, channel: string, args?: any[]): void {
-        this._ipcPostCommand({ kind, channel, peer }, args);
+    protected ipcPostAdmin(ipcBusCommand: IpcBusCommand): void {
+        this._ipcPostCommand(ipcBusCommand);
     }
 
-    protected ipcPostCommandMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    protected ipcPostMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         this._ipcPostCommand(ipcBusCommand, args);
     }
 

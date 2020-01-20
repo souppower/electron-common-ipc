@@ -39,7 +39,7 @@ export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl {
         this._bridge = bridge;
     }
 
-    protected ipcPostCommandMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    protected ipcPostMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         this._bridge._onMainMessageReceived(ipcBusCommand, args);
     }
 }

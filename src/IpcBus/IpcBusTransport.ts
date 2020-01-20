@@ -1,7 +1,6 @@
 import { EventEmitter } from 'events';
 
 import * as Client from './IpcBusClient';
-import { IpcBusCommand } from './IpcBusCommand';
 
 /** @internal */
 export namespace IpcBusTransport {
@@ -24,5 +23,4 @@ export interface IpcBusTransport {
 
     ipcRequestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse>;
     ipcSendMessage(client: IpcBusTransport.Client, channel: string, args: any[]): void;
-    ipcPost(peer: Client.IpcBusPeer, kind: IpcBusCommand.Kind, channel: string, args?: any[]): void;
 }
