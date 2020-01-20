@@ -45,7 +45,7 @@ class DeferredRequest {
 
 /** @internal */
 export abstract class IpcBusTransportImpl implements IpcBusTransport {
-    private _localInstance: number;
+    // private _localInstance: number;
 
     protected _peer: Client.IpcBusPeer;
     protected _promiseConnected: Promise<void>;
@@ -71,11 +71,13 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
     }
 
     protected generateName(): string {
-        let name = `${this._peer.process.type}-${this._localInstance}`;
-        if (this._peer.process.rid) {
+        let name = `${this._peer.process.type}-${this._peer.process.wcid}`;
+        if (this._peer.process.rid != this._peer.process.wcid) {
             name += `-${this._peer.process.rid}`;
         }
-        name += `_${this._peer.process.pid}`;
+        if (this._peer.process.pid != this._peer.process.wcid) {
+            name += `_${this._peer.process.pid}`;
+        }
         return name;
     }
 
@@ -194,7 +196,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport {
             this._promiseConnected = this.ipcHandshake(options)
             .then((handshake) => {
                 this._client = eventEmitter;
-                this._localInstance = handshake.instance;
+                // this._localInstance = handshake.instance;
                 this._peer.name = options.peerName || this.generateName();
                 this.ipcPost(IpcBusCommand.Kind.Connect, '');
             });

@@ -14,14 +14,6 @@ export const IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Connect
 export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:Command';
 export const IPCBUS_TRANSPORT_RENDERER_EVENT = 'ECIPC:IpcBusRenderer:Event';
 
-// export interface HandshakeInfo {
-//     process: {
-//         wcid: number;
-//         rid: number;
-//         pid: number;
-//     }
-// }
-
 export interface IpcWindow extends EventEmitter {
     send(channel: string, ...args: any[]): void;
 }

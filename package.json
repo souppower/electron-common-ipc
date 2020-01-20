@@ -68,7 +68,9 @@
     "typescript": "^3.7.3"
   },
   "scripts": {
-    "clean": "del-cli ./lib ./build ./dist",
+    "clean": "run-p clean:*",
+    "clean:build": "del-cli ./lib ./build ./dist",
+    "clean:test": "del-cli ./test/**/*.bundle.js",
     "build": "npm run build-js && npm run build-declaration && npm run browserify-test",
     "build-js": "tsc -p ./tsconfig/tsconfig-js.json",
     "build-declaration": "run-s build-declaration:*",

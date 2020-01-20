@@ -26,14 +26,14 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     protected _brokerChannels: Set<string>;
 
     protected _connected: boolean;
-    protected _instance: number;
+    // protected _instances: Map<number, number>;
 
     constructor(contextType: Client.IpcBusProcessType) {
         super(contextType);
 
         this._ipcMain = require('electron').ipcMain;
         this._connected = false;
-        this._instance = 0;
+        // this._instances = new Map<number, number>();
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<IpcBusSender>('IPCBus:Bridge', true);
         this._subscriptions.on('channel-added', channel => {
@@ -178,11 +178,13 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
     // This is coming from the Electron Renderer Proces/s (Electron ipc)
     // =================================================================================================
     private _completePeerInfo(webContents: Electron.WebContents, peer: Client.IpcBusPeer): IpcBusTransport.Handshake {
-        this._instance++;
+        // let instance = this._instances.get(webContents.id);
+        // instance = (instance == null) ? 1 : ++instance;
+        // this._instances.set(webContents.id, instance);
         const handshake: IpcBusTransport.Handshake = {
             peer,
             process: peer.process,
-            instance: this._instance
+            // instance
         };
         handshake.process.wcid = webContents.id;
         // Following functions are not implemented in all Electrons
@@ -190,7 +192,7 @@ export class IpcBusBridgeImpl extends IpcBusTransportNet implements Bridge.IpcBu
             handshake.process.rid = webContents.getProcessId();
         }
         catch (err) {
-            handshake.process.rid = -1;
+            handshake.process.rid = webContents.id;
         }
         try {
             handshake.process.pid = webContents.getOSProcessId();
