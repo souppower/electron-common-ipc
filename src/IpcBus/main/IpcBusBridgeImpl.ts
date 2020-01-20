@@ -19,7 +19,6 @@ import { IpcBusTransport } from '../IpcBusTransport';
 export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     protected _mainTransport: IpcBusBridgeTransportMain;
     protected _netTransport: IpcBusBridgeTransportNet;
-    protected _netConnector: IpcBusConnectorNet;
     protected _rendererConnector: IpcBusRendererBridge;
 
     protected _connected: boolean;
@@ -31,8 +30,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         this._packetOut = new IpcPacketBuffer();
         const mainConnector = new IpcBusBridgeConnectorMain(contextType);
         this._mainTransport = new IpcBusBridgeTransportMain(mainConnector, this);
-        this._netConnector = new IpcBusConnectorNet(contextType);
-        this._netTransport = new IpcBusBridgeTransportNet(this._netConnector, this);
+        const netConnector = new IpcBusConnectorNet(contextType);
+        this._netTransport = new IpcBusBridgeTransportNet(netConnector, this);
         this._rendererConnector = new IpcBusRendererBridge(this);
     }
 
