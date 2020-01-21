@@ -3,7 +3,7 @@ import { GetElectronProcessType } from 'electron-process-type/lib/v2';
 import * as IpcBusUtils from '../IpcBusUtils';
 
 import { IpcBusBroker } from './IpcBusBroker';
-import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
+import { IpcBusBrokerNode } from './IpcBusBrokerNode';
 import { IpcBusBrokerJSONLogger } from './IpcBusBrokerJSONLogger';
 import { IpcBusBrokerCSVLogger } from './IpcBusBrokerCSVLogger';
 
@@ -24,7 +24,7 @@ export const CreateIpcBusBroker: IpcBusBroker.CreateFunction = (): IpcBusBroker 
                     ipcBusBroker = new IpcBusBrokerCSVLogger(electronProcessType, logPath);
                 }
                 else {
-                    ipcBusBroker = new IpcBusBrokerImpl(electronProcessType);
+                    ipcBusBroker = new IpcBusBrokerNode(electronProcessType);
                 }
             }
             break;

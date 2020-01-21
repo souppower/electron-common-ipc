@@ -6,12 +6,12 @@ import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusConnector } from '../IpcBusConnector';
-import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
+import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import { IpcBusTransport } from '../IpcBusTransport';
 import { IpcBusPeer } from '../IpcBusClient';
 
-export class IpcBusBridgeTransportNet extends IpcBusTransportImpl {
+export class IpcBusBridgeTransportNet extends IpcBusTransportImpl implements IpcBusBridgeClient {
     protected _bridge: IpcBusBridgeImpl;
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<string>;
 
@@ -24,6 +24,15 @@ export class IpcBusBridgeTransportNet extends IpcBusTransportImpl {
 
     get peer(): IpcBusPeer {
         return this._peer;
+    }
+
+    connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
+        return super.ipcConnect(null, options)
+        .then(() => {});
+    }
+
+    close(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+        return this.ipcClose(null, options);
     }
 
     ipcConnect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
@@ -69,6 +78,14 @@ export class IpcBusBridgeTransportNet extends IpcBusTransportImpl {
     }
 
     protected ipcPostMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    }
+
+    broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
+        this.broadcastBuffer(ipcBusCommand, rawContent.buffer);
+    }
+
+    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
+        this.broadcastBuffer(ipcBusCommand, ipcPacketBuffer.buffer);
     }
 
     broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void {
@@ -121,7 +138,7 @@ export class IpcBusBridgeTransportNet extends IpcBusTransportImpl {
                 break;
 
             default:
-                this.broadcastBuffer(ipcBusCommand, null);
+                this.broadcastPacketRaw(ipcBusCommand, null);
                 this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
                 break;
         }

@@ -9,6 +9,8 @@ import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultIImpl';
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl'; 
 
 export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
+    protected _bridge: IpcBusBridgeImpl;
+    
     constructor(contextType: Client.IpcBusProcessType) {
        super(contextType);
     }
@@ -31,13 +33,33 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     }
 }
 
-export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl {
+export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl { // implements IpcBusBridgeClient {
     protected _bridge: IpcBusBridgeImpl;
 
     constructor(connector: IpcBusConnector, bridge: IpcBusBridgeImpl) {
         super(connector);
         this._bridge = bridge;
     }
+    
+    // connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    //     return Promise.resolve();
+    // }
+
+    // close(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    //     return Promise.resolve();
+    // }
+
+    // broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void {
+    //     throw 'not implemented';
+    // }
+
+    // broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
+    //     this.onConnectorBufferReceived(null, ipcBusCommand, rawContent);
+    // }
+
+    // broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
+    //     this.onConnectorPacketReceived(ipcBusCommand, ipcPacketBuffer);
+    // }
 
     protected ipcPostMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         this._bridge._onMainMessageReceived(ipcBusCommand, args);

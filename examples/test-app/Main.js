@@ -511,9 +511,11 @@ function startApp() {
     new MainProcess();
 }
 
+var localIpcBroker = null;
+
 function prepareApp() {
     ipcBridge = ipcBusModule.IpcBusBridge.Create();
-    ipcBridge.connect(busPath)
+    ipcBridge.connect(busPath, { server: localIpcBroker == null })
         .then((msg) => {
             console.log('<MAIN> IPC bridge is ready !');
             // Setup IPC Client (and renderer bridge)
@@ -524,10 +526,8 @@ function prepareApp() {
 
 // Startup
 electronApp.on('ready', function () {
-    var localIpcBroker = true;
-
     console.log('<MAIN> Starting IPC broker ...');
-    if (localIpcBroker) {
+    if (localIpcBroker === true) {
         // Broker in Master process
         ipcBroker = ipcBusModule.IpcBusBroker.Create();
         ipcBroker.connect(busPath)
@@ -538,7 +538,8 @@ electronApp.on('ready', function () {
             .catch((err) => {
                 console.log("IPC Broker instance : " + err);
             });
-    } else {
+    }
+    else if (localIpcBroker === false) {
         // Setup Remote Broker
         ipcBrokerProcess = spawnNodeInstance('BrokerNodeInstance.js');
         ipcBrokerProcess.on('message', function (msg) {
@@ -547,6 +548,9 @@ electronApp.on('ready', function () {
         });
         // ipcBrokerProcess.stdout.addListener('data', data => { console.log('<BROKER> ' + data.toString()); });
         // ipcBrokerProcess.stderr.addListener('data', data => { console.log('<BROKER> ' + data.toString()); });
+    }
+    else {
+        prepareApp();
     }
 });
 

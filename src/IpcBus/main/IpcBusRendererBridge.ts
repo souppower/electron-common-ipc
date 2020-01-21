@@ -11,11 +11,11 @@ import {
     IPCBUS_TRANSPORT_RENDERER_EVENT
 } from '../renderer/IpcBusConnectorRenderer';
 import { IpcBusConnector } from '../IpcBusConnector';
-import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
+import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
-export class IpcBusRendererBridge {
+export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _ipcMain: Electron.IpcMain;
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<Electron.WebContents>;
     protected _bridge: IpcBusBridgeImpl;
@@ -39,7 +39,7 @@ export class IpcBusRendererBridge {
     //     return this._subscriptions.getRequestChannel(channel) != null;
     // }
 
-    connect(): Promise<void> {
+    connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         // To manage re-entrance
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererCommandReceived);
         this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererCommandReceived);
@@ -47,7 +47,7 @@ export class IpcBusRendererBridge {
         return Promise.resolve();
     }
 
-    close(): Promise<void> {
+    close(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererCommandReceived);
         return Promise.resolve();
     }
@@ -109,12 +109,16 @@ export class IpcBusRendererBridge {
         }
     }
 
+    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
+        throw 'not implemented';
+    }
+
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
         const rawContent = ipcPacketBuffer.getRawContent();
         this._broadcastMessage(null, ipcBusCommand, rawContent);
     }
 
-    broadcastBuffer(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
+    broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
         this._broadcastMessage(null, ipcBusCommand, rawContent);
     }
 
