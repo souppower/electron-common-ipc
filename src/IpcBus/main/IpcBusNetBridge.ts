@@ -148,6 +148,7 @@ export class IpcBusBridgeTransportNet extends IpcBusTransportImpl implements Ipc
     }
 
     onConnectorClosed(): void {
+        this._bridge._onNetClosed();
     }
 
 }

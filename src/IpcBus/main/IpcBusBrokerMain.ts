@@ -17,10 +17,10 @@ export class IpcBusBrokerMain extends IpcBusBrokerImpl implements IpcBusBridgeCl
 
         this._subscriptions.emitter = true;
         this._subscriptions.on('channel-added', (channel) => {
-            this._bridge && this.bridgeAddChannel(channel);
+            this.bridgeAddChannel(channel);
         });
         this._subscriptions.on('channel-removed', (channel) => {
-            this._bridge && this.bridgeRemoveChannel(channel);
+            this.bridgeRemoveChannel(channel);
         });
     }
 
@@ -55,10 +55,10 @@ export class IpcBusBrokerMain extends IpcBusBrokerImpl implements IpcBusBridgeCl
             case IpcBusCommand.Kind.RequestResponse: {
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     connData.conn.write(buffer);
+                    this._subscriptions.emitter = false;
+                    this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                    this._subscriptions.emitter = true;
                 });
-                this._subscriptions.emitter = false;
-                this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
-                this._subscriptions.emitter = true;
                 break;
             }
 
@@ -72,10 +72,10 @@ export class IpcBusBrokerMain extends IpcBusBrokerImpl implements IpcBusBridgeCl
 
     protected _reset(closeServer: boolean) {
         super._reset(closeServer);
-        this._bridge = null;
+        this._bridge._onNetClosed();
     }
 
     protected bridgeBroadcastMessage(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        this._bridge && this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
+        this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
     }
 }

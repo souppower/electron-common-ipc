@@ -304,10 +304,10 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             case IpcBusCommand.Kind.RequestResponse: {
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     connData.conn.write(packet.buffer);
+                    this._subscriptions.emitter = false;
+                    this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                    this._subscriptions.emitter = true;
                 });
-                this._subscriptions.emitter = false;
-                this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
-                this._subscriptions.emitter = true;
                 break;
             }
 
