@@ -293,12 +293,6 @@ export class ChannelConnectionMap<T> extends EventEmitter {
 
     private _release(channel: string, conn: T, peer: IpcBusPeer, all: boolean): number {
         Logger.enable && this._info(`Release '${channel}' (${all}): peerId = ${peer.id}`);
-        if (conn == null) {
-            if (this._channelsMap.delete(channel)) {
-                this.emitter && this.emit('channel-removed', channel);
-            }
-            return 0;
-        }
         const connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`Release '${channel}': '${channel}' is unknown`);
@@ -317,8 +311,12 @@ export class ChannelConnectionMap<T> extends EventEmitter {
         return this._release(channel, conn, peer, true);
     }
 
-    removeChannel(channel: string): void {
-        this._release(channel, null, null, true);
+    removeChannel(channel: string): boolean {
+        if (this._channelsMap.delete(channel)) {
+            this.emitter && this.emit('channel-removed', channel);
+            return true;
+        }
+        return false;
     }
 
     removePeer(conn: T, peer: IpcBusPeer) {
@@ -470,8 +468,8 @@ export class ConnectionPeers<T> {
                 this.peerRefCounts.delete(peer.id);
                 // Logger.enable && this._info(`Release: peerId #${peerId} is released`);
             }
+            return peerRefCount.refCount;
         }
-        return peerRefCount.refCount;
     }
 }
 

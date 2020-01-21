@@ -105,6 +105,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         // Prevent serializing for main
         if (this._rendererConnector.hasChannel(ipcBusCommand.channel) ||
             this._netTransport.hasChannel(ipcBusCommand.channel)) {
+            ipcBusCommand.bridge = true;
             if (args) {
                 this._packetOut.serializeArray([ipcBusCommand, args]);
             }
