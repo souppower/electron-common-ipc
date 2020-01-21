@@ -27,7 +27,7 @@ export class IpcBusBridgeTransportNet extends IpcBusTransportImpl implements Ipc
     }
 
     connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return super.ipcConnect(null, options)
+        return this.ipcConnect(null, options)
         .then(() => {});
     }
 
@@ -138,7 +138,7 @@ export class IpcBusBridgeTransportNet extends IpcBusTransportImpl implements Ipc
                 break;
 
             default:
-                this.broadcastPacketRaw(ipcBusCommand, null);
+                this.broadcastBuffer(ipcBusCommand, null);
                 this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
                 break;
         }
