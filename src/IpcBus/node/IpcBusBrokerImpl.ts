@@ -377,7 +377,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 // If this message does not come from the IpcBusBridge, send it to it
                 if (!ipcBusCommand.bridge) {
                     // if (this._bridgeChannels.has(ipcBusCommand.channel)) {
-                        this._socketBridge && this._socketBridge.write(packet.buffer);
+                        this.brokerBroadcastMessage(ipcBusCommand, packet);
                     // }
                 }
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
@@ -402,7 +402,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 // If this message does not come from the IpcBusBridge, send it to it
                 if (!ipcBusCommand.bridge) {
                     // if (this._bridgeChannels.has(ipcBusCommand.channel)) {
-                        this._socketBridge && this._socketBridge.write(packet.buffer);
+                    this.brokerBroadcastMessage(ipcBusCommand, packet);
                     // }
                 }
                 break;
@@ -471,6 +471,10 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         const socketWriter = new SocketWriter(this._socketBridge);
         const ipcPacketBuffer = new IpcPacketBuffer();
         ipcPacketBuffer.writeArray(socketWriter, [ipcBusCommand]);
+    }
+
+    private brokerBroadcastMessage(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+        this._socketBridge && this._socketBridge.write(ipcPacketBuffer.buffer);
     }
 
     queryState(): Object {
