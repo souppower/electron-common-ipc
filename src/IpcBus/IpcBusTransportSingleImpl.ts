@@ -80,7 +80,7 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
             else {
                 this.ipcPostAdmin({
                     peer: client.peer,
-                    kind: IpcBusCommand.Kind.RemoveListeners,
+                    kind: IpcBusCommand.Kind.RemoveChannelListener,
                     channel
                 });
             }
@@ -88,8 +88,8 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         else {
             this.ipcPostAdmin({
                 peer: client.peer,
-                kind: IpcBusCommand.Kind.RemoveChannelListener,
-                channel
+                kind: IpcBusCommand.Kind.RemoveListeners,
+                channel: ''
             });
         }
     }

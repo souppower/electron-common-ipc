@@ -23,13 +23,16 @@ function GetCmdLineArgValue(argName)  {
 let busPath = GetCmdLineArgValue('bus-path');
 console.log(busPath);
 
+let nodeCount = GetCmdLineArgValue('nodeCount');
+console.log(nodeCount);
+
 const ipcBusModule = require('electron-common-ipc');
 const ipcBus = ipcBusModule.IpcBusClient.Create();
 // ipcBusModule.ActivateIpcBusTrace(true);
 
 const PerfTests = require('./PerfTests.js');
 
-const peerName = 'Node_' + process.pid;
+const peerName = 'Node_' + nodeCount;
 
 function onTopicMessage(ipcBusEvent, ipcContent) {
    console.log('Node - IPCBUS - ReceivedMessage - topic:' + ipcBusEvent.channel + 'from #' + ipcBusEvent.sender.name);
@@ -133,7 +136,7 @@ ipcBus.connect(busPath)
         }
         msgs = [];
         perfTests = new PerfTests('node', busPath);
-        perfTests.connect();
+        perfTests.connect(peerName);
 });
 
 process.on('message', dispatchMessage);

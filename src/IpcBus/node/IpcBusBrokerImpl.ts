@@ -296,13 +296,13 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                         this.bridgeBroadcastMessage(ipcBusCommand, packet);
                     // }
                 }
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     connData.conn.write(packet.buffer);
                 });
                 break;
 
             case IpcBusCommand.Kind.RequestResponse: {
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData, channel) => {
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     connData.conn.write(packet.buffer);
                 });
                 this._subscriptions.emitter = false;

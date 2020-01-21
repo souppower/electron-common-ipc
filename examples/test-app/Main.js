@@ -43,8 +43,13 @@ const PerfTests = require('./PerfTests.js');
 
 
 // Helpers
-function spawnNodeInstance(scriptPath) {
-    const args = [path.join(__dirname, scriptPath), '--parent-pid=' + process.pid, '--bus-path=' + busPath];
+function spawnNodeInstance(scriptPath, nodeCount) {
+    const args = [
+        path.join(__dirname, scriptPath),
+        '--parent-pid=' + process.pid,
+        '--bus-path=' + busPath,
+        '--nodeCount=' + nodeCount
+    ];
     // args.push('--inspect-brk=9000');
 
     let options = { env: {} };
@@ -96,7 +101,7 @@ var MainProcess = (function () {
         console.log('<MAIN> ProcessConnect ready');
 
         var perfTests = new PerfTests('browser', busPath);
-        perfTests.connect();
+        perfTests.connect('main');
         console.log('<MAIN> PerfTest ready');
 
         const mainWindow = new BrowserWindow({
@@ -249,9 +254,11 @@ var MainProcess = (function () {
 var RendererProcess = (function () {
 
     function RendererProcess(processId) {
+        var rendererCount = 0;
         var rendererWindows = new Map();
         var callbackClose;
         this.createWindow = function _createWindow() {
+            ++rendererCount;
             const rendererWindow = new BrowserWindow({
                 width: width, height: 600,
                 autoHideMenuBar: true,
@@ -263,7 +270,7 @@ var RendererProcess = (function () {
             });
             rendererWindow.loadURL(commonViewUrl);
             rendererWindow.webContents.on('dom-ready', function () {
-                rendererWindow.webContents.send('initializeWindow', { title: 'Renderer', type: 'renderer', id: processId, peerName: 'Renderer_' + rendererWindow.webContents.id, webContentsId: rendererWindow.webContents.id });
+                rendererWindow.webContents.send('initializeWindow', { title: 'Renderer', type: 'renderer', id: processId, peerName: 'Renderer_' + rendererCount, webContentsId: rendererWindow.webContents.id });
             });
 
             rendererWindows.set(rendererWindow.webContents.id, rendererWindow);
@@ -303,9 +310,10 @@ var RendererProcess = (function () {
 
 // Classes
 var NodeProcess = (function () {
+    var nodeCount = 0;
 
-    function NodeInstance() {
-        this.process = spawnNodeInstance('NodeInstance.js');
+    function NodeInstance(nodeCount) {
+        this.process = spawnNodeInstance('NodeInstance.js', nodeCount);
         // this.process.stdout.addListener('data', data => { console.log('<NODE> ' + data.toString()); });
         // this.process.stderr.addListener('data', data => { console.log('<NODE> ' + data.toString()); });
         console.log('<MAIN> Node instance #' + this.process.pid + ' started !');
@@ -319,6 +327,8 @@ var NodeProcess = (function () {
 
         var nodeInstance = null;
 
+        nodeCount++;
+
         // Listen view messages
         var processMainFromView = new ProcessConnector('node', ipcMain, processId);
         processMainFromView.onRequestMessage(onIPCElectron_RequestMessage);
@@ -327,7 +337,7 @@ var NodeProcess = (function () {
         processMainFromView.onUnsubscribe(onIPCElectron_Unsubscribe);
 
         // Create node process
-        nodeInstance = new NodeInstance();
+        nodeInstance = new NodeInstance(nodeCount);
         nodeInstance.process.on('message', onIPCProcess_Message);
         nodeInstance.process.send(JSON.stringify({ action: 'init', args: { title: 'Node', type: 'node', id: processId } }));
         nodeInstance.process.on('exit', function () {
@@ -349,7 +359,7 @@ var NodeProcess = (function () {
         processMainToView = new ProcessConnector('node', nodeWindow.webContents, processId);
         nodeWindow.loadURL(commonViewUrl);
         nodeWindow.webContents.on('dom-ready', function () {
-            nodeWindow.webContents.send('initializeWindow', { title: 'Node', type: 'node', id: processId, peerName: 'Node_' + nodeInstance.process.pid, webContentsId: nodeWindow.webContents.id });
+            nodeWindow.webContents.send('initializeWindow', { title: 'Node', type: 'node', id: processId, peerName: 'Node_' + nodeCount, webContentsId: nodeWindow.webContents.id });
         });
 
         nodeWindow.on('close', function () {
@@ -519,7 +529,7 @@ function prepareApp() {
         .then((msg) => {
             console.log('<MAIN> IPC bridge is ready !');
             // Setup IPC Client (and renderer bridge)
-            ipcBusClient.connect(busPath, { peerName: 'MainBus', socketBuffer: 2048 })
+            ipcBusClient.connect(busPath, { peerName: 'Main', socketBuffer: 2048 })
                 .then(() => startApp());
         });
 }

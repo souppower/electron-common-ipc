@@ -257,7 +257,7 @@ ipcRenderer.on('initializeWindow', function (event, data) {
     console.log('initializeWindow' + args);
 
     processId = args['id'];
-    peerName  = args['peerName']; 
+    peerName = args['peerName']; 
 
     var processMonitorElt = document.getElementById('ProcessMonitor');
     processMonitorElt.setAttribute('topic-process', args['type']);
@@ -306,7 +306,7 @@ ipcRenderer.on('initializeWindow', function (event, data) {
         ipcBus.connect()
             .then(() => {
                 console.log('renderer : connected to ipcBus');
-                perfTests.connect();
+                perfTests.connect(peerName);
             });
     }
     if (args['type'] === 'node') {
