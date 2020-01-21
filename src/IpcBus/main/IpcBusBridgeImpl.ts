@@ -94,15 +94,13 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     _onRendererMessagedReceived(webContents: Electron.WebContents, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         this._mainTransport.onConnectorBufferReceived(null, ipcBusCommand, rawContent);
-        if (this._netTransport.hasChannel(ipcBusCommand.channel)) {
-            this._netTransport.broadcastBuffer(ipcBusCommand, rawContent.buffer);
-        }
+        this._netTransport.broadcastBuffer(ipcBusCommand, rawContent.buffer);
     }
 
     // This is coming from the Electron Main Process (Electron ipc)
     // =================================================================================================
     _onMainMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]) {
-        // Prevent serializing for main
+        // Prevent serializing for nothing !
         if (this._rendererConnector.hasChannel(ipcBusCommand.channel) ||
             this._netTransport.hasChannel(ipcBusCommand.channel)) {
             ipcBusCommand.bridge = true;
@@ -114,9 +112,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             }
             const rawContent = this._packetOut.getRawContent();
             this._rendererConnector.broadcastBuffer(ipcBusCommand, rawContent);
-            if (this._netTransport.hasChannel(ipcBusCommand.channel)) {
-                this._netTransport.broadcastBuffer(ipcBusCommand, rawContent.buffer);
-            }
+            this._netTransport.broadcastBuffer(ipcBusCommand, rawContent.buffer);
         }
     }
 

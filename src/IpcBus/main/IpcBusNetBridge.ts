@@ -72,31 +72,33 @@ export class IpcBusBridgeTransportNet extends IpcBusTransportImpl {
     }
 
     broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void {
-        switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.SendMessage: {
-                if (ipcBusCommand.request) {
-                    this._subscriptions.addRef(ipcBusCommand.request.replyChannel, 'netbroker', ipcBusCommand.peer);
+        if (this.hasChannel(ipcBusCommand.channel)) {
+            switch (ipcBusCommand.kind) {
+                case IpcBusCommand.Kind.SendMessage: {
+                    if (ipcBusCommand.request) {
+                        this._subscriptions.addRef(ipcBusCommand.request.replyChannel, 'netbroker', ipcBusCommand.peer);
+                    }
+                    if (buffer) {
+                        this._connector.ipcPostBuffer(buffer);
+                    }
+                    break;
                 }
-                if (buffer) {
-                    this._connector.ipcPostBuffer(buffer);
-                }
-                break;
-            }
 
-            case IpcBusCommand.Kind.RequestResponse: {
-                this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
-                if (buffer) {
-                    this._connector.ipcPostBuffer(buffer);
+                case IpcBusCommand.Kind.RequestResponse: {
+                    this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                    if (buffer) {
+                        this._connector.ipcPostBuffer(buffer);
+                    }
+                    break;
                 }
-                break;
-            }
 
-            case IpcBusCommand.Kind.RequestClose:
-                this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
-                if (buffer) {
-                    this._connector.ipcPostBuffer(buffer);
-                }
-                break;
+                case IpcBusCommand.Kind.RequestClose:
+                    this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                    if (buffer) {
+                        this._connector.ipcPostBuffer(buffer);
+                    }
+                    break;
+            }
         }
     }
 
