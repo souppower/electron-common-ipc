@@ -511,7 +511,7 @@ function startApp() {
     new MainProcess();
 }
 
-var localIpcBroker = null;
+var localIpcBroker = true;
 
 function prepareApp() {
     ipcBridge = ipcBusModule.IpcBusBridge.Create();

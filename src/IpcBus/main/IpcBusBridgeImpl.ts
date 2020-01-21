@@ -127,9 +127,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             else {
                 this._packetOut.serializeArray([ipcBusCommand]);
             }
-            const rawContent = this._packetOut.getRawContent();
-            this._rendererConnector.broadcastPacketRaw(ipcBusCommand, rawContent);
-            this._netTransport.broadcastBuffer(ipcBusCommand, rawContent.buffer);
+            this._rendererConnector.broadcastPacket(ipcBusCommand, this._packetOut);
+            this._netTransport.broadcastBuffer(ipcBusCommand, this._packetOut.buffer);
         }
     }
 
