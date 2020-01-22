@@ -60,7 +60,7 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
             });
             this._requestFunctions.clear();
             this._client = null;
-            return this.ipcClose(client, options);
+            return super.ipcClose(client, options);
         }
         return Promise.resolve();
     }

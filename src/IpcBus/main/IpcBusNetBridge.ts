@@ -11,6 +11,8 @@ import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import { IpcBusTransport } from '../IpcBusTransport';
 import { IpcBusPeer } from '../IpcBusClient';
 
+const PeerName = 'NetBridge';
+
 export class IpcBusBridgeTransportNet extends IpcBusTransportImpl implements IpcBusBridgeClient {
     protected _bridge: IpcBusBridgeImpl;
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<string>;
@@ -19,7 +21,7 @@ export class IpcBusBridgeTransportNet extends IpcBusTransportImpl implements Ipc
         super(connector);
 
         this._bridge = bridge;
-        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<string>('IPCBus:NetBridge', false);
+        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<string>(`IPCBus:${PeerName}`, false);
     }
 
     get peer(): IpcBusPeer {
@@ -36,8 +38,9 @@ export class IpcBusBridgeTransportNet extends IpcBusTransportImpl implements Ipc
     }
 
     ipcConnect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
-        return super.ipcConnect(null, options)
+        return super.ipcConnect(null, { ...options, peerName: PeerName })
         .then((peer) => {
+            this._peer = peer;
             this.ipcPostAdmin({
                 peer: this._peer,
                 kind: IpcBusCommand.Kind.BridgeConnect,
@@ -54,7 +57,7 @@ export class IpcBusBridgeTransportNet extends IpcBusTransportImpl implements Ipc
             kind: IpcBusCommand.Kind.BridgeClose,
             channel: ''
         });
-        return this.ipcClose(client, options);
+        return super.ipcClose(null, options);
     }
 
     hasChannel(channel: string): boolean {
@@ -90,7 +93,7 @@ export class IpcBusBridgeTransportNet extends IpcBusTransportImpl implements Ipc
             switch (ipcBusCommand.kind) {
                 case IpcBusCommand.Kind.SendMessage: {
                     if (ipcBusCommand.request) {
-                        this._subscriptions.addRef(ipcBusCommand.request.replyChannel, 'netbroker', ipcBusCommand.peer);
+                        this._subscriptions.addRef(ipcBusCommand.request.replyChannel, PeerName, ipcBusCommand.peer);
                     }
                     if (buffer) {
                         this._connector.ipcPostBuffer(buffer);
@@ -119,19 +122,19 @@ export class IpcBusBridgeTransportNet extends IpcBusTransportImpl implements Ipc
     onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.AddChannelListener:
-                this._subscriptions.addRef(ipcBusCommand.channel, 'netbroker', ipcBusCommand.peer);
+                this._subscriptions.addRef(ipcBusCommand.channel, PeerName, ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.RemoveChannelListener:
-                this._subscriptions.release(ipcBusCommand.channel, 'netbroker', ipcBusCommand.peer);
+                this._subscriptions.release(ipcBusCommand.channel, PeerName, ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
-                this._subscriptions.releaseAll(ipcBusCommand.channel, 'netbroker', ipcBusCommand.peer);
+                this._subscriptions.releaseAll(ipcBusCommand.channel, PeerName, ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.RemoveListeners:
-                this._subscriptions.removePeer('netbroker', ipcBusCommand.peer);
+                this._subscriptions.removePeer(PeerName, ipcBusCommand.peer);
                 break;
 
             default:
