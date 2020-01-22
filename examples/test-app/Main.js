@@ -522,7 +522,7 @@ function startApp() {
     new MainProcess();
 }
 
-var localIpcBroker = true;
+var localIpcBroker = false;
 
 function prepareApp() {
     ipcBridge = ipcBusModule.IpcBusBridge.Create();
@@ -553,7 +553,7 @@ electronApp.on('ready', function () {
     else if (localIpcBroker === false) {
         // Setup Remote Broker
         ipcBrokerProcess = spawnNodeInstance(
-            'BrokerNodeInstance.js',
+            'BrokerNodeInstance.js', -1,
             ['--inspect-brk=9000']
         );
         ipcBrokerProcess.on('message', function (msg) {
