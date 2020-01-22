@@ -22,9 +22,9 @@ export namespace IpcBusConnector {
 export interface IpcBusConnector {
     readonly process: Client.IpcBusProcess;
 
-    ipcHandshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
-    ipcShutdown(client: IpcBusConnector.Client, options: Client.IpcBusClient.CloseOptions): Promise<void>;
-    ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
-    ipcPostBuffer(buffer: Buffer): void;
+    handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
+    shutdown(client: IpcBusConnector.Client, options: Client.IpcBusClient.CloseOptions): Promise<void>;
+    postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
+    postBuffer(buffer: Buffer): void;
 }
 

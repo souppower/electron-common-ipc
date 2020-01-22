@@ -63,7 +63,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     };
 
     /// IpcBusTrandport API
-    ipcHandshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
+    handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         return new Promise<IpcBusConnector.Handshake>((resolve, reject) => {
             options = IpcBusUtils.CheckConnectOptions(options);
             // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
@@ -86,7 +86,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             }
             // We wait for the bridge confirmation
             this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-            this.ipcPostCommand({
+            this.postCommand({
                 kind: IpcBusCommand.Kind.Handshake,
                 channel: '',
                 peer: this._peer
@@ -94,7 +94,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         });
     }
 
-    ipcShutdown(client: IpcBusConnector.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    shutdown(client: IpcBusConnector.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         this.onConnectorShutdown();
         this.removeClient(client);
         return Promise.resolve();
@@ -102,7 +102,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
 
     // We serialize in renderer process to save master CPU.
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
-    ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         ipcBusCommand.bridge = true;
         if (args) {
             this._packetOut.serializeArray([ipcBusCommand, args]);
@@ -113,7 +113,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, this._packetOut.getRawContent());
     }
 
-    ipcPostBuffer(buffer: Buffer) {
+    postBuffer(buffer: Buffer) {
         throw 'not implemented';
     }
 }

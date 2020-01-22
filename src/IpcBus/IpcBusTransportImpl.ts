@@ -223,6 +223,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     // IpcConnectorClient
     onConnectorShutdown() {
         this._waitForConnected = null;
+        this._requestFunctions.clear();
     }
 
     sendMessage(client: IpcBusTransport.Client, channel: string, args: any[]): void {
@@ -282,7 +283,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         if (this._waitForConnected == null) {
             this._waitForConnected = this._waitForClosed
             .then(() => {
-                return this._connector.ipcHandshake(this, options);
+                return this._connector.handshake(this, options);
             })
             .then((handshake) => {
                 const peer = { id: uuid.v1(), name: '', process: handshake.process };
@@ -304,7 +305,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             this._waitForConnected = null;
             this._waitForClosed = waitForConnected
             .then(() => {
-                return this._connector.ipcShutdown(this, options);
+                return this._connector.shutdown(this, options);
             })
             .then(() => {
                 this._ipcPostCommand = this.ipcPostCommandFake;
@@ -325,7 +326,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     protected ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        this._connector.ipcPostCommand(ipcBusCommand, args);
+        this._connector.postCommand(ipcBusCommand, args);
     }
 
     abstract hasChannel(channel: string): boolean;

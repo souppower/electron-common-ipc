@@ -75,7 +75,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
                         this._subscriptions.addRef(ipcBusCommand.request.replyChannel, PeerName, ipcBusCommand.peer);
                     }
                     if (buffer) {
-                        this._connector.ipcPostBuffer(buffer);
+                        this._connector.postBuffer(buffer);
                     }
                     break;
                 }
@@ -83,7 +83,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
                 case IpcBusCommand.Kind.RequestResponse: {
                     this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
                     if (buffer) {
-                        this._connector.ipcPostBuffer(buffer);
+                        this._connector.postBuffer(buffer);
                     }
                     break;
                 }
@@ -91,7 +91,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
                 case IpcBusCommand.Kind.RequestClose:
                     this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
                     if (buffer) {
-                        this._connector.ipcPostBuffer(buffer);
+                        this._connector.postBuffer(buffer);
                     }
                     break;
             }

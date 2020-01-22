@@ -15,21 +15,21 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
        super(contextType);
     }
 
-    ipcHandshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
+    handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         const handshake: IpcBusConnector.Handshake = {
             process: this.process
         }
         return Promise.resolve(handshake);
     }
 
-    ipcShutdown(client: IpcBusConnector.Client, options: Client.IpcBusClient.CloseOptions): Promise<void> {
+    shutdown(client: IpcBusConnector.Client, options: Client.IpcBusClient.CloseOptions): Promise<void> {
         return Promise.resolve();
     }
 
-    ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
     }
 
-    ipcPostBuffer(buffer: Buffer) {
+    postBuffer(buffer: Buffer) {
     }
 }
 

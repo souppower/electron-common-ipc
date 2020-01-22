@@ -30,7 +30,6 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
 
     onConnectorShutdown() {
         super.onConnectorShutdown();
-        this._requestFunctions.clear();
         this._client = null;
     }
 

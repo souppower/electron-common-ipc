@@ -94,7 +94,7 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
     }
 
     /// IpcBusTransportImpl API
-    ipcHandshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
+    handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         return new Promise((resolve, reject) => {
             options = IpcBusUtils.CheckConnectOptions(options);
             if ((options.port == null) && (options.path == null)) {
@@ -181,7 +181,7 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
         });
     }
 
-    ipcShutdown(client: IpcBusConnector.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    shutdown(client: IpcBusConnector.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         options = options || {};
         if (options.timeoutDelay == null) {
             options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
@@ -222,7 +222,7 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
         });
     }
 
-    ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._socketWriter) {
             if (args) {
                 this._packetOut.writeArray(this._socketWriter, [ipcBusCommand, args]);
@@ -233,7 +233,7 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
         }
     }
 
-    ipcPostBuffer(buffer: Buffer) {
+    postBuffer(buffer: Buffer) {
         if (this._socketWriter) {
             this._socketWriter.writeBuffer(buffer);
         }

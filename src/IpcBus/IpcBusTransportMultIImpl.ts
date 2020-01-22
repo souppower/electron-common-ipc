@@ -38,7 +38,6 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
             this._subscriptions.emitter = false;
             this._subscriptions = null;
         }
-        this._requestFunctions.clear();
     }
 
     connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
