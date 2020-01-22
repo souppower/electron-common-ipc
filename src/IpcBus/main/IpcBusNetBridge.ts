@@ -49,15 +49,12 @@ export class IpcBusBridgeTransportNet extends IpcBusTransportImpl implements Ipc
     }
 
     ipcClose(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return super.ipcClose(client, options)
-        .then(() => {
-            this.ipcPostAdmin({
-                peer: this._peer,
-                kind: IpcBusCommand.Kind.BridgeClose,
-                channel: ''
-            });
-            return this.ipcCloseFinalize(client, options);
+        this.ipcPostAdmin({
+            peer: this._peer,
+            kind: IpcBusCommand.Kind.BridgeClose,
+            channel: ''
         });
+        return this.ipcClose(client, options);
     }
 
     hasChannel(channel: string): boolean {

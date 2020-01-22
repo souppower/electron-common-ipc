@@ -113,5 +113,6 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     }
 
     ipcPostBuffer(buffer: Buffer) {
+        throw 'not implemented';
     }
 }

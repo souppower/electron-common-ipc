@@ -32,20 +32,30 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         });
     }
 
+    onConnectorClosed() {
+        super.onConnectorClosed();
+        if (this._subscriptions == null) {
+            this._subscriptions.emitter = false;
+            this._subscriptions = null;
+        }
+        this._requestFunctions.clear();
+    }
+
     ipcConnect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
         return super.ipcConnect(client, options)
         .then((peer) => {
             if (this._subscriptions == null) {
                 this._subscriptions = new IpcBusUtils.ChannelConnectionMap<IpcBusTransport.Client>(`IPCBus:Transport-${IpcBusTransportImpl.generateName(this._peer)}`, true);
-                this._subscriptions.on('channel-added', (channel: string) => {
+                this._subscriptions.on('channel-added', (channel) => {
                     this.ipcPostAdmin({
                         peer: this._peer,
                         kind: IpcBusCommand.Kind.AddChannelListener,
                         channel
                     });
                 });
-                this._subscriptions.on('channel-removed', (channel: string) => {
-                    this.ipcPostAdmin({ peer: this._peer,
+                this._subscriptions.on('channel-removed', (channel) => {
+                    this.ipcPostAdmin({
+                        peer: this._peer,
                         kind: IpcBusCommand.Kind.RemoveChannelListener,
                         channel
                     });
@@ -56,25 +66,22 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
     }
 
     ipcClose(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        if (this._subscriptions.getChannelsCount() === 0) {
-            return super.ipcClose(client, options)
-            .then(() => {
-                this._subscriptions.emitter = false;
-                this._subscriptions.clear();
-                this._subscriptions = null;
-                this._requestFunctions.forEach(request => {
-                    if (request.client === client) {
-                        this.ipcPostMessage({ 
-                            kind: IpcBusCommand.Kind.RequestClose,
-                            channel: request.request.channel,
-                            peer: client.peer,
-                            request: request.request
-                        });
-                        this._requestFunctions.delete(request.request.replyChannel);
-                    }
-                });
-                return this.ipcCloseFinalize(client, options);
+        if (this._subscriptions && (this._subscriptions.getChannelsCount() === 0)) {
+            this._subscriptions.emitter = false;
+            this._subscriptions = null;
+            this._requestFunctions.forEach(request => {
+                if (request.client === client) {
+                    this.ipcPostMessage({ 
+                        kind: IpcBusCommand.Kind.RequestClose,
+                        channel: request.request.channel,
+                        peer: client.peer,
+                        request: request.request
+                    });
+                    request.timeout();
+                }
             });
+            this._requestFunctions.clear();
+            return super.ipcClose(client, options);
         }
         return Promise.resolve();
     }

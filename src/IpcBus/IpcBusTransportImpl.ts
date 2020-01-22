@@ -90,8 +90,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected _connector: IpcBusConnector;
 
     constructor(connector: IpcBusConnector) {
-        this._peer = { id: uuid.v1(), name: '', process: connector.process };
         this._connector = connector;
+
+        this._peer = { id: uuid.v1(), name: '', process: connector.process };
         this._requestFunctions = new Map<string, DeferredRequest>();
         this._packetDecoder = new IpcPacketBuffer();
         this._ipcPostCommand = this.ipcPostCommandFake;
@@ -119,8 +120,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     // We assume prior to call this function client is not empty and have listeners for this channel !!
     protected _onClientMessageReceived(client: IpcBusTransport.Client, ipcBusCommand: IpcBusCommand, args: any[]): void {
-        const listeners = client.listeners(ipcBusCommand.channel);
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
+        const listeners = client.listeners(ipcBusCommand.channel);
         const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
         if (ipcBusCommand.request) {
             const settled = (resolve: boolean, args: any[]) => {
@@ -153,7 +154,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     settled(true, [payload]);
                 },
                 reject: (err: string) => {
-                    ipcBusCommand.request.reject = true;
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Reject request received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} - err: ${JSON.stringify(err)}`);
                     settled(false, [err]);
                 }
@@ -271,6 +271,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         if (this.hasChannel(channel)) {
             this.onConnectorMessageReceived(ipcMessage, args);
         }
+        // If not resolved by local clients
         if (deferredRequest.isSettled() === false) {
             this.ipcPostMessage(ipcMessage, args);
         }
@@ -280,7 +281,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     ipcConnect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
         if (this._waitForConnected == null) {
             this._waitForConnected = this._waitForClosed
-            .then((handshake) => {
+            .then(() => {
                 this._connector.addClient(this);
                 return this._connector.ipcHandshake(options);
             })
@@ -289,6 +290,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 peer.name = options.peerName || IpcBusTransportImpl.generateName(peer);
                 this._ipcPostCommand = this.ipcPostCommand;
                 return peer;
+            })
+            .catch((err) => {
+                this._connector.removeClient(this);
+                this._waitForConnected = null;
+                throw err;
             });
         }
         return this._waitForConnected;
@@ -300,17 +306,14 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             this._waitForConnected = null;
             this._waitForClosed = waitForConnected
             .then(() => {
+                return this._connector.ipcShutdown(options);
             })
+            .then(() => {
+                this._connector.removeClient(this);
+                this._ipcPostCommand = this.ipcPostCommandFake;
+            });
         }
         return this._waitForClosed;
-    }
-
-    protected ipcCloseFinalize(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return this._connector.ipcShutdown(options)
-        .then(() => {
-            this._connector.removeClient(this);
-            this._ipcPostCommand = this.ipcPostCommandFake;
-        });
     }
 
     protected ipcPostAdmin(ipcBusCommand: IpcBusCommand): void {
