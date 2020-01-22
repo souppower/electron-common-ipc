@@ -72,33 +72,31 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
     }
 
     broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void {
-        if (this.hasChannel(ipcBusCommand.channel)) {
-            switch (ipcBusCommand.kind) {
-                case IpcBusCommand.Kind.SendMessage: {
-                    if (ipcBusCommand.request) {
-                        this._subscriptions.addRef(ipcBusCommand.request.replyChannel, PeerName, ipcBusCommand.peer);
-                    }
-                    if (buffer) {
-                        this._connector.postBuffer(buffer);
-                    }
-                    break;
+        switch (ipcBusCommand.kind) {
+            case IpcBusCommand.Kind.SendMessage: {
+                if (ipcBusCommand.request) {
+                    this._subscriptions.addRef(ipcBusCommand.request.replyChannel, PeerName, ipcBusCommand.peer);
                 }
-
-                case IpcBusCommand.Kind.RequestResponse: {
-                    this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
-                    if (buffer) {
-                        this._connector.postBuffer(buffer);
-                    }
-                    break;
+                if (buffer && this.hasChannel(ipcBusCommand.channel)) {
+                    this._connector.postBuffer(buffer);
                 }
-
-                case IpcBusCommand.Kind.RequestClose:
-                    this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
-                    if (buffer) {
-                        this._connector.postBuffer(buffer);
-                    }
-                    break;
+                break;
             }
+
+            case IpcBusCommand.Kind.RequestResponse: {
+                const hasChannel = this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                if (buffer && hasChannel) {
+                    this._connector.postBuffer(buffer);
+                }
+                break;
+            }
+
+            case IpcBusCommand.Kind.RequestClose:
+                const hasChannel = this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                if (buffer && hasChannel) {
+                    this._connector.postBuffer(buffer);
+                }
+                break;
         }
     }
 
