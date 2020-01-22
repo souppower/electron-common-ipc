@@ -286,35 +286,43 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             case IpcBusCommand.Kind.SendMessage:
                 // Register the replyChannel
                 if (ipcBusCommand.request) {
+                    const previous = this._subscriptions.emitter;
                     this._subscriptions.emitter = false;
                     this._subscriptions.addRef(ipcBusCommand.request.replyChannel, socket, ipcBusCommand.peer);
-                    this._subscriptions.emitter = true;
+                    this._subscriptions.emitter = previous;
                 }
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
+                    connData.conn.write(packet.buffer);
+                });
                 // If this message does not come from the IpcBusBridge, send it to it
                 if (!ipcBusCommand.bridge) {
                     // if (this._bridgeChannels.has(ipcBusCommand.channel)) {
                         this.bridgeBroadcastMessage(ipcBusCommand, packet);
                     // }
                 }
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-                    connData.conn.write(packet.buffer);
-                });
                 break;
 
             case IpcBusCommand.Kind.RequestResponse: {
+                const previous = this._subscriptions.emitter;
+                this._subscriptions.emitter = false;
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     connData.conn.write(packet.buffer);
-                    this._subscriptions.emitter = false;
                     this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
-                    this._subscriptions.emitter = true;
                 });
+                this._subscriptions.emitter = previous;
+                if (!ipcBusCommand.bridge) {
+                    // if (this._bridgeChannels.has(ipcBusCommand.channel)) {
+                    this.bridgeBroadcastMessage(ipcBusCommand, packet);
+                    // }
+                }
                 break;
             }
 
-            case IpcBusCommand.Kind.RequestClose:
+            case IpcBusCommand.Kind.RequestClose: {
+                const previous = this._subscriptions.emitter;
                 this._subscriptions.emitter = false;
                 this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
-                this._subscriptions.emitter = true;
+                this._subscriptions.emitter = previous;
                 // If this message does not come from the IpcBusBridge, send it to it
                 if (!ipcBusCommand.bridge) {
                     // if (this._bridgeChannels.has(ipcBusCommand.channel)) {
@@ -322,6 +330,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                     // }
                 }
                 break;
+            }
 
             // case IpcBusCommand.Kind.AddBridgeChannels: {
             //     const channels: string[] = packet.parseArrayAt(1);

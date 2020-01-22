@@ -14,14 +14,6 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         super(contextType);
 
         this._bridge = bridge;
-
-        this._subscriptions.emitter = true;
-        this._subscriptions.on('channel-added', (channel) => {
-            this.bridgeAddChannel(channel);
-        });
-        this._subscriptions.on('channel-removed', (channel) => {
-            this.bridgeRemoveChannel(channel);
-        });
     }
 
     hasChannel(channel: string) {
@@ -55,17 +47,17 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
             case IpcBusCommand.Kind.RequestResponse: {
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     connData.conn.write(buffer);
-                    this._subscriptions.emitter = false;
+                    // this._subscriptions.emitter = false;
                     this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
-                    this._subscriptions.emitter = true;
+                    // this._subscriptions.emitter = true;
                 });
                 break;
             }
 
             case IpcBusCommand.Kind.RequestClose:
-                this._subscriptions.emitter = false;
+                // this._subscriptions.emitter = false;
                 this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
-                this._subscriptions.emitter = true;
+                // this._subscriptions.emitter = true;
                 break;
         }
     }
