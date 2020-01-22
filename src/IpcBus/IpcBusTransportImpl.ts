@@ -77,7 +77,7 @@ class DeferredRequest {
 
 /** @internal */
 export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConnector.Client {
-    private static s_requestNumber: number;
+    private static s_requestNumber: number = 0;
 
     protected _peer: Client.IpcBusPeer;
     protected _waitForConnected: Promise<Client.IpcBusPeer>;

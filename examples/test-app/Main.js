@@ -43,13 +43,14 @@ const PerfTests = require('./PerfTests.js');
 
 
 // Helpers
-function spawnNodeInstance(scriptPath, nodeCount) {
+function spawnNodeInstance(scriptPath, nodeCount, newArgs) {
     const args = [
         path.join(__dirname, scriptPath),
         '--parent-pid=' + process.pid,
         '--bus-path=' + busPath,
         '--nodeCount=' + nodeCount
-    ];
+    ].concat(newArgs || []);
+
     // args.push('--inspect-brk=9000');
 
     let options = { env: {} };
@@ -521,7 +522,7 @@ function startApp() {
     new MainProcess();
 }
 
-var localIpcBroker = undefined;
+var localIpcBroker = true;
 
 function prepareApp() {
     ipcBridge = ipcBusModule.IpcBusBridge.Create();
@@ -551,7 +552,10 @@ electronApp.on('ready', function () {
     }
     else if (localIpcBroker === false) {
         // Setup Remote Broker
-        ipcBrokerProcess = spawnNodeInstance('BrokerNodeInstance.js');
+        ipcBrokerProcess = spawnNodeInstance(
+            'BrokerNodeInstance.js',
+            ['--inspect-brk=9000']
+        );
         ipcBrokerProcess.on('message', function (msg) {
             console.log('<MAIN> IPC broker is ready !');
             prepareApp();
