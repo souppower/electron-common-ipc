@@ -8,6 +8,7 @@ export namespace IpcBusConnector {
     /** @internal */
     export interface Handshake {
         process: Client.IpcBusProcess;
+        log?: boolean;
     }
 
     /** @internal */
