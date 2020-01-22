@@ -5,15 +5,15 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import { IpcBusTransport } from '../IpcBusTransport';
-import { IpcBusPeer } from '../IpcBusClient';
+import { IpcBusConnectorNet } from '../node/IpcBusConnectorNet';
+import { IpcBusConnector } from '../IpcBusConnector';
 
 const PeerName = 'NetBridge';
 
-export class IpcBusNetBridge extends IpcBusTransportImpl implements IpcBusBridgeClient {
+class IpcBusTransportNetBridge extends IpcBusTransportImpl {
     protected _bridge: IpcBusBridgeImpl;
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<string>;
 
@@ -22,19 +22,6 @@ export class IpcBusNetBridge extends IpcBusTransportImpl implements IpcBusBridge
 
         this._bridge = bridge;
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<string>(`IPCBus:${PeerName}`, false);
-    }
-
-    get peer(): IpcBusPeer {
-        return this._peer;
-    }
-
-    connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return this.ipcConnect(null, options)
-        .then(() => {});
-    }
-
-    close(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return this.ipcClose(null, options);
     }
 
     ipcConnect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
@@ -78,14 +65,6 @@ export class IpcBusNetBridge extends IpcBusTransportImpl implements IpcBusBridge
     }
 
     protected ipcPostMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-    }
-
-    broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
-        this.broadcastBuffer(ipcBusCommand, rawContent.buffer);
-    }
-
-    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
-        this.broadcastBuffer(ipcBusCommand, ipcPacketBuffer.buffer);
     }
 
     broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void {
@@ -150,6 +129,41 @@ export class IpcBusNetBridge extends IpcBusTransportImpl implements IpcBusBridge
     onConnectorClosed(): void {
         this._bridge._onNetClosed();
     }
+}
 
+export class IpcBusNetBridge implements IpcBusBridgeClient {
+    protected _bridge: IpcBusBridgeImpl;
+    protected _transport: IpcBusTransportNetBridge;
+
+    constructor(bridge: IpcBusBridgeImpl) {
+        this._bridge = bridge;
+        const connector = new IpcBusConnectorNet(PeerName);
+        this._transport = new IpcBusTransportNetBridge(connector, bridge);
+    }
+
+    connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
+        return this._transport.ipcConnect(null, options)
+        .then(() => {});
+    }
+
+    close(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+        return this._transport.ipcClose(null, options);
+    }
+
+    hasChannel(channel: string): boolean {
+        return this._transport.hasChannel(channel);
+    }
+
+    broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
+        this._transport.broadcastBuffer(ipcBusCommand, rawContent.buffer);
+    }
+
+    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
+        this._transport.broadcastBuffer(ipcBusCommand, ipcPacketBuffer.buffer);
+    }
+
+    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void {
+        this._transport.broadcastBuffer(ipcBusCommand, buffer);
+    }
 }
 

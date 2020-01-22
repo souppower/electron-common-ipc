@@ -8,7 +8,6 @@ import * as Bridge from './IpcBusBridge';
 import { IpcBusCommand } from '../IpcBusCommand';
 
 import { IpcBusRendererBridge } from './IpcBusRendererBridge';
-import { IpcBusConnectorNet } from '../node/IpcBusConnectorNet';
 import { IpcBusNetBridge } from './IpcBusNetBridge';
 import { IpcBusBridgeConnectorMain, IpcBusBridgeTransportMain } from './IpcBusMainBridge'; 
 import { IpcBusTransport } from '../IpcBusTransport'; 
@@ -79,8 +78,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
                         this._netTransport = new IpcBusBrokerBridge('main', this);
                     }
                     else {
-                        const netConnector = new IpcBusConnectorNet('main');
-                        this._netTransport = new IpcBusNetBridge(netConnector, this);
+                        this._netTransport = new IpcBusNetBridge(this);
                     }
                     return this._netTransport.connect(options)
                     .catch(err => {
