@@ -16,10 +16,10 @@ import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export class IpcBusRendererBridge implements IpcBusBridgeClient {
+    protected _bridge: IpcBusBridgeImpl;
+
     private _ipcMain: Electron.IpcMain;
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<Electron.WebContents>;
-    protected _bridge: IpcBusBridgeImpl;
-    // private _packetDecoder: IpcPacketBuffer;
 
     constructor(bridge: IpcBusBridgeImpl) {
         this._bridge = bridge;
@@ -34,10 +34,6 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     hasChannel(channel: string): boolean {
         return this._subscriptions.hasChannel(channel);
     }
-
-    // hasRequestChannel(channel: string): boolean {
-    //     return this._subscriptions.getRequestChannel(channel) != null;
-    // }
 
     connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         // To manage re-entrance

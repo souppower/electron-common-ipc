@@ -49,7 +49,7 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
     close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         if (this._client && (this._client === client)) {
             this._requestFunctions.forEach(request => {
-                this.ipcPostMessage({ 
+                this.postMessage({ 
                     kind: IpcBusCommand.Kind.RequestClose,
                     channel: request.request.channel,
                     peer: client.peer,
@@ -67,7 +67,7 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
     addChannel(client: IpcBusTransport.Client, channel: string, count?: number) {
         let refCount = (count == null) ? 1 : count;
         while (refCount-- > 0) {
-            this.ipcPostAdmin({
+            this.postAdmin({
                 peer: client.peer,
                 kind: IpcBusCommand.Kind.AddChannelListener,
                 channel
@@ -78,14 +78,14 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
     removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean) {
         if (channel) {
             if (all) {
-                this.ipcPostAdmin({
+                this.postAdmin({
                     peer: client.peer,
                     kind: IpcBusCommand.Kind.RemoveChannelAllListeners,
                     channel
                 });
             }
             else {
-                this.ipcPostAdmin({
+                this.postAdmin({
                     peer: client.peer,
                     kind: IpcBusCommand.Kind.RemoveChannelListener,
                     channel
@@ -93,7 +93,7 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
             }
         }
         else {
-            this.ipcPostAdmin({
+            this.postAdmin({
                 peer: client.peer,
                 kind: IpcBusCommand.Kind.RemoveListeners,
                 channel: ''

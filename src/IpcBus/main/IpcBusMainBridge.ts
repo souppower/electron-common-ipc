@@ -27,9 +27,13 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     }
 
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+        // Bypassed by ipcPostMessage below
+        throw 'not implemented';
     }
 
     postBuffer(buffer: Buffer) {
+        // Bypassed by ipcPostMessage below
+        throw 'not implemented';
     }
 }
 
@@ -61,7 +65,11 @@ export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl { // imp
     //     this.onConnectorPacketReceived(ipcBusCommand, ipcPacketBuffer);
     // }
 
-    protected ipcPostMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    protected postAdmin(ipcBusCommand: IpcBusCommand): void {
+        // by pass
+    }
+
+    protected postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         this._bridge._onMainMessageReceived(ipcBusCommand, args);
     }
 }

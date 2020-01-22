@@ -28,7 +28,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         return super.connect(null, { ...options, peerName: PeerName })
         .then((peer) => {
             this._peer = peer;
-            this.ipcPostAdmin({
+            this.postAdmin({
                 peer: this._peer,
                 kind: IpcBusCommand.Kind.BridgeConnect,
                 channel: ''
@@ -39,7 +39,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
     }
 
     close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        this.ipcPostAdmin({
+        this.postAdmin({
             peer: this._peer,
             kind: IpcBusCommand.Kind.BridgeClose,
             channel: ''
@@ -56,15 +56,19 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
     }
 
     addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void {
+        throw 'not implemented';
     }
 
     removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void {
+        throw 'not implemented';
     }
 
     onConnectorMessageReceived(ipcBusCommand: IpcBusCommand, args: any[]): void {
+        throw 'not implemented';
     }
 
-    protected ipcPostMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    protected postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+        throw 'not implemented';
     }
 
     broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void {
@@ -124,6 +128,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
     }
 
     onConnectorBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
+        throw 'not implemented';
     }
 
     onConnectorShutdown(): void {

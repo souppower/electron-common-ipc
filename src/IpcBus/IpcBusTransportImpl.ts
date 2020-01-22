@@ -85,7 +85,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     protected _requestFunctions: Map<string, DeferredRequest>;
     protected _packetDecoder: IpcPacketBuffer;
-    protected _ipcPostCommand: Function;
+    protected _postCommandBind: Function;
 
     protected _connector: IpcBusConnector;
 
@@ -95,7 +95,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._peer = { id: uuid.v1(), name: '', process: connector.process };
         this._requestFunctions = new Map<string, DeferredRequest>();
         this._packetDecoder = new IpcPacketBuffer();
-        this._ipcPostCommand = this.ipcPostCommandFake;
+        this._postCommandBind = () => {};
         this._waitForClosed = Promise.resolve();
     }
     
@@ -145,7 +145,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     deferredRequest.settled(ipcBusCommand, args);
                 }
                 else {
-                    this.ipcPostMessage(ipcBusCommandResponse, args);
+                    this.postMessage(ipcBusCommandResponse, args);
                 }
             }
             ipcBusEvent.request = {
@@ -236,7 +236,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         if (this.hasChannel(channel)) {
             this.onConnectorMessageReceived(ipcMessage, args);
         }
-        this.ipcPostMessage(ipcMessage, args);
+        this.postMessage(ipcMessage, args);
     }
 
     requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
@@ -254,7 +254,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     deferredRequest.timeout();
                 }
                 // Unregister remotely
-                this.ipcPostMessage({ 
+                this.postMessage({ 
                     kind: IpcBusCommand.Kind.RequestClose,
                     channel,
                     peer: client.peer,
@@ -274,7 +274,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
         // If not resolved by local clients
         if (deferredRequest.isSettled() === false) {
-            this.ipcPostMessage(ipcMessage, args);
+            this.postMessage(ipcMessage, args);
         }
         return deferredRequest.promise;
     }
@@ -288,7 +288,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             .then((handshake) => {
                 const peer = { id: uuid.v1(), name: '', process: handshake.process };
                 peer.name = options.peerName || IpcBusTransportImpl.generateName(peer);
-                this._ipcPostCommand = this.ipcPostCommand;
+                this._postCommandBind = this._connector.postCommand.bind(this._connector);
                 return peer;
             })
             .catch((err) => {
@@ -308,25 +308,18 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 return this._connector.shutdown(this, options);
             })
             .then(() => {
-                this._ipcPostCommand = this.ipcPostCommandFake;
+                this._postCommandBind = () => {};
             });
         }
         return this._waitForClosed;
     }
 
-    protected ipcPostAdmin(ipcBusCommand: IpcBusCommand): void {
-        this._ipcPostCommand(ipcBusCommand);
+    protected postAdmin(ipcBusCommand: IpcBusCommand): void {
+        this._postCommandBind(ipcBusCommand);
     }
 
-    protected ipcPostMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        this._ipcPostCommand(ipcBusCommand, args);
-    }
-
-    protected ipcPostCommandFake(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-    }
-
-    protected ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        this._connector.postCommand(ipcBusCommand, args);
+    protected postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+        this._postCommandBind(ipcBusCommand, args);
     }
 
     abstract hasChannel(channel: string): boolean;

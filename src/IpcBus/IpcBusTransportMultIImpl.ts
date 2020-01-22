@@ -46,14 +46,14 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
             if (this._subscriptions == null) {
                 this._subscriptions = new IpcBusUtils.ChannelConnectionMap<IpcBusTransport.Client>(`IPCBus:Transport-${IpcBusTransportImpl.generateName(this._peer)}`, true);
                 this._subscriptions.on('channel-added', (channel) => {
-                    this.ipcPostAdmin({
+                    this.postAdmin({
                         peer: this._peer,
                         kind: IpcBusCommand.Kind.AddChannelListener,
                         channel
                     });
                 });
                 this._subscriptions.on('channel-removed', (channel) => {
-                    this.ipcPostAdmin({
+                    this.postAdmin({
                         peer: this._peer,
                         kind: IpcBusCommand.Kind.RemoveChannelListener,
                         channel
@@ -70,7 +70,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
             this._subscriptions = null;
             this._requestFunctions.forEach(request => {
                 if (request.client === client) {
-                    this.ipcPostMessage({ 
+                    this.postMessage({ 
                         kind: IpcBusCommand.Kind.RequestClose,
                         channel: request.request.channel,
                         peer: client.peer,
