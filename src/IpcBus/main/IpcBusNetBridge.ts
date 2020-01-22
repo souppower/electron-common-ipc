@@ -24,8 +24,8 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<string>(`IPCBus:${PeerName}`, false);
     }
 
-    ipcConnect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
-        return super.ipcConnect(null, { ...options, peerName: PeerName })
+    connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
+        return super.connect(null, { ...options, peerName: PeerName })
         .then((peer) => {
             this._peer = peer;
             this.ipcPostAdmin({
@@ -38,13 +38,13 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         });
     }
 
-    ipcClose(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         this.ipcPostAdmin({
             peer: this._peer,
             kind: IpcBusCommand.Kind.BridgeClose,
             channel: ''
         });
-        return super.ipcClose(null, options);
+        return super.close(null, options);
     }
 
     hasChannel(channel: string): boolean {
@@ -55,10 +55,10 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         return this._subscriptions.getChannels();
     }
 
-    ipcAddChannel(client: IpcBusTransport.Client, channel: string, count?: number): void {
+    addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void {
     }
 
-    ipcRemoveChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void {
+    removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void {
     }
 
     onConnectorMessageReceived(ipcBusCommand: IpcBusCommand, args: any[]): void {
@@ -142,12 +142,12 @@ export class IpcBusNetBridge implements IpcBusBridgeClient {
     }
 
     connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return this._transport.ipcConnect(null, options)
+        return this._transport.connect(null, options)
         .then(() => {});
     }
 
     close(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return this._transport.ipcClose(null, options);
+        return this._transport.close(null, options);
     }
 
     hasChannel(channel: string): boolean {

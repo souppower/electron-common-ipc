@@ -41,8 +41,8 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         this._requestFunctions.clear();
     }
 
-    ipcConnect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
-        return super.ipcConnect(client, options)
+    connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
+        return super.connect(client, options)
         .then((peer) => {
             if (this._subscriptions == null) {
                 this._subscriptions = new IpcBusUtils.ChannelConnectionMap<IpcBusTransport.Client>(`IPCBus:Transport-${IpcBusTransportImpl.generateName(this._peer)}`, true);
@@ -65,7 +65,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         });
     }
 
-    ipcClose(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         if (this._subscriptions && (this._subscriptions.getChannelsCount() === 0)) {
             this._subscriptions.emitter = false;
             this._subscriptions = null;
@@ -81,19 +81,19 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
                 }
             });
             this._requestFunctions.clear();
-            return super.ipcClose(client, options);
+            return super.close(client, options);
         }
         return Promise.resolve();
     }
 
-    ipcAddChannel(client: IpcBusTransport.Client, channel: string, count?: number) {
+    addChannel(client: IpcBusTransport.Client, channel: string, count?: number) {
         if (this._subscriptions == null) {
             return;
         }
         this._subscriptions.addRefCount(channel, client, client.peer, count);
     }
 
-    ipcRemoveChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean) {
+    removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean) {
         if (this._subscriptions == null) {
             return;
         }

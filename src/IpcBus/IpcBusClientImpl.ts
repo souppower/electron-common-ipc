@@ -29,14 +29,14 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
             const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
             this._waitForConnected = this._waitForClosed
             .then(() => {
-                return this._transport.ipcConnect(this, options)
+                return this._transport.connect(this, options)
             })
             .then((peer) => {
                 this._peer = peer;
                 const eventNames = this.eventNames();
                 for (let i = 0, l = eventNames.length; i < l; ++i) {
                     const eventName = eventNames[i] as string;
-                    this._transport.ipcAddChannel(this, eventName, this.listenerCount(eventName));
+                    this._transport.addChannel(this, eventName, this.listenerCount(eventName));
                 }
             });
         }
@@ -49,8 +49,8 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
             this._waitForConnected = null;
             this._waitForClosed = waitForConnected
             .then(() => {
-                this._transport.ipcRemoveChannel(this);
-                return this._transport.ipcClose(this, options);
+                this._transport.removeChannel(this);
+                return this._transport.close(this, options);
             })
             .then(() => {
                 this._peer = null;
@@ -60,15 +60,15 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
     }
 
     send(channel: string, ...args: any[]) {
-        this._transport.ipcSendMessage(this, channel, args);
+        this._transport.sendMessage(this, channel, args);
     }
 
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<Client.IpcBusRequestResponse> {
-        return this._transport.ipcRequestMessage(this, channel, timeoutDelay, args);
+        return this._transport.requestMessage(this, channel, timeoutDelay, args);
     }
 
     emit(event: string, ...args: any[]): boolean {
-        this._transport.ipcSendMessage(this, event, args);
+        this._transport.sendMessage(this, event, args);
         return true;
     }
  
@@ -81,34 +81,34 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
     }
 
     addListener(channel: string, listener: Client.IpcBusListener): this {
-        this._transport.ipcAddChannel(this, channel);
+        this._transport.addChannel(this, channel);
         return super.addListener(channel, listener);
     }
 
     removeListener(channel: string, listener: Client.IpcBusListener): this {
-        this._transport.ipcRemoveChannel(this, channel);
+        this._transport.removeChannel(this, channel);
         return super.removeListener(channel, listener);
     }
 
     once(channel: string, listener: Client.IpcBusListener): this {
         // removeListener will be automatically called by NodeJS when callback has been triggered
-        this._transport.ipcAddChannel(this, channel);
+        this._transport.addChannel(this, channel);
         return super.once(channel, listener);
     }
 
     removeAllListeners(channel?: string): this {
-        this._transport.ipcRemoveChannel(this, channel);
+        this._transport.removeChannel(this, channel);
         return super.removeAllListeners(channel);
     }
 
     // Added in Node 6...
     prependListener(channel: string, listener: Client.IpcBusListener): this {
-        this._transport.ipcAddChannel(this, channel);
+        this._transport.addChannel(this, channel);
         return super.prependListener(channel, listener);
     }
 
     prependOnceListener(channel: string, listener: Client.IpcBusListener): this {
-        this._transport.ipcAddChannel(this, channel);
+        this._transport.addChannel(this, channel);
         return super.prependOnceListener(channel, listener);
     }
 }

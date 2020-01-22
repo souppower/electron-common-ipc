@@ -12,15 +12,15 @@ export namespace IpcBusTransport {
 
 /** @internal */
 export interface IpcBusTransport {
-    ipcConnect(client: IpcBusTransport.Client, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer>;
-    ipcClose(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void>;
+    connect(client: IpcBusTransport.Client, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer>;
+    close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void>;
 
     hasChannel(channel: string): boolean;
     getChannels(): string[];
 
-    ipcAddChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
-    ipcRemoveChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;
+    addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
+    removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;
 
-    ipcRequestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse>;
-    ipcSendMessage(client: IpcBusTransport.Client, channel: string, args: any[]): void;
+    requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse>;
+    sendMessage(client: IpcBusTransport.Client, channel: string, args: any[]): void;
 }

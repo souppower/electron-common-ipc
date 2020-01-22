@@ -225,7 +225,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._waitForConnected = null;
     }
 
-    ipcSendMessage(client: IpcBusTransport.Client, channel: string, args: any[]): void {
+    sendMessage(client: IpcBusTransport.Client, channel: string, args: any[]): void {
         const ipcMessage: IpcBusCommand = { 
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
@@ -238,7 +238,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this.ipcPostMessage(ipcMessage, args);
     }
 
-    ipcRequestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
+    requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
         if (timeoutDelay == null) {
             timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
@@ -278,7 +278,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return deferredRequest.promise;
     }
 
-    ipcConnect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
+    connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
         if (this._waitForConnected == null) {
             this._waitForConnected = this._waitForClosed
             .then(() => {
@@ -300,7 +300,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return this._waitForConnected;
     }
 
-    ipcClose(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         if (this._waitForConnected) {
             const waitForConnected = this._waitForConnected;
             this._waitForConnected = null;
@@ -335,6 +335,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     abstract getChannels(): string[];
     abstract onConnectorMessageReceived(ipcBusCommand: IpcBusCommand, args: any[]): void;
 
-    abstract ipcAddChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
-    abstract ipcRemoveChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;
+    abstract addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
+    abstract removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;
 }

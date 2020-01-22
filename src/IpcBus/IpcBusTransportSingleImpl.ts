@@ -34,9 +34,9 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         this._client = null;
     }
 
-    ipcConnect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
+    connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
         if (this._client == null) {
-            return super.ipcConnect(client, options)
+            return super.connect(client, options)
             .then((peer) => {
                 if (client) {
                     this._client = client;
@@ -47,7 +47,7 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         return Promise.resolve(this._client.peer);
     }
 
-    ipcClose(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         if (this._client && (this._client === client)) {
             this._requestFunctions.forEach(request => {
                 this.ipcPostMessage({ 
@@ -60,12 +60,12 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
             });
             this._requestFunctions.clear();
             this._client = null;
-            return super.ipcClose(client, options);
+            return super.close(client, options);
         }
         return Promise.resolve();
     }
 
-    ipcAddChannel(client: IpcBusTransport.Client, channel: string, count?: number) {
+    addChannel(client: IpcBusTransport.Client, channel: string, count?: number) {
         let refCount = (count == null) ? 1 : count;
         while (refCount-- > 0) {
             this.ipcPostAdmin({
@@ -76,7 +76,7 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         }
     }
 
-    ipcRemoveChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean) {
+    removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean) {
         if (channel) {
             if (all) {
                 this.ipcPostAdmin({
