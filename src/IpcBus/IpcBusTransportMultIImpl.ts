@@ -32,8 +32,8 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         });
     }
 
-    onConnectorClosed() {
-        super.onConnectorClosed();
+    onConnectorShutdown() {
+        super.onConnectorShutdown();
         if (this._subscriptions == null) {
             this._subscriptions.emitter = false;
             this._subscriptions = null;

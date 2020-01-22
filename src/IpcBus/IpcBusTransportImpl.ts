@@ -221,7 +221,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // IpcConnectorClient
-    onConnectorClosed() {
+    onConnectorShutdown() {
         this._waitForConnected = null;
     }
 
@@ -282,8 +282,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         if (this._waitForConnected == null) {
             this._waitForConnected = this._waitForClosed
             .then(() => {
-                this._connector.addClient(this);
-                return this._connector.ipcHandshake(options);
+                return this._connector.ipcHandshake(this, options);
             })
             .then((handshake) => {
                 const peer = { id: uuid.v1(), name: '', process: handshake.process };
@@ -292,7 +291,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 return peer;
             })
             .catch((err) => {
-                this._connector.removeClient(this);
                 this._waitForConnected = null;
                 throw err;
             });
@@ -306,10 +304,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             this._waitForConnected = null;
             this._waitForClosed = waitForConnected
             .then(() => {
-                return this._connector.ipcShutdown(options);
+                return this._connector.ipcShutdown(this, options);
             })
             .then(() => {
-                this._connector.removeClient(this);
                 this._ipcPostCommand = this.ipcPostCommandFake;
             });
         }

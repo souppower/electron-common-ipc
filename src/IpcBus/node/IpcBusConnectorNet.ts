@@ -79,9 +79,9 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
     }
 
     protected _reset(endSocket: boolean) {
-        this._client.onConnectorClosed();
         this._socketWriter = null;
         if (this._socket) {
+            this._client.onConnectorShutdown();
             const socket = this._socket;
             this._socket = null;
             for (let key in this._netBinds) {
@@ -94,7 +94,7 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
     }
 
     /// IpcBusTransportImpl API
-    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
+    ipcHandshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         return new Promise((resolve, reject) => {
             options = IpcBusUtils.CheckConnectOptions(options);
             if ((options.port == null) && (options.path == null)) {
@@ -129,6 +129,8 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
             let socketLocalBinds: { [key: string]: (...args: any[]) => void } = {};
             const catchConnect = (conn: any) => {
                 clearTimeout(timer);
+
+                this.addClient(client);
                 for (let key in socketLocalBinds) {
                     socket.removeListener(key, socketLocalBinds[key]);
                 }
@@ -179,7 +181,7 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
         });
     }
 
-    ipcShutdown(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    ipcShutdown(client: IpcBusConnector.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         options = options || {};
         if (options.timeoutDelay == null) {
             options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
@@ -194,6 +196,7 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
                     for (let key in socketLocalBinds) {
                         socket.removeListener(key, socketLocalBinds[key]);
                     }
+                    this.removeClient(client);
                     resolve();
                 };
                 // Below zero = infinite

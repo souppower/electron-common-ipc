@@ -122,9 +122,6 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._broadcastMessage(null, ipcBusCommand, rawContent);
     }
 
-    onConnectorClosed(): void {
-    }
-
     private _broadcastMessage(webContents: Electron.WebContents | null, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {

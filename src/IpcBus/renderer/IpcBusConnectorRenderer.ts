@@ -33,9 +33,9 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         this._packetOut = new IpcPacketBuffer();
     }
 
-    protected _onConnectorClosed() {
-        this._client.onConnectorClosed();
+    protected onConnectorShutdown() {
         if (this._onIpcEventReceived) {
+            this._client.onConnectorShutdown();
             this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             this._onIpcEventReceived = null;
         }
@@ -63,13 +63,14 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     };
 
     /// IpcBusTrandport API
-    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
+    ipcHandshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         return new Promise<IpcBusConnector.Handshake>((resolve, reject) => {
             options = IpcBusUtils.CheckConnectOptions(options);
             // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
             let timer: NodeJS.Timer;
             const onIpcConnect = (eventOrPeer: any, peerOrArgs: Client.IpcBusPeer | IpcBusConnector.Handshake, handshakeArg: IpcBusConnector.Handshake) => {
                 this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
+                this.addClient(client);
                 const handshake = this._onConnect(eventOrPeer, peerOrArgs, handshakeArg);
                 clearTimeout(timer);
                 resolve(handshake);
@@ -80,7 +81,6 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                 timer = setTimeout(() => {
                     timer = null;
                     this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                    this._onConnectorClosed();
                     reject('timeout');
                 }, options.timeoutDelay);
             }
@@ -94,8 +94,9 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         });
     }
 
-    ipcShutdown(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        this._onConnectorClosed();
+    ipcShutdown(client: IpcBusConnector.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+        this.onConnectorShutdown();
+        this.removeClient(client);
         return Promise.resolve();
     }
 

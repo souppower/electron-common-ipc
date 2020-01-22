@@ -14,7 +14,7 @@ export namespace IpcBusConnector {
     export interface Client {
         onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void;
         onConnectorBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void;
-        onConnectorClosed(): void;
+        onConnectorShutdown(): void;
     }
 }
 
@@ -22,12 +22,9 @@ export namespace IpcBusConnector {
 export interface IpcBusConnector {
     readonly process: Client.IpcBusProcess;
 
-    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
-    ipcShutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
+    ipcHandshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
+    ipcShutdown(client: IpcBusConnector.Client, options: Client.IpcBusClient.CloseOptions): Promise<void>;
     ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
     ipcPostBuffer(buffer: Buffer): void;
-
-    addClient(client: IpcBusConnector.Client): void;
-    removeClient(client: IpcBusConnector.Client): void;
 }
 

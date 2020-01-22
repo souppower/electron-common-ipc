@@ -126,7 +126,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
     onConnectorBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
     }
 
-    onConnectorClosed(): void {
+    onConnectorShutdown(): void {
         this._bridge._onNetClosed();
     }
 }
@@ -137,7 +137,7 @@ export class IpcBusNetBridge implements IpcBusBridgeClient {
 
     constructor(bridge: IpcBusBridgeImpl) {
         this._bridge = bridge;
-        const connector = new IpcBusConnectorNet(PeerName);
+        const connector = new IpcBusConnectorNet('main');
         this._transport = new IpcBusTransportNetBridge(connector, bridge);
     }
 

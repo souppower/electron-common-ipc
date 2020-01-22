@@ -28,8 +28,8 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         this._client && this._onClientMessageReceived(this._client, ipcBusCommand, args);
     }
 
-    onConnectorClosed() {
-        super.onConnectorClosed();
+    onConnectorShutdown() {
+        super.onConnectorShutdown();
         this._requestFunctions.clear();
         this._client = null;
     }

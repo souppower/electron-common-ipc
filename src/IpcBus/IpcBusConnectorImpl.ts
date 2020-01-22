@@ -26,18 +26,18 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         return this._peer.process;
     }
 
-    addClient(client: IpcBusConnector.Client) {
+    protected addClient(client: IpcBusConnector.Client) {
         this._client = client;
     }
 
-    removeClient(client: IpcBusConnector.Client) {
+    protected removeClient(client: IpcBusConnector.Client) {
         if (this._client === client) {
             this._client = null;
         }
     }
 
-    abstract ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
-    abstract ipcShutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
+    abstract ipcHandshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
+    abstract ipcShutdown(client: IpcBusConnector.Client, options: Client.IpcBusClient.CloseOptions): Promise<void>;
     abstract ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
     abstract ipcPostBuffer(buffer: Buffer): void;
 }
