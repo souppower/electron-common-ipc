@@ -13,7 +13,7 @@ import { IpcBusPeer } from '../IpcBusClient';
 
 const PeerName = 'NetBridge';
 
-export class IpcBusBridgeTransportNet extends IpcBusTransportImpl implements IpcBusBridgeClient {
+export class IpcBusNetBridge extends IpcBusTransportImpl implements IpcBusBridgeClient {
     protected _bridge: IpcBusBridgeImpl;
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<string>;
 

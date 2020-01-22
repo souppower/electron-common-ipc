@@ -7,7 +7,7 @@ import { IpcBusBrokerImpl } from '../node/IpcBusBrokerImpl';
 import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
 /** @internal */
-export class IpcBusBrokerMain extends IpcBusBrokerImpl implements IpcBusBridgeClient {
+export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridgeClient {
     private _bridge: IpcBusBridgeImpl;
 
     constructor(contextType: Client.IpcBusProcessType, bridge: IpcBusBridgeImpl) {

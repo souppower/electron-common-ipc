@@ -9,10 +9,10 @@ import { IpcBusCommand } from '../IpcBusCommand';
 
 import { IpcBusRendererBridge } from './IpcBusRendererBridge';
 import { IpcBusConnectorNet } from '../node/IpcBusConnectorNet';
-import { IpcBusBridgeTransportNet } from './IpcBusNetBridge';
+import { IpcBusNetBridge } from './IpcBusNetBridge';
 import { IpcBusBridgeConnectorMain, IpcBusBridgeTransportMain } from './IpcBusMainBridge'; 
 import { IpcBusTransport } from '../IpcBusTransport'; 
-import { IpcBusBrokerMain } from './IpcBusBrokerMain';
+import { IpcBusBrokerBridge } from './IpcBusBrokerBridge';
 
 export interface IpcBusBridgeClient {
     connect(options: Client.IpcBusClient.ConnectOptions): Promise<void>;
@@ -76,11 +76,11 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             if (this._netTransport == null) {
                 if ((options.port != null) || (options.path != null)) {
                     if (options.server) {
-                        this._netTransport = new IpcBusBrokerMain('main', this);
+                        this._netTransport = new IpcBusBrokerBridge('main', this);
                     }
                     else {
                         const netConnector = new IpcBusConnectorNet('main');
-                        this._netTransport = new IpcBusBridgeTransportNet(netConnector, this);
+                        this._netTransport = new IpcBusNetBridge(netConnector, this);
                     }
                     return this._netTransport.connect(options)
                     .catch(err => {
