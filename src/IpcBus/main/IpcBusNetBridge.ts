@@ -66,7 +66,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         throw 'not implemented';
     }
 
-    onConnectorMessageReceived(ipcBusCommand: IpcBusCommand, args: any[]): void {
+    onMessageReceived(ipcBusCommand: IpcBusCommand, args: any[], local?: boolean): void {
         throw 'not implemented';
     }
 

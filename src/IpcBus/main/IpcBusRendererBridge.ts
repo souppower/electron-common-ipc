@@ -174,7 +174,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
             default:
                 this._broadcastMessage(webContents, ipcBusCommand, rawContent);
-                this._bridge._onRendererMessagedReceived(webContents, ipcBusCommand, rawContent);
+                this._bridge._onRendererMessagedReceived(ipcBusCommand, rawContent);
                 break;
         }
     }

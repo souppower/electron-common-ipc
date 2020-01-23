@@ -25,10 +25,10 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return channels;
     }
 
-    onConnectorMessageReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
+    onMessageReceived(ipcBusCommand: IpcBusCommand, args: any[], local: boolean) {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
         this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-            this._onClientMessageReceived(connData.conn, ipcBusCommand, args);
+            this._onClientMessageReceived(connData.conn, ipcBusCommand, args, local);
         });
     }
 

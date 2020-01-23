@@ -148,6 +148,7 @@ export function BinarySearch<T>(array: T[], target: T, compareFn: (l: T, r: T) =
 export class Logger {
     static enable: boolean = false;
     static service: boolean = false;
+    // static logFile: string;
 
     static info(msg: string) {
         console.log(msg);
@@ -160,6 +161,7 @@ export class Logger {
     static error(msg: string) {
         console.error(msg);
     }
+
 };
 
 // Structure

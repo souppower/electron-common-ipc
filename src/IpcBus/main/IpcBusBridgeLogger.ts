@@ -13,11 +13,21 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
 
     protected abstract addLog(ipcBusCommand: IpcBusCommand, args: any[]): void;
 
-    _onCommonMessage(origin: 'broker'| 'renderer'| 'main', event: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
-        const ipcPacketBuffer = new IpcPacketBuffer(rawContent);
-        this.addLog(ipcBusCommand, ipcPacketBuffer.parseArrayAt(1));
-        // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(log);
-        // super._onCommonMessage(origin, event, ipcBusCommand, rawContent);
+    _onRendererMessagedReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
+        this._packet.setRawContent(rawContent);
+        this.addLog(ipcBusCommand, this._packet.parseArrayAt(1));
+        super._onRendererMessagedReceived(ipcBusCommand, rawContent);
     }
+
+    _onMainMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]) {
+        this.addLog(ipcBusCommand, args);
+        super._onMainMessageReceived(ipcBusCommand, args);
+    }
+
+    _onNetMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+        this.addLog(ipcBusCommand, ipcPacketBuffer.parseArrayAt(1));
+        super._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
+    }
+
 }
 

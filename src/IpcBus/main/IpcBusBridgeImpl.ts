@@ -53,10 +53,10 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     protected _netTransport: IpcBusBridgeClient;
     protected _rendererConnector: IpcBusBridgeClient;
 
-    private _packetOut: IpcPacketBuffer;
+    protected _packet: IpcPacketBuffer;
 
     constructor(contextType: Client.IpcBusProcessType) {
-        this._packetOut = new IpcPacketBuffer();
+        this._packet = new IpcPacketBuffer();
         const mainConnector = new IpcBusBridgeConnectorMain(contextType);
         this._mainTransport = new IpcBusBridgeTransportMain(mainConnector, this);
         this._rendererConnector = new IpcBusRendererBridge(this);
@@ -120,7 +120,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     //     return queryStateResult;
     // }
 
-    _onRendererMessagedReceived(webContents: Electron.WebContents, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
+    _onRendererMessagedReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         this._mainTransport.onConnectorBufferReceived(null, ipcBusCommand, rawContent);
         this._netTransport && this._netTransport.broadcastBuffer(ipcBusCommand, rawContent.buffer);
     }
@@ -133,13 +133,13 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             (this._netTransport && this._netTransport.hasChannel(ipcBusCommand.channel))) {
             ipcBusCommand.bridge = true;
             if (args) {
-                this._packetOut.serializeArray([ipcBusCommand, args]);
+                this._packet.serializeArray([ipcBusCommand, args]);
             }
             else {
-                this._packetOut.serializeArray([ipcBusCommand]);
+                this._packet.serializeArray([ipcBusCommand]);
             }
-            this._rendererConnector.broadcastPacket(ipcBusCommand, this._packetOut);
-            this._netTransport && this._netTransport.broadcastBuffer(ipcBusCommand, this._packetOut.buffer);
+            this._rendererConnector.broadcastPacket(ipcBusCommand, this._packet);
+            this._netTransport && this._netTransport.broadcastBuffer(ipcBusCommand, this._packet.buffer);
         }
     }
 
