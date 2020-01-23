@@ -1,29 +1,26 @@
+import { EventEmitter } from 'events';
+
 import * as Client from './IpcBusClient';
-import { IpcBusCommand } from './IpcBusCommand';
 
-export interface IpcBusSender {
-    send(channel: string, ...args: any[]): void;
-}
-
+/** @internal */
 export namespace IpcBusTransport {
-    export interface Handshake {
-        peer: Client.IpcBusPeer,
-        process: Client.IpcBusProcess;
-        // instance: number;
-    };
+    /** @internal */
+    export interface Client extends EventEmitter {
+        peer: Client.IpcBusPeer;
+    }
 }
 
 /** @internal */
 export interface IpcBusTransport {
-    readonly peer: Client.IpcBusPeer;
+    connect(client: IpcBusTransport.Client, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer>;
+    close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void>;
 
-    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusTransport.Handshake>;
-    ipcShutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
+    hasChannel(channel: string): boolean;
+    getChannels(): string[];
 
-    ipcConnect(client: Client.IpcBusClient | null, options: Client.IpcBusClient.ConnectOptions): Promise<void>;
-    ipcClose(client: Client.IpcBusClient | null, options?: Client.IpcBusClient.CloseOptions): Promise<void>;
+    addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
+    removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;
 
-    ipcRequestMessage(channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse>;
-    ipcSendMessage(channel: string, args: any[]): void;
-    ipcPost(kind: IpcBusCommand.Kind, channel: string, ipcBusCommandRequest?: IpcBusCommand.Request, args?: any[]): void;
+    requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse>;
+    sendMessage(client: IpcBusTransport.Client, channel: string, args: any[]): void;
 }

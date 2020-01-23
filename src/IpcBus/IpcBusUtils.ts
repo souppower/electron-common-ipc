@@ -150,15 +150,16 @@ export class Logger {
 export class ChannelConnectionMap<T> extends EventEmitter {
     private _name: string;
     private _channelsMap: Map<string, Map<T, ConnectionPeers<T>>>;
-    private _requestChannels: Map<string, ConnectionPeer<T>>;
-    private _emitter: boolean;
+    // private _requestChannels: Map<string, ConnectionPeer<T>>;
+    
+    public emitter: boolean;
 
     constructor(name: string, emitter: boolean) {
         super();
         this._name = name;
-        this._emitter = emitter;
+        this.emitter = emitter;
         this._channelsMap = new Map<string, Map<T, ConnectionPeers<T>>>();
-        this._requestChannels = new Map<string,  ConnectionPeer<T>>();
+        // this._requestChannels = new Map<string,  ConnectionPeer<T>>();
     }
 
     private _info(str: string) {
@@ -173,32 +174,52 @@ export class ChannelConnectionMap<T> extends EventEmitter {
     //     Logger.enable && Logger.error(`[${this._name}] ${str}`);
     // }
 
-    setRequestChannel(channel: string, conn: T, peer: IpcBusPeer): void {
-        this._requestChannels.set(channel, { conn, peer });
-    }
+    // setRequestChannel(channel: string, conn: T, peer: IpcBusPeer): void {
+    //     this._requestChannels.set(channel, { conn, peer });
+    // }
 
-    getRequestChannel(channel: string): ConnectionPeer<T> {
-        return this._requestChannels.get(channel);
-    }
+    // getRequestChannel(channel: string): ConnectionPeer<T> {
+    //     return this._requestChannels.get(channel);
+    // }
 
-    deleteRequestChannel(channel: string): boolean {
-        return this._requestChannels.delete(channel);
-    }
+    // deleteRequestChannel(channel: string): boolean {
+    //     return this._requestChannels.delete(channel);
+    // }
 
     hasChannel(channel: string): boolean {
         return this._channelsMap.has(channel);
     }
 
     getChannels(): string[] {
-        return Array.from(this._channelsMap.keys());
+        const channels = Array.from(this._channelsMap.keys());
+        // if (this._requestChannels.size) {
+        //     return channels.concat(Array.from(this._requestChannels.keys()));
+        // }
+        return channels;
+    }
+
+    getChannelsCount(): number {
+        return this._channelsMap.size; // + this._requestChannels.size;
     }
 
     clear() {
         this._channelsMap.clear();
-        this._requestChannels.clear();
+        // this._requestChannels.clear();
     }
 
-    addRef(channel: string, conn: T, peer: IpcBusPeer): number {
+    addRefs(channels: string[], conn: T, peer: IpcBusPeer): void {
+        for (let i = 0, l = channels.length; i < l; ++i) {
+            this.addRef(channels[i], conn, peer);
+        }
+    }
+
+    releases(channels: string[], conn: T, peer: IpcBusPeer): void {
+        for (let i = 0, l = channels.length; i < l; ++i) {
+            this.release(channels[i], conn, peer);
+        }
+    }
+
+    addRefCount(channel: string, conn: T, peer: IpcBusPeer, count: number): number {
         Logger.enable && this._info(`AddRef: '${channel}', peerId = ${peer.id}`);
 
         let connData: ConnectionPeers<T>;
@@ -210,26 +231,30 @@ export class ChannelConnectionMap<T> extends EventEmitter {
 
             // Code is duplicated here but it would save time.
             // This channel has NOT been already subscribed by this connection
-            connData = new ConnectionPeers<T>(conn, peer);
+            connData = new ConnectionPeers<T>(conn, peer, count);
             connsMap.set(conn, connData);
             
-            this._emitter && this.emit('channel-added', channel);
+            this.emitter && this.emit('channel-added', channel);
             // Logger.enable && this._info(`AddRef: channel '${channel}' is added`);
         }
         else {
             connData = connsMap.get(conn);
             if (connData == null) {
                 // This channel has NOT been already subscribed by this connection
-                connData = new ConnectionPeers<T>(conn, peer);
+                connData = new ConnectionPeers<T>(conn, peer, count);
                 connsMap.set(conn, connData);
                 // Logger.enable && this._info(`AddRef: connKey = ${conn} is added`);
             }
             else {
-                connData.addPeer(peer);
+                connData.addPeer(peer, count);
             }
         }
         Logger.enable && this._info(`AddRef: '${channel}', count = ${connData.peerRefCounts.size}`);
         return connsMap.size;
+    }
+
+    addRef(channel: string, conn: T, peer: IpcBusPeer): number {
+        return this.addRefCount(channel, conn, peer,  1);
     }
 
     private _releaseConnData(channel: string, conn: T, connsMap: Map<T, ConnectionPeers<T>>, peer: IpcBusPeer, all: boolean): number {
@@ -257,7 +282,7 @@ export class ChannelConnectionMap<T> extends EventEmitter {
                 // Logger.enable && this._info(`Release: conn = ${conn} is released`);
                 if (connsMap.size === 0) {
                     this._channelsMap.delete(channel);
-                    this._emitter && this.emit('channel-removed', channel);
+                    this.emitter && this.emit('channel-removed', channel);
                     // Logger.enable && this._info(`Release: channel '${channel}' is released`);
                 }
             }
@@ -286,14 +311,22 @@ export class ChannelConnectionMap<T> extends EventEmitter {
         return this._release(channel, conn, peer, true);
     }
 
+    removeChannel(channel: string): boolean {
+        if (this._channelsMap.delete(channel)) {
+            this.emitter && this.emit('channel-removed', channel);
+            return true;
+        }
+        return false;
+    }
+
     removePeer(conn: T, peer: IpcBusPeer) {
         Logger.enable && this._info(`releasePeerId: peerId = ${peer.id}`);
 
-        this._requestChannels.forEach((connData, channel) => {
-            if (connData.peer === peer) {
-                this._requestChannels.delete(channel);
-            }
-        });
+        // this._requestChannels.forEach((connData, channel) => {
+        //     if (connData.peer === peer) {
+        //         this._requestChannels.delete(channel);
+        //     }
+        // });
 
         // ForEach is supposed to support deletion during the iteration !
         this._channelsMap.forEach((connsMap, channel) => {
@@ -305,11 +338,11 @@ export class ChannelConnectionMap<T> extends EventEmitter {
         Logger.enable && this._info(`ReleaseConn: conn = ${conn}`);
 
         // ForEach is supposed to support deletion during the iteration !
-        this._requestChannels.forEach((connData, channel) => {
-            if (connData.conn === conn) {
-                this._requestChannels.delete(channel);
-            }
-        });
+        // this._requestChannels.forEach((connData, channel) => {
+        //     if (connData.conn === conn) {
+        //         this._requestChannels.delete(channel);
+        //     }
+        // });
 
         // ForEach is supposed to support deletion during the iteration !
         this._channelsMap.forEach((connsMap, channel) => {
@@ -365,12 +398,16 @@ export class ChannelConnectionMap<T> extends EventEmitter {
         });
     }
 
+    // on(event: 'channel-added', listener: (channel: string) => void): this;
+    // on(event: 'channel-removed', listener: (channel: string) => void): this;
     on(event: 'channel-added', listener: (channel: string) => void): this;
     on(event: 'channel-removed', listener: (channel: string) => void): this;
     on(event: symbol | string, listener: (...args: any[]) => void): this {
         return super.addListener(event, listener);
     }
 
+    // off(event: 'channel-added', listener: (channel: string) => void): this;
+    // off(event: 'channel-removed', listener: (channel: string) => void): this;
     off(event: 'channel-added', listener: (channel: string) => void): this;
     off(event: 'channel-removed', listener: (channel: string) => void): this;
     off(event: symbol | string, listener: (...args: any[]) => void): this {
@@ -389,21 +426,23 @@ export class ConnectionPeers<T> {
     readonly conn: T;
     peerRefCounts: Map<string, ConnectionPeers.PeerRefCount> = new Map<string, ConnectionPeers.PeerRefCount>();
 
-    constructor(conn: T, peer: IpcBusPeer) {
+    constructor(conn: T, peer: IpcBusPeer, count?: number) {
         this.conn = conn;
-        const peerRefCount = { peer, refCount: 1 };
+        const refCount = (count == null) ? 1 : count;
+        const peerRefCount = { peer, refCount };
         this.peerRefCounts.set(peer.id, peerRefCount);
     }
 
-    addPeer(peer: IpcBusPeer): number {
+    addPeer(peer: IpcBusPeer, count?: number): number {
+        const refCount = (count == null) ? 1 : count;
         let peerRefCount = this.peerRefCounts.get(peer.id);
         if (peerRefCount == null) {
             // This channel has NOT been already subcribed by this peername, by default 1
-            peerRefCount = { peer, refCount: 1 };
+            peerRefCount = { peer, refCount };
             this.peerRefCounts.set(peer.id, peerRefCount);
         }
         else {
-            ++peerRefCount.refCount;
+            peerRefCount.refCount += refCount;
         }
         return peerRefCount.refCount;
     }
@@ -429,8 +468,8 @@ export class ConnectionPeers<T> {
                 this.peerRefCounts.delete(peer.id);
                 // Logger.enable && this._info(`Release: peerId #${peerId} is released`);
             }
+            return peerRefCount.refCount;
         }
-        return peerRefCount.refCount;
     }
 }
 

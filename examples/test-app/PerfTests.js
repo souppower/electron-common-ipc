@@ -9,9 +9,9 @@ var PerfTests = function _PerfTests(type, busPath) {
         _ipcBus.send('test-performance-run', testParams);
     }
 
-    this.connect = function() {
-        _ipcBus.connect(busPath, { peerName: `perfTestsBus ${_type}` })
-            .then((msg) => {
+    this.connect = function(peerName) {
+        _ipcBus.connect(busPath, { peerName })
+            .then(() => {
                 _ipcBus.on('test-performance-trace', (ipcBusEvent, activateTrace) => this.onIPCBus_TestPerformanceTrace(ipcBusEvent, activateTrace));
                 _ipcBus.on('test-performance-run', (ipcBusEvent, testParams) => this.onIPCBus_TestPerformanceRun(ipcBusEvent, testParams));
                 _ipcBus.on('test-performance-'+ _type, (ipcBusEvent, msgContent) => this.onIPCBus_TestPerformance(ipcBusEvent, msgContent));

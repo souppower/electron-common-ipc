@@ -6,13 +6,13 @@ import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSoc
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 
-import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
-import { IpcBusTransport } from '../IpcBusTransport';
 import { IpcBusCommand } from '../IpcBusCommand';
+import { IpcBusConnector } from '../IpcBusConnector';
+import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 
 // Implementation for Node process
 /** @internal */
-export class IpcBusTransportNet extends IpcBusTransportImpl {
+export class IpcBusConnectorNet extends IpcBusConnectorImpl {
     protected _socket: net.Socket;
     protected _netBinds: { [key: string]: (...args: any[]) => void };
 
@@ -26,8 +26,8 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
 
     constructor(contextType: Client.IpcBusProcessType) {
         assert((contextType === 'main') || (contextType === 'node'), `IpcBusTransportNet: contextType must not be a ${contextType}`);
+        super(contextType);
 
-        super({ type: contextType, pid: process.pid });
         this._packetOut = new IpcPacketBufferWrap();
 
         this._bufferListReader = new BufferListReader();
@@ -39,7 +39,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
         this._netBinds['data'] = this._onSocketData.bind(this);
         this._netBinds['end'] = this._onSocketEnd.bind(this);
     }
-
+    
     // https://nodejs.org/api/net.html#net_event_error_1
     protected _onSocketError(err: any) {
         const msg = `[IPCBusTransport:Net ${this._peer.id}] socket error ${err}`;
@@ -68,7 +68,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
         while (this._packetIn.decodeFromReader(this._bufferListReader)) {
             const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
             if (ipcBusCommand && ipcBusCommand.peer) {
-                this._onCommandPacketReceived(ipcBusCommand, this._packetIn);
+                this._client.onConnectorPacketReceived(ipcBusCommand, this._packetIn);
             }
             else {
                 throw `[IPCBusTransport:Net ${this._peer.id}] Not valid packet !`;
@@ -79,9 +79,9 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
     }
 
     protected _reset(endSocket: boolean) {
-        this._promiseConnected = null;
         this._socketWriter = null;
         if (this._socket) {
+            this._client.onConnectorShutdown();
             const socket = this._socket;
             this._socket = null;
             for (let key in this._netBinds) {
@@ -94,8 +94,8 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
     }
 
     /// IpcBusTransportImpl API
-    ipcHandshake(options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusTransport.Handshake> {
-        return new Promise<IpcBusTransport.Handshake>((resolve, reject) => {
+    handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
+        return new Promise((resolve, reject) => {
             options = IpcBusUtils.CheckConnectOptions(options);
             if ((options.port == null) && (options.path == null)) {
                 return reject('Connection options not provided');
@@ -129,6 +129,8 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
             let socketLocalBinds: { [key: string]: (...args: any[]) => void } = {};
             const catchConnect = (conn: any) => {
                 clearTimeout(timer);
+
+                this.addClient(client);
                 for (let key in socketLocalBinds) {
                     socket.removeListener(key, socketLocalBinds[key]);
                 }
@@ -147,12 +149,9 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
                 else if (this._socketBuffer > 0) {
                     this._socketWriter = new BufferedSocketWriter(this._socket, this._socketBuffer);
                 }
-                const handshake: IpcBusTransport.Handshake = {
-                    peer: this._peer,
-                    process: this._peer.process,
-                    // instance: 0
-                }
-                resolve(handshake);
+                resolve({
+                    process: this._peer.process
+                });
             };
 
             fctReject = (msg: string) => {
@@ -182,7 +181,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
         });
     }
 
-    ipcShutdown(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    shutdown(client: IpcBusConnector.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         options = options || {};
         if (options.timeoutDelay == null) {
             options.timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
@@ -197,6 +196,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
                     for (let key in socketLocalBinds) {
                         socket.removeListener(key, socketLocalBinds[key]);
                     }
+                    this.removeClient(client);
                     resolve();
                 };
                 // Below zero = infinite
@@ -214,7 +214,6 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
                 for (let key in socketLocalBinds) {
                     socket.addListener(key, socketLocalBinds[key]);
                 }
-                this.ipcPost(IpcBusCommand.Kind.Close, '');
                 this._reset(true);
             }
             else {
@@ -223,7 +222,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
         });
     }
 
-    ipcPostCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._socketWriter) {
             if (args) {
                 this._packetOut.writeArray(this._socketWriter, [ipcBusCommand, args]);
@@ -234,7 +233,7 @@ export class IpcBusTransportNet extends IpcBusTransportImpl {
         }
     }
 
-    ipcPostBuffer(buffer: Buffer) {
+    postBuffer(buffer: Buffer) {
         if (this._socketWriter) {
             this._socketWriter.writeBuffer(buffer);
         }

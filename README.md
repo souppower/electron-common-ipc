@@ -205,6 +205,8 @@ You have to bundle your file :
 browserify -o ./preload-ipc.bundle.js -x electron ./preload-ipc.js
 ```
 
+Use Browserify >= 16.5.0 for having full support of EventEmitter.
+
 ***Bus in frame is still experimental.***
 
 # Common options
