@@ -15,13 +15,16 @@ const PeerName = 'NetBridge';
 
 class IpcBusTransportNetBridge extends IpcBusTransportImpl {
     protected _bridge: IpcBusBridgeImpl;
-    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<string>;
+    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<string, string>;
 
     constructor(connector: IpcBusConnector, bridge: IpcBusBridgeImpl) {
         super(connector);
-
         this._bridge = bridge;
-        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<string>(`IPCBus:${PeerName}`, false);
+
+        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<string, string>(
+            `IPCBus:${PeerName}`,
+            (conn) => conn,
+            false);
     }
 
     connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {

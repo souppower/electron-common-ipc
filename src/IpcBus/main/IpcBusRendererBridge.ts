@@ -19,13 +19,16 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     protected _bridge: IpcBusBridgeImpl;
 
     private _ipcMain: Electron.IpcMain;
-    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<Electron.WebContents>;
+    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<Electron.WebContents, number>;
 
     constructor(bridge: IpcBusBridgeImpl) {
         this._bridge = bridge;
 
         this._ipcMain = require('electron').ipcMain;
-        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<Electron.WebContents>('IPCBus:RendererBridge', false);
+        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<Electron.WebContents, number>(
+            'IPCBus:RendererBridge',
+            (conn) => conn.id,
+            false);
 
         // callbacks
         this._onRendererCommandReceived = this._onRendererCommandReceived.bind(this);
