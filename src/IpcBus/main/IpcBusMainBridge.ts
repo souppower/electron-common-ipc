@@ -27,12 +27,11 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     }
 
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        // Bypassed by ipcPostMessage below
+        // Bypassed by ipcPostMessage and postAdmin below
         throw 'not implemented';
     }
 
     postBuffer(buffer: Buffer) {
-        // Bypassed by ipcPostMessage below
         throw 'not implemented';
     }
 }
@@ -46,7 +45,7 @@ export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl { // imp
     }
 
     protected postAdmin(ipcBusCommand: IpcBusCommand): void {
-        // by pass
+        // skipped, admin messages does not interest Bridge
     }
 
     protected postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {

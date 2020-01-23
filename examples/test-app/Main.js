@@ -483,8 +483,12 @@ function startApp() {
     //    timeServiceProxy.connect().then(() => {
             console.log('<MAIN Service> Service is STARTED !');
             wrapper.getCurrent('After')
-                .then((currentTime) => console.log(`<Remote Service> Current time = ${currentTime}`))
-                .catch((err) => console.error(`<Remote Service> Time service returned error : ${err}`));
+                .then((currentTime) => {
+                    console.log(`<Remote Service> Current time = ${currentTime}`);
+                })
+                .catch((err) => {
+                    console.error(`<Remote Service> Time service returned error : ${err}`)
+                });
             // Subscribe to remote events (client-side)
             wrapper.on('emitted_event', () => {
                 console.log(`<Remote Service> Received 'emitted_event' event from Time service`)
@@ -522,7 +526,7 @@ function startApp() {
     new MainProcess();
 }
 
-var localIpcBroker = false;
+var localIpcBroker = undefined;
 
 function prepareApp() {
     ipcBridge = ipcBusModule.IpcBusBridge.Create();

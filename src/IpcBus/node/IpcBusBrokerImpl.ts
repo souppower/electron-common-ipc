@@ -21,7 +21,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
     private _promiseStarted: Promise<void>;
 
-    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<net.Socket>;
+    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<net.Socket, number>;
 
     constructor(contextType: Client.IpcBusProcessType) {
         // Callbacks
@@ -35,7 +35,10 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
         // this._bridgeChannels = new Set<string>();
 
-        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<net.Socket>('IPCBus:Broker', false);
+        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<net.Socket, number>(
+            'IPCBus:Broker',
+            (conn) => conn.remotePort,
+            false);
         this._ipcBusBrokerClient = CreateIpcBusClientNet(contextType);
     }
 

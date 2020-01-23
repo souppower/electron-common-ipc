@@ -7,7 +7,7 @@ import { IpcBusConnector } from './IpcBusConnector';
 
 /** @internal */
 export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
-    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<IpcBusTransport.Client>;
+    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<IpcBusTransport.Client, string>;
 
     constructor(connector: IpcBusConnector) {
         super(connector);
@@ -25,10 +25,10 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return channels;
     }
 
-    onConnectorMessageReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
+    onMessageReceived(ipcBusCommand: IpcBusCommand, args: any[], local: boolean) {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
         this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-            this._onClientMessageReceived(connData.conn, ipcBusCommand, args);
+            this._onClientMessageReceived(connData.conn, ipcBusCommand, args, local);
         });
     }
 
@@ -44,7 +44,10 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return super.connect(client, options)
         .then((peer) => {
             if (this._subscriptions == null) {
-                this._subscriptions = new IpcBusUtils.ChannelConnectionMap<IpcBusTransport.Client>(`IPCBus:Transport-${IpcBusTransportImpl.generateName(this._peer)}`, true);
+                this._subscriptions = new IpcBusUtils.ChannelConnectionMap<IpcBusTransport.Client, string>(
+                    `IPCBus:Transport-${IpcBusTransportImpl.generateName(this._peer)}`,
+                    (conn) => conn.peer.id,
+                    true);
                 this._subscriptions.on('channel-added', (channel) => {
                     this.postAdmin({
                         peer: this._peer,
