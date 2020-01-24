@@ -34,7 +34,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
 
     onConnectorShutdown() {
         super.onConnectorShutdown();
-        if (this._subscriptions == null) {
+        if (this._subscriptions) {
             this._subscriptions.emitter = false;
             this._subscriptions = null;
         }
