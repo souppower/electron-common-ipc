@@ -86,7 +86,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 if (ipcBusCommand.request) {
-                    this._subscriptions.addRef(ipcBusCommand.request.replyChannel, PeerName, ipcBusCommand.peer);
+                    this._subscriptions.setSingleChannel(ipcBusCommand.request.replyChannel, PeerName, ipcBusCommand.peer);
                 }
                 if (buffer && this.hasChannel(ipcBusCommand.channel)) {
                     this._connector.postBuffer(buffer);

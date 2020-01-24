@@ -1,4 +1,3 @@
-// Constants
 import { EventEmitter } from 'events';
 
 import { IpcConnectOptions, IpcBusPeer } from './IpcBusClient';
@@ -220,6 +219,33 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
         for (let i = 0, l = channels.length; i < l; ++i) {
             this.release(channels[i], conn, peer);
         }
+    }
+
+    // Channel is supposed to be new
+    setSingleChannel(channel: string, conn: T, peer: IpcBusPeer) {
+        Logger.enable && this._info(`SetChannel: '${channel}', peerId = ${peer.id}`);
+
+        const key = this._getKey(conn);
+        const connsMap = new Map<M, ConnectionPeers<T, M>>();
+        // This channel has NOT been subscribed yet, add it to the map
+        this._channelsMap.set(channel, connsMap);
+
+        const connData = new ConnectionPeers<T, M>(key, conn, peer, 1);
+        connsMap.set(key, connData);
+
+        this.emitter && this.emit('channel-added', channel);
+    }
+
+    getSingleChannel(channel: string): ConnectionPeers<T, M> | null {
+        const connsMap = this._channelsMap.get(channel);
+        if (connsMap == null) {
+            return null;
+        }
+        if (connsMap.size !== 1) {
+            throw 'should not happen';
+            return null;
+        }
+        return connsMap.values().next().value;
     }
 
     addRefCount(channel: string, conn: T, peer: IpcBusPeer, count: number): number {

@@ -1,4 +1,4 @@
-import { Create as CreateIpcBusClientWindow } from './IpcBusClientRenderer';
+import { Create as CreateIpcBusClientWindow } from './IpcBusClientRenderer-factory';
 
 import { CrossFrameEventEmitter, IpcBusFrameBridge } from './CrossFrameEventEmitter2';
 // import { CrossFrameEventDispatcher } from './CrossFrameEventEmitter';

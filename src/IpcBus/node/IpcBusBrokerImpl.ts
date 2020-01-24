@@ -5,7 +5,7 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as Client from '../IpcBusClient';
 import * as Broker from './IpcBusBroker';
 import * as IpcBusUtils from '../IpcBusUtils';
-import { Create as CreateIpcBusClientNet } from './IpcBusClientNet';
+import { Create as CreateIpcBusClientNet } from './IpcBusClientNet-factory';
 
 import { IpcBusCommand } from '../IpcBusCommand';
 
@@ -291,7 +291,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 if (ipcBusCommand.request) {
                     const previous = this._subscriptions.emitter;
                     this._subscriptions.emitter = false;
-                    this._subscriptions.addRef(ipcBusCommand.request.replyChannel, socket, ipcBusCommand.peer);
+                    this._subscriptions.setSingleChannel(ipcBusCommand.request.replyChannel, socket, ipcBusCommand.peer);
                     this._subscriptions.emitter = previous;
                 }
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
@@ -308,10 +308,11 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             case IpcBusCommand.Kind.RequestResponse: {
                 const previous = this._subscriptions.emitter;
                 this._subscriptions.emitter = false;
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
+                const connData = this._subscriptions.getSingleChannel(ipcBusCommand.channel);
+                if (connData) {
                     connData.conn.write(packet.buffer);
                     this._subscriptions.removeChannel(ipcBusCommand.channel);
-                });
+                }
                 this._subscriptions.emitter = previous;
                 if (!ipcBusCommand.bridge) {
                     // if (this._bridgeChannels.has(ipcBusCommand.channel)) {

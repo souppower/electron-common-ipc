@@ -126,28 +126,28 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         if (ipcBusCommand.request) {
             const settled = (resolve: boolean, args: any[]) => {
                 // Is it a local request ?
+                const ipcBusCommandResponse = {
+                    kind: IpcBusCommand.Kind.RequestResponse,
+                    channel: ipcBusCommand.request.replyChannel,
+                    peer: client.peer,
+                    request: ipcBusCommand.request
+                };
+                if (resolve) {
+                    ipcBusCommand.request.resolve = true;
+                }
+                else {
+                    ipcBusCommand.request.reject = true;
+                }
                 if (local) {
                     const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
                     if (deferredRequest) {
-                        // this.trackResponse(client, resolve, ipcBusCommand, args, local);
+                        // this.trackResponse(client, ipcBusCommandResponse, args, local);
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
                         this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
-                        deferredRequest.settled(ipcBusCommand, args);
+                        deferredRequest.settled(ipcBusCommandResponse, args);
                     }
                 }
                 else {
-                    const ipcBusCommandResponse = {
-                        kind: IpcBusCommand.Kind.RequestResponse,
-                        channel: ipcBusCommand.request.replyChannel,
-                        peer: client.peer,
-                        request: ipcBusCommand.request
-                    };
-                    if (resolve) {
-                        ipcBusCommand.request.resolve = true;
-                    }
-                    else {
-                        ipcBusCommand.request.reject = true;
-                    }
                     this.postMessage(ipcBusCommandResponse, args);
                 }
             }
