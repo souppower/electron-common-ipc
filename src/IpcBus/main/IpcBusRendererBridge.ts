@@ -28,7 +28,10 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<Electron.WebContents, number>(
             'IPCBus:RendererBridge',
             (conn) => conn.id,
-            false);
+            false
+        );
+
+        // this._bridge.trackAdmin(ipcBusCommand);
 
         // callbacks
         this._onRendererCommandReceived = this._onRendererCommandReceived.bind(this);
@@ -124,9 +127,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _broadcastMessage(webContents: Electron.WebContents | null, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
                 if (ipcBusCommand.request && webContents) {
-                    this._subscriptions.addRef(ipcBusCommand.request.replyChannel, webContents, ipcBusCommand.peer);
+                    this._subscriptions.setSingleChannel(ipcBusCommand.request.replyChannel, webContents, ipcBusCommand.peer);
                 }
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
@@ -135,16 +137,16 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             }
 
             case IpcBusCommand.Kind.RequestResponse: {
-                IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
+                const connData = this._subscriptions.getSingleChannel(ipcBusCommand.channel);
+                if (connData) {
                     connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
-                    this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
-                });
+                    this._subscriptions.removeChannel(ipcBusCommand.channel);
+                }
                 break;
             }
 
             case IpcBusCommand.Kind.RequestClose:
-                this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                this._subscriptions.removeChannel(ipcBusCommand.channel);
                 break;
         }
     }

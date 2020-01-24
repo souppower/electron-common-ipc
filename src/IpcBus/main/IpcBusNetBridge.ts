@@ -24,7 +24,10 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<string, string>(
             `IPCBus:${PeerName}`,
             (conn) => conn,
-            false);
+            false
+        );
+
+        // this._bridge.trackAdmin(ipcBusCommand);
     }
 
     connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
@@ -74,11 +77,16 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         throw 'not implemented';
     }
 
+    // protected postAdmin(ipcBusCommand: IpcBusCommand): void {
+        // super.postAdmin(ipcBusCommand);
+        // this._bridge.trackAdmin(ipcBusCommand);
+    // }
+
     broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 if (ipcBusCommand.request) {
-                    this._subscriptions.addRef(ipcBusCommand.request.replyChannel, PeerName, ipcBusCommand.peer);
+                    this._subscriptions.setSingleChannel(ipcBusCommand.request.replyChannel, PeerName, ipcBusCommand.peer);
                 }
                 if (buffer && this.hasChannel(ipcBusCommand.channel)) {
                     this._connector.postBuffer(buffer);
@@ -87,7 +95,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
             }
 
             case IpcBusCommand.Kind.RequestResponse: {
-                const hasChannel = this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                const hasChannel = this._subscriptions.removeChannel(ipcBusCommand.channel);
                 if (buffer && hasChannel) {
                     this._connector.postBuffer(buffer);
                 }
@@ -95,7 +103,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
             }
 
             case IpcBusCommand.Kind.RequestClose:
-                const hasChannel = this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                const hasChannel = this._subscriptions.removeChannel(ipcBusCommand.channel);
                 if (buffer && hasChannel) {
                     this._connector.postBuffer(buffer);
                 }

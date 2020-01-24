@@ -4,9 +4,8 @@ import { IpcBusConnectorRenderer  } from './IpcBusConnectorRenderer';
 import { IpcWindow } from './IpcBusConnectorRenderer';
 import { IpcBusClientImpl} from '../IpcBusClientImpl';
 import { IpcBusTransport } from '../IpcBusTransport';
-import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultIImpl';
+import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultiImpl';
 import { IpcBusConnector } from '../IpcBusConnector';
-
 
 export function CreateConnector(contextType: Client.IpcBusProcessType, ipcWindow: IpcWindow): IpcBusConnector {
     const connector = new IpcBusConnectorRenderer(contextType, ipcWindow);

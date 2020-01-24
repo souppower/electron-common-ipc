@@ -59,8 +59,9 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         return this._waitForClosed;
     }
 
-    send(channel: string, ...args: any[]) {
+    send(channel: string, ...args: any[]): boolean {
         this._transport.sendMessage(this, channel, args);
+        return (this._waitForConnected != null);
     }
 
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<Client.IpcBusRequestResponse> {
@@ -69,7 +70,7 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
 
     emit(event: string, ...args: any[]): boolean {
         this._transport.sendMessage(this, event, args);
-        return true;
+        return (this._waitForConnected != null);
     }
  
     on(channel: string, listener: Client.IpcBusListener): this {
