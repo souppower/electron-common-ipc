@@ -310,7 +310,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 this._subscriptions.emitter = false;
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     connData.conn.write(packet.buffer);
-                    this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                    this._subscriptions.removeChannel(ipcBusCommand.channel);
                 });
                 this._subscriptions.emitter = previous;
                 if (!ipcBusCommand.bridge) {
@@ -324,7 +324,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             case IpcBusCommand.Kind.RequestClose: {
                 const previous = this._subscriptions.emitter;
                 this._subscriptions.emitter = false;
-                this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                this._subscriptions.removeChannel(ipcBusCommand.channel);
                 this._subscriptions.emitter = previous;
                 // If this message does not come from the IpcBusBridge, send it to it
                 if (!ipcBusCommand.bridge) {
