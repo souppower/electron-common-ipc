@@ -1,15 +1,6 @@
 import { IpcBusPeer } from './IpcBusClient';
 
 /** @internal */
-export interface IpcBusCommand {
-    peer: IpcBusPeer;
-    kind: IpcBusCommand.Kind;
-    channel: string;
-    request?: IpcBusCommand.Request;
-    bridge?: boolean;
-}
-
-/** @internal */
 export namespace IpcBusCommand {
     /** @internal */
     export enum Kind {
@@ -27,11 +18,6 @@ export namespace IpcBusCommand {
 
         BridgeConnect                     = 'BCOO',    // COnnexion
         BridgeClose                       = 'BCOC',
-
-        // AddBrokerChannels                 = 'BOCAS',
-        // RemoveBrokerChannels              = 'BOCRS',
-        // AddBridgeChannels                 = 'BICAS',
-        // RemoveBridgeChannels              = 'BICRS',
     };
 
     /** @internal */
@@ -41,5 +27,13 @@ export namespace IpcBusCommand {
         resolve?: boolean;
         reject?: boolean;
     }
+}
 
+/** @internal */
+export interface IpcBusCommand {
+    peer: IpcBusPeer;
+    kind: IpcBusCommand.Kind;
+    channel: string;
+    request?: IpcBusCommand.Request;
+    bridge?: boolean;
 }
