@@ -94,7 +94,7 @@ export interface IpcBusClient extends EventEmitter {
     connect: IpcBusClient.ConnectFunction;
     close: IpcBusClient.CloseFunction;
 
-    send(channel: string, ...args: any[]): void;
+    send(channel: string, ...args: any[]): boolean;
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;
 
     // EventEmitter API

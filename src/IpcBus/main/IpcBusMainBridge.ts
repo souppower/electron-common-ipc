@@ -5,7 +5,7 @@ import { IpcBusCommand } from '../IpcBusCommand';
 // import { IpcBusTransportNet } from '../node/IpcBusTransportNet';
 import { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
-import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultIImpl'; 
+import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultiImpl'; 
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl'; 
 
 export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {

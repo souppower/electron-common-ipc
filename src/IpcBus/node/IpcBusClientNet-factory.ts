@@ -5,7 +5,7 @@ import * as Client from '../IpcBusClient';
 import { IpcBusConnectorNet } from './IpcBusConnectorNet';
 import { IpcBusClientImpl}  from '../IpcBusClientImpl';
 import { IpcBusTransport } from '../IpcBusTransport';
-import { IpcBusTransportSingleImpl } from '../IpcBusTransportSingleImpl';
+import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultiImpl';
 import { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusClientNet } from './IpcBusClientNet';
 
@@ -22,7 +22,7 @@ export function CreateConnector(contextType: Client.IpcBusProcessType): IpcBusCo
 
 export function CreateTransport(contextType: Client.IpcBusProcessType): IpcBusTransport {
     const connector = CreateConnector(contextType);
-    const transport = new IpcBusTransportSingleImpl(connector);
+    const transport = new IpcBusTransportMultiImpl(connector);
     return transport;
 }
 

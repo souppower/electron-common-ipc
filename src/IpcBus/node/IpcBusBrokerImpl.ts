@@ -306,14 +306,14 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
 
             case IpcBusCommand.Kind.RequestResponse: {
-                const previous = this._subscriptions.emitter;
-                this._subscriptions.emitter = false;
                 const connData = this._subscriptions.getSingleChannel(ipcBusCommand.channel);
                 if (connData) {
-                    connData.conn.write(packet.buffer);
+                    const previous = this._subscriptions.emitter;
+                    this._subscriptions.emitter = false;
                     this._subscriptions.removeChannel(ipcBusCommand.channel);
+                    this._subscriptions.emitter = previous;
+                    connData.conn.write(packet.buffer);
                 }
-                this._subscriptions.emitter = previous;
                 if (!ipcBusCommand.bridge) {
                     // if (this._bridgeChannels.has(ipcBusCommand.channel)) {
                     this.bridgeBroadcastMessage(ipcBusCommand, packet);
