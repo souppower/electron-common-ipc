@@ -164,6 +164,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
             case IpcBusCommand.Kind.RequestClose:
                 this._subscriptions.removeChannel(ipcBusCommand.channel);
+                // this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
+                //     connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                // });
                 break;
         }
     }

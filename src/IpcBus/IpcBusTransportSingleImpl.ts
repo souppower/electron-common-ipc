@@ -48,17 +48,8 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
 
     close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         if (this._client && (this._client === client)) {
-            this._requestFunctions.forEach(request => {
-                this.postMessage({ 
-                    kind: IpcBusCommand.Kind.RequestClose,
-                    channel: request.request.channel,
-                    peer: client.peer,
-                    request: request.request
-                });
-                request.timeout();
-            });
-            this._requestFunctions.clear();
             this._client = null;
+            this.cancelRequest(client);
             return super.close(client, options);
         }
         return Promise.resolve();

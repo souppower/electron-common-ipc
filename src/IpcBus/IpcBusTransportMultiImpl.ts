@@ -68,22 +68,13 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
     }
 
     close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        if (this._subscriptions && (this._subscriptions.getChannelsCount() === 0)) {
-            this._subscriptions.emitter = false;
-            this._subscriptions = null;
-            this._requestFunctions.forEach(request => {
-                if (request.client === client) {
-                    this.postMessage({ 
-                        kind: IpcBusCommand.Kind.RequestClose,
-                        channel: request.request.channel,
-                        peer: client.peer,
-                        request: request.request
-                    });
-                    request.timeout();
-                }
-            });
-            this._requestFunctions.clear();
-            return super.close(client, options);
+        if (this._subscriptions) {
+            this.cancelRequest(client);
+            if (this._subscriptions.getChannelsCount() === 0) {
+                this._subscriptions.emitter = false;
+                this._subscriptions = null;
+                return super.close(client, options);
+            }
         }
         return Promise.resolve();
     }

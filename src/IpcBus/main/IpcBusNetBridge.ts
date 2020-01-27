@@ -115,6 +115,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
 
             case IpcBusCommand.Kind.RequestClose:
                 const hasChannel = this._subscriptions.removeChannel(ipcBusCommand.channel);
+                // To inform Broker
                 if (buffer && hasChannel) {
                     this._connector.postBuffer(buffer);
                 }

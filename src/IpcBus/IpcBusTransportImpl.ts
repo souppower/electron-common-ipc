@@ -150,7 +150,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                         this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
                         // Simulate message reception
                         if (this._logLevel) {
-                            this._connector.trackCommandReceived(deferredRequest.client.peer, true, ipcBusCommandResponse, argsResponse);
+                            this._connector.trackMessageReceived(deferredRequest.client.peer, true, ipcBusCommandResponse, argsResponse);
                         }
                         deferredRequest.settled(ipcBusCommandResponse, args);
                     }
@@ -171,11 +171,30 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             };
         }
         if (this._logLevel) {
-            this._connector.trackCommandReceived(client.peer, local, ipcBusCommand, args);
+            this._connector.trackMessageReceived(client.peer, local, ipcBusCommand, args);
         }
         for (let i = 0; i < listeners.length; ++i) {
             listeners[i].call(client, ipcBusEvent, ...args);
         }
+    }
+
+    protected cancelRequest(client: IpcBusTransport.Client): void {
+        this._requestFunctions.forEach((request, key) => {
+            if (client === request.client) {
+                const ipcMessage: IpcBusCommand = { 
+                    kind: IpcBusCommand.Kind.RequestClose,
+                    channel: request.request.channel,
+                    peer: request.client.peer,
+                    request: request.request
+                };
+                // if (this._logLevel) {
+                //    this._connector.trackCommandReceived(client.peer, true, ipcMessage);
+                // }
+                this.postMessage(ipcMessage);
+                request.timeout();
+                this._requestFunctions.delete(key);
+            }
+        });
     }
 
     onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
@@ -194,14 +213,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
                     const args = ipcPacketBuffer.parseArrayAt(1);
                     if (this._logLevel) {
-                        this._connector.trackCommandReceived(deferredRequest.client.peer, false, ipcBusCommand, args);
+                        this._connector.trackMessageReceived(deferredRequest.client.peer, false, ipcBusCommand, args);
                     }
                     deferredRequest.settled(ipcBusCommand, args);
                 }
-                break;
-            }
-            case IpcBusCommand.Kind.RequestClose: {
-                this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
                 break;
             }
         }
@@ -227,14 +242,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     this._packetDecoder.setRawContent(rawContent);
                     const args = this._packetDecoder.parseArrayAt(1);
                     if (this._logLevel) {
-                        this._connector.trackCommandReceived(deferredRequest.client.peer, false, ipcBusCommand, args);
+                        this._connector.trackMessageReceived(deferredRequest.client.peer, false, ipcBusCommand, args);
                     }
                     deferredRequest.settled(ipcBusCommand, args);
                 }
-                break;
-            }
-            case IpcBusCommand.Kind.RequestClose: {
-                this._requestFunctions.delete(ipcBusCommand.channel);
                 break;
             }
         }

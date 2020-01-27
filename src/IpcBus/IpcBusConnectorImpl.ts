@@ -51,7 +51,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         }
     }
 
-    trackCommandLocal(ipcBusCommand: IpcBusCommand, args?: any[]) {
+    trackMessageLocal(ipcBusCommand: IpcBusCommand, args?: any[]) {
         if (this._logLevel & LogLevel.Sent) {
             const ipcBusCommandLog: IpcBusCommand = {
                 kind: IpcBusCommand.Kind.LogSend,
@@ -67,7 +67,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         }
     }
 
-    trackCommandReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    trackMessageReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._logLevel >= LogLevel.Received) {
             const ipcBusCommandLog: IpcBusCommand = {
                 kind: IpcBusCommand.Kind.LogGet,
