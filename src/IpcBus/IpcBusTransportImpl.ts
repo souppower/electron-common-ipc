@@ -27,7 +27,9 @@ class DeferredRequestPromise {
         this.promise = new Promise<Client.IpcBusRequestResponse>((resolve, reject) => {
             this.reject = reject;
             this.resolve = resolve;
-        });
+        })
+        // Prevent unhandled rejected promise
+        this.promise.catch(() => {});
         this._settled = false;
     }
 
