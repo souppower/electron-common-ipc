@@ -14,6 +14,10 @@ export function ActivateServiceTrace(enable: boolean): void {
     IpcBusUtils.Logger.service = enable;
 }
 
+// Force to execute code
+/** @internal */
+import './IpcBus/service/IpcBusService-factory';
+
 // export function ActivateIpcBusLogFile(filename: string): void {
 //     IpcBusUtils.ConsoleLogger.logFile = filename;
 // }

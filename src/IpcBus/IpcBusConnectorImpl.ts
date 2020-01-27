@@ -41,6 +41,16 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         }
     }
 
+    trackMessageCreation(ipcBusCommand: IpcBusCommand, args?: any[]) {
+        if (this._logLevel & LogLevel.Sent) {
+            ipcBusCommand.log = ipcBusCommand.log || {};
+            ipcBusCommand.log.post = {
+                id: `${this._peer.id}-${this._messageId++}`,
+                timestamp: Date.now()
+            };
+        }
+    }
+
     trackCommandLocal(ipcBusCommand: IpcBusCommand, args?: any[]) {
         if (this._logLevel & LogLevel.Sent) {
             const ipcBusCommandLog: IpcBusCommand = {
@@ -54,16 +64,6 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
                 local: true
             };
             this.postCommand(ipcBusCommandLog);
-        }
-    }
-
-    trackMessageCreation(ipcBusCommand: IpcBusCommand, args?: any[]) {
-        if (this._logLevel & LogLevel.Sent) {
-            ipcBusCommand.log = ipcBusCommand.log || {};
-            ipcBusCommand.log.post = {
-                id: `${this._peer.id}-${this._messageId++}`,
-                timestamp: Date.now().valueOf()
-            };
         }
     }
 

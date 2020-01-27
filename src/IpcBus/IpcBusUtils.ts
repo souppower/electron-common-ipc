@@ -123,7 +123,7 @@ export function JSON_stringify(data: any, maxLen: number): string {
             }
             break;
         case 'string':
-            output = data.substr(0, maxLen);
+            output = data.substr(0, maxLen).replace(';', ' ');
             break;
         case 'number':
             output = data.toString();

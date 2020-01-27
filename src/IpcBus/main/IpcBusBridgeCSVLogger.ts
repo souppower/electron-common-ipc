@@ -1,5 +1,3 @@
-/// <reference types='electron' />
-
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -23,7 +21,7 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
 
         !fs.existsSync(logPath) && fs.mkdirSync(logPath);
 
-        this._logger = csvWriter({ separator: ';', headers: [
+        this._logger = csvWriter({ separator: '\t', headers: [
             '#',
             'peer id',
             'peer',

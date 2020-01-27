@@ -10,7 +10,7 @@ import { IpcBusConnector } from './IpcBusConnector';
 const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
 
 /** @internal */
-class DeferredRequest {
+class DeferredRequestPromise {
     public promise: Promise<Client.IpcBusRequestResponse>;
 
     public resolve: (value: Client.IpcBusRequestResponse) => void;
@@ -86,7 +86,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected _waitForClosed: Promise<void>;
     protected _logLevel: number;
 
-    protected _requestFunctions: Map<string, DeferredRequest>;
+    protected _requestFunctions: Map<string, DeferredRequestPromise>;
     protected _packetDecoder: IpcPacketBuffer;
     protected _postCommandBind: Function;
 
@@ -94,7 +94,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._connector = connector;
 
         this._peer = { id: uuid.v1(), name: '', process: connector.process };
-        this._requestFunctions = new Map<string, DeferredRequest>();
+        this._requestFunctions = new Map<string, DeferredRequestPromise>();
         this._packetDecoder = new IpcPacketBuffer();
         this._postCommandBind = () => {};
         this._waitForClosed = Promise.resolve();
@@ -267,7 +267,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
         const ipcBusCommandRequest: IpcBusCommand.Request = {channel, replyChannel: IpcBusTransportImpl.generateReplyChannel(client.peer) };
-        const deferredRequest = new DeferredRequest(client, ipcBusCommandRequest);
+        const deferredRequest = new DeferredRequestPromise(client, ipcBusCommandRequest);
         // Register locally
          this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
         // Clean-up
