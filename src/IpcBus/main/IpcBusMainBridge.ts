@@ -11,13 +11,16 @@ import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     protected _bridge: IpcBusBridgeImpl;
     
-    constructor(contextType: Client.IpcBusProcessType) {
+    constructor(contextType: Client.IpcBusProcessType, bridge: IpcBusBridgeImpl) {
        super(contextType);
+
+       this._bridge = bridge;
     }
 
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         const handshake: IpcBusConnector.Handshake = {
-            process: this.process
+            process: this.process,
+            logChannel: this._logChannel
         }
         return Promise.resolve(handshake);
     }
@@ -27,8 +30,18 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     }
 
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        // Bypassed by ipcPostMessage and postAdmin below
-        throw 'not implemented';
+        this._logChannel && this.trackCommandPost(false, ipcBusCommand, args);
+        switch (ipcBusCommand.kind) {
+            case IpcBusCommand.Kind.SendMessage:
+            case IpcBusCommand.Kind.RequestResponse:
+            case IpcBusCommand.Kind.RequestClose:
+            case IpcBusCommand.Kind.Log:
+                this._bridge._onMainMessageReceived(ipcBusCommand, args);
+                break;
+            default: 
+                this._bridge._trackAdmin(ipcBusCommand);
+                break;
+        }
     }
 
     postBuffer(buffer: Buffer) {
@@ -37,19 +50,4 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
 }
 
 export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl { // implements IpcBusBridgeClient {
-    protected _bridge: IpcBusBridgeImpl;
-
-    constructor(connector: IpcBusConnector, bridge: IpcBusBridgeImpl) {
-        super(connector);
-        this._bridge = bridge;
-    }
-
-    protected postAdmin(ipcBusCommand: IpcBusCommand): void {
-        // skipped, admin messages does not interest Bridge
-        // this._bridge.trackAdmin(ipcBusCommand);
-    }
-
-    protected postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        this._bridge._onMainMessageReceived(ipcBusCommand, args);
-    }
 }

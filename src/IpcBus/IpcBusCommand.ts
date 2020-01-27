@@ -16,8 +16,10 @@ export namespace IpcBusCommand {
         RequestResponse             = 'RQR',
         RequestClose                = 'RQC',
 
-        BridgeConnect                     = 'BCOO',    // COnnexion
-        BridgeClose                       = 'BCOC',
+        Log                         = 'LOG',
+
+        BridgeConnect               = 'BCOO',    // COnnexion
+        BridgeClose                 = 'BCOC',
     };
 
     /** @internal */
@@ -27,6 +29,17 @@ export namespace IpcBusCommand {
         resolve?: boolean;
         reject?: boolean;
     }
+
+    /** @internal */
+    export interface Log {
+        sent?: { 
+            id: string;
+            timestamp: number;
+        }
+        received?: {
+            command: IpcBusCommand
+        };
+    }
 }
 
 /** @internal */
@@ -35,5 +48,6 @@ export interface IpcBusCommand {
     kind: IpcBusCommand.Kind;
     channel: string;
     request?: IpcBusCommand.Request;
+    log?: IpcBusCommand.Log;
     bridge?: boolean;
 }

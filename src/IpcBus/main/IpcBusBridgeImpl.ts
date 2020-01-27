@@ -57,8 +57,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     constructor(contextType: Client.IpcBusProcessType) {
         this._packet = new IpcPacketBuffer();
-        const mainConnector = new IpcBusBridgeConnectorMain(contextType);
-        this._mainTransport = new IpcBusBridgeTransportMain(mainConnector, this);
+        const mainConnector = new IpcBusBridgeConnectorMain(contextType, this);
+        this._mainTransport = new IpcBusBridgeTransportMain(mainConnector);
         this._rendererConnector = new IpcBusRendererBridge(this);
     }
 
@@ -119,13 +119,17 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     //     });
     //     return queryStateResult;
     // }
+    _trackAdmin(ipcBusCommand: IpcBusCommand) {
+    }
 
+    // This is coming from the Electron Renderer Process (Electron main ipc)
+    // =================================================================================================
     _onRendererMessagedReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         this._mainTransport.onConnectorBufferReceived(null, ipcBusCommand, rawContent);
         this._netTransport && this._netTransport.broadcastBuffer(ipcBusCommand, rawContent.buffer);
     }
 
-    // This is coming from the Electron Main Process (Electron ipc)
+    // This is coming from the Electron Main Process (Electron main ipc)
     // =================================================================================================
     _onMainMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]) {
         // Prevent serializing for nothing !
