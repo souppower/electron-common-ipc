@@ -258,18 +258,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 this._socketCleanUp(socket);
                 break;
 
-            // case IpcBusCommand.Kind.AddChannels: {
-            //     const channels: string[] = packet.parseArrayAt(1);
-            //     this._subscriptions.addRefs(channels, socket, ipcBusCommand.peer);
-            //     break;
-            // }
-
-            // case IpcBusCommand.Kind.RemoveChannels: {
-            //     const channels: string[] = packet.parseArrayAt(1);
-            //     this._subscriptions.releases(channels, socket, ipcBusCommand.peer);
-            //     break;
-            // }
-
             case IpcBusCommand.Kind.AddChannelListener:
                 this._subscriptions.addRef(ipcBusCommand.channel, socket, ipcBusCommand.peer);
                 break;
@@ -336,21 +324,11 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
             }
 
-            // case IpcBusCommand.Kind.AddBridgeChannels: {
-            //     const channels: string[] = packet.parseArrayAt(1);
-            //     channels.forEach(channel => {
-            //         this._bridgeChannels.add(channel);
-            //     });
-            //     break;
-            // }
-
-            // case IpcBusCommand.Kind.RemoveBridgeChannels: {
-            //     const channels: string[] = packet.parseArrayAt(1);
-            //     channels.forEach(channel => {
-            //         this._bridgeChannels.delete(channel);
-            //     });
-            //     break;
-            // }
+            case IpcBusCommand.Kind.LogGet:
+            case IpcBusCommand.Kind.LogSend: {
+                this.bridgeBroadcastMessage(ipcBusCommand, packet);
+                break;
+            }
 
             // BridgeClose/Connect received are coming from IpcBusBridge only !
             case IpcBusCommand.Kind.BridgeConnect: {

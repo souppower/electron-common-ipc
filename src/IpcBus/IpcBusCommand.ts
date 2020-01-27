@@ -8,16 +8,21 @@ export namespace IpcBusCommand {
         Shutdown                    = 'SHT',
         Connect                     = 'COO',    // Obsolete
         Close                       = 'COC',    // Obsolete
+
         AddChannelListener          = 'LICA',
         RemoveChannelListener       = 'LICR',
         RemoveChannelAllListeners   = 'LICRA',
         RemoveListeners             = 'LIR',
+
         SendMessage                 = 'MES',
         RequestResponse             = 'RQR',
         RequestClose                = 'RQC',
 
-        BridgeConnect                     = 'BCOO',    // COnnexion
-        BridgeClose                       = 'BCOC',
+        LogGet                      = 'LOGG',
+        LogSend                     = 'LOGS',
+
+        BridgeConnect               = 'BCOO',    // COnnexion
+        BridgeClose                 = 'BCOC',
     };
 
     /** @internal */
@@ -27,6 +32,18 @@ export namespace IpcBusCommand {
         resolve?: boolean;
         reject?: boolean;
     }
+
+    /** @internal */
+    export interface Log {
+        post?: { 
+            id: string;
+            timestamp: number;
+        }
+        received?: {
+            command: IpcBusCommand,
+            local: boolean
+        };
+    }
 }
 
 /** @internal */
@@ -35,5 +52,6 @@ export interface IpcBusCommand {
     kind: IpcBusCommand.Kind;
     channel: string;
     request?: IpcBusCommand.Request;
+    log?: IpcBusCommand.Log;
     bridge?: boolean;
 }

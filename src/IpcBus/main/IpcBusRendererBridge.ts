@@ -31,7 +31,23 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             false
         );
 
-        // this._bridge.trackAdmin(ipcBusCommand);
+        // this._subscriptions.emitter = true;
+        // this._subscriptions.on('channel-added', (channel) => {
+        //     const ipcBusCommand = { 
+        //         kind: IpcBusCommand.Kind.AddChannelListener,
+        //         peer: this._peer,
+        //         channel
+        //     }
+        //     this._bridge._trackAdmin(ipcBusCommand);
+        // });
+        // this._subscriptions.on('channel-removed', (channel) => {
+        //     const ipcBusCommand = { 
+        //         kind: IpcBusCommand.Kind.RemoveChannelListener,
+        //         peer: this._peer,
+        //         channel
+        //     }
+        //     this._bridge._trackAdmin(ipcBusCommand);
+        // });
 
         // callbacks
         this._onRendererCommandReceived = this._onRendererCommandReceived.bind(this);
@@ -86,6 +102,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             // For backward we fill pid with webContents id
             handshake.process.pid = webContents.id;
         }
+        handshake.logLevel = IpcBusUtils.CheckLogLevel();
         return handshake;
     }
 
@@ -147,6 +164,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
             case IpcBusCommand.Kind.RequestClose:
                 this._subscriptions.removeChannel(ipcBusCommand.channel);
+                // this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
+                //     connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                // });
                 break;
         }
     }

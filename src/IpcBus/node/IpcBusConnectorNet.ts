@@ -149,9 +149,12 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
                 else if (this._socketBuffer > 0) {
                     this._socketWriter = new BufferedSocketWriter(this._socket, this._socketBuffer);
                 }
-                resolve({
-                    process: this._peer.process
-                });
+
+                const handshake: IpcBusConnector.Handshake = {
+                    process: this._peer.process,
+                    logLevel: this._logLevel
+                }
+                resolve(handshake);
             };
 
             fctReject = (msg: string) => {
@@ -224,6 +227,7 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
 
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._socketWriter) {
+            // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
             if (args) {
                 this._packetOut.writeArray(this._socketWriter, [ipcBusCommand, args]);
             }

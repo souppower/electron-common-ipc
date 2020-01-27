@@ -46,15 +46,12 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         // In sandbox mode, 1st parameter is no more the event, but directly arguments !!!
         if (handshakeArg) {
             const handshake = handshakeArg;
-            this._peer.process = handshake.process;
-            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Standard listening for #${this._peer.name}`);
             this._onIpcEventReceived = this._client.onConnectorBufferReceived.bind(this._client);
             this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             return handshake;
         }
         else {
             const handshake = peerOrArgs as IpcBusConnector.Handshake;
-            this._peer.process = handshake.process;
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._peer.name}`);
             this._onIpcEventReceived = this._client.onConnectorBufferReceived.bind(this._client, undefined);
             this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
@@ -72,6 +69,8 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                 this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
                 this.addClient(client);
                 const handshake = this._onConnect(eventOrPeer, peerOrArgs, handshakeArg);
+                this._peer.process = handshake.process;
+                this._logLevel = handshake.logLevel;
                 clearTimeout(timer);
                 resolve(handshake);
             };
@@ -104,6 +103,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         ipcBusCommand.bridge = true;
+        // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
         if (args) {
             this._packetOut.serializeArray([ipcBusCommand, args]);
         }

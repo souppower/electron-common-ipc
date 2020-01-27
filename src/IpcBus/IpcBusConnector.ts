@@ -8,7 +8,7 @@ export namespace IpcBusConnector {
     /** @internal */
     export interface Handshake {
         process: Client.IpcBusProcess;
-        log?: boolean;
+        logLevel?: number;
     }
 
     /** @internal */
@@ -21,11 +21,15 @@ export namespace IpcBusConnector {
 
 /** @internal */
 export interface IpcBusConnector {
-    readonly process: Client.IpcBusProcess;
+    readonly process: Client.IpcBusProcess | null;
 
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
     shutdown(client: IpcBusConnector.Client, options: Client.IpcBusClient.CloseOptions): Promise<void>;
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
     postBuffer(buffer: Buffer): void;
+
+    trackMessageCreation(ipcBusCommand: IpcBusCommand, args?: any[]): void;
+    trackMessageLocal(ipcBusCommand: IpcBusCommand, args?: any[]): void;
+    trackMessageReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void;
 }
 

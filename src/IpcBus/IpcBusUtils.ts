@@ -49,6 +49,22 @@ export function CheckConnectOptions<T extends IpcConnectOptions>(arg1: T | strin
     return options;
 }
 
+export enum LogLevel {
+    None = 0,
+    Sent = 1,
+    Received = 2,
+    Args = 4
+}
+
+export function CheckLogLevel(): number {
+// In renderer process, there is no process object
+    const logLevelAny = process && process.env && process.env['ELECTRON_IPC_LOG'];
+    let logLevel = Number(logLevelAny);
+    logLevel = Math.min(logLevel, 3);
+    logLevel = Math.max(logLevel, 0);
+    return logLevel;
+}
+
 function JSON_stringify_array(data: any[], maxLen: number, output: string): string {
     output += '[';
     for (let i = 0, l = data.length; i < l; ++i) {
@@ -107,7 +123,7 @@ export function JSON_stringify(data: any, maxLen: number): string {
             }
             break;
         case 'string':
-            output = data.substr(0, maxLen);
+            output = data.substr(0, maxLen).replace(';', ' ');
             break;
         case 'number':
             output = data.toString();
@@ -131,15 +147,15 @@ export function BinarySearch<T>(array: T[], target: T, compareFn: (l: T, r: T) =
         if (compareResult > 0) {
             left = middle + 1;
         }
-        else {
+        else if (compareResult < 0) {
             right = middle;
-            // We are looking for the lowest index so we can't return immediately.
-            found = (compareResult === 0);
+        }
+        else {
+            return middle;
         }
     }
-    // left is the index if found, or the insertion point otherwise.
-    // ~left is a shorthand for -left - 1.
-    return found ? left : ~left;
+    // left is the insertion point if not found
+    return -left - 1;
 };
 
 

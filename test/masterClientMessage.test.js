@@ -38,7 +38,16 @@ function test(remoteBroker, busPath) {
           let ipcBusPath = brokers.getBusPath();
           ipcClient1 = ipcBusModule.CreateIpcBusClient();
           ipcClient2 = ipcBusModule.CreateIpcBusClient();
-          return Promise.all([ipcClient1.connect(ipcBusPath, { peerName: 'client1', timeoutDelay }), ipcClient2.connect(ipcBusPath, { peerName: 'client2', timeoutDelay })]);
+          let ipcClient3Connect = Promise.resolve();
+          if (busPath) {
+            ipcClientNet3 = ipcBusModule.IpcBusClientNet.Create();
+            ipcClient3Connect = ipcClientNet3.connect(busPath, { peerName: 'clientnet1', timeoutDelay });
+          }
+          return Promise.all([
+            ipcClient1.connect({ peerName: 'client1', timeoutDelay }),
+            ipcClient2.connect({ peerName: 'client2', timeoutDelay }),
+            ipcClient3Connect
+          ]);
         })
     });
 
@@ -65,7 +74,7 @@ function test(remoteBroker, busPath) {
           setTimeout(() => {
             console.time(msg);
             ipcClient1.send('test-message', param);
-          }, 200);
+          }, 100);
         });
       }
       {
@@ -87,7 +96,7 @@ function test(remoteBroker, busPath) {
                 assert(comparator(result.payload, param));
                 done();
               })
-          }, 200);
+          }, 100);
         });
       }
     }

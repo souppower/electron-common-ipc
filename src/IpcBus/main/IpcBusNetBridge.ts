@@ -27,7 +27,23 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
             false
         );
 
-        // this._bridge.trackAdmin(ipcBusCommand);
+        // this._subscriptions.emitter = true;
+        // this._subscriptions.on('channel-added', (channel) => {
+        //     const ipcBusCommand = { 
+        //         kind: IpcBusCommand.Kind.AddChannelListener,
+        //         peer: this._peer,
+        //         channel
+        //     }
+        //     this._bridge._trackAdmin(ipcBusCommand);
+        // });
+        // this._subscriptions.on('channel-removed', (channel) => {
+        //     const ipcBusCommand = { 
+        //         kind: IpcBusCommand.Kind.RemoveChannelListener,
+        //         peer: this._peer,
+        //         channel
+        //     }
+        //     this._bridge._trackAdmin(ipcBusCommand);
+        // });
     }
 
     connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
@@ -69,18 +85,13 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         throw 'not implemented';
     }
 
-    onMessageReceived(ipcBusCommand: IpcBusCommand, args: any[], local?: boolean): void {
+    onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): void {
         throw 'not implemented';
     }
 
     protected postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         throw 'not implemented';
     }
-
-    // protected postAdmin(ipcBusCommand: IpcBusCommand): void {
-        // super.postAdmin(ipcBusCommand);
-        // this._bridge.trackAdmin(ipcBusCommand);
-    // }
 
     broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void {
         switch (ipcBusCommand.kind) {
@@ -104,6 +115,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
 
             case IpcBusCommand.Kind.RequestClose:
                 const hasChannel = this._subscriptions.removeChannel(ipcBusCommand.channel);
+                // To inform Broker
                 if (buffer && hasChannel) {
                     this._connector.postBuffer(buffer);
                 }

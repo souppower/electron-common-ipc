@@ -24,8 +24,8 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         return channels;
     }
 
-    onMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[], local?: boolean): void {
-        this._client && this._onClientMessageReceived(this._client, ipcBusCommand, args, local);
+    onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
+        this._client && this._onClientMessageReceived(this._client, local, ipcBusCommand, args);
     }
 
     onConnectorShutdown() {
@@ -48,17 +48,8 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
 
     close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         if (this._client && (this._client === client)) {
-            this._requestFunctions.forEach(request => {
-                this.postMessage({ 
-                    kind: IpcBusCommand.Kind.RequestClose,
-                    channel: request.request.channel,
-                    peer: client.peer,
-                    request: request.request
-                });
-                request.timeout();
-            });
-            this._requestFunctions.clear();
             this._client = null;
+            this.cancelRequest(client);
             return super.close(client, options);
         }
         return Promise.resolve();

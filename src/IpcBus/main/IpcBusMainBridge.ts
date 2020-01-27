@@ -5,19 +5,22 @@ import { IpcBusCommand } from '../IpcBusCommand';
 // import { IpcBusTransportNet } from '../node/IpcBusTransportNet';
 import { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
-import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultiImpl'; 
-import { IpcBusBridgeImpl } from './IpcBusBridgeImpl'; 
+import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultiImpl';
+import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 
 export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     protected _bridge: IpcBusBridgeImpl;
-    
-    constructor(contextType: Client.IpcBusProcessType) {
-       super(contextType);
+
+    constructor(contextType: Client.IpcBusProcessType, bridge: IpcBusBridgeImpl) {
+        super(contextType);
+
+        this._bridge = bridge;
     }
 
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         const handshake: IpcBusConnector.Handshake = {
-            process: this.process
+            process: this.process,
+            logLevel: this._logLevel
         }
         return Promise.resolve(handshake);
     }
@@ -27,8 +30,24 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     }
 
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        // Bypassed by ipcPostMessage and postAdmin below
-        throw 'not implemented';
+        // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
+        switch (ipcBusCommand.kind) {
+            case IpcBusCommand.Kind.AddChannelListener:
+                break;
+
+            case IpcBusCommand.Kind.RemoveChannelListener:
+                break;
+
+            case IpcBusCommand.Kind.RemoveChannelAllListeners:
+                break;
+
+            case IpcBusCommand.Kind.RemoveListeners:
+                break;
+
+            default :
+                this._bridge._onMainMessageReceived(ipcBusCommand, args);
+                break;
+        }
     }
 
     postBuffer(buffer: Buffer) {
@@ -37,19 +56,4 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
 }
 
 export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl { // implements IpcBusBridgeClient {
-    protected _bridge: IpcBusBridgeImpl;
-
-    constructor(connector: IpcBusConnector, bridge: IpcBusBridgeImpl) {
-        super(connector);
-        this._bridge = bridge;
-    }
-
-    protected postAdmin(ipcBusCommand: IpcBusCommand): void {
-        // skipped, admin messages does not interest Bridge
-        // this._bridge.trackAdmin(ipcBusCommand);
-    }
-
-    protected postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        this._bridge._onMainMessageReceived(ipcBusCommand, args);
-    }
 }
