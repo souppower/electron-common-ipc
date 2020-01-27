@@ -147,15 +147,15 @@ export function BinarySearch<T>(array: T[], target: T, compareFn: (l: T, r: T) =
         if (compareResult > 0) {
             left = middle + 1;
         }
-        else {
+        else if (compareResult < 0) {
             right = middle;
-            // We are looking for the lowest index so we can't return immediately.
-            found = (compareResult === 0);
+        }
+        else {
+            return middle;
         }
     }
-    // left is the index if found, or the insertion point otherwise.
-    // ~left is a shorthand for -left - 1.
-    return found ? left : ~left;
+    // left is the insertion point if not found
+    return -left - 1;
 };
 
 
