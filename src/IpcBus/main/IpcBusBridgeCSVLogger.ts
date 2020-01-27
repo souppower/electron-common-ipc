@@ -54,51 +54,67 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 log.push(
-                    ipcBusCommand.log.sent.id,
+                    ipcBusCommand.log.post.id,
                     ipcBusCommand.channel,
-                    ipcBusCommand.kind,
-                    ipcBusCommand.log.sent.timestamp.toString(),
+                    'SEND-MESSAGE',
+                    '', // ipcBusCommand.log.post.timestamp.toString(),
                     ipcBusCommand.request ? JSON.stringify(ipcBusCommand.request) : ''
                 );
-                if (args) {
-                    for (let i = 0, l = args.length; i < l; ++i) {
-                        log.push(JSON_stringify(args[i], 255));
-                    }
-                }
                 break;
             }
-            case IpcBusCommand.Kind.Log: {
+            case IpcBusCommand.Kind.RequestResponse: {
+                log.push(
+                    ipcBusCommand.log.post.id,
+                    ipcBusCommand.channel,
+                    'SEND-RESPONSE',
+                    '', // ipcBusCommand.log.post.timestamp.toString(),
+                    JSON.stringify(ipcBusCommand.request)
+                );
+                break;
+            }
+            case IpcBusCommand.Kind.LogGet: {
                 const original_command = ipcBusCommand.log.received.command;
-                const local = (ipcBusCommand.peer.id === original_command.peer.id);
-                const delay = (ipcBusCommand.log.sent.timestamp - original_command.log.sent.timestamp);
+                const local = ipcBusCommand.log.received.local; // (ipcBusCommand.peer.id === original_command.peer.id);
+                const delay = (ipcBusCommand.log.post.timestamp - original_command.log.post.timestamp);
                 if (original_command.kind === IpcBusCommand.Kind.SendMessage) {
                     log.push(
-                        original_command.log.sent.id,
+                        original_command.log.post.id,
                         original_command.channel,
-                        local ? 'GET-local' : 'GET',
+                        local ? 'MESSAGE-local' : 'MESSAGE',
                         delay.toString(),
                         original_command.request ? JSON.stringify(original_command.request) : ''
                     );
                 }
                 else if (original_command.kind === IpcBusCommand.Kind.RequestResponse) {
                     log.push(
-                        original_command.log.sent.id,
+                        original_command.log.post.id,
                         original_command.request.channel,
-                        local ? 'RES-local' : 'RES',
+                        local ? 'RESPONSE-local' : 'RESPONSE',
                         delay.toString(),
                         JSON.stringify(original_command.request)
                     );
                 }
-                if (args) {
-                    for (let i = 0, l = args.length; i < l; ++i) {
-                        log.push(JSON_stringify(args[i], 255));
-                    }
-                }
+                break;
+            }
+            case IpcBusCommand.Kind.LogSend: {
+                const original_command = ipcBusCommand.log.received.command;
+                log.push(
+                    original_command.log.post.id,
+                    original_command.channel,
+                    'SEND-local',
+                    '', // ipcBusCommand.log.post.timestamp.toString(),
+                    original_command.request ? JSON.stringify(original_command.request) : ''
+                );
                 break;
             }
         }
+        if (args) {
+            for (let i = 0, l = args.length; i < l; ++i) {
+                log.push(JSON_stringify(args[i], 255));
+            }
+        }
         this._logger.write(log);
-        return (ipcBusCommand.kind !== IpcBusCommand.Kind.Log);
+        return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }
 }
 

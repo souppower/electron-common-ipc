@@ -125,9 +125,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         const listeners = client.listeners(ipcBusCommand.channel);
         const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
         if (ipcBusCommand.request) {
-            const settled = (resolve: boolean, args: any[]) => {
+            const settled = (resolve: boolean, argsResponse: any[]) => {
                 // Is it a local request ?
-                const ipcBusCommandResponse = {
+                const ipcBusCommandResponse: IpcBusCommand = {
                     kind: IpcBusCommand.Kind.RequestResponse,
                     channel: ipcBusCommand.request.replyChannel,
                     peer: client.peer,
@@ -139,18 +139,24 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 else {
                     ipcBusCommand.request.reject = true;
                 }
+                if (this._logLevel) {
+                    this._connector.trackMessageCreation(ipcBusCommandResponse, argsResponse);
+                    ipcBusCommandResponse.log.post.id = ipcBusCommand.log.post.id;
+                }
                 if (local) {
                     const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
                     if (deferredRequest) {
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
                         this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
-                        this._logLevel && this._connector.trackCommandPost(ipcBusCommandResponse, args);
-                        this._logLevel && this._connector.trackCommandReceived(deferredRequest.client.peer, true, ipcBusCommandResponse, args);
+                        // Simulate message reception
+                        if (this._logLevel) {
+                            this._connector.trackCommandReceived(deferredRequest.client.peer, true, ipcBusCommandResponse, argsResponse);
+                        }
                         deferredRequest.settled(ipcBusCommandResponse, args);
                     }
                 }
                 else {
-                    this.postMessage(ipcBusCommandResponse, args);
+                    this.postMessage(ipcBusCommandResponse, argsResponse);
                 }
             }
             ipcBusEvent.request = {
@@ -164,7 +170,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 }
             };
         }
-        this._logLevel && this._connector.trackCommandReceived(client.peer, local, ipcBusCommand, args);
+        if (this._logLevel) {
+            this._connector.trackCommandReceived(client.peer, local, ipcBusCommand, args);
+        }
         for (let i = 0; i < listeners.length; ++i) {
             listeners[i].call(client, ipcBusEvent, ...args);
         }
@@ -185,7 +193,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
                     this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
                     const args = ipcPacketBuffer.parseArrayAt(1);
-                    this._logLevel && this._connector.trackCommandReceived(deferredRequest.client.peer, false, ipcBusCommand, args);
+                    if (this._logLevel) {
+                        this._connector.trackCommandReceived(deferredRequest.client.peer, false, ipcBusCommand, args);
+                    }
                     deferredRequest.settled(ipcBusCommand, args);
                 }
                 break;
@@ -216,7 +226,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     this._requestFunctions.delete(ipcBusCommand.channel);
                     this._packetDecoder.setRawContent(rawContent);
                     const args = this._packetDecoder.parseArrayAt(1);
-                    this._logLevel && this._connector.trackCommandReceived(deferredRequest.client.peer, false, ipcBusCommand, args);
+                    if (this._logLevel) {
+                        this._connector.trackCommandReceived(deferredRequest.client.peer, false, ipcBusCommand, args);
+                    }
                     deferredRequest.settled(ipcBusCommand, args);
                 }
                 break;
@@ -241,7 +253,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             peer: client.peer
         }
         // Broadcast locally
-        this._logLevel && this._connector.trackCommandPost(ipcMessage, args);
+        if (this._logLevel) {
+            this._connector.trackMessageCreation(ipcMessage, args);
+        }
         if (this.hasChannel(channel)) {
             this.onMessageReceived(true, ipcMessage, args);
         }
@@ -277,7 +291,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             peer: client.peer,
             request: ipcBusCommandRequest
         }
-        this._logLevel && this._connector.trackCommandPost(ipcMessage, args);
+        if (this._logLevel) {
+            this._connector.trackMessageCreation(ipcMessage, args);
+        }
         // Broadcast locally
         if (this.hasChannel(channel)) {
             this.onMessageReceived(true, ipcMessage, args);

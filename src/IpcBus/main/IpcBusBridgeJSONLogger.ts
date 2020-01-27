@@ -37,7 +37,8 @@ export class IpcBusBridgeJSONLogger extends IpcBusBridgeLogger {
         }
         log.peer = ipcBusCommand.peer;
         this._logger.info(ipcBusCommand.kind, log);
-        return (ipcBusCommand.kind !== IpcBusCommand.Kind.Log);
+        return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
+
     }
 }
 

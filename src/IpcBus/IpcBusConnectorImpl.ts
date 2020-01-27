@@ -4,7 +4,7 @@ import * as uuid from 'uuid';
 import { IpcBusConnector } from './IpcBusConnector';
 import { IpcBusCommand } from './IpcBusCommand';
 import * as Client from './IpcBusClient';
-import { CheckLogLevel } from './IpcBusUtils';
+import { CheckLogLevel, LogLevel } from './IpcBusUtils';
 
 // Implementation for renderer process
 /** @internal */
@@ -41,29 +41,46 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         }
     }
 
-    trackCommandPost(ipcBusCommand: IpcBusCommand, args?: any[]) {
-        ipcBusCommand.log = ipcBusCommand.log || {};
-        ipcBusCommand.log.sent = {
-            id: `${this._peer.id}-${this._messageId++}`,
-            timestamp: Date.now().valueOf()
-        };
+    trackCommandLocal(ipcBusCommand: IpcBusCommand, args?: any[]) {
+        if (this._logLevel & LogLevel.Sent) {
+            const ipcBusCommandLog: IpcBusCommand = {
+                kind: IpcBusCommand.Kind.LogSend,
+                peer: ipcBusCommand.peer,
+                channel: ''
+            };
+            this.trackMessageCreation(ipcBusCommandLog, args);
+            ipcBusCommandLog.log.received = {
+                command: ipcBusCommand,
+                local: true
+            };
+            this.postCommand(ipcBusCommandLog);
+        }
+    }
+
+    trackMessageCreation(ipcBusCommand: IpcBusCommand, args?: any[]) {
+        if (this._logLevel & LogLevel.Sent) {
+            ipcBusCommand.log = ipcBusCommand.log || {};
+            ipcBusCommand.log.post = {
+                id: `${this._peer.id}-${this._messageId++}`,
+                timestamp: Date.now().valueOf()
+            };
+        }
     }
 
     trackCommandReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        if (ipcBusCommand.log == null) {
-            return;
+        if (this._logLevel >= LogLevel.Received) {
+            const ipcBusCommandLog: IpcBusCommand = {
+                kind: IpcBusCommand.Kind.LogGet,
+                peer,
+                channel: ''
+            };
+            this.trackMessageCreation(ipcBusCommandLog, args);
+            ipcBusCommandLog.log.received = {
+                command: ipcBusCommand,
+                local
+            };
+            this.postCommand(ipcBusCommandLog);
         }
-        const ipcBusCommandLog: IpcBusCommand = {
-            kind: IpcBusCommand.Kind.Log,
-            peer,
-            channel: ''
-        };
-        ipcBusCommandLog.log = ipcBusCommandLog.log || {};
-        ipcBusCommandLog.log.received = {
-            command: ipcBusCommand
-        };
-        this.trackCommandPost(ipcBusCommandLog, args);
-        this.postCommand(ipcBusCommandLog);
     }
 
     abstract handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;

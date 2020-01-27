@@ -32,16 +32,20 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.SendMessage:
-            case IpcBusCommand.Kind.RequestResponse:
-            case IpcBusCommand.Kind.RequestClose:
+            case IpcBusCommand.Kind.AddChannelListener:
+                break;
+
+            case IpcBusCommand.Kind.RemoveChannelListener:
+                break;
+
+            case IpcBusCommand.Kind.RemoveChannelAllListeners:
+                break;
+
+            case IpcBusCommand.Kind.RemoveListeners:
+                break;
+
+            default :
                 this._bridge._onMainMessageReceived(ipcBusCommand, args);
-                break;
-            case IpcBusCommand.Kind.Log:
-                this._bridge.addLog(ipcBusCommand, args);
-                break;
-            default:
-                this._bridge._trackAdmin(ipcBusCommand);
                 break;
         }
     }

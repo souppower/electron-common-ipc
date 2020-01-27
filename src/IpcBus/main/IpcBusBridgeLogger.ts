@@ -14,12 +14,12 @@ export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
     addLogRawContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         this._packet.setRawContent(rawContent);
         this.addLog(ipcBusCommand, this._packet.parseArrayAt(1));
-        return (ipcBusCommand.kind !== IpcBusCommand.Kind.Log);
+        return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }
 
     addLogPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         this.addLog(ipcBusCommand, ipcPacketBuffer.parseArrayAt(1));
-        return (ipcBusCommand.kind !== IpcBusCommand.Kind.Log);
+        return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }
 
     _onRendererMessagedReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
