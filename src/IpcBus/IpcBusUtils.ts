@@ -140,7 +140,6 @@ export function JSON_stringify(data: any, maxLen: number): string {
 export function BinarySearch<T>(array: T[], target: T, compareFn: (l: T, r: T) => number) {
     let left = 0;  // inclusive
     let right = array.length;  // exclusive
-    let found = false;
     while (left < right) {
         let middle = (left + right) >> 1;
         const compareResult = compareFn(target, array[middle]);

@@ -152,7 +152,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                         if (this._logLevel) {
                             this._connector.trackMessageReceived(deferredRequest.client.peer, true, ipcBusCommandResponse, argsResponse);
                         }
-                        deferredRequest.settled(ipcBusCommandResponse, args);
+                        deferredRequest.settled(ipcBusCommandResponse, argsResponse);
                     }
                 }
                 else {

@@ -81,6 +81,12 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
         // Check service availability
         this._isStarted = false;
 
+        // Callback
+        this._onServiceReceived = this._onServiceReceived.bind(this);
+
+        // Register service start/stop/event events
+        this._ipcBusClient.addListener(ServiceUtils.getServiceEventChannel(this._serviceName), this._onServiceReceived);
+
         this.getStatus()
           .then((serviceStatus: Service.ServiceStatus) => {
                 this._onServiceStart(serviceStatus);
@@ -89,12 +95,6 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
             .catch((err) => {
                 IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] first status to '${this._serviceName}' - err: ${err}`);
             });
-
-        // Callback
-        this._onServiceReceived = this._onServiceReceived.bind(this);
-
-        // Register service start/stop/event events
-        this._ipcBusClient.addListener(ServiceUtils.getServiceEventChannel(this._serviceName), this._onServiceReceived);
     }
 
     connect<T>(options?: Service.IpcBusServiceProxy.ConnectOptions): Promise<T> {
