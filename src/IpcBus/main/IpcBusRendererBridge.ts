@@ -102,7 +102,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             // For backward we fill pid with webContents id
             handshake.process.pid = webContents.id;
         }
-        handshake.logChannel = process.env['ELECTRON_IPC_LOG'];
+        handshake.logLevel = IpcBusUtils.CheckLogLevel();
         return handshake;
     }
 

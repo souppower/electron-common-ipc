@@ -152,7 +152,7 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
 
                 const handshake: IpcBusConnector.Handshake = {
                     process: this._peer.process,
-                    logChannel: this._logChannel
+                    logLevel: this._logLevel
                 }
                 resolve(handshake);
             };
@@ -227,7 +227,7 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
 
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._socketWriter) {
-            this._logChannel && this.trackCommandPost(false, ipcBusCommand, args);
+            // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
             if (args) {
                 this._packetOut.writeArray(this._socketWriter, [ipcBusCommand, args]);
             }

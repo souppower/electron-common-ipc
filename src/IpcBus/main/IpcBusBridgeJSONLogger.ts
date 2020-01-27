@@ -28,7 +28,7 @@ export class IpcBusBridgeJSONLogger extends IpcBusBridgeLogger {
         });
     }
 
-    protected addLog(ipcBusCommand: IpcBusCommand, args: any[]): any {
+    addLog(ipcBusCommand: IpcBusCommand, args: any[]): boolean {
         const log: any = { command: ipcBusCommand };
         if (args) {
             for (let i = 0, l = args.length; i < l; ++i) {
@@ -37,6 +37,7 @@ export class IpcBusBridgeJSONLogger extends IpcBusBridgeLogger {
         }
         log.peer = ipcBusCommand.peer;
         this._logger.info(ipcBusCommand.kind, log);
+        return (ipcBusCommand.kind !== IpcBusCommand.Kind.Log);
     }
 }
 

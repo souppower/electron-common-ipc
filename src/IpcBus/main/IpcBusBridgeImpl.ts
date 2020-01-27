@@ -109,6 +109,18 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         });
     }
 
+    addLog(ipcBusCommand: IpcBusCommand, args: any[]): boolean {
+        return true;
+    }
+
+    addLogRawContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
+        return true;
+    }
+
+    addLogPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean {
+        return true;
+    }
+
     // // Not exposed
     // queryState(): Object {
     //     const queryStateResult: Object[] = [];

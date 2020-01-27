@@ -8,10 +8,12 @@ export namespace IpcBusCommand {
         Shutdown                    = 'SHT',
         Connect                     = 'COO',    // Obsolete
         Close                       = 'COC',    // Obsolete
+
         AddChannelListener          = 'LICA',
         RemoveChannelListener       = 'LICR',
         RemoveChannelAllListeners   = 'LICRA',
         RemoveListeners             = 'LIR',
+
         SendMessage                 = 'MES',
         RequestResponse             = 'RQR',
         RequestClose                = 'RQC',

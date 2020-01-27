@@ -8,7 +8,7 @@ export namespace IpcBusConnector {
     /** @internal */
     export interface Handshake {
         process: Client.IpcBusProcess;
-        logChannel?: string;
+        logLevel?: number;
     }
 
     /** @internal */
@@ -28,7 +28,7 @@ export interface IpcBusConnector {
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
     postBuffer(buffer: Buffer): void;
 
-    trackCommandPost(local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void;
+    trackCommandPost(ipcBusCommand: IpcBusCommand, args?: any[]): void;
     trackCommandReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void;
 }
 

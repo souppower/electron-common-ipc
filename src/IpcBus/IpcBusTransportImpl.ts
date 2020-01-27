@@ -84,7 +84,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected _peer: Client.IpcBusPeer;
     protected _waitForConnected: Promise<Client.IpcBusPeer>;
     protected _waitForClosed: Promise<void>;
-    protected _logChannel: string;
+    protected _logLevel: number;
 
     protected _requestFunctions: Map<string, DeferredRequest>;
     protected _packetDecoder: IpcPacketBuffer;
@@ -142,9 +142,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 if (local) {
                     const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
                     if (deferredRequest) {
-                        this._logChannel && this._connector.trackCommandPost(local, ipcBusCommandResponse, args);
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
                         this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
+                        this._logLevel && this._connector.trackCommandPost(ipcBusCommandResponse, args);
+                        this._logLevel && this._connector.trackCommandReceived(deferredRequest.client.peer, true, ipcBusCommandResponse, args);
                         deferredRequest.settled(ipcBusCommandResponse, args);
                     }
                 }
@@ -163,7 +164,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 }
             };
         }
-        this._logChannel && this._connector.trackCommandReceived(client.peer, local, ipcBusCommand, args);
+        this._logLevel && this._connector.trackCommandReceived(client.peer, local, ipcBusCommand, args);
         for (let i = 0; i < listeners.length; ++i) {
             listeners[i].call(client, ipcBusEvent, ...args);
         }
@@ -184,6 +185,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
                     this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
                     const args = ipcPacketBuffer.parseArrayAt(1);
+                    this._logLevel && this._connector.trackCommandReceived(deferredRequest.client.peer, false, ipcBusCommand, args);
                     deferredRequest.settled(ipcBusCommand, args);
                 }
                 break;
@@ -214,6 +216,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     this._requestFunctions.delete(ipcBusCommand.channel);
                     this._packetDecoder.setRawContent(rawContent);
                     const args = this._packetDecoder.parseArrayAt(1);
+                    this._logLevel && this._connector.trackCommandReceived(deferredRequest.client.peer, false, ipcBusCommand, args);
                     deferredRequest.settled(ipcBusCommand, args);
                 }
                 break;
@@ -238,8 +241,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             peer: client.peer
         }
         // Broadcast locally
+        this._logLevel && this._connector.trackCommandPost(ipcMessage, args);
         if (this.hasChannel(channel)) {
-            this._logChannel && this._connector.trackCommandPost(true, ipcMessage, args);
             this.onMessageReceived(true, ipcMessage, args);
         }
         this.postMessage(ipcMessage, args);
@@ -274,9 +277,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             peer: client.peer,
             request: ipcBusCommandRequest
         }
+        this._logLevel && this._connector.trackCommandPost(ipcMessage, args);
         // Broadcast locally
         if (this.hasChannel(channel)) {
-            this._logChannel && this._connector.trackCommandPost(true, ipcMessage, args);
             this.onMessageReceived(true, ipcMessage, args);
         }
         // If not resolved by local clients
@@ -295,7 +298,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             .then((handshake) => {
                 const peer = { id: uuid.v1(), name: '', process: handshake.process };
                 peer.name = options.peerName || IpcBusTransportImpl.generateName(peer);
-                this._logChannel = handshake.logChannel;
+                this._logLevel = handshake.logLevel;
                 this._postCommandBind = this._connector.postCommand.bind(this._connector);
                 return peer;
             })

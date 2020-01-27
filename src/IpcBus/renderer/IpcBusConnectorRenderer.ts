@@ -70,7 +70,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                 this.addClient(client);
                 const handshake = this._onConnect(eventOrPeer, peerOrArgs, handshakeArg);
                 this._peer.process = handshake.process;
-                this._logChannel = handshake.logChannel;
+                this._logLevel = handshake.logLevel;
                 clearTimeout(timer);
                 resolve(handshake);
             };
@@ -103,7 +103,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         ipcBusCommand.bridge = true;
-        this._logChannel && this.trackCommandPost(false, ipcBusCommand, args);
+        // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
         if (args) {
             this._packetOut.serializeArray([ipcBusCommand, args]);
         }

@@ -4,6 +4,7 @@ import * as uuid from 'uuid';
 import { IpcBusConnector } from './IpcBusConnector';
 import { IpcBusCommand } from './IpcBusCommand';
 import * as Client from './IpcBusClient';
+import { CheckLogLevel } from './IpcBusUtils';
 
 // Implementation for renderer process
 /** @internal */
@@ -11,7 +12,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     protected _client: IpcBusConnector.Client;
     protected _peer: Client.IpcBusPeer;
     protected _messageId: number;
-    protected _logChannel: string;
+    protected _logLevel: number;
 
     constructor(contextType: Client.IpcBusProcessType) {
         this._peer = {
@@ -22,10 +23,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
                 pid: process ? process.pid: -1
             }
         };
-
-        // In renderer process, there is no process object
-        this._logChannel = process && process.env && process.env['ELECTRON_IPC_LOG'];
-
+        this._logLevel = CheckLogLevel();
         this._messageId = 0;
     }
 
@@ -43,7 +41,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         }
     }
 
-    trackCommandPost(local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]) {
+    trackCommandPost(ipcBusCommand: IpcBusCommand, args?: any[]) {
         ipcBusCommand.log = ipcBusCommand.log || {};
         ipcBusCommand.log.sent = {
             id: `${this._peer.id}-${this._messageId++}`,
@@ -58,12 +56,13 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         const ipcBusCommandLog: IpcBusCommand = {
             kind: IpcBusCommand.Kind.Log,
             peer,
-            channel: '',
-            log: ipcBusCommand.log
+            channel: ''
         };
+        ipcBusCommandLog.log = ipcBusCommandLog.log || {};
         ipcBusCommandLog.log.received = {
             command: ipcBusCommand
         };
+        this.trackCommandPost(ipcBusCommandLog, args);
         this.postCommand(ipcBusCommandLog);
     }
 
