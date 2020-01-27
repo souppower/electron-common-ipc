@@ -12,10 +12,13 @@ export function CreateConnector(contextType: Client.IpcBusProcessType, ipcWindow
     return connector;
 }
 
+let g_transport: IpcBusTransport = null;
 export function CreateTransport(contextType: Client.IpcBusProcessType, ipcWindow: IpcWindow): IpcBusTransport {
-    const connector = CreateConnector(contextType, ipcWindow);
-    const transport = new IpcBusTransportMultiImpl(connector);
-    return transport;
+    if (g_transport == null) {
+        const connector = CreateConnector(contextType, ipcWindow);
+        g_transport = new IpcBusTransportMultiImpl(connector);
+    }
+    return g_transport;
 }
 
 // Implementation for Renderer process

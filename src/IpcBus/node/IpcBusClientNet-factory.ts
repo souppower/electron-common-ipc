@@ -20,10 +20,13 @@ export function CreateConnector(contextType: Client.IpcBusProcessType): IpcBusCo
     return connector;
 }
 
+let g_transport: IpcBusTransport = null;
 export function CreateTransport(contextType: Client.IpcBusProcessType): IpcBusTransport {
-    const connector = CreateConnector(contextType);
-    const transport = new IpcBusTransportMultiImpl(connector);
-    return transport;
+    if (g_transport == null) {
+        const connector = CreateConnector(contextType);
+        g_transport = new IpcBusTransportMultiImpl(connector);
+    }
+    return g_transport;
 }
 
 // Implementation for Node process
