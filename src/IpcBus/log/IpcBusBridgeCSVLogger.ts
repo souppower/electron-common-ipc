@@ -116,7 +116,14 @@ export class CSVLogger {
 
 let cvsLogger: CSVLogger;
 export function SetLogLevelCVS(level: IpcBusLog.Level, filename: string): void {
-    cvsLogger = new CSVLogger(filename);
-    const cb = cvsLogger.addLog.bind(cvsLogger);
-    SetLogLevel(level, cb);
+    if (level >= IpcBusLog.Level.None) {
+        if (cvsLogger == null) {
+            cvsLogger = new CSVLogger(filename);
+            const cb = cvsLogger.addLog.bind(cvsLogger);
+            SetLogLevel(level, cb);
+        }
+    }
+    else {
+        cvsLogger = null;
+    }
 }
