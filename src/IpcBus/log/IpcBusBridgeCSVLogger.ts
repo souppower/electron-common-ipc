@@ -52,7 +52,7 @@ export class CSVLogger {
                     log.push(
                         ipcBusCommand.log.post.id,
                         ipcBusCommand.channel,
-                        'SEND-MESSAGE',
+                        ipcBusCommand.request ? 'SEND-REQUEST' : 'SEND-MESSAGE',
                         '', // ipcBusCommand.log.post.timestamp.toString(),
                         ipcBusCommand.request ? JSON.stringify(ipcBusCommand.request) : ''
                     );
@@ -62,7 +62,7 @@ export class CSVLogger {
                     log.push(
                         ipcBusCommand.log.post.id,
                         ipcBusCommand.channel,
-                        'SEND-RESPONSE',
+                        'SEND-REQUEST-RESPONSE',
                         '', // ipcBusCommand.log.post.timestamp.toString(),
                         JSON.stringify(ipcBusCommand.request)
                     );
@@ -76,7 +76,7 @@ export class CSVLogger {
                         log.push(
                             original_command.log.post.id,
                             original_command.channel,
-                            local ? 'MESSAGE-local' : 'GET-MESSAGE',
+                            original_command.request ? local ? 'REQUEST-local' : 'GET-REQUEST' : local ? 'MESSAGE-local' : 'GET-MESSAGE',
                             delay.toString(),
                             original_command.request ? JSON.stringify(original_command.request) : ''
                         );
@@ -85,7 +85,7 @@ export class CSVLogger {
                         log.push(
                             original_command.log.post.id,
                             original_command.request.channel,
-                            local ? 'RESPONSE-local' : 'GET-RESPONSE',
+                            local ? 'RESPONSE-local' : 'GET-REQUEST-RESPONSE',
                             delay.toString(),
                             JSON.stringify(original_command.request)
                         );
