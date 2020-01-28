@@ -9,7 +9,8 @@ import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { JSON_stringify } from '../IpcBusUtils';
+import { JSON_stringify } from '../log/IpcBusLogUtils';
+
 
 import { IpcBusBrokerLogger } from './IpcBusBrokerLogger';
 

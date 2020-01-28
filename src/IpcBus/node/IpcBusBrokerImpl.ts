@@ -324,8 +324,8 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
             }
 
-            case IpcBusCommand.Kind.LogGet:
-            case IpcBusCommand.Kind.LogSend: {
+            case IpcBusCommand.Kind.LogGetMessage:
+            case IpcBusCommand.Kind.LogResponse: {
                 this.bridgeBroadcastMessage(ipcBusCommand, packet);
                 break;
             }

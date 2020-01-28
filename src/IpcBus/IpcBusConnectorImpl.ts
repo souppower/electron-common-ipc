@@ -45,33 +45,42 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     trackMessageCreation(ipcBusCommand: IpcBusCommand, args?: any[]) {
         if (this._logLevel & IpcBusLog.Level.Sent) {
             ipcBusCommand.log = ipcBusCommand.log || {};
+            const id = `${this._peer.id}-${this._messageId++}`;
             ipcBusCommand.log.post = {
-                id: `${this._peer.id}-${this._messageId++}`,
+                id,
                 timestamp: Date.now()
             };
         }
     }
 
-    trackMessageLocal(ipcBusCommand: IpcBusCommand, args?: any[]) {
+    trackResponseCreation(ipcBusCommandOrigin: IpcBusCommand, ipcBusCommand: IpcBusCommand, args?: any[]) {
         if (this._logLevel & IpcBusLog.Level.Sent) {
-            const ipcBusCommandLog: IpcBusCommand = {
-                kind: IpcBusCommand.Kind.LogSend,
-                peer: ipcBusCommand.peer,
-                channel: ''
+            ipcBusCommand.log = ipcBusCommand.log || {};
+            const id = ipcBusCommandOrigin.log?.post?.id || `${this._peer.id}-${this._messageId++}`;
+            ipcBusCommand.log.post = {
+                id,
+                timestamp: Date.now()
             };
-            this.trackMessageCreation(ipcBusCommandLog, args);
-            ipcBusCommandLog.log.received = {
-                command: ipcBusCommand,
-                local: true
+            ipcBusCommand.log.received = {
+                command: ipcBusCommandOrigin,
+                local: false
             };
+        }
+    }
+
+    logResponse(ipcBusCommand: IpcBusCommand, args?: any[]) {
+        if (this._logLevel & IpcBusLog.Level.Sent) {
+            // Clone first level
+            const ipcBusCommandLog: IpcBusCommand = Object.assign({}, ipcBusCommand);
+            ipcBusCommandLog.kind = IpcBusCommand.Kind.LogResponse;
             this.postCommand(ipcBusCommandLog);
         }
     }
 
-    trackMessageReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    logMessageReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._logLevel >= IpcBusLog.Level.Received) {
             const ipcBusCommandLog: IpcBusCommand = {
-                kind: IpcBusCommand.Kind.LogGet,
+                kind: IpcBusCommand.Kind.LogGetMessage,
                 peer,
                 channel: ''
             };

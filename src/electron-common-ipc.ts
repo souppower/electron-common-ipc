@@ -10,7 +10,7 @@ export * from './IpcBus/main/IpcBusBridge';
 export * from './IpcBus/main/IpcBusBridge-factory';
 
 export * from './IpcBus/log/IpcBusLog';
-export * from './IpcBus/log/IpcBusBridgeCSVLogger';
+export * from './IpcBus/log/IpcBusCSVLogger';
 
 // Force to execute code
 /** @internal */
@@ -25,7 +25,7 @@ import './IpcBus/node/IpcBusClientNet-factory';
 import './IpcBus/log/IpcBusLogImpl';
 
 /** @internal */
-import { SetLogLevelCVS } from './IpcBus/log/IpcBusBridgeCSVLogger';
+import { SetLogLevelCVS } from './IpcBus/log/IpcBusCSVLogger';
 
 if (process && process.env && process.env['ELECTRON_IPC_LOG'] && process.env['ELECTRON_IPC_LOG_CSV']) {
     SetLogLevelCVS(Number(process.env['ELECTRON_IPC_LOG']), process.env['ELECTRON_IPC_LOG_CSV']);

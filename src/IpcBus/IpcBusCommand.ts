@@ -18,8 +18,8 @@ export namespace IpcBusCommand {
         RequestResponse             = 'RQR',
         RequestClose                = 'RQC',
 
-        LogGet                      = 'LOGG',
-        LogSend                     = 'LOGS',
+        LogGetMessage               = 'LOGG',
+        LogResponse                 = 'LOGR',
 
         BridgeConnect               = 'BCOO',    // COnnexion
         BridgeClose                 = 'BCOC',

@@ -31,7 +31,7 @@
             "env": {
                 // "ELECTRON_IPC_BROKER_LOG_CSV": "c:\\temp\\ipc-log",
                 "ELECTRON_IPC_LOG": "3",
-                "ELECTRON_IPC_BRIDGE_LOG_CSV": "c:\\temp\\ipc-log",
+                "ELECTRON_IPC_LOG_CSV": "c:\\temp\\ipc-log",
             },
             "outputCapture": "std",
             "console": "internalConsole",

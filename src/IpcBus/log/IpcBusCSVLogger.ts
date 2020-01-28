@@ -4,9 +4,10 @@ import * as fs from 'fs';
 const csvWriter = require('csv-write-stream');
 
 import { IpcBusCommand } from '../IpcBusCommand';
-import { JSON_stringify } from '../IpcBusUtils';
+import { JSON_stringify } from './IpcBusLogUtils';
 import { IpcBusLog } from './IpcBusLog';
 import { SetLogLevel } from './IpcBusLogImpl';
+
 
 /** @internal */
 export class CSVLogger {
@@ -50,25 +51,15 @@ export class CSVLogger {
             switch (ipcBusCommand.kind) {
                 case IpcBusCommand.Kind.SendMessage: {
                     log.push(
-                        ipcBusCommand.log.post.id,
+                        ipcBusCommand.log ? ipcBusCommand.log.post.id : '?',
                         ipcBusCommand.channel,
                         ipcBusCommand.request ? 'SEND-REQUEST' : 'SEND-MESSAGE',
-                        '', // ipcBusCommand.log.post.timestamp.toString(),
+                        '',
                         ipcBusCommand.request ? JSON.stringify(ipcBusCommand.request) : ''
                     );
                     break;
                 }
-                case IpcBusCommand.Kind.RequestResponse: {
-                    log.push(
-                        ipcBusCommand.log.post.id,
-                        ipcBusCommand.channel,
-                        'SEND-REQUEST-RESPONSE',
-                        '', // ipcBusCommand.log.post.timestamp.toString(),
-                        JSON.stringify(ipcBusCommand.request)
-                    );
-                    break;
-                }
-                case IpcBusCommand.Kind.LogGet: {
+                case IpcBusCommand.Kind.LogGetMessage: {
                     const original_command = ipcBusCommand.log.received.command;
                     const local = ipcBusCommand.log.received.local;
                     const delay = (ipcBusCommand.log.post.timestamp - original_command.log.post.timestamp);
@@ -85,21 +76,40 @@ export class CSVLogger {
                         log.push(
                             original_command.log.post.id,
                             original_command.request.channel,
-                            local ? 'RESPONSE-local' : 'GET-REQUEST-RESPONSE',
+                            'GET-REQUEST-RESPONSE',
                             delay.toString(),
                             JSON.stringify(original_command.request)
                         );
                     }
                     break;
                 }
-                case IpcBusCommand.Kind.LogSend: {
-                    const original_command = ipcBusCommand.log.received.command;
+                case IpcBusCommand.Kind.RequestResponse: {
+                    const original_command = ipcBusCommand.log.received?.command;
+                    let delay = '?';
+                    if (original_command) {
+                        delay = ((ipcBusCommand.log.post.timestamp - original_command.log.post.timestamp)).toString();
+                    }
                     log.push(
-                        original_command.log.post.id,
-                        original_command.channel,
-                        'SEND-local',
-                        '', // ipcBusCommand.log.post.timestamp.toString(),
-                        original_command.request ? JSON.stringify(original_command.request) : ''
+                        ipcBusCommand.log ? ipcBusCommand.log.post.id : '?',
+                        ipcBusCommand.channel,
+                        'SEND-REQUEST-RESPONSE',
+                        delay,
+                        JSON.stringify(ipcBusCommand.request)
+                    );
+                    break;
+                }
+                case IpcBusCommand.Kind.LogResponse: {
+                    const original_command = ipcBusCommand.log.received?.command;
+                    let delay = '?';
+                    if (original_command) {
+                        delay = ((ipcBusCommand.log.post.timestamp - original_command.log.post.timestamp)).toString();
+                    }
+                    log.push(
+                        ipcBusCommand.log ? ipcBusCommand.log.post.id : '?',
+                        ipcBusCommand.channel,
+                        'RESPONSE-local',
+                        delay,
+                        JSON.stringify(ipcBusCommand.request)
                     );
                     break;
                 }
