@@ -4,8 +4,10 @@ import * as IpcBusUtils from '../IpcBusUtils';
 
 import { IpcBusBridge } from './IpcBusBridge';
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
-import { IpcBusBridgeJSONLogger } from './IpcBusBridgeJSONLogger';
-import { IpcBusBridgeCSVLogger } from './IpcBusBridgeCSVLogger';
+import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
+
+import { IpcBusLog } from '../log/IpcBusLog';
+import { logManager } from '../log/IpcBusLogImpl';
 
 let g_bridge: IpcBusBridge;
 export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge => {
@@ -14,18 +16,11 @@ export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge 
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBridge process type = ${electronProcessType}`);
         switch (electronProcessType) {
             case 'main':
-                const logPath = process.env['ELECTRON_IPC_BRIDGE_LOG_JSON'];
-                if (logPath) {
-                    g_bridge = new IpcBusBridgeJSONLogger(electronProcessType, logPath);
+                if (logManager.getLogLevel() > IpcBusLog.Level.None) {
+                    g_bridge = new IpcBusBridgeLogger(electronProcessType, logManager);
                 }
                 else {
-                    const logPath = process.env['ELECTRON_IPC_BRIDGE_LOG_CSV'];
-                    if (logPath) {
-                        g_bridge = new IpcBusBridgeCSVLogger(electronProcessType, logPath);
-                    }
-                    else {
-                        g_bridge = new IpcBusBridgeImpl(electronProcessType);
-                    }
+                    g_bridge = new IpcBusBridgeImpl(electronProcessType);
                 }
                 break;
             // not supported process

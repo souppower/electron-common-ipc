@@ -3,20 +3,17 @@ import * as fs from 'fs';
 
 const csvWriter = require('csv-write-stream');
 
-import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { JSON_stringify } from '../IpcBusUtils';
-import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
+import { IpcBusLog } from './IpcBusLog';
+import { SetLogLevel } from './IpcBusLogImpl';
 
-// This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
-export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
+export class CSVLogger {
     private _logger: any;
     private _line: number;
 
-    constructor(contextType: Client.IpcBusProcessType, logPath: string) {
-        super(contextType);
-
+    constructor(logPath: string) {
         this._line = 0;
 
         !fs.existsSync(logPath) && fs.mkdirSync(logPath);
@@ -40,7 +37,7 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
         this._logger.pipe(fs.createWriteStream(path.join(logPath, 'electron-common-ipcbus-bridge.csv.txt')));
     }
 
-    addLog(ipcBusCommand: IpcBusCommand, args: any[]): boolean {
+    addLog(ipcBusCommand: IpcBusCommand, args: any[]): void {
         if (ipcBusCommand.log) {
             const peer = ipcBusCommand.peer;
             ++this._line;
@@ -73,13 +70,13 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
                 }
                 case IpcBusCommand.Kind.LogGet: {
                     const original_command = ipcBusCommand.log.received.command;
-                    const local = ipcBusCommand.log.received.local; // (ipcBusCommand.peer.id === original_command.peer.id);
+                    const local = ipcBusCommand.log.received.local;
                     const delay = (ipcBusCommand.log.post.timestamp - original_command.log.post.timestamp);
                     if (original_command.kind === IpcBusCommand.Kind.SendMessage) {
                         log.push(
                             original_command.log.post.id,
                             original_command.channel,
-                            local ? 'MESSAGE-local' : 'MESSAGE',
+                            local ? 'MESSAGE-local' : 'GET-MESSAGE',
                             delay.toString(),
                             original_command.request ? JSON.stringify(original_command.request) : ''
                         );
@@ -88,7 +85,7 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
                         log.push(
                             original_command.log.post.id,
                             original_command.request.channel,
-                            local ? 'RESPONSE-local' : 'RESPONSE',
+                            local ? 'RESPONSE-local' : 'GET-RESPONSE',
                             delay.toString(),
                             JSON.stringify(original_command.request)
                         );
@@ -114,7 +111,12 @@ export class IpcBusBridgeCSVLogger extends IpcBusBridgeLogger {
             }
             this._logger.write(log);
         }
-        return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }
 }
 
+let cvsLogger: CSVLogger;
+export function SetLogLevelCVS(level: IpcBusLog.Level, filename: string): void {
+    cvsLogger = new CSVLogger(filename);
+    const cb = cvsLogger.addLog.bind(cvsLogger);
+    SetLogLevel(level, cb);
+}

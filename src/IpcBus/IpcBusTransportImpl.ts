@@ -6,6 +6,7 @@ import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusTransport } from './IpcBusTransport';
 import { IpcBusConnector } from './IpcBusConnector';
+import { IpcBusLog } from './log/IpcBusLog';
 
 const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
 
@@ -86,7 +87,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected _peer: Client.IpcBusPeer;
     protected _waitForConnected: Promise<Client.IpcBusPeer>;
     protected _waitForClosed: Promise<void>;
-    protected _logLevel: number;
+    protected _logLevel: IpcBusLog.Level;
 
     protected _requestFunctions: Map<string, DeferredRequestPromise>;
     protected _packetDecoder: IpcPacketBuffer;

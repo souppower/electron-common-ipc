@@ -1,6 +1,7 @@
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import { IpcBusCommand } from './IpcBusCommand';
+import { IpcBusLog } from './log/IpcBusLog';
 import * as Client from './IpcBusClient';
 
 /** @internal */
@@ -8,7 +9,7 @@ export namespace IpcBusConnector {
     /** @internal */
     export interface Handshake {
         process: Client.IpcBusProcess;
-        logLevel?: number;
+        logLevel?: IpcBusLog.Level;
     }
 
     /** @internal */

@@ -4,7 +4,8 @@ import * as uuid from 'uuid';
 import { IpcBusConnector } from './IpcBusConnector';
 import { IpcBusCommand } from './IpcBusCommand';
 import * as Client from './IpcBusClient';
-import { CheckLogLevel, LogLevel } from './IpcBusUtils';
+import { IpcBusLog } from './log/IpcBusLog';
+import { GetLogLevel } from './log/IpcBusLogImpl';
 
 // Implementation for renderer process
 /** @internal */
@@ -12,7 +13,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     protected _client: IpcBusConnector.Client;
     protected _peer: Client.IpcBusPeer;
     protected _messageId: number;
-    protected _logLevel: number;
+    protected _logLevel: IpcBusLog.Level;
 
     constructor(contextType: Client.IpcBusProcessType) {
         this._peer = {
@@ -23,7 +24,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
                 pid: process ? process.pid: -1
             }
         };
-        this._logLevel = CheckLogLevel();
+        this._logLevel = GetLogLevel();
         this._messageId = 0;
     }
 
@@ -42,7 +43,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     }
 
     trackMessageCreation(ipcBusCommand: IpcBusCommand, args?: any[]) {
-        if (this._logLevel & LogLevel.Sent) {
+        if (this._logLevel & IpcBusLog.Level.Sent) {
             ipcBusCommand.log = ipcBusCommand.log || {};
             ipcBusCommand.log.post = {
                 id: `${this._peer.id}-${this._messageId++}`,
@@ -52,7 +53,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     }
 
     trackMessageLocal(ipcBusCommand: IpcBusCommand, args?: any[]) {
-        if (this._logLevel & LogLevel.Sent) {
+        if (this._logLevel & IpcBusLog.Level.Sent) {
             const ipcBusCommandLog: IpcBusCommand = {
                 kind: IpcBusCommand.Kind.LogSend,
                 peer: ipcBusCommand.peer,
@@ -68,7 +69,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     }
 
     trackMessageReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        if (this._logLevel >= LogLevel.Received) {
+        if (this._logLevel >= IpcBusLog.Level.Received) {
             const ipcBusCommandLog: IpcBusCommand = {
                 kind: IpcBusCommand.Kind.LogGet,
                 peer,

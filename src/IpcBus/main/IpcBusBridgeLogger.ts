@@ -3,39 +3,32 @@ import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 import { IpcPacketBuffer } from 'socket-serializer';
+import { IpcBusLog } from '../log/IpcBusLog';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
-export abstract class IpcBusBridgeLogger extends IpcBusBridgeImpl {
-    constructor(contextType: Client.IpcBusProcessType) {
+export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
+    private _ipcBusLog: IpcBusLog;
+
+    constructor(contextType: Client.IpcBusProcessType, ipcBusLog: IpcBusLog) {
         super(contextType);
-    }
-
-    addLogRawContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
-        this._packet.setRawContent(rawContent);
-        this.addLog(ipcBusCommand, this._packet.parseArrayAt(1));
-        return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
-    }
-
-    addLogPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        this.addLog(ipcBusCommand, ipcPacketBuffer.parseArrayAt(1));
-        return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
+        this._ipcBusLog = ipcBusLog;
     }
 
     _onRendererMessagedReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
-        if (this.addLogRawContent(ipcBusCommand, rawContent)) {
+        if (this._ipcBusLog.addLogRawContent(ipcBusCommand, rawContent)) {
             super._onRendererMessagedReceived(ipcBusCommand, rawContent);
         }
     }
 
     _onMainMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]) {
-        if (this.addLog(ipcBusCommand, args)) {
+        if (this._ipcBusLog.addLog(ipcBusCommand, args)) {
             super._onMainMessageReceived(ipcBusCommand, args);
         }
     }
 
     _onNetMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        if (this.addLogPacket(ipcBusCommand, ipcPacketBuffer)) {
+        if (this._ipcBusLog.addLogPacket(ipcBusCommand, ipcPacketBuffer)) {
             super._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
         }
     }

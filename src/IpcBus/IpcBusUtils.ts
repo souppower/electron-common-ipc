@@ -49,21 +49,6 @@ export function CheckConnectOptions<T extends IpcConnectOptions>(arg1: T | strin
     return options;
 }
 
-export enum LogLevel {
-    None = 0,
-    Sent = 1,
-    Received = 2,
-    Args = 4
-}
-
-export function CheckLogLevel(): number {
-// In renderer process, there is no process object
-    const logLevelAny = process && process.env && process.env['ELECTRON_IPC_LOG'];
-    let logLevel = Number(logLevelAny);
-    logLevel = Math.min(logLevel, 3);
-    logLevel = Math.max(logLevel, 0);
-    return logLevel;
-}
 
 function JSON_stringify_array(data: any[], maxLen: number, output: string): string {
     output += '[';

@@ -90,21 +90,16 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         if (this._subscriptions == null) {
             return;
         }
-        // this._subscriptions.emitter = false;
         if (channel) {
             if (all) {
                 this._subscriptions.releaseAll(channel, client, client.peer);
-                // this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannelAllListeners, channel);
             }
             else {
                 this._subscriptions.release(channel, client, client.peer);
-                // this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveListeners, channel);
             }
         }
         else {
             this._subscriptions.removePeer(client, client.peer);
-            // this.ipcPost(client.peer, IpcBusCommand.Kind.RemoveChannelListener, channel);
         }
-        // this._subscriptions.emitter = true;
     }
 }

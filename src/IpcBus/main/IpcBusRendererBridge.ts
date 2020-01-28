@@ -12,6 +12,7 @@ import {
 } from '../renderer/IpcBusConnectorRenderer';
 import { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
+import { GetLogLevel } from '../log/IpcBusLogImpl';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
@@ -102,7 +103,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             // For backward we fill pid with webContents id
             handshake.process.pid = webContents.id;
         }
-        handshake.logLevel = IpcBusUtils.CheckLogLevel();
+        handshake.logLevel = GetLogLevel();
         return handshake;
     }
 
