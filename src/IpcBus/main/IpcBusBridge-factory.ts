@@ -16,6 +16,13 @@ export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge 
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBridge process type = ${electronProcessType}`);
         switch (electronProcessType) {
             case 'main':
+                // For backward
+                if (process.env['ELECTRON_IPC_LOG'] && process.env['ELECTRON_IPC_LOG_CSV']) {
+                    IpcBusLog.SetLogLevelCVS(Number(process.env['ELECTRON_IPC_LOG']), process.env['ELECTRON_IPC_LOG_CSV']);
+                }
+                if (process.env['ELECTRON_IPC_LOG'] && process.env['ELECTRON_IPC_LOG_JSON']) {
+                    IpcBusLog.SetLogLevelJSON(Number(process.env['ELECTRON_IPC_LOG']), process.env['ELECTRON_IPC_LOG_JSON']);
+                }
                 if (logManager.getLogLevel() > IpcBusLog.Level.None) {
                     g_bridge = new IpcBusBridgeLogger(electronProcessType, logManager);
                 }
