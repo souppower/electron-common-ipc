@@ -1,6 +1,7 @@
 export * from './IpcBus/IpcBusClient';
 export * from './IpcBus/service/IpcBusService';
 export * from './IpcBus/service/IpcBusService-factory';
+export * from './IpcBus/log/IpcBusLog';
 
 export * from './IpcBus/renderer/IpcBusRendererPreload';
 
@@ -18,3 +19,5 @@ export function ActivateServiceTrace(enable: boolean): void {
 /** @internal */
 import './IpcBus/service/IpcBusService-factory';
 
+/** @internal */
+import './IpcBus/log/IpcBusLogImpl';

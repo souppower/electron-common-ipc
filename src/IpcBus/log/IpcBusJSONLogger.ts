@@ -7,6 +7,7 @@ import * as Client from '../IpcBusClient';
 import { JSON_stringify } from './IpcBusLogUtils';
 import { IpcBusLog } from './IpcBusLog';
 
+/** @internal */
 interface JSONLog {
     order: number,
     id: string,

@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import { JSON_stringify } from './IpcBusLogUtils';
 import { IpcBusLog } from './IpcBusLog';
 
+
 /** @internal */
 export class CSVLogger {
     private _logger: any;
@@ -34,7 +35,7 @@ export class CSVLogger {
 
     writeLine(cols: string[]) {
         for (let i = 0, l = cols.length; i < l; ++i) {
-            this._logger.write(cols[i]);
+            this._logger.write(cols[i].replace('\t', ' '));
             this._logger.write('\t');
         }
         this._logger.write('\n');

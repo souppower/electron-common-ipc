@@ -56,7 +56,7 @@ export function JSON_stringify(data: any, maxLen: number): string {
             }
             break;
         case 'string':
-            output = data.substr(0, maxLen).replace(';', ' ');
+            output = data.substr(0, maxLen);
             break;
         case 'number':
             output = data.toString();
@@ -65,6 +65,7 @@ export function JSON_stringify(data: any, maxLen: number): string {
             output = data ? 'true' : 'false';
             break;
         case 'undefined':
+            output = '__undefined__'
             break;
     }
     return output;
