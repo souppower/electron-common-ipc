@@ -77,7 +77,7 @@
     "build-declaration:ts": "tsc -p ./tsconfig/tsconfig-declaration.json",
     "build-declaration:dts-bundle": "dts-bundle --outputAsModuleFolder --name electron-common-ipc --main ./lib/electron-common-ipc.d.ts",
     "build-declaration:dts-bundle-browser": "dts-bundle --outputAsModuleFolder --name electron-common-ipc-browser --main ./lib/electron-common-ipc-browser.d.ts",
-    "build-declaration:clean-up": "del-cli ./lib/IpcBus/*.d.ts",
+    "abuild-declaration:clean-up": "del-cli ./lib/IpcBus/*.d.ts",
     "browserify-test": "run-p browserify-test:*",
     "browserify-test:preload": "browserify -o ./test/electron-tests/page-preload.bundle.js -x electron ./test/electron-tests/page-preload.js",
     "browserify-test:js1": "browserify -o ./test/electron-tests/page.bundle.js -x electron ./test/electron-tests/page.js",
