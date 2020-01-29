@@ -8,7 +8,6 @@ import { JSON_stringify } from './IpcBusLogUtils';
 import { IpcBusLog } from './IpcBusLog';
 import { SetLogLevel } from './IpcBusLogImpl';
 
-
 /** @internal */
 export class CSVLogger {
     private _logger: any;
@@ -48,76 +47,85 @@ export class CSVLogger {
                 JSON.stringify(peer)
             ];
 
+            let remainingArgs = 6;
+            if ((args != null) && args.length) {
+                remainingArgs -= args.length;
+            }
+
             switch (ipcBusCommand.kind) {
                 case IpcBusCommand.Kind.SendMessage: {
+                    const current_command = ipcBusCommand;
                     log.push(
-                        ipcBusCommand.log ? ipcBusCommand.log.post.id : '?',
-                        ipcBusCommand.channel,
-                        ipcBusCommand.request ? 'SEND-REQUEST' : 'SEND-MESSAGE',
+                        current_command.log ? current_command.log.id : '?',
+                        current_command.channel,
+                        current_command.request ? 'SEND-REQUEST' : 'SEND-MESSAGE',
                         '',
-                        ipcBusCommand.request ? JSON.stringify(ipcBusCommand.request) : ''
+                        current_command.request ? JSON.stringify(current_command.request) : ''
                     );
+                    if (args && args.length) {
+                        for (let i = 0, l = args.length; i < l; ++i) {
+                            log.push(JSON_stringify(args[i], 255));
+                        }
+                    }
+                    break;
+                }
+                case IpcBusCommand.Kind.RequestResponse:
+                case IpcBusCommand.Kind.LogRequestResponse: {
+                    const current_command = ipcBusCommand;
+                    let original_command = current_command;
+                    while (original_command.log.previous) {
+                        original_command = original_command.log.previous;
+                    }
+                    const local = ipcBusCommand.log.local;
+                    let delay = '?';
+                    if (original_command) {
+                        delay = ((ipcBusCommand.log.timestamp - original_command.log.timestamp)).toString();
+                    }
+                    log.push(
+                        ipcBusCommand.log ? ipcBusCommand.log.id : '?',
+                        ipcBusCommand.channel,
+                        local ? 'REQUEST-RESPONSE-local' : 'SEND-REQUEST-RESPONSE',
+                        delay,
+                        JSON.stringify(ipcBusCommand.request)
+                    );
+                    if (args && args.length) {
+                        for (let i = 0, l = args.length; i < l; ++i) {
+                            log.push(JSON_stringify(args[i], 255));
+                        }
+                    }
                     break;
                 }
                 case IpcBusCommand.Kind.LogGetMessage: {
-                    const original_command = ipcBusCommand.log.received.command;
-                    const local = ipcBusCommand.log.received.local;
-                    const delay = (ipcBusCommand.log.post.timestamp - original_command.log.post.timestamp);
-                    if (original_command.kind === IpcBusCommand.Kind.SendMessage) {
+                    const current_command = ipcBusCommand.log.previous;
+                    let original_command = current_command;
+                    while (original_command?.log?.previous) {
+                        original_command = original_command.log.previous;
+                    }
+                    const local = ipcBusCommand.log.local;
+                    const delay = (ipcBusCommand.log.timestamp - original_command.log.timestamp);
+                    if (current_command.kind === IpcBusCommand.Kind.SendMessage) {
                         log.push(
-                            original_command.log.post.id,
-                            original_command.channel,
-                            original_command.request ? local ? 'REQUEST-local' : 'GET-REQUEST' : local ? 'MESSAGE-local' : 'GET-MESSAGE',
+                            current_command.log.id,
+                            current_command.channel,
+                            current_command.request ? local ? 'REQUEST-local' : 'GET-REQUEST' : local ? 'MESSAGE-local' : 'GET-MESSAGE',
                             delay.toString(),
-                            original_command.request ? JSON.stringify(original_command.request) : ''
+                            current_command.request ? JSON.stringify(current_command.request) : ''
                         );
                     }
-                    else if (original_command.kind === IpcBusCommand.Kind.RequestResponse) {
+                    else if (current_command.kind === IpcBusCommand.Kind.RequestResponse) {
                         log.push(
-                            original_command.log.post.id,
-                            original_command.request.channel,
+                            current_command.log.id,
+                            current_command.request.channel,
                             'GET-REQUEST-RESPONSE',
                             delay.toString(),
-                            JSON.stringify(original_command.request)
+                            JSON.stringify(current_command.request)
                         );
                     }
-                    break;
-                }
-                case IpcBusCommand.Kind.RequestResponse: {
-                    const original_command = ipcBusCommand.log.received?.command;
-                    let delay = '?';
-                    if (original_command) {
-                        delay = ((ipcBusCommand.log.post.timestamp - original_command.log.post.timestamp)).toString();
-                    }
-                    log.push(
-                        ipcBusCommand.log ? ipcBusCommand.log.post.id : '?',
-                        ipcBusCommand.channel,
-                        'SEND-REQUEST-RESPONSE',
-                        delay,
-                        JSON.stringify(ipcBusCommand.request)
-                    );
-                    break;
-                }
-                case IpcBusCommand.Kind.LogResponse: {
-                    const original_command = ipcBusCommand.log.received?.command;
-                    let delay = '?';
-                    if (original_command) {
-                        delay = ((ipcBusCommand.log.post.timestamp - original_command.log.post.timestamp)).toString();
-                    }
-                    log.push(
-                        ipcBusCommand.log ? ipcBusCommand.log.post.id : '?',
-                        ipcBusCommand.channel,
-                        'RESPONSE-local',
-                        delay,
-                        JSON.stringify(ipcBusCommand.request)
-                    );
                     break;
                 }
             }
-            if (args) {
-                for (let i = 0, l = args.length; i < l; ++i) {
-                    log.push(JSON_stringify(args[i], 255));
-                }
+            for (let i = 0, l = remainingArgs; i < l; ++i) {
+                log.push('');
             }
             this._logger.write(log);
         }

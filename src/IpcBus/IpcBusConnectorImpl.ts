@@ -42,29 +42,24 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         }
     }
 
-    trackMessageCreation(ipcBusCommand: IpcBusCommand, args?: any[]) {
+    trackMessageCreation(ipcBusCommand: IpcBusCommand) {
         if (this._logLevel & IpcBusLog.Level.Sent) {
-            ipcBusCommand.log = ipcBusCommand.log || {};
             const id = `${this._peer.id}-${this._messageId++}`;
-            ipcBusCommand.log.post = {
+            ipcBusCommand.log = ipcBusCommand.log || {
                 id,
                 timestamp: Date.now()
             };
         }
     }
 
-    trackResponseCreation(ipcBusCommandOrigin: IpcBusCommand, ipcBusCommand: IpcBusCommand, args?: any[]) {
+    trackResponseCreation(ipcBusCommandOrigin: IpcBusCommand, ipcBusCommand: IpcBusCommand) {
         if (this._logLevel & IpcBusLog.Level.Sent) {
-            ipcBusCommand.log = ipcBusCommand.log || {};
-            const id = ipcBusCommandOrigin.log?.post?.id || `${this._peer.id}-${this._messageId++}`;
-            ipcBusCommand.log.post = {
+            const id = ipcBusCommandOrigin.log?.id || `${this._peer.id}-${this._messageId++}`;
+            ipcBusCommand.log = ipcBusCommand.log || {
                 id,
                 timestamp: Date.now()
             };
-            ipcBusCommand.log.received = {
-                command: ipcBusCommandOrigin,
-                local: false
-            };
+            ipcBusCommand.log.previous = ipcBusCommandOrigin;
         }
     }
 
@@ -72,8 +67,9 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         if (this._logLevel & IpcBusLog.Level.Sent) {
             // Clone first level
             const ipcBusCommandLog: IpcBusCommand = Object.assign({}, ipcBusCommand);
-            ipcBusCommandLog.kind = IpcBusCommand.Kind.LogResponse;
-            this.postCommand(ipcBusCommandLog);
+            ipcBusCommandLog.kind = IpcBusCommand.Kind.LogRequestResponse;
+            ipcBusCommand.log.local = true;
+            this.postCommand(ipcBusCommandLog, args);
         }
     }
 
@@ -84,11 +80,10 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
                 peer,
                 channel: ''
             };
-            this.trackMessageCreation(ipcBusCommandLog, args);
-            ipcBusCommandLog.log.received = {
-                command: ipcBusCommand,
-                local
-            };
+            this.trackMessageCreation(ipcBusCommandLog);
+            ipcBusCommandLog.log.local = local;
+            ipcBusCommandLog.log.previous = ipcBusCommand;
+            // no args
             this.postCommand(ipcBusCommandLog);
         }
     }

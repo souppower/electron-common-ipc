@@ -294,11 +294,11 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
 
             case IpcBusCommand.Kind.RequestResponse: {
-                const connData = this._subscriptions.getSingleChannel(ipcBusCommand.channel);
+                const connData = this._subscriptions.getSingleChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
                     const previous = this._subscriptions.emitter;
                     this._subscriptions.emitter = false;
-                    this._subscriptions.removeChannel(ipcBusCommand.channel);
+                    this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
                     this._subscriptions.emitter = previous;
                     connData.conn.write(packet.buffer);
                 }
@@ -313,7 +313,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             case IpcBusCommand.Kind.RequestClose: {
                 const previous = this._subscriptions.emitter;
                 this._subscriptions.emitter = false;
-                this._subscriptions.removeChannel(ipcBusCommand.channel);
+                this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
                 this._subscriptions.emitter = previous;
                 // If this message does not come from the IpcBusBridge, send it to it
                 if (!ipcBusCommand.bridge) {
@@ -325,7 +325,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             }
 
             case IpcBusCommand.Kind.LogGetMessage:
-            case IpcBusCommand.Kind.LogResponse: {
+            case IpcBusCommand.Kind.LogRequestResponse: {
                 this.bridgeBroadcastMessage(ipcBusCommand, packet);
                 break;
             }

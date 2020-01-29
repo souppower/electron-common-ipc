@@ -45,10 +45,10 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
                 break;
 
             case IpcBusCommand.Kind.RequestResponse: {
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
+                this._subscriptions.forEachChannel(ipcBusCommand.request.replyChannel, (connData) => {
                     connData.conn.write(buffer);
                     // this._subscriptions.emitter = false;
-                    this._subscriptions.removeChannel(ipcBusCommand.channel);
+                    this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
                     // this._subscriptions.emitter = true;
                 });
                 break;
@@ -56,7 +56,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
 
             case IpcBusCommand.Kind.RequestClose:
                 // this._subscriptions.emitter = false;
-                this._subscriptions.removeChannel(ipcBusCommand.channel);
+                this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
                 // this._subscriptions.emitter = true;
                 break;
         }

@@ -18,8 +18,8 @@ export namespace IpcBusCommand {
         RequestResponse             = 'RQR',
         RequestClose                = 'RQC',
 
-        LogGetMessage               = 'LOGG',
-        LogResponse                 = 'LOGR',
+        LogGetMessage               = 'LOGMES',
+        LogRequestResponse          = 'LOGRQR',
 
         BridgeConnect               = 'BCOO',    // COnnexion
         BridgeClose                 = 'BCOC',
@@ -35,14 +35,10 @@ export namespace IpcBusCommand {
 
     /** @internal */
     export interface Log {
-        post?: { 
-            id: string;
-            timestamp: number;
-        }
-        received?: {
-            command: IpcBusCommand,
-            local: boolean
-        };
+        id: string;
+        timestamp: number;
+        local?: boolean;
+        previous?: IpcBusCommand
     }
 }
 

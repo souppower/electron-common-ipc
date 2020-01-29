@@ -155,7 +155,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             }
 
             case IpcBusCommand.Kind.RequestResponse: {
-                const connData = this._subscriptions.getSingleChannel(ipcBusCommand.channel);
+                const connData = this._subscriptions.getSingleChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
                     connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                     this._subscriptions.removeChannel(ipcBusCommand.channel);
@@ -164,7 +164,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             }
 
             case IpcBusCommand.Kind.RequestClose:
-                this._subscriptions.removeChannel(ipcBusCommand.channel);
+                this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
                 // this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                 //     connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                 // });
