@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 
-const csvWriter = require('csv-write-stream');
+// const csvWriter = require('csv-write-stream');
 
 import { IpcBusCommand } from '../IpcBusCommand';
 import { JSON_stringify } from './IpcBusLogUtils';
@@ -18,7 +18,8 @@ export class CSVLogger {
 
         !fs.existsSync(logPath) && fs.mkdirSync(logPath);
 
-        this._logger = csvWriter({ separator: '\t', headers: [
+        this._logger = fs.createWriteStream(path.join(logPath, 'electron-common-ipcbus-bridge.csv.txt'));
+        this.writeLine([
             '#',
             'peer id',
             'peer',
@@ -33,15 +34,22 @@ export class CSVLogger {
             'arg3',
             'arg4',
             'arg5'
-        ]});
-        this._logger.pipe(fs.createWriteStream(path.join(logPath, 'electron-common-ipcbus-bridge.csv.txt')));
+        ]);
+    }
+
+    writeLine(cols: string[]) {
+        for (let i = 0, l = cols.length; i < l; ++i) {
+            this._logger.write(cols[i]);
+            this._logger.write('\t');
+        }
+        this._logger.write('\n');
     }
 
     addLog(ipcBusCommand: IpcBusCommand, args: any[]): void {
         if (ipcBusCommand.log) {
             const peer = ipcBusCommand.peer;
             ++this._line;
-            const log: string[] = [
+            const cols: string[] = [
                 this._line.toString(),
                 peer.id,
                 JSON.stringify(peer)
@@ -55,7 +63,7 @@ export class CSVLogger {
             switch (ipcBusCommand.kind) {
                 case IpcBusCommand.Kind.SendMessage: {
                     const current_command = ipcBusCommand;
-                    log.push(
+                    cols.push(
                         current_command.log ? current_command.log.id : '?',
                         current_command.channel,
                         current_command.request ? 'SEND-REQUEST' : 'SEND-MESSAGE',
@@ -64,7 +72,7 @@ export class CSVLogger {
                     );
                     if (args && args.length) {
                         for (let i = 0, l = args.length; i < l; ++i) {
-                            log.push(JSON_stringify(args[i], 255));
+                            cols.push(JSON_stringify(args[i], 255));
                         }
                     }
                     break;
@@ -81,7 +89,7 @@ export class CSVLogger {
                     if (original_command) {
                         delay = ((current_command.log.timestamp - original_command.log.timestamp)).toString();
                     }
-                    log.push(
+                    cols.push(
                         current_command.log ? current_command.log.id : '?',
                         current_command.channel,
                         local ? 'REQUEST-RESPONSE-local' : 'SEND-REQUEST-RESPONSE',
@@ -90,7 +98,7 @@ export class CSVLogger {
                     );
                     if (args && args.length) {
                         for (let i = 0, l = args.length; i < l; ++i) {
-                            log.push(JSON_stringify(args[i], 255));
+                            cols.push(JSON_stringify(args[i], 255));
                         }
                     }
                     break;
@@ -103,21 +111,21 @@ export class CSVLogger {
                     }
                     const local = ipcBusCommand.log.local;
                     const delay = (ipcBusCommand.log.timestamp - original_command.log.timestamp);
-                    log.push(
+                    cols.push(
                         current_command.log.id,
                         current_command.channel
                     );
                     if (current_command.kind === IpcBusCommand.Kind.SendMessage) {
-                        log.push(
+                        cols.push(
                             current_command.request ? local ? 'REQUEST-local' : 'GET-REQUEST' : local ? 'MESSAGE-local' : 'GET-MESSAGE',
                         );
                     }
                     else if (current_command.kind === IpcBusCommand.Kind.RequestResponse) {
-                        log.push(
+                        cols.push(
                             'GET-REQUEST-RESPONSE',
                         );
                     }
-                    log.push(
+                    cols.push(
                         delay.toString(),
                         current_command.request ? JSON.stringify(current_command.request) : ''
                     );
@@ -125,9 +133,9 @@ export class CSVLogger {
                 }
             }
             for (let i = 0, l = remainingArgs; i < l; ++i) {
-                log.push('');
+                cols.push('');
             }
-            this._logger.write(log);
+            this.writeLine(cols);
         }
     }
 }
