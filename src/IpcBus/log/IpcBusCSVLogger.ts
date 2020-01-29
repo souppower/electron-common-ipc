@@ -1,11 +1,8 @@
 import * as path from 'path';
 import * as fs from 'fs';
 
-// const csvWriter = require('csv-write-stream');
-
 import { JSON_stringify } from './IpcBusLogUtils';
 import { IpcBusLog } from './IpcBusLog';
-
 
 /** @internal */
 export class CSVLogger {

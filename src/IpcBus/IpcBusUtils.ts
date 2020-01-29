@@ -19,6 +19,25 @@ function CleanPipeName(str: string) {
     return str;
 }
 
+export function CheckChannel(channel: any): string {
+    switch (typeof channel) {
+        case 'string':
+            break;
+        case 'undefined':
+            channel = 'undefined';
+            break;
+        default:
+            if (channel === null) {
+                channel = 'null';
+            }
+            else {
+                channel = channel.toString();
+            }
+            break;
+    }
+    return channel;
+}
+
 export function CheckConnectOptions<T extends IpcConnectOptions>(arg1: T | string | number, arg2?: T | string, arg3?: T): T | null {
     // A port number : 59233, 42153
     // A port number + hostname : 59233, '127.0.0.1'

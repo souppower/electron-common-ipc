@@ -60,15 +60,19 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
     }
 
     send(channel: string, ...args: any[]): boolean {
+        // in nodejs eventEmitter, undefined is converted to 'undefined'
+        channel = IpcBusUtils.CheckChannel(channel);
         this._transport.sendMessage(this, channel, args);
         return (this._waitForConnected != null);
     }
 
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<Client.IpcBusRequestResponse> {
+        channel = IpcBusUtils.CheckChannel(channel);
         return this._transport.requestMessage(this, channel, timeoutDelay, args);
     }
 
     emit(event: string, ...args: any[]): boolean {
+        event = IpcBusUtils.CheckChannel(event);
         this._transport.sendMessage(this, event, args);
         return (this._waitForConnected != null);
     }
@@ -82,33 +86,41 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
     }
 
     addListener(channel: string, listener: Client.IpcBusListener): this {
+        channel = IpcBusUtils.CheckChannel(channel);
         this._transport.addChannel(this, channel);
         return super.addListener(channel, listener);
     }
 
     removeListener(channel: string, listener: Client.IpcBusListener): this {
+        channel = IpcBusUtils.CheckChannel(channel);
         this._transport.removeChannel(this, channel);
         return super.removeListener(channel, listener);
     }
 
     once(channel: string, listener: Client.IpcBusListener): this {
         // removeListener will be automatically called by NodeJS when callback has been triggered
+        channel = IpcBusUtils.CheckChannel(channel);
         this._transport.addChannel(this, channel);
         return super.once(channel, listener);
     }
 
     removeAllListeners(channel?: string): this {
+        if (arguments.length === 1) {
+            channel = IpcBusUtils.CheckChannel(channel);
+        }
         this._transport.removeChannel(this, channel);
         return super.removeAllListeners(channel);
     }
 
     // Added in Node 6...
     prependListener(channel: string, listener: Client.IpcBusListener): this {
+        channel = IpcBusUtils.CheckChannel(channel);
         this._transport.addChannel(this, channel);
         return super.prependListener(channel, listener);
     }
 
     prependOnceListener(channel: string, listener: Client.IpcBusListener): this {
+        channel = IpcBusUtils.CheckChannel(channel);
         this._transport.addChannel(this, channel);
         return super.prependOnceListener(channel, listener);
     }

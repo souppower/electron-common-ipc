@@ -39,7 +39,6 @@
   "types": "./lib/electron-common-ipc.d.ts",
   "browser": "./lib/electron-common-ipc-browser.js",
   "dependencies": {
-    "csv-write-stream": "^2.0.0",
     "electron-process-type": "^4.1.0",
     "json-helpers": "^2.1.0",
     "socket-serializer": "^3.6.0",
