@@ -5,7 +5,6 @@ import { IpcBusConnector } from './IpcBusConnector';
 import { IpcBusCommand } from './IpcBusCommand';
 import * as Client from './IpcBusClient';
 import { IpcBusLog } from './log/IpcBusLog';
-import { GetLogLevel } from './log/IpcBusLogImpl';
 
 // Implementation for renderer process
 /** @internal */
@@ -24,7 +23,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
                 pid: process ? process.pid: -1
             }
         };
-        this._logLevel = GetLogLevel();
+        this._logLevel = IpcBusLog.GetLogLevel();
         this._messageId = 0;
     }
 

@@ -1,6 +1,6 @@
 {
   "name": "electron-common-ipc",
-  "version": "8.0.0-beta.3",
+  "version": "8.0.0-beta.4",
   "description": "A safe IPC bus for applications built on Node or Electron.",
   "repository": {
     "type": "git",
@@ -32,7 +32,7 @@
   "maintainers": [
     {
       "name": "Emmanuel Kimmerlin",
-      "email": "emmanuel.kimmerlin@thomsonreuters.com"
+      "email": "emmanuel.kimmerlin@refinitiv.com"
     }
   ],
   "main": "./lib/electron-common-ipc.js",

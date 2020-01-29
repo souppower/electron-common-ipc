@@ -3,7 +3,7 @@ import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 import { IpcPacketBuffer } from 'socket-serializer';
-import { IpcBusLog } from '../log/IpcBusLog';
+import { IpcBusLog } from '../log/IpcBusLogImpl';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
