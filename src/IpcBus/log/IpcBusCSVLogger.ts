@@ -76,17 +76,17 @@ export class CSVLogger {
                     while (original_command.log.previous) {
                         original_command = original_command.log.previous;
                     }
-                    const local = ipcBusCommand.log.local;
+                    const local = current_command.log.local;
                     let delay = '?';
                     if (original_command) {
-                        delay = ((ipcBusCommand.log.timestamp - original_command.log.timestamp)).toString();
+                        delay = ((current_command.log.timestamp - original_command.log.timestamp)).toString();
                     }
                     log.push(
-                        ipcBusCommand.log ? ipcBusCommand.log.id : '?',
-                        ipcBusCommand.channel,
+                        current_command.log ? current_command.log.id : '?',
+                        current_command.channel,
                         local ? 'REQUEST-RESPONSE-local' : 'SEND-REQUEST-RESPONSE',
                         delay,
-                        JSON.stringify(ipcBusCommand.request)
+                        JSON.stringify(current_command.request)
                     );
                     if (args && args.length) {
                         for (let i = 0, l = args.length; i < l; ++i) {
@@ -103,24 +103,24 @@ export class CSVLogger {
                     }
                     const local = ipcBusCommand.log.local;
                     const delay = (ipcBusCommand.log.timestamp - original_command.log.timestamp);
+                    log.push(
+                        current_command.log.id,
+                        current_command.channel
+                    );
                     if (current_command.kind === IpcBusCommand.Kind.SendMessage) {
                         log.push(
-                            current_command.log.id,
-                            current_command.channel,
                             current_command.request ? local ? 'REQUEST-local' : 'GET-REQUEST' : local ? 'MESSAGE-local' : 'GET-MESSAGE',
-                            delay.toString(),
-                            current_command.request ? JSON.stringify(current_command.request) : ''
                         );
                     }
                     else if (current_command.kind === IpcBusCommand.Kind.RequestResponse) {
                         log.push(
-                            current_command.log.id,
-                            current_command.request.channel,
                             'GET-REQUEST-RESPONSE',
-                            delay.toString(),
-                            JSON.stringify(current_command.request)
                         );
                     }
+                    log.push(
+                        delay.toString(),
+                        current_command.request ? JSON.stringify(current_command.request) : ''
+                    );
                     break;
                 }
             }

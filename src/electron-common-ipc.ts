@@ -30,3 +30,10 @@ import { SetLogLevelCVS } from './IpcBus/log/IpcBusCSVLogger';
 if (process && process.env && process.env['ELECTRON_IPC_LOG'] && process.env['ELECTRON_IPC_LOG_CSV']) {
     SetLogLevelCVS(Number(process.env['ELECTRON_IPC_LOG']), process.env['ELECTRON_IPC_LOG_CSV']);
 }
+
+/** @internal */
+import { SetLogLevelJSON } from './IpcBus/log/IpcBusJSONLogger';
+
+if (process && process.env && process.env['ELECTRON_IPC_LOG'] && process.env['ELECTRON_IPC_LOG_JSON']) {
+    SetLogLevelJSON(Number(process.env['ELECTRON_IPC_LOG']), process.env['ELECTRON_IPC_LOG_JSON']);
+}
