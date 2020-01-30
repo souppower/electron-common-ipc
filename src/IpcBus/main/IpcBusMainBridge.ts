@@ -20,7 +20,7 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         const handshake: IpcBusConnector.Handshake = {
             process: this.process,
-            logConfig: this._logConfig
+            logLevel: this._logLevel
         }
         return Promise.resolve(handshake);
     }

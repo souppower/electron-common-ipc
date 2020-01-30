@@ -18,6 +18,3 @@ export function ActivateServiceTrace(enable: boolean): void {
 // Force to execute code
 /** @internal */
 import './IpcBus/service/IpcBusService-factory';
-
-/** @internal */
-import './IpcBus/log/IpcBusLogImpl';

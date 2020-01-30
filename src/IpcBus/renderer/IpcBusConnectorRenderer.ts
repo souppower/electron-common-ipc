@@ -70,8 +70,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                 this.addClient(client);
                 const handshake = this._onConnect(eventOrPeer, peerOrArgs, handshakeArg);
                 this._peer.process = handshake.process;
-                this._logConfig.level = handshake.logConfig.level;
-                this._logConfig.baseTime = handshake.logConfig.baseTime;
+                this._logLevel = handshake.logLevel;
                 clearTimeout(timer);
                 resolve(handshake);
             };

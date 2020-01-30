@@ -89,7 +89,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _completePeerInfo(webContents: Electron.WebContents, peer: Client.IpcBusPeer): IpcBusConnector.Handshake {
         const handshake: IpcBusConnector.Handshake = {
             process: peer.process,
-            logConfig: ipcBusLogConfig
+            logLevel: ipcBusLogConfig.level,
         };
         handshake.process.wcid = webContents.id;
         // Following functions are not implemented in all Electrons

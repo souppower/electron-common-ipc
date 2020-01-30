@@ -37,7 +37,7 @@ export namespace IpcBusLog {
             case Kind.GET_REQUEST:
                 return 'GetRequest';
             case Kind.SEND_REQUEST_RESPONSE:
-                return 'SendRequestRespose';
+                return 'SendRequestResponse';
             case Kind.GET_REQUEST_RESPONSE:
                 return 'GetRequestResponse';
         }

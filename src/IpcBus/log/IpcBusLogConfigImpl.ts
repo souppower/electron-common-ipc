@@ -19,10 +19,12 @@ export class IpcBusLogConfigImpl implements IpcBusLogConfig {
         // In renderer process, there is no process object
         if (process && process.env) {
             const levelAny = process.env[LogLevelEnv];
-            let level = Number(levelAny);
-            level = Math.min(level, IpcBusLogConfig.Level.Args);
-            level = Math.max(level, IpcBusLogConfig.Level.None);
-            return level;
+            if (levelAny != null) {
+                let level = Number(levelAny);
+                level = Math.min(level, IpcBusLogConfig.Level.Args);
+                level = Math.max(level, IpcBusLogConfig.Level.None);
+                return level;
+            }
         }
         return -1;
     }
@@ -31,8 +33,10 @@ export class IpcBusLogConfigImpl implements IpcBusLogConfig {
         // In renderer process, there is no process object
         if (process && process.env) {
             const baseTimeAny = process.env[LogBaseTimeEnv];
-            let baseTime = Number(baseTimeAny);
-            return baseTime;
+            if (baseTimeAny != null) {
+                const baseline = Number(baseTimeAny);
+                return baseline;
+            }
         }
         return -1;
     }

@@ -13,7 +13,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     protected _client: IpcBusConnector.Client;
     protected _peer: Client.IpcBusPeer;
     protected _messageId: number;
-    protected _logConfig: IpcBusLogConfig;
+    protected _logLevel: IpcBusLogConfig.Level;
 
     constructor(contextType: Client.IpcBusProcessType) {
         this._peer = {
@@ -24,8 +24,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
                 pid: process ? process.pid: -1
             }
         };
-        this._logConfig.level = ipcBusLogConfig.level;
-        this._logConfig.baseTime = ipcBusLogConfig.baseTime;
+        this._logLevel = ipcBusLogConfig.level;
         this._messageId = 0;
     }
 
@@ -43,33 +42,29 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         }
     }
 
-    protected getTime(): number {
-        return Date.now() - this._logConfig.baseTime;
-    }
-
     logMessageCreation(ipcBusCommand: IpcBusCommand) {
-        if (this._logConfig.level & IpcBusLogConfig.Level.Sent) {
+        if (this._logLevel & IpcBusLogConfig.Level.Sent) {
             const id = `${this._peer.id}-${this._messageId++}`;
             ipcBusCommand.log = ipcBusCommand.log || {
                 id,
-                timestamp: this.getTime()
+                timestamp: Date.now()
             };
         }
     }
 
     logResponseCreation(ipcBusCommandOrigin: IpcBusCommand, ipcBusCommand: IpcBusCommand) {
-        if (this._logConfig.level & IpcBusLogConfig.Level.Sent) {
+        if (this._logLevel & IpcBusLogConfig.Level.Sent) {
             const id = ipcBusCommandOrigin.log?.id || `${this._peer.id}-${this._messageId++}`;
             ipcBusCommand.log = ipcBusCommand.log || {
                 id,
-                timestamp: this.getTime()
+                timestamp: Date.now()
             };
             ipcBusCommand.log.previous = ipcBusCommandOrigin;
         }
     }
 
     logResponse(ipcBusCommand: IpcBusCommand, args?: any[]) {
-        if (this._logConfig.level & IpcBusLogConfig.Level.Sent) {
+        if (this._logLevel & IpcBusLogConfig.Level.Sent) {
             // Clone first level
             const ipcBusCommandLog: IpcBusCommand = Object.assign({}, ipcBusCommand);
             ipcBusCommandLog.kind = IpcBusCommand.Kind.LogRequestResponse;
@@ -79,7 +74,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     }
 
     logMessageReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        if (this._logConfig.level >= IpcBusLogConfig.Level.Received) {
+        if (this._logLevel >= IpcBusLogConfig.Level.Received) {
             const ipcBusCommandLog: IpcBusCommand = {
                 kind: IpcBusCommand.Kind.LogGetMessage,
                 peer,

@@ -56,7 +56,7 @@ export class IpcBusLogMainImpl implements IpcBusLogMain {
             const id = `external-${this._order}`;
             ipcBusCommand.log = ipcBusCommand.log || {
                 id,
-                timestamp: Date.now() - ipcBusLogConfig.baseTime
+                timestamp: Date.now()
             };
         }
 
@@ -70,7 +70,7 @@ export class IpcBusLogMainImpl implements IpcBusLogMain {
         };
 
         trace.peer = trace.peer_source = source_command.peer;
-        trace.timestamp = trace.timestamp_source = source_command.log.timestamp;
+        trace.timestamp = trace.timestamp_source = source_command.log.timestamp - this.baseTime;
         trace.channel = source_command.channel;
 
         switch (ipcBusCommand.kind) {
@@ -82,14 +82,14 @@ export class IpcBusLogMainImpl implements IpcBusLogMain {
             case IpcBusCommand.Kind.LogRequestResponse: {
                 const current_command = ipcBusCommand;
                 trace.peer = current_command.peer;
-                trace.timestamp = current_command.log.timestamp;
+                trace.timestamp = current_command.log.timestamp - this.baseTime;
                 trace.local = current_command.log.local;
                 trace.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE
                 break;
             }
             case IpcBusCommand.Kind.LogGetMessage: {
                 trace.peer = ipcBusCommand.peer;
-                trace.timestamp = ipcBusCommand.log.timestamp;
+                trace.timestamp = ipcBusCommand.log.timestamp - this.baseTime;
                 trace.local = ipcBusCommand.log.local;
 
                 const current_command = ipcBusCommand.log.previous;

@@ -326,7 +326,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             .then((handshake) => {
                 const peer = { id: uuid.v1(), name: '', process: handshake.process };
                 peer.name = options.peerName || IpcBusTransportImpl.generateName(peer);
-                this._logActivate = handshake.logConfig.level > 0;
+                this._logActivate = handshake.logLevel > 0;
                 this._postCommandBind = this._connector.postCommand.bind(this._connector);
                 return peer;
             })

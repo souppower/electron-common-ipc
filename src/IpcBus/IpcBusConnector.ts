@@ -9,7 +9,7 @@ export namespace IpcBusConnector {
     /** @internal */
     export interface Handshake {
         process: Client.IpcBusProcess;
-        logConfig: IpcBusLogConfig;
+        logLevel: IpcBusLogConfig.Level;
     }
 
     /** @internal */
