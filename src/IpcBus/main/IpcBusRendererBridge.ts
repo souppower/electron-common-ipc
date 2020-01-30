@@ -5,14 +5,16 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
+import { IpcBusConnector } from '../IpcBusConnector';
+
 import {
     IPCBUS_TRANSPORT_RENDERER_HANDSHAKE,
     IPCBUS_TRANSPORT_RENDERER_COMMAND,
     IPCBUS_TRANSPORT_RENDERER_EVENT
 } from '../renderer/IpcBusConnectorRenderer';
-import { IpcBusConnector } from '../IpcBusConnector';
+import { ipcBusLogConfig } from '../log/IpcBusLogConfigImpl';
+
 import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
-import { IpcBusLog } from '../log/IpcBusLog';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
@@ -86,7 +88,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     // =================================================================================================
     private _completePeerInfo(webContents: Electron.WebContents, peer: Client.IpcBusPeer): IpcBusConnector.Handshake {
         const handshake: IpcBusConnector.Handshake = {
-            process: peer.process
+            process: peer.process,
+            logConfig: ipcBusLogConfig
         };
         handshake.process.wcid = webContents.id;
         // Following functions are not implemented in all Electrons
@@ -103,7 +106,6 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             // For backward we fill pid with webContents id
             handshake.process.pid = webContents.id;
         }
-        handshake.logLevel = IpcBusLog.GetLogLevel();
         return handshake;
     }
 

@@ -5,6 +5,7 @@ const csvWriter = require('csv-write-stream');
 
 import { JSON_stringify } from './IpcBusLogUtils';
 import { IpcBusLog } from './IpcBusLog';
+import { IpcBusLogConfig } from './IpcBusLogConfig';
 
 /** @internal */
 export class CSVLogger {
@@ -48,7 +49,7 @@ export class CSVLogger {
             trace.order.toString(),
             trace.channel,
             trace.id,
-            trace.kind,
+            IpcBusLog.KindToStr(trace.kind),
 
             peer.id,
         ];
@@ -92,8 +93,8 @@ export class CSVLogger {
 }
 
 let cvsLogger: CSVLogger;
-IpcBusLog.SetLogLevelCVS = (level: IpcBusLog.Level, filename: string): void => {
-    if (level >= IpcBusLog.Level.None) {
+IpcBusLog.SetLogLevelCVS = (level: IpcBusLogConfig.Level, filename: string): void => {
+    if (level >= IpcBusLogConfig.Level.None) {
         if (cvsLogger == null) {
             cvsLogger = new CSVLogger(filename);
             const cb = cvsLogger.addLog.bind(cvsLogger);

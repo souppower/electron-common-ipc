@@ -151,8 +151,8 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
                 }
 
                 const handshake: IpcBusConnector.Handshake = {
-                    process: this._peer.process,
-                    logLevel: this._logLevel
+                    process: this.process,
+                    logConfig: this._logConfig
                 }
                 resolve(handshake);
             };
