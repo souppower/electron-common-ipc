@@ -143,7 +143,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     ipcBusCommand.request.reject = true;
                 }
                 if (this._logLevel) {
-                    this._connector.trackResponseCreation(ipcBusCommand, ipcBusCommandResponse);
+                    this._connector.logResponseCreation(ipcBusCommand, ipcBusCommandResponse);
                 }
                 if (local) {
                     const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
@@ -267,7 +267,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
         // Broadcast locally
         if (this._logLevel) {
-            this._connector.trackMessageCreation(ipcMessage);
+            this._connector.logMessageCreation(ipcMessage);
         }
         if (this.hasChannel(channel)) {
             this.onMessageReceived(true, ipcMessage, args);
@@ -305,7 +305,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             request: ipcBusCommandRequest
         }
         if (this._logLevel) {
-            this._connector.trackMessageCreation(ipcMessage);
+            this._connector.logMessageCreation(ipcMessage);
         }
         // Broadcast locally
         if (this.hasChannel(channel)) {

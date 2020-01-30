@@ -41,7 +41,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         }
     }
 
-    trackMessageCreation(ipcBusCommand: IpcBusCommand) {
+    logMessageCreation(ipcBusCommand: IpcBusCommand) {
         if (this._logLevel & IpcBusLog.Level.Sent) {
             const id = `${this._peer.id}-${this._messageId++}`;
             ipcBusCommand.log = ipcBusCommand.log || {
@@ -51,7 +51,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         }
     }
 
-    trackResponseCreation(ipcBusCommandOrigin: IpcBusCommand, ipcBusCommand: IpcBusCommand) {
+    logResponseCreation(ipcBusCommandOrigin: IpcBusCommand, ipcBusCommand: IpcBusCommand) {
         if (this._logLevel & IpcBusLog.Level.Sent) {
             const id = ipcBusCommandOrigin.log?.id || `${this._peer.id}-${this._messageId++}`;
             ipcBusCommand.log = ipcBusCommand.log || {
@@ -79,7 +79,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
                 peer,
                 channel: ''
             };
-            this.trackMessageCreation(ipcBusCommandLog);
+            this.logMessageCreation(ipcBusCommandLog);
             ipcBusCommandLog.log.local = local;
             ipcBusCommandLog.log.previous = ipcBusCommand;
             // no args
