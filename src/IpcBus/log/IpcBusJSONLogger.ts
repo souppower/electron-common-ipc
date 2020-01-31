@@ -11,13 +11,14 @@ import { IpcBusLogConfig } from './IpcBusLogConfig';
 /** @internal */
 interface JSONLog {
     order: number,
+    channel?: string,
     id: string,
+    kind?: string,
     peer_id: string,
     peer: Client.IpcBusPeer,
     peer_source?: Client.IpcBusPeer,
-    channel?: string,
-    kind?: string,
     delay?: number,
+    payload?: number,
     arg0?: string,
     arg1?: string,
     arg2?: string,
@@ -52,6 +53,7 @@ export class JSONLogger {
 
             peer_id: peer.id,
             peer,
+            payload: trace.payload
         };
 
         if (trace.peer != trace.peer_source) {

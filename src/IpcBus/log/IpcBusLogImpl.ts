@@ -9,7 +9,7 @@ import { ipcBusLogConfig } from './IpcBusLogConfigImpl';
 export interface IpcBusLogMain extends IpcBusLogConfig {
     getCallback(): IpcBusLog.Callback;
     setCallback(cb?: IpcBusLog.Callback): void;
-    addLog(command: IpcBusCommand, args: any[]): boolean;
+    addLog(command: IpcBusCommand, args: any[], payload?: number): boolean;
     addLogRawContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean;
     addLogPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean;
 }
@@ -49,7 +49,7 @@ export class IpcBusLogMainImpl implements IpcBusLogMain {
         this._cb = cb;
     }
 
-    addLog(ipcBusCommand: IpcBusCommand, args: any[]): boolean {
+    addLog(ipcBusCommand: IpcBusCommand, args: any[], payload?: number): boolean {
         ++this._order;
         // Some C++ lib can not manage log, so we have to simulate the minimum at this level
         if (ipcBusCommand.log == null) {
@@ -66,7 +66,9 @@ export class IpcBusLogMainImpl implements IpcBusLogMain {
         }
 
         const trace: Partial<IpcBusLog.Trace> = {
-            order: this._order
+            order: this._order,
+            args,
+            payload
         };
 
         trace.peer = trace.peer_source = source_command.peer;
@@ -103,7 +105,6 @@ export class IpcBusLogMainImpl implements IpcBusLogMain {
             }
         }
         trace.id = `${source_command.log.id}_${trace.kind}`;
-        trace.args = args;
 
         this._cb(trace as IpcBusLog.Trace);
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
@@ -112,14 +113,14 @@ export class IpcBusLogMainImpl implements IpcBusLogMain {
     addLogRawContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
         if (ipcBusCommand.log) {
             this._packet.setRawContent(rawContent);
-            this.addLog(ipcBusCommand, this._packet.parseArrayAt(1));
+            this.addLog(ipcBusCommand, this._packet.parseArrayAt(1), this._packet.buffer.length);
         }
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }
 
     addLogPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean {
         if (ipcBusCommand.log) {
-            this.addLog(ipcBusCommand, ipcPacketBuffer.parseArrayAt(1));
+            this.addLog(ipcBusCommand, ipcPacketBuffer.parseArrayAt(1), ipcPacketBuffer.buffer.length);
         }
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }

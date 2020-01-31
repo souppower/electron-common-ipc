@@ -151,6 +151,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                     if (ipcBusCommand.request) {
                         this._subscriptions.setSingleChannel(ipcBusCommand.request.replyChannel, webContents, ipcBusCommand.peer);
                     }
+                    // Prevent echo message
                     const sourceKey = this._subscriptions.getKey(webContents);
                     this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                         if (connData.key !== sourceKey) {

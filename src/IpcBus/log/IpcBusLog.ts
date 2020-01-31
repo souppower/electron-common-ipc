@@ -23,6 +23,7 @@ export namespace IpcBusLog {
         kind: Kind;
 
         local?: boolean;
+        payload?: number;
         args?: any[];
     }
 

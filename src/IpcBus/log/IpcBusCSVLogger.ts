@@ -24,6 +24,7 @@ export class CSVLogger {
             'local',
             'peer',
             'peer-source',
+            'payload',
             'arg0',
             'arg1',
             'arg2',
@@ -83,7 +84,12 @@ export class CSVLogger {
         else {
             cols.push('');
         }
-
+        if (trace.payload) {
+            cols.push(trace.payload.toString());
+        }
+        else {
+            cols.push('');
+        }
         let remainingArgs = 6;
         if (trace.args && trace.args.length) {
             remainingArgs -= trace.args.length;
