@@ -130,6 +130,10 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
         this._channelsMap = new Map<string, Map<M, ConnectionPeers<T, M>>>();
     }
 
+    getKey(t: T): M {
+        return this._getKey(t);
+    }
+
     private _info(str: string) {
         Logger.enable && Logger.info(`[${this._name}] ${str}`);
     }

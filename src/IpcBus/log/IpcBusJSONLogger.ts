@@ -14,6 +14,7 @@ interface JSONLog {
     id: string,
     peer_id: string,
     peer: Client.IpcBusPeer,
+    peer_source?: Client.IpcBusPeer,
     channel?: string,
     kind?: string,
     delay?: number,
@@ -52,6 +53,10 @@ export class JSONLogger {
             peer_id: peer.id,
             peer,
         };
+
+        if (trace.peer != trace.peer_source) {
+            log.peer_source = trace.peer_source;
+        }
 
         switch (trace.kind) {
             case IpcBusLog.Kind.SEND_MESSAGE:

@@ -147,12 +147,22 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _broadcastMessage(webContents: Electron.WebContents | null, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                if (ipcBusCommand.request && webContents) {
-                    this._subscriptions.setSingleChannel(ipcBusCommand.request.replyChannel, webContents, ipcBusCommand.peer);
+                if (webContents) {
+                    if (ipcBusCommand.request) {
+                        this._subscriptions.setSingleChannel(ipcBusCommand.request.replyChannel, webContents, ipcBusCommand.peer);
+                    }
+                    const sourceKey = this._subscriptions.getKey(webContents);
+                    this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
+                        if (connData.key !== sourceKey) {
+                            connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                        }
+                    });
                 }
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
-                });
+                else {
+                    this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
+                        connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                    });
+                }
                 break;
             }
 

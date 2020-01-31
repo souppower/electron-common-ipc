@@ -73,9 +73,9 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
             // else {
             //     throw `[IPCBusTransport:Net ${this._messageId}] Not valid packet !`;
             // }
-            // Remove read buffer
-            this._bufferListReader.reduce();
         }
+        // Remove read buffer
+        this._bufferListReader.reduce();
     }
 
     protected _reset(endSocket: boolean) {

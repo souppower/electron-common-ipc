@@ -23,6 +23,7 @@ export class CSVLogger {
             'delay',
             'local',
             'peer',
+            'peer-source',
             'arg0',
             'arg1',
             'arg2',
@@ -76,6 +77,12 @@ export class CSVLogger {
                 break;
         }
         cols.push(JSON.stringify(peer));
+        if (trace.peer != trace.peer_source) {
+            cols.push(JSON.stringify(trace.peer_source));
+        }
+        else {
+            cols.push('');
+        }
 
         let remainingArgs = 6;
         if (trace.args && trace.args.length) {
