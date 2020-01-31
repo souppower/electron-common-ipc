@@ -4,7 +4,7 @@ const LogLevelEnv = 'ELECTRON_IPC_LOG_LEVEL';
 const LogBaseTimeEnv = 'ELECTRON_IPC_LOG_BASE_TIME';
 
 /** @internal */
-export class IpcBusLogConfigImpl implements IpcBusLogConfig {
+export class IpcBusLogConfigImpl {
     private _level: IpcBusLogConfig.Level;
     private _baseTime: number;
 
