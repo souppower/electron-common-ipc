@@ -67,8 +67,7 @@ export class IpcBusLogMainImpl implements IpcBusLogMain {
 
         const trace: Partial<IpcBusLog.Trace> = {
             order: this._order,
-            args,
-            payload
+            args
         };
 
         trace.peer = trace.peer_source = source_command.peer;
@@ -78,6 +77,7 @@ export class IpcBusLogMainImpl implements IpcBusLogMain {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 trace.kind = source_command.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
+                trace.payload = payload;
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse:
@@ -87,6 +87,7 @@ export class IpcBusLogMainImpl implements IpcBusLogMain {
                 trace.timestamp = current_command.log.timestamp - this.baseTime;
                 trace.local = current_command.log.local;
                 trace.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE
+                trace.payload = payload;
                 break;
             }
             case IpcBusCommand.Kind.LogGetMessage: {
