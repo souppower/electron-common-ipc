@@ -1,4 +1,3 @@
-/** @internal */
 export namespace IpcBusLogConfig {
     export enum Level {
         None = 0,
