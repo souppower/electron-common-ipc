@@ -12,6 +12,8 @@ export namespace IpcBusTransport {
 
 /** @internal */
 export interface IpcBusTransport {
+    peer: Client.IpcBusPeer;
+
     connect(client: IpcBusTransport.Client, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer>;
     close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void>;
 

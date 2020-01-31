@@ -41,7 +41,6 @@ export namespace IpcBusLog {
             case Kind.GET_REQUEST_RESPONSE:
                 return 'GetRequestResponse';
         }
-
     }
 
     export interface Callback {

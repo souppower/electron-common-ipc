@@ -101,6 +101,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._postCommandBind = () => {};
         this._waitForClosed = Promise.resolve();
     }
+
+    get peer(): Client.IpcBusPeer {
+        return this._peer;
+    }
     
     protected static generateReplyChannel(peer: Client.IpcBusPeer): string {
         ++IpcBusTransportImpl.s_requestNumber;

@@ -52,7 +52,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         }
         else {
             const handshake = peerOrArgs as IpcBusConnector.Handshake;
-            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._peer.name}`);
+            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._messageId}`);
             this._onIpcEventReceived = this._client.onConnectorBufferReceived.bind(this._client, undefined);
             this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             return handshake;
@@ -69,7 +69,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                 this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
                 this.addClient(client);
                 const handshake = this._onConnect(eventOrPeer, peerOrArgs, handshakeArg);
-                this._peer.process = handshake.process;
+                this._process = handshake.process;
                 this._logLevel = handshake.logLevel;
                 clearTimeout(timer);
                 resolve(handshake);
@@ -88,7 +88,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             this.postCommand({
                 kind: IpcBusCommand.Kind.Handshake,
                 channel: '',
-                peer: this._peer
+                peer: client.peer
             });
         });
     }

@@ -11,25 +11,23 @@ import { ipcBusLogConfig } from './log/IpcBusLogConfigImpl';
 /** @internal */
 export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     protected _client: IpcBusConnector.Client;
-    protected _peer: Client.IpcBusPeer;
-    protected _messageId: number;
+    protected _process: Client.IpcBusProcess;
+    protected _messageId: string;
+    protected _messageCount: number;
     protected _logLevel: IpcBusLogConfig.Level;
 
     constructor(contextType: Client.IpcBusProcessType) {
-        this._peer = {
-            id: uuid.v1(),
-            name: '',
-            process: {
-                type: contextType,
-                pid: process ? process.pid: -1
-            }
+        this._process = {
+            type: contextType,
+            pid: process ? process.pid: -1
         };
         this._logLevel = ipcBusLogConfig.level;
-        this._messageId = 0;
+        this._messageId = uuid.v1();
+        this._messageCount = 0;
     }
 
     get process(): Client.IpcBusProcess {
-        return this._peer.process;
+        return this._process;
     }
 
     protected addClient(client: IpcBusConnector.Client) {
@@ -44,7 +42,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
 
     logMessageCreation(ipcBusCommand: IpcBusCommand) {
         if (this._logLevel & IpcBusLogConfig.Level.Sent) {
-            const id = `${this._peer.id}-${this._messageId++}`;
+            const id = `${this._messageId}-${this._messageCount++}`;
             ipcBusCommand.log = ipcBusCommand.log || {
                 id,
                 timestamp: Date.now()
@@ -54,7 +52,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
 
     logResponseCreation(ipcBusCommandOrigin: IpcBusCommand, ipcBusCommand: IpcBusCommand) {
         if (this._logLevel & IpcBusLogConfig.Level.Sent) {
-            const id = ipcBusCommandOrigin.log?.id || `${this._peer.id}-${this._messageId++}`;
+            const id = ipcBusCommandOrigin.log?.id || `${this._messageId}-${this._messageCount++}`;
             ipcBusCommand.log = ipcBusCommand.log || {
                 id,
                 timestamp: Date.now()

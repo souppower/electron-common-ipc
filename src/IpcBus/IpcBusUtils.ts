@@ -167,8 +167,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
         }
     }
 
-    // Channel is supposed to be new
-    setSingleChannel(channel: string, conn: T, peer: IpcBusPeer) {
+    protected _setSingleChannel(channel: string, conn: T, peer: IpcBusPeer): Map<M, ConnectionPeers<T, M>> {
         Logger.enable && this._info(`SetChannel: '${channel}', peerId = ${peer.id}`);
 
         const connsMap = new Map<M, ConnectionPeers<T, M>>();
@@ -180,6 +179,13 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
         connsMap.set(key, connData);
 
         this.emitter && this.emit('channel-added', channel);
+
+        return connsMap;
+    }
+
+    // Channel is supposed to be new
+    setSingleChannel(channel: string, conn: T, peer: IpcBusPeer) {
+        this._setSingleChannel(channel, conn, peer);
     }
 
     getSingleChannel(channel: string): ConnectionPeers<T, M> | null {
@@ -201,17 +207,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
         let connData: ConnectionPeers<T, M>;
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
-            connsMap = new Map<M, ConnectionPeers<T, M>>();
-            // This channel has NOT been subscribed yet, add it to the map
-            this._channelsMap.set(channel, connsMap);
-
-            // Code is duplicated here but it would save time.
-            // This channel has NOT been already subscribed by this connection
-            connData = new ConnectionPeers<T, M>(key, conn, peer, count);
-            connsMap.set(key, connData);
-
-            this.emitter && this.emit('channel-added', channel);
-            // Logger.enable && this._info(`AddRef: channel '${channel}' is added`);
+            connsMap = this._setSingleChannel(channel, conn, peer);
         }
         else {
             connData = connsMap.get(key);
