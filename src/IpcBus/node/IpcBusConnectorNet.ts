@@ -67,12 +67,12 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
         this._bufferListReader.appendBuffer(buffer);
         while (this._packetIn.decodeFromReader(this._bufferListReader)) {
             const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
-            if (ipcBusCommand && ipcBusCommand.peer) {
+            // if (ipcBusCommand.kind && ipcBusCommand.peer) {
                 this._client.onConnectorPacketReceived(ipcBusCommand, this._packetIn);
-            }
-            else {
-                throw `[IPCBusTransport:Net ${this._messageId}] Not valid packet !`;
-            }
+            // }
+            // else {
+            //     throw `[IPCBusTransport:Net ${this._messageId}] Not valid packet !`;
+            // }
             // Remove read buffer
             this._bufferListReader.reduce();
         }

@@ -203,14 +203,13 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
     addRefCount(channel: string, conn: T, peer: IpcBusPeer, count: number): number {
         Logger.enable && this._info(`AddRef: '${channel}', peerId = ${peer.id}`);
 
-        const key = this._getKey(conn);
-        let connData: ConnectionPeers<T, M>;
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             connsMap = this._setSingleChannel(channel, conn, peer);
         }
         else {
-            connData = connsMap.get(key);
+            const key = this._getKey(conn);
+            let connData = connsMap.get(key);
             if (connData == null) {
                 // This channel has NOT been already subscribed by this connection
                 connData = new ConnectionPeers<T, M>(key, conn, peer, count);
@@ -221,7 +220,6 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
                 connData.addPeer(peer, count);
             }
         }
-        Logger.enable && this._info(`AddRef: '${channel}', count = ${connData.peerRefCounts.size}`);
         return connsMap.size;
     }
 
@@ -243,7 +241,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
                 connData.releasePeer(peer);
             }
         }
-        if (connData.peerRefCounts.size <= 0) {
+        if (connData.peerRefCounts.size === 0) {
             connsMap.delete(connData.key);
             // Logger.enable && this._info(`Release: conn = ${conn} is released`);
             if (connsMap.size === 0) {
