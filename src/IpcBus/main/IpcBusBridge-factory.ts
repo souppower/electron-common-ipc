@@ -7,7 +7,8 @@ import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
 
 import { IpcBusLog } from '../log/IpcBusLog';
-import { logManager } from '../log/IpcBusLogImpl';
+import { ipcBusLog } from '../log/IpcBusLogImpl';
+import { IpcBusLogConfig } from '../log/IpcBusLogConfig';
 
 let g_bridge: IpcBusBridge;
 export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge => {
@@ -23,8 +24,8 @@ export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge 
                 if (process.env['ELECTRON_IPC_LOG'] && process.env['ELECTRON_IPC_LOG_JSON']) {
                     IpcBusLog.SetLogLevelJSON(Number(process.env['ELECTRON_IPC_LOG']), process.env['ELECTRON_IPC_LOG_JSON']);
                 }
-                if (logManager.getLogLevel() > IpcBusLog.Level.None) {
-                    g_bridge = new IpcBusBridgeLogger(electronProcessType, logManager);
+                if (ipcBusLog.level > IpcBusLogConfig.Level.None) {
+                    g_bridge = new IpcBusBridgeLogger(electronProcessType, ipcBusLog);
                 }
                 else {
                     g_bridge = new IpcBusBridgeImpl(electronProcessType);

@@ -3,14 +3,14 @@ import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 import { IpcPacketBuffer } from 'socket-serializer';
-import { IpcBusLog } from '../log/IpcBusLogImpl';
+import { IpcBusLogMain } from '../log/IpcBusLogImpl';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
-    private _ipcBusLog: IpcBusLog;
+    private _ipcBusLog: IpcBusLogMain;
 
-    constructor(contextType: Client.IpcBusProcessType, ipcBusLog: IpcBusLog) {
+    constructor(contextType: Client.IpcBusProcessType, ipcBusLog: IpcBusLogMain) {
         super(contextType);
         this._ipcBusLog = ipcBusLog;
     }

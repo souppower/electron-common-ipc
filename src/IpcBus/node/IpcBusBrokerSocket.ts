@@ -54,9 +54,9 @@ export class IpcBusBrokerSocket {
         this._bufferListReader.appendBuffer(buffer);
         while (this._packetIn.decodeFromReader(this._bufferListReader)) {
             this._client.onSocketPacket(this._socket, this._packetIn);
-            // Remove read buffer
-            this._bufferListReader.reduce();
         }
+        // Remove read buffer
+        this._bufferListReader.reduce();
     }
 
     protected _onSocketError(err: any) {

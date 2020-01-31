@@ -25,6 +25,9 @@ import './IpcBus/node/IpcBusClientNet-factory';
 import './IpcBus/log/IpcBusCSVLogger';
 /** @internal */
 import './IpcBus/log/IpcBusJSONLogger';
+/** @internal */
+import './IpcBus/log/IpcBusLogImpl';
+
 
 // /** @internal */
 // import { IpcBusLog } from './IpcBus/log/IpcBusLog';

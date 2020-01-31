@@ -2,131 +2,138 @@ import { IpcPacketBuffer } from "socket-serializer";
 
 import { IpcBusCommand } from "../IpcBusCommand";
 import { IpcBusLog } from './IpcBusLog';
+import { IpcBusLogConfig } from './IpcBusLogConfig';
+import { ipcBusLogConfig } from './IpcBusLogConfigImpl';
 
 /** @internal */
-export interface IpcBusLog {
+export interface IpcBusLogMain extends IpcBusLogConfig {
     getCallback(): IpcBusLog.Callback;
-    getLogLevel(): number;
-    setLogLevel(logLevel: IpcBusLog.Level, cb?: IpcBusLog.Callback): void;
-    addLog(command: IpcBusCommand, args: any[]): boolean;
+    setCallback(cb?: IpcBusLog.Callback): void;
+    addLog(command: IpcBusCommand, args: any[], payload?: number): boolean;
     addLogRawContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean;
     addLogPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean;
 }
 
-
 /** @internal */
-export class IpcBusLogImpl implements IpcBusLog {
-    private _logLevel: number;
+export class IpcBusLogMainImpl implements IpcBusLogMain {
     private _cb: IpcBusLog.Callback;
     protected _packet: IpcPacketBuffer;
     protected _order: number;
 
     constructor() {
-        this._logLevel = IpcBusLog.Level.None;
         this._packet = new IpcPacketBuffer();
         this._order = 0;
+    }
+
+    get level(): IpcBusLogConfig.Level {
+        return ipcBusLogConfig.level;
+    }
+
+    set level(level: IpcBusLogConfig.Level) {
+        ipcBusLogConfig.level = level;
+    }
+
+    get baseTime(): number {
+        return ipcBusLogConfig.baseTime;
+    }
+
+    set baseTime(baseTime: number) {
+        ipcBusLogConfig.baseTime = baseTime;
     }
 
     getCallback(): IpcBusLog.Callback {
         return this._cb;
     }
 
-    getLogLevel(): number {
-        // In renderer process, there is no process object
-        if (process && process.env) {
-            const logLevelAny = process.env['ELECTRON_IPC_LEVEL'];
-            let logLevel = Number(logLevelAny);
-            logLevel = Math.min(logLevel, 3);
-            logLevel = Math.max(logLevel, 0);
-            return logLevel;
-        }
-        return this._logLevel;
-    }
-        
-    setLogLevel(logLevel: IpcBusLog.Level, cb?: IpcBusLog.Callback): void {
-        if (process && process.env) {
-            process.env['ELECTRON_IPC_LEVEL'] = logLevel.toString();
-        }
-        this._logLevel = logLevel;
+    setCallback(cb?: IpcBusLog.Callback): void {
         this._cb = cb;
     }
 
-    addLog(ipcBusCommand: IpcBusCommand, args: any[]): boolean {
-        if (ipcBusCommand.log) {
-            ++this._order;
-            const trace: Partial<IpcBusLog.Trace> = {
-                order: this._order
+    addLog(ipcBusCommand: IpcBusCommand, args: any[], payload?: number): boolean {
+        ++this._order;
+        // Some C++ lib can not manage log, so we have to simulate the minimum at this level
+        if (ipcBusCommand.log == null) {
+            const id = `external-${this._order}`;
+            ipcBusCommand.log = ipcBusCommand.log || {
+                id,
+                timestamp: Date.now()
             };
-
-            let source_command = ipcBusCommand;
-            while (source_command.log.previous) {
-                source_command = source_command.log.previous;
-            }
-            trace.id = source_command.log.id;
-            trace.peer = trace.peer_source = source_command.peer;
-            trace.timestamp = trace.timestamp_source = source_command.log.timestamp;
-            trace.channel = source_command.channel;
-            trace.args = args;
-
-            switch (ipcBusCommand.kind) {
-                case IpcBusCommand.Kind.SendMessage: {
-                    trace.kind = source_command.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
-                    break;
-                }
-                case IpcBusCommand.Kind.RequestResponse:
-                case IpcBusCommand.Kind.LogRequestResponse: {
-                    const current_command = ipcBusCommand;
-                    trace.peer = current_command.peer;
-                    trace.timestamp = current_command.log.timestamp;
-                    trace.local = current_command.log.local;
-                    trace.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE
-                    break;
-                }
-                case IpcBusCommand.Kind.LogGetMessage: {
-                    trace.peer = ipcBusCommand.peer;
-                    trace.timestamp = ipcBusCommand.log.timestamp;
-                    trace.local = ipcBusCommand.log.local;
-
-                    const current_command = ipcBusCommand.log.previous;
-                    if (current_command.kind === IpcBusCommand.Kind.SendMessage) {
-                        trace.kind = current_command.request ? IpcBusLog.Kind.GET_REQUEST : IpcBusLog.Kind.GET_MESSAGE;
-                    }
-                    else if (current_command.kind === IpcBusCommand.Kind.RequestResponse) {
-                        trace.kind = IpcBusLog.Kind.GET_REQUEST_RESPONSE;
-                    }
-                    break;
-                }
-            }
-            this._cb(trace as IpcBusLog.Trace);
         }
+
+        let source_command = ipcBusCommand;
+        while (source_command.log?.previous) {
+            source_command = source_command.log.previous;
+        }
+
+        const trace: Partial<IpcBusLog.Trace> = {
+            order: this._order,
+            args
+        };
+
+        trace.peer = trace.peer_source = source_command.peer;
+        trace.timestamp = trace.timestamp_source = source_command.log.timestamp - this.baseTime;
+        trace.channel = source_command.channel;
+
+        switch (ipcBusCommand.kind) {
+            case IpcBusCommand.Kind.SendMessage: {
+                trace.kind = source_command.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
+                trace.payload = payload;
+                break;
+            }
+            case IpcBusCommand.Kind.RequestResponse:
+            case IpcBusCommand.Kind.LogRequestResponse: {
+                const current_command = ipcBusCommand;
+                trace.peer = current_command.peer;
+                trace.timestamp = current_command.log.timestamp - this.baseTime;
+                trace.local = current_command.log.local;
+                trace.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE
+                trace.payload = payload;
+                break;
+            }
+            case IpcBusCommand.Kind.LogGetMessage: {
+                trace.peer = ipcBusCommand.peer;
+                trace.timestamp = ipcBusCommand.log.timestamp - this.baseTime;
+                trace.local = ipcBusCommand.log.local;
+
+                const current_command = ipcBusCommand.log.previous;
+                if (current_command.kind === IpcBusCommand.Kind.SendMessage) {
+                    trace.kind = current_command.request ? IpcBusLog.Kind.GET_REQUEST : IpcBusLog.Kind.GET_MESSAGE;
+                }
+                else if (current_command.kind === IpcBusCommand.Kind.RequestResponse) {
+                    trace.kind = IpcBusLog.Kind.GET_REQUEST_RESPONSE;
+                }
+                break;
+            }
+        }
+        trace.id = `${source_command.log.id}_${trace.kind}`;
+
+        this._cb(trace as IpcBusLog.Trace);
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }
 
     addLogRawContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
         if (ipcBusCommand.log) {
             this._packet.setRawContent(rawContent);
-            this.addLog(ipcBusCommand, this._packet.parseArrayAt(1));
+            this.addLog(ipcBusCommand, this._packet.parseArrayAt(1), this._packet.buffer.length);
         }
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }
 
     addLogPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean {
         if (ipcBusCommand.log) {
-            this.addLog(ipcBusCommand, ipcPacketBuffer.parseArrayAt(1));
+            this.addLog(ipcBusCommand, ipcPacketBuffer.parseArrayAt(1), ipcPacketBuffer.buffer.length);
         }
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }
 }
 
 /** @internal */
-export const logManager = new IpcBusLogImpl();
+export const ipcBusLog = new IpcBusLogMainImpl();
 
-IpcBusLog.GetLogLevel = (): IpcBusLog.Level => {
-    return logManager.getLogLevel();
+IpcBusLog.SetLogLevel = (level: IpcBusLogConfig.Level, cb?: IpcBusLog.Callback): void => {
+    ipcBusLog.level = level;
+    ipcBusLog.setCallback(cb);
 }
 
-IpcBusLog.SetLogLevel = (level: IpcBusLog.Level, cb?: IpcBusLog.Callback): void => {
-    return logManager.setLogLevel(level, cb);
-}
 
 

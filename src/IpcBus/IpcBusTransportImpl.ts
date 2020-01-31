@@ -6,7 +6,6 @@ import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusTransport } from './IpcBusTransport';
 import { IpcBusConnector } from './IpcBusConnector';
-import { IpcBusLog } from './log/IpcBusLog';
 
 const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
 
@@ -87,7 +86,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected _peer: Client.IpcBusPeer;
     protected _waitForConnected: Promise<Client.IpcBusPeer>;
     protected _waitForClosed: Promise<void>;
-    protected _logLevel: IpcBusLog.Level;
+    protected _logActivate: boolean;
 
     protected _requestFunctions: Map<string, DeferredRequestPromise>;
     protected _packetDecoder: IpcPacketBuffer;
@@ -102,7 +101,15 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._postCommandBind = () => {};
         this._waitForClosed = Promise.resolve();
     }
+
+    get peer(): Client.IpcBusPeer {
+        return this._peer;
+    }
     
+    hasRequestChannel(channel: string): boolean {
+        return this._requestFunctions.get(channel) != null;
+    }
+
     protected static generateReplyChannel(peer: Client.IpcBusPeer): string {
         ++IpcBusTransportImpl.s_requestNumber;
         return `${replyChannelPrefix}${peer.id}-${IpcBusTransportImpl.s_requestNumber.toString()}`;
@@ -142,7 +149,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 else {
                     ipcBusCommand.request.reject = true;
                 }
-                if (this._logLevel) {
+                if (this._logActivate) {
                     this._connector.logResponseCreation(ipcBusCommand, ipcBusCommandResponse);
                 }
                 if (local) {
@@ -151,7 +158,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
                         this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
                         // Send the local response to log
-                        if (this._logLevel) {
+                        if (this._logActivate) {
                             this._connector.logResponse(ipcBusCommandResponse, argsResponse);
                         }
                         deferredRequest.settled(ipcBusCommandResponse, argsResponse);
@@ -172,7 +179,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 }
             };
         }
-        if (this._logLevel) {
+        if (this._logActivate) {
             this._connector.logMessageReceived(client.peer, local, ipcBusCommand, args);
         }
         for (let i = 0; i < listeners.length; ++i) {
@@ -214,7 +221,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
                     this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
                     const args = ipcPacketBuffer.parseArrayAt(1);
-                    if (this._logLevel) {
+                    if (this._logActivate) {
                         this._connector.logMessageReceived(deferredRequest.client.peer, false, ipcBusCommand, args);
                     }
                     deferredRequest.settled(ipcBusCommand, args);
@@ -243,7 +250,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     this._requestFunctions.delete(ipcBusCommand.channel);
                     this._packetDecoder.setRawContent(rawContent);
                     const args = this._packetDecoder.parseArrayAt(1);
-                    if (this._logLevel) {
+                    if (this._logActivate) {
                         this._connector.logMessageReceived(deferredRequest.client.peer, false, ipcBusCommand, args);
                     }
                     deferredRequest.settled(ipcBusCommand, args);
@@ -266,7 +273,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             peer: client.peer
         }
         // Broadcast locally
-        if (this._logLevel) {
+        if (this._logActivate) {
             this._connector.logMessageCreation(ipcMessage);
         }
         if (this.hasChannel(channel)) {
@@ -304,7 +311,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             peer: client.peer,
             request: ipcBusCommandRequest
         }
-        if (this._logLevel) {
+        if (this._logActivate) {
             this._connector.logMessageCreation(ipcMessage);
         }
         // Broadcast locally
@@ -327,7 +334,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             .then((handshake) => {
                 const peer = { id: uuid.v1(), name: '', process: handshake.process };
                 peer.name = options.peerName || IpcBusTransportImpl.generateName(peer);
-                this._logLevel = handshake.logLevel;
+                this._logActivate = handshake.logLevel > 0;
                 this._postCommandBind = this._connector.postCommand.bind(this._connector);
                 return peer;
             })
@@ -363,7 +370,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     abstract hasChannel(channel: string): boolean;
-    abstract getChannels(): string[];
+    // abstract getChannels(): string[];
     abstract onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): void;
 
     abstract addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;

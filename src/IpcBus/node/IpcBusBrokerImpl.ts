@@ -282,8 +282,12 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                     this._subscriptions.setSingleChannel(ipcBusCommand.request.replyChannel, socket, ipcBusCommand.peer);
                     this._subscriptions.emitter = previous;
                 }
+                // Prevent echo message
+                const sourceKey = this._subscriptions.getKey(socket);
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-                    connData.conn.write(packet.buffer);
+                    if (connData.key !== sourceKey) {
+                        connData.conn.write(packet.buffer);
+                    }
                 });
                 // If this message does not come from the IpcBusBridge, send it to it
                 if (!ipcBusCommand.bridge) {

@@ -119,8 +119,6 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     //     });
     //     return queryStateResult;
     // }
-    _trackAdmin(ipcBusCommand: IpcBusCommand) {
-    }
 
     // This is coming from the Electron Renderer Process (Electron main ipc)
     // =================================================================================================

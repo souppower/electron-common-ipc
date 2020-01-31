@@ -52,7 +52,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         }
         else {
             const handshake = peerOrArgs as IpcBusConnector.Handshake;
-            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._peer.name}`);
+            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._messageId}`);
             this._onIpcEventReceived = this._client.onConnectorBufferReceived.bind(this._client, undefined);
             this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             return handshake;
@@ -62,20 +62,20 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     /// IpcBusTrandport API
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         return new Promise<IpcBusConnector.Handshake>((resolve, reject) => {
-            options = IpcBusUtils.CheckConnectOptions(options);
             // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
             let timer: NodeJS.Timer;
             const onIpcConnect = (eventOrPeer: any, peerOrArgs: Client.IpcBusPeer | IpcBusConnector.Handshake, handshakeArg: IpcBusConnector.Handshake) => {
                 this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
                 this.addClient(client);
                 const handshake = this._onConnect(eventOrPeer, peerOrArgs, handshakeArg);
-                this._peer.process = handshake.process;
+                this._process = handshake.process;
                 this._logLevel = handshake.logLevel;
                 clearTimeout(timer);
                 resolve(handshake);
             };
 
             // Below zero = infinite
+            options = IpcBusUtils.CheckConnectOptions(options);
             if (options.timeoutDelay >= 0) {
                 timer = setTimeout(() => {
                     timer = null;
@@ -88,7 +88,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             this.postCommand({
                 kind: IpcBusCommand.Kind.Handshake,
                 channel: '',
-                peer: this._peer
+                peer: client.peer
             });
         });
     }

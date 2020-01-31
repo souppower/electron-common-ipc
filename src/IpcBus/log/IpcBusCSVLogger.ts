@@ -5,6 +5,7 @@ const csvWriter = require('csv-write-stream');
 
 import { JSON_stringify } from './IpcBusLogUtils';
 import { IpcBusLog } from './IpcBusLog';
+import { IpcBusLogConfig } from './IpcBusLogConfig';
 
 /** @internal */
 export class CSVLogger {
@@ -22,6 +23,8 @@ export class CSVLogger {
             'delay',
             'local',
             'peer',
+            'peer-source',
+            'payload',
             'arg0',
             'arg1',
             'arg2',
@@ -48,7 +51,7 @@ export class CSVLogger {
             trace.order.toString(),
             trace.channel,
             trace.id,
-            trace.kind,
+            IpcBusLog.KindToStr(trace.kind),
 
             peer.id,
         ];
@@ -75,7 +78,18 @@ export class CSVLogger {
                 break;
         }
         cols.push(JSON.stringify(peer));
-
+        if (trace.peer != trace.peer_source) {
+            cols.push(JSON.stringify(trace.peer_source));
+        }
+        else {
+            cols.push('');
+        }
+        if (trace.payload) {
+            cols.push(trace.payload.toString());
+        }
+        else {
+            cols.push('');
+        }
         let remainingArgs = 6;
         if (trace.args && trace.args.length) {
             remainingArgs -= trace.args.length;
@@ -92,8 +106,8 @@ export class CSVLogger {
 }
 
 let cvsLogger: CSVLogger;
-IpcBusLog.SetLogLevelCVS = (level: IpcBusLog.Level, filename: string): void => {
-    if (level >= IpcBusLog.Level.None) {
+IpcBusLog.SetLogLevelCVS = (level: IpcBusLogConfig.Level, filename: string): void => {
+    if (level >= IpcBusLogConfig.Level.None) {
         if (cvsLogger == null) {
             cvsLogger = new CSVLogger(filename);
             const cb = cvsLogger.addLog.bind(cvsLogger);

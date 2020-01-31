@@ -6,16 +6,19 @@ import * as winston from 'winston';
 import * as Client from '../IpcBusClient';
 import { JSON_stringify } from './IpcBusLogUtils';
 import { IpcBusLog } from './IpcBusLog';
+import { IpcBusLogConfig } from './IpcBusLogConfig';
 
 /** @internal */
 interface JSONLog {
     order: number,
+    channel?: string,
     id: string,
+    kind?: string,
     peer_id: string,
     peer: Client.IpcBusPeer,
-    channel?: string,
-    kind?: string,
+    peer_source?: Client.IpcBusPeer,
     delay?: number,
+    payload?: number,
     arg0?: string,
     arg1?: string,
     arg2?: string,
@@ -46,11 +49,16 @@ export class JSONLogger {
             order: trace.order,
             channel: trace.channel,
             id: trace.id,
-            kind: trace.kind,
+            kind: IpcBusLog.KindToStr(trace.kind),
 
             peer_id: peer.id,
             peer,
+            payload: trace.payload
         };
+
+        if (trace.peer != trace.peer_source) {
+            log.peer_source = trace.peer_source;
+        }
 
         switch (trace.kind) {
             case IpcBusLog.Kind.SEND_MESSAGE:
@@ -88,8 +96,8 @@ export class JSONLogger {
 }
 
 let jsonLogger: JSONLogger;
-IpcBusLog.SetLogLevelJSON = (level: IpcBusLog.Level, filename: string): void => {
-    if (level >= IpcBusLog.Level.None) {
+IpcBusLog.SetLogLevelJSON = (level: IpcBusLogConfig.Level, filename: string): void => {
+    if (level >= IpcBusLogConfig.Level.None) {
         if (jsonLogger == null) {
             jsonLogger = new JSONLogger(filename);
             const cb = jsonLogger.addLog.bind(jsonLogger);

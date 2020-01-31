@@ -1,19 +1,20 @@
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import { IpcBusCommand } from './IpcBusCommand';
-import { IpcBusLog } from './log/IpcBusLog';
 import * as Client from './IpcBusClient';
+import { IpcBusLogConfig } from './log/IpcBusLogConfig';
 
 /** @internal */
 export namespace IpcBusConnector {
     /** @internal */
     export interface Handshake {
         process: Client.IpcBusProcess;
-        logLevel?: IpcBusLog.Level;
+        logLevel: IpcBusLogConfig.Level;
     }
 
     /** @internal */
     export interface Client {
+        peer: Client.IpcBusPeer;
         onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void;
         onConnectorBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void;
         onConnectorShutdown(): void;
