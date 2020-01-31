@@ -62,7 +62,6 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     /// IpcBusTrandport API
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
         return new Promise<IpcBusConnector.Handshake>((resolve, reject) => {
-            options = IpcBusUtils.CheckConnectOptions(options);
             // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
             let timer: NodeJS.Timer;
             const onIpcConnect = (eventOrPeer: any, peerOrArgs: Client.IpcBusPeer | IpcBusConnector.Handshake, handshakeArg: IpcBusConnector.Handshake) => {
@@ -76,6 +75,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             };
 
             // Below zero = infinite
+            options = IpcBusUtils.CheckConnectOptions(options);
             if (options.timeoutDelay >= 0) {
                 timer = setTimeout(() => {
                     timer = null;

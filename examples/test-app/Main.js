@@ -558,7 +558,7 @@ electronApp.on('ready', function () {
         // Setup Remote Broker
         ipcBrokerProcess = spawnNodeInstance(
             'BrokerNodeInstance.js', -1,
-            ['--inspect-brk=9000']
+            // ['--inspect-brk=9000']
         );
         ipcBrokerProcess.on('message', function (msg) {
             console.log('<MAIN> IPC broker is ready !');

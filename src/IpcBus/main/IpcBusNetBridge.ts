@@ -69,13 +69,17 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         return super.close(null, options);
     }
 
+    hasRequestChannel(channel: string): boolean {
+        return this._subscriptions.hasChannel(channel);
+    }
+
     hasChannel(channel: string): boolean {
         return this._subscriptions.hasChannel(channel);
     }
 
-    getChannels(): string[] {
-        return this._subscriptions.getChannels();
-    }
+    // getChannels(): string[] {
+    //     return this._subscriptions.getChannels();
+    // }
 
     addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void {
         throw 'not implemented';
@@ -177,7 +181,7 @@ export class IpcBusNetBridge implements IpcBusBridgeClient {
     }
 
     hasChannel(channel: string): boolean {
-        return this._transport.hasChannel(channel);
+        return this._transport.hasRequestChannel(channel);
     }
 
     broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {

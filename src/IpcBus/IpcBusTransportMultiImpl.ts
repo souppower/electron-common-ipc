@@ -14,16 +14,16 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
     }
 
     hasChannel(channel: string): boolean {
-        return this._subscriptions.hasChannel(channel) || (this._requestFunctions.get(channel) != null);
+        return this._subscriptions.hasChannel(channel);
     }
 
-    getChannels(): string[] {
-        const channels = this._subscriptions.getChannels();
-        if (this._requestFunctions.size) {
-            return channels.concat(Array.from(this._requestFunctions.keys()));
-        }
-        return channels;
-    }
+    // getChannels(): string[] {
+    //     const channels = this._subscriptions.getChannels();
+    //     if (this._requestFunctions.size) {
+    //         return channels.concat(Array.from(this._requestFunctions.keys()));
+    //     }
+    //     return channels;
+    // }
 
     onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]) {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);

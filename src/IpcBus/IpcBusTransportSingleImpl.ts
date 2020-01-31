@@ -13,16 +13,16 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
     }
 
     hasChannel(channel: string): boolean {
-        return (this._client && (this._client.listenerCount(channel) > 0)) || (this._requestFunctions.get(channel) != null);
+        return (this._client && (this._client.listenerCount(channel) > 0));
     }
 
-    getChannels(): string[] {
-        const channels = this._client ? this._client.eventNames() as string[]: [];
-        if (this._requestFunctions.size) {
-            return channels.concat(Array.from(this._requestFunctions.keys()));
-        }
-        return channels;
-    }
+    // getChannels(): string[] {
+    //     const channels = this._client ? this._client.eventNames() as string[]: [];
+    //     if (this._requestFunctions.size) {
+    //         return channels.concat(Array.from(this._requestFunctions.keys()));
+    //     }
+    //     return channels;
+    // }
 
     onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
         this._client && this._onClientMessageReceived(this._client, local, ipcBusCommand, args);

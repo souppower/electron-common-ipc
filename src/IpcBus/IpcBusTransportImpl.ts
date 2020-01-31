@@ -106,6 +106,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return this._peer;
     }
     
+    hasRequestChannel(channel: string): boolean {
+        return this._requestFunctions.get(channel) != null;
+    }
+
     protected static generateReplyChannel(peer: Client.IpcBusPeer): string {
         ++IpcBusTransportImpl.s_requestNumber;
         return `${replyChannelPrefix}${peer.id}-${IpcBusTransportImpl.s_requestNumber.toString()}`;
@@ -366,7 +370,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     abstract hasChannel(channel: string): boolean;
-    abstract getChannels(): string[];
+    // abstract getChannels(): string[];
     abstract onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): void;
 
     abstract addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;

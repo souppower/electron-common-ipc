@@ -30,7 +30,6 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     }
 
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.AddChannelListener:
                 break;
