@@ -30,7 +30,7 @@ npm install electron-common-ipc
 Dependencies
 * https://github.com/emmkimme/socket-serializer
 * http://electron.atom.io/
-* http://nodejs.org/
+* http://nodejs.org/ >= 12.0.0.
 
 
 # Technical Overview
