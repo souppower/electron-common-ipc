@@ -109,6 +109,59 @@ export class Logger {
 
 };
 
+/** @internal */
+export class ConnectCloseState<T> {
+    protected _waitForConnected: Promise<T>;
+    protected _waitForClosed: Promise<void>;
+    protected _connected: boolean;
+
+    constructor() {
+        this.shutdown();
+    }
+
+    get connected(): boolean {
+        return this._connected;
+    }
+
+    connect(cb: () => Promise<T>): Promise<T> {
+        if (this._waitForConnected == null) {
+            this._waitForConnected = this._waitForClosed
+            .then(() => {
+                return cb();
+            })
+            .then((t) => {
+                this._connected = true;
+                return t;
+            })
+            .catch((err) => {
+                this._waitForConnected = null;
+                throw err;
+            });
+        }
+        return this._waitForConnected;
+    }
+
+    close(cb: () => Promise<void>): Promise<void> {
+        if (this._waitForConnected) {
+            const waitForConnected = this._waitForConnected;
+            this._waitForConnected = null;
+            this._waitForClosed = waitForConnected
+            .then(() => {
+                this._connected = false;
+                return cb();
+            });
+        }
+        return this._waitForClosed;
+    }
+
+    shutdown() {
+        this._waitForConnected = null;
+        this._waitForClosed = Promise.resolve();
+        this._connected = false;
+    }
+}
+
+
 // Structure
 // Channel has key
 // then list of "transports" for this channel: key + implem (socket or webContents)
