@@ -84,9 +84,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected _connector: IpcBusConnector;
 
     protected _peer: Client.IpcBusPeer;
-    protected _waitForConnected: Promise<Client.IpcBusPeer>;
-    protected _waitForClosed: Promise<void>;
     protected _logActivate: boolean;
+
+    protected _connectCloseState: IpcBusUtils.ConnectCloseState<Client.IpcBusPeer>;
 
     protected _requestFunctions: Map<string, DeferredRequestPromise>;
     protected _packetDecoder: IpcPacketBuffer;
@@ -99,7 +99,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._requestFunctions = new Map<string, DeferredRequestPromise>();
         this._packetDecoder = new IpcPacketBuffer();
         this._postCommandBind = () => {};
-        this._waitForClosed = Promise.resolve();
+        this._connectCloseState = new IpcBusUtils.ConnectCloseState<Client.IpcBusPeer>();
     }
 
     get peer(): Client.IpcBusPeer {
@@ -262,7 +262,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     // IpcConnectorClient
     onConnectorShutdown() {
-        this._waitForConnected = null;
+        this._connectCloseState.shutdown();
         this._requestFunctions.clear();
     }
 
@@ -326,39 +326,25 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
-        if (this._waitForConnected == null) {
-            this._waitForConnected = this._waitForClosed
-            .then(() => {
-                return this._connector.handshake(this, options);
-            })
+        return this._connectCloseState.connect(() => {
+            return this._connector.handshake(this, options)
             .then((handshake) => {
                 const peer = { id: uuid.v1(), name: '', process: handshake.process };
                 peer.name = options.peerName || IpcBusTransportImpl.generateName(peer);
                 this._logActivate = handshake.logLevel > 0;
                 this._postCommandBind = this._connector.postCommand.bind(this._connector);
                 return peer;
-            })
-            .catch((err) => {
-                this._waitForConnected = null;
-                throw err;
             });
-        }
-        return this._waitForConnected;
+        });
     }
 
     close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        if (this._waitForConnected) {
-            const waitForConnected = this._waitForConnected;
-            this._waitForConnected = null;
-            this._waitForClosed = waitForConnected
-            .then(() => {
-                return this._connector.shutdown(this, options);
-            })
+        return this._connectCloseState.close(() => {
+            return this._connector.shutdown(this, options)
             .then(() => {
                 this._postCommandBind = () => {};
             });
-        }
-        return this._waitForClosed;
+        });
     }
 
     protected postAdmin(ipcBusCommand: IpcBusCommand): void {

@@ -10,14 +10,14 @@ import * as IpcBusUtils from './IpcBusUtils';
 export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClient, IpcBusTransport.Client {
     protected _peer: Client.IpcBusPeer;
     protected _transport: IpcBusTransport;
-    protected _waitForConnected: Promise<void>;
-    protected _waitForClosed: Promise<void>;
+
+    protected _connectCloseState: IpcBusUtils.ConnectCloseState<void>;
 
     constructor(transport: IpcBusTransport) {
         super();
         super.setMaxListeners(0);
         this._transport = transport;
-        this._waitForClosed = Promise.resolve();
+        this._connectCloseState = new IpcBusUtils.ConnectCloseState<void>();
     }
 
     get peer(): Client.IpcBusPeer | null {
@@ -25,12 +25,9 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
     }
 
     connect(arg1: Client.IpcBusClient.ConnectOptions | string | number, arg2?: Client.IpcBusClient.ConnectOptions | string, arg3?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        if (this._waitForConnected == null) {
-            this._waitForConnected = this._waitForClosed
-            .then(() => {
-                const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
-                return this._transport.connect(this, options)
-            })
+        return this._connectCloseState.connect(() => {
+            const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
+            return this._transport.connect(this, options)
             .then((peer) => {
                 this._peer = peer;
                 const eventNames = this.eventNames();
@@ -39,31 +36,24 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
                     this._transport.addChannel(this, eventName, this.listenerCount(eventName));
                 }
             });
-        }
-        return this._waitForConnected;
+        });
     }
 
     close(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        if (this._waitForConnected) {
-            const waitForConnected = this._waitForConnected;
-            this._waitForConnected = null;
-            this._waitForClosed = waitForConnected
-            .then(() => {
-                this._transport.removeChannel(this);
-                return this._transport.close(this, options);
-            })
+        return this._connectCloseState.close(() => {
+            this._transport.removeChannel(this);
+            return this._transport.close(this, options)
             .then(() => {
                 this._peer = null;
             });
-        }
-        return this._waitForClosed;
+        });
     }
 
     send(channel: string, ...args: any[]): boolean {
         // in nodejs eventEmitter, undefined is converted to 'undefined'
         channel = IpcBusUtils.CheckChannel(channel);
         this._transport.sendMessage(this, channel, args);
-        return (this._waitForConnected != null);
+        return this._connectCloseState.connected;
     }
 
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<Client.IpcBusRequestResponse> {
@@ -74,7 +64,7 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
     emit(event: string, ...args: any[]): boolean {
         event = IpcBusUtils.CheckChannel(event);
         this._transport.sendMessage(this, event, args);
-        return (this._waitForConnected != null);
+        return this._connectCloseState.connected;
     }
  
     on(channel: string, listener: Client.IpcBusListener): this {

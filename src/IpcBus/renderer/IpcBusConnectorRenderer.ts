@@ -26,11 +26,14 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     private _onIpcEventReceived: (...args: any[]) => void;
     private _packetOut: IpcPacketBuffer;
 
+    protected _connectCloseState: IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>;
+
     constructor(contextType: Client.IpcBusProcessType, ipcWindow: IpcWindow) {
         assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
         super(contextType);
         this._ipcWindow = ipcWindow;
         this._packetOut = new IpcPacketBuffer();
+        this._connectCloseState = new IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>();
     }
 
     protected onConnectorShutdown() {
@@ -61,42 +64,46 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
 
     /// IpcBusTrandport API
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
-        return new Promise<IpcBusConnector.Handshake>((resolve, reject) => {
-            // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
-            let timer: NodeJS.Timer;
-            const onIpcConnect = (eventOrPeer: any, peerOrArgs: Client.IpcBusPeer | IpcBusConnector.Handshake, handshakeArg: IpcBusConnector.Handshake) => {
-                this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                this.addClient(client);
-                const handshake = this._onConnect(eventOrPeer, peerOrArgs, handshakeArg);
-                this._process = handshake.process;
-                this._logLevel = handshake.logLevel;
-                clearTimeout(timer);
-                resolve(handshake);
-            };
-
-            // Below zero = infinite
-            options = IpcBusUtils.CheckConnectOptions(options);
-            if (options.timeoutDelay >= 0) {
-                timer = setTimeout(() => {
-                    timer = null;
+        return this._connectCloseState.connect(() => {
+            return new Promise<IpcBusConnector.Handshake>((resolve, reject) => {
+                // Do not type timer as it may differ between node and browser api, let compiler and browserify deal with.
+                let timer: NodeJS.Timer;
+                const onIpcConnect = (eventOrPeer: any, peerOrArgs: Client.IpcBusPeer | IpcBusConnector.Handshake, handshakeArg: IpcBusConnector.Handshake) => {
                     this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-                    reject('timeout');
-                }, options.timeoutDelay);
-            }
-            // We wait for the bridge confirmation
-            this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
-            this.postCommand({
-                kind: IpcBusCommand.Kind.Handshake,
-                channel: '',
-                peer: client.peer
+                    this.addClient(client);
+                    const handshake = this._onConnect(eventOrPeer, peerOrArgs, handshakeArg);
+                    this._process = handshake.process;
+                    this._logLevel = handshake.logLevel;
+                    clearTimeout(timer);
+                    resolve(handshake);
+                };
+
+                // Below zero = infinite
+                options = IpcBusUtils.CheckConnectOptions(options);
+                if (options.timeoutDelay >= 0) {
+                    timer = setTimeout(() => {
+                        timer = null;
+                        this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
+                        reject('timeout');
+                    }, options.timeoutDelay);
+                }
+                // We wait for the bridge confirmation
+                this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
+                this.postCommand({
+                    kind: IpcBusCommand.Kind.Handshake,
+                    channel: '',
+                    peer: client.peer
+                });
             });
         });
     }
 
     shutdown(client: IpcBusConnector.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        this.onConnectorShutdown();
-        this.removeClient(client);
-        return Promise.resolve();
+        return this._connectCloseState.close(() => {
+            this.onConnectorShutdown();
+            this.removeClient(client);
+            return Promise.resolve();
+        });
     }
 
     // We serialize in renderer process to save master CPU.
