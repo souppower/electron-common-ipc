@@ -11,4 +11,6 @@ export namespace IpcBusLogConfig {
 export interface IpcBusLogConfig {
     level: IpcBusLogConfig.Level;
     baseTime: number;
+    now: number;
+    hrnow: number;
 }

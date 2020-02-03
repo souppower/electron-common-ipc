@@ -3,8 +3,25 @@ import { IpcBusLogConfig } from './IpcBusLogConfig';
 const LogLevelEnv = 'ELECTRON_IPC_LOG_LEVEL';
 const LogBaseTimeEnv = 'ELECTRON_IPC_LOG_BASE_TIME';
 
+let performanceNode: any;
+try {
+    performanceNode = require('perf_hooks').performance;
+}
+catch (err) {
+}
+
+// polyfil for window.performance.now
+const performanceInterface: any = performanceNode || performance || {}
+const performanceNow =
+    performanceInterface.now        ||
+    performanceInterface.mozNow     ||
+    performanceInterface.msNow      ||
+    performanceInterface.oNow       ||
+    performanceInterface.webkitNow  ||
+  function(){ return (new Date()).getTime() }
+
 /** @internal */
-export class IpcBusLogConfigImpl {
+export class IpcBusLogConfigImpl implements IpcBusLogConfig {
     private _level: IpcBusLogConfig.Level;
     private _baseTime: number;
 
@@ -12,7 +29,7 @@ export class IpcBusLogConfigImpl {
         const levelFromEnv = this.getLevelFromEnv();
         this._level = Math.max(IpcBusLogConfig.Level.None, levelFromEnv);
         const baseTimeFromEnv = this.getBaseTimeFromEnv();
-        this._baseTime = Math.max(Date.now(), baseTimeFromEnv);
+        this._baseTime = Math.max(this.hrnow, baseTimeFromEnv);
     }
 
     protected getLevelFromEnv(): number {
@@ -54,6 +71,15 @@ export class IpcBusLogConfigImpl {
 
     get baseTime(): number {
         return this._baseTime;
+    }
+
+    get now(): number {
+        return Date.now();
+    }
+
+    get hrnow(): number {
+        const clocktime = performanceNow.call(performanceInterface) * 1e-3;
+        return clocktime;
     }
 
     set baseTime(baseTime: number) {

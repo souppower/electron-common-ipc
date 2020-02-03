@@ -42,13 +42,17 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
             const id = `external-${this._order}`;
             ipcBusCommand.log = ipcBusCommand.log || {
                 id,
-                timestamp: Date.now()
+                timestamp: this.now
             };
         }
 
         let source_command = ipcBusCommand;
         while (source_command.log.previous) {
-            source_command = source_command.log.previous;
+            const previous = source_command.log.previous;
+            if (previous.log == null) {
+                break;
+            }
+            source_command = previous;
         }
 
         const trace: Partial<IpcBusLog.Trace> = {
