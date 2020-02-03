@@ -25,7 +25,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
     }
 
     close(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return this.close(options);
+        return super.close(options);
     }
 
     broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
