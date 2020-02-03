@@ -47,7 +47,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         }
 
         let source_command = ipcBusCommand;
-        while (source_command.log?.previous) {
+        while (source_command.log.previous) {
             source_command = source_command.log.previous;
         }
 
@@ -57,7 +57,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         };
 
         trace.peer = trace.peer_source = source_command.peer;
-        trace.timestamp = trace.timestamp_source = source_command.log.timestamp - this.baseTime;
+        trace.timestamp = trace.timestamp_source = (source_command.log.timestamp - this.baseTime);
         trace.channel = source_command.channel;
 
         switch (ipcBusCommand.kind) {
@@ -68,10 +68,9 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
             }
             case IpcBusCommand.Kind.RequestResponse:
             case IpcBusCommand.Kind.LogRequestResponse: {
-                const current_command = ipcBusCommand;
-                trace.peer = current_command.peer;
-                trace.timestamp = current_command.log.timestamp - this.baseTime;
-                trace.local = current_command.log.local;
+                trace.peer = ipcBusCommand.peer;
+                trace.timestamp = ipcBusCommand.log.timestamp - this.baseTime;
+                trace.local = ipcBusCommand.log.local;
                 trace.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE
                 trace.payload = payload;
                 break;

@@ -69,9 +69,9 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         return super.close(null, options);
     }
 
-    hasRequestChannel(channel: string): boolean {
-        return this._subscriptions.hasChannel(channel);
-    }
+    // hasRequestChannel(channel: string): boolean {
+    //     return this._subscriptions.hasChannel(channel);
+    // }
 
     hasChannel(channel: string): boolean {
         return this._subscriptions.hasChannel(channel);
@@ -181,7 +181,7 @@ export class IpcBusNetBridge implements IpcBusBridgeClient {
     }
 
     hasChannel(channel: string): boolean {
-        return this._transport.hasRequestChannel(channel);
+        return this._transport.hasChannel(channel);
     }
 
     broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
