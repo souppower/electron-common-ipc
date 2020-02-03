@@ -9,6 +9,7 @@ export * from './IpcBus/node/IpcBusClientNet';
 export * from './IpcBus/main/IpcBusBridge';
 export * from './IpcBus/main/IpcBusBridge-factory';
 
+export * from './IpcBus/log/IpcBusLog';
 export * from './IpcBus/log/IpcBusCSVLogger';
 export * from './IpcBus/log/IpcBusJSONLogger';
 
