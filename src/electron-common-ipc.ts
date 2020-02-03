@@ -28,7 +28,7 @@ import './IpcBus/log/IpcBusCSVLogger';
 /** @internal */
 import './IpcBus/log/IpcBusJSONLogger';
 /** @internal */
-import './IpcBus/log/IpcBusLogImpl';
+import './IpcBus/log/IpcBusLogConfigMain';
 
 
 // /** @internal */

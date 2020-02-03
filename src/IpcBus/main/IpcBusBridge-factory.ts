@@ -9,7 +9,7 @@ import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
 import { IpcBusLog } from '../log/IpcBusLog';
 import { IpcBusLogConfig } from '../log/IpcBusLogConfig';
 import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
-import { IpcBusLogMain } from '../log/IpcBusLogImpl';
+import { IpcBusLogMain } from '../log/IpcBusLogConfigMain';
 
 let g_bridge: IpcBusBridge;
 export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge => {

@@ -16,7 +16,7 @@ export interface IpcBusLogMain extends IpcBusLogConfig {
 }
 
 /** @internal */
-export class IpcBusLogMainImpl extends IpcBusLogConfigImpl implements IpcBusLogMain {
+export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLogMain {
     private _cb: IpcBusLog.Callback;
     protected _packet: IpcPacketBuffer;
     protected _order: number;
