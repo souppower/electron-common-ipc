@@ -12,7 +12,7 @@ import {
     IPCBUS_TRANSPORT_RENDERER_COMMAND,
     IPCBUS_TRANSPORT_RENDERER_EVENT
 } from '../renderer/IpcBusConnectorRenderer';
-import { ipcBusLogConfig } from '../log/IpcBusLogConfigImpl';
+import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
 
 import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
@@ -87,9 +87,11 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     // This is coming from the Electron Renderer Proces/s (Electron ipc)
     // =================================================================================================
     private _completePeerInfo(webContents: Electron.WebContents, peer: Client.IpcBusPeer): IpcBusConnector.Handshake {
+        const logger = CreateIpcBusLog();
+
         const handshake: IpcBusConnector.Handshake = {
             process: peer.process,
-            logLevel: ipcBusLogConfig.level,
+            logLevel: logger.level,
         };
         handshake.process.wcid = webContents.id;
         // Following functions are not implemented in all Electrons

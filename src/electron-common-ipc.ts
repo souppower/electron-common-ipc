@@ -12,6 +12,7 @@ export * from './IpcBus/main/IpcBusBridge-factory';
 export * from './IpcBus/log/IpcBusLog';
 export * from './IpcBus/log/IpcBusCSVLogger';
 export * from './IpcBus/log/IpcBusJSONLogger';
+export * from './IpcBus/log/IpcBusLog-factory';
 
 // Force to execute code
 /** @internal */

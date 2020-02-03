@@ -2,8 +2,9 @@ import { IpcPacketBuffer } from "socket-serializer";
 
 import { IpcBusCommand } from "../IpcBusCommand";
 import { IpcBusLog } from './IpcBusLog';
+import { IpcBusLogConfigImpl } from './IpcBusLogConfigImpl';
 import { IpcBusLogConfig } from './IpcBusLogConfig';
-import { ipcBusLogConfig } from './IpcBusLogConfigImpl';
+import { CreateIpcBusLog } from "./IpcBusLog-factory";
 
 /** @internal */
 export interface IpcBusLogMain extends IpcBusLogConfig {
@@ -15,30 +16,15 @@ export interface IpcBusLogMain extends IpcBusLogConfig {
 }
 
 /** @internal */
-export class IpcBusLogMainImpl implements IpcBusLogMain {
+export class IpcBusLogMainImpl extends IpcBusLogConfigImpl implements IpcBusLogMain {
     private _cb: IpcBusLog.Callback;
     protected _packet: IpcPacketBuffer;
     protected _order: number;
 
     constructor() {
+        super();
         this._packet = new IpcPacketBuffer();
         this._order = 0;
-    }
-
-    get level(): IpcBusLogConfig.Level {
-        return ipcBusLogConfig.level;
-    }
-
-    set level(level: IpcBusLogConfig.Level) {
-        ipcBusLogConfig.level = level;
-    }
-
-    get baseTime(): number {
-        return ipcBusLogConfig.baseTime;
-    }
-
-    set baseTime(baseTime: number) {
-        ipcBusLogConfig.baseTime = baseTime;
     }
 
     getCallback(): IpcBusLog.Callback {
@@ -127,12 +113,10 @@ export class IpcBusLogMainImpl implements IpcBusLogMain {
     }
 }
 
-/** @internal */
-export const ipcBusLog = new IpcBusLogMainImpl();
-
 IpcBusLog.SetLogLevel = (level: IpcBusLogConfig.Level, cb?: IpcBusLog.Callback): void => {
-    ipcBusLog.level = level;
-    ipcBusLog.setCallback(cb);
+    const logger = CreateIpcBusLog() as IpcBusLogMain;
+    logger.level = level;
+    logger.setCallback(cb);
 }
 
 

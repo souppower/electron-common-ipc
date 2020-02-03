@@ -5,7 +5,7 @@ import { IpcBusConnector } from './IpcBusConnector';
 import { IpcBusCommand } from './IpcBusCommand';
 import * as Client from './IpcBusClient';
 import { IpcBusLogConfig } from './log/IpcBusLogConfig';
-import { ipcBusLogConfig } from './log/IpcBusLogConfigImpl';
+import { CreateIpcBusLog } from './log/IpcBusLog-factory';
 
 // Implementation for renderer process
 /** @internal */
@@ -21,7 +21,9 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
             type: contextType,
             pid: process ? process.pid: -1
         };
-        this._logLevel = ipcBusLogConfig.level;
+
+        const logger = CreateIpcBusLog();
+        this._logLevel = logger.level;
         this._messageId = uuid.v1();
         this._messageCount = 0;
     }

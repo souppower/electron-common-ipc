@@ -63,5 +63,3 @@ export class IpcBusLogConfigImpl {
         this._baseTime = baseTime;
     }
 }
-
-export const ipcBusLogConfig = new IpcBusLogConfigImpl();
