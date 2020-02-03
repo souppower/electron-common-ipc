@@ -6,7 +6,6 @@ import { IpcBusLogConfigMain } from './IpcBusLogConfigMain';
 import { IpcBusLogConfig } from './IpcBusLogConfig';
 import { IpcBusLogConfigImpl } from './IpcBusLogConfigImpl';
 
-/** @internal */
 let g_log: IpcBusLogConfig;
 
 /** @internal */
@@ -18,7 +17,6 @@ export const CreateIpcBusLog = (): IpcBusLogConfig => {
             case 'main':
                 g_log = new IpcBusLogConfigMain();
                 break;
-            // not supported process
             case 'renderer':
             case 'node':
             default:

@@ -1,7 +1,6 @@
 import { IpcBusLogConfig } from './IpcBusLogConfig';
 import { IpcBusLogConfigImpl } from './IpcBusLogConfigImpl';
 
-/** @internal */
 let g_log: IpcBusLogConfig;
 
 /** @internal */
