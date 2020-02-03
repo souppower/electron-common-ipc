@@ -39,7 +39,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         ++this._order;
         // Some C++ lib can not manage log, so we have to simulate the minimum at this level
         if (ipcBusCommand.log == null) {
-            const id = `external-${this._order}`;
+            const id = `external-${ipcBusCommand.peer.id}-${this._order}`;
             ipcBusCommand.log = ipcBusCommand.log || {
                 id,
                 timestamp: this.now

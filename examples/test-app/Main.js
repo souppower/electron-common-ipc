@@ -314,7 +314,11 @@ var NodeProcess = (function () {
     var nodeCount = 0;
 
     function NodeInstance(nodeCount) {
-        this.process = spawnNodeInstance('NodeInstance.js', nodeCount);
+        this.process = spawnNodeInstance(
+            'NodeInstance.js',
+            nodeCount,
+            // ['--inspect-brk=9000']
+        );
         // this.process.stdout.addListener('data', data => { console.log('<NODE> ' + data.toString()); });
         // this.process.stderr.addListener('data', data => { console.log('<NODE> ' + data.toString()); });
         console.log('<MAIN> Node instance #' + this.process.pid + ' started !');
