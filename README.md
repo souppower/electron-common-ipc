@@ -30,7 +30,7 @@ npm install electron-common-ipc
 Dependencies
 * https://github.com/emmkimme/socket-serializer
 * http://electron.atom.io/
-* http://nodejs.org/ >= 12.0.0.
+* http://nodejs.org/
 
 
 # Technical Overview
@@ -43,17 +43,18 @@ Dependencies
 
 ## Scenarii
 ### Electron App
-Main Process  
+Pseuso code in...  
+**Main Process**
 - ipcBusBridge = IpcBusBridge.Create
 - ipcBusBridge.connect
 - ipcBusClientElectronMain = IpcBusClient.Create
 - ipcBusClientElectronMain.connect
 
-Renderer Process (nodeIintegration = true)
+**Renderer Process (nodeIntegration = true)**
 - ipcBusClientRenderer1 = IpcBusClient.Create
 - ipcBusClientRenderer1.connect
 
-Sandboxed Renderer Process (sandbox = true)
+**Sandboxed Renderer Process (sandbox = true)**
 - load ipcbus library in the preload file
 - ipcBusClientRenderer2 = IpcBusClient.Create
 - ipcBusClientRenderer2.connect
@@ -62,14 +63,15 @@ done
 ipcBusClientElectronMain, ipcBusClientRenderer1 and ipcBusClientRenderer2 can exchange data.
 
 ### NodeJS App
-Main Process  
+Pseuso code in...  
+**Main Process**
 - find a free port (using [Socket port helpers](https://github.com/emmkimme/socket-port-helpers) for instance)
 - ipcBusBroker = IpcBusBroker.Create
 - ipcBusBroker.connect [free port]
 - ipcBusClientNodeMain = IpcBusClient.Create
 - ipcBusClientNodeMain.connect [free port]
 
-Child process
+**Child node process**
 - retrieve free port through commandline or environment variable
 - ipcBusClientNodeChild = IpcBusClient.Create
 - ipcBusClientNodeChild.connect [free port]
@@ -78,7 +80,8 @@ done
 ipcBusClientNodeMain and ipcBusClientNodeChild can exchange data.
 
 ### Hybrid App (NodeJS and Electron)
-Main Process
+Pseuso code in...  
+**Main Process**
 - ipBusBridge.connect [same port as the ipcBusBroker]
 
 done  
