@@ -73,16 +73,16 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return Promise.resolve();
     }
 
-    // Not exposed
-    queryState(): Object {
-        const queryStateResult: Object[] = [];
-        this._subscriptions.forEach((connData, channel) => {
-            connData.peerRefCounts.forEach((peerRefCount) => {
-                queryStateResult.push({ channel: channel, peer: peerRefCount.peer, count: peerRefCount.refCount });
-            });
-        });
-        return queryStateResult;
-    }
+    // // Not exposed
+    // queryState(): Object {
+    //     const queryStateResult: Object[] = [];
+    //     this._subscriptions.forEach((connData, channel) => {
+    //         connData.peerRefCounts.forEach((peerRefCount) => {
+    //             queryStateResult.push({ channel: channel, peer: peerRefCount.peer, count: peerRefCount.refCount });
+    //         });
+    //     });
+    //     return queryStateResult;
+    // }
 
     // This is coming from the Electron Renderer Proces/s (Electron ipc)
     // =================================================================================================

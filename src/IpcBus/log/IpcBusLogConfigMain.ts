@@ -62,11 +62,22 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
 
         trace.peer = trace.peer_source = source_command.peer;
         trace.timestamp = trace.timestamp_source = (source_command.log.timestamp - this.baseTime);
-        trace.channel = source_command.channel;
 
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 trace.kind = source_command.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
+                trace.channel = source_command.channel;
+                trace.payload = payload;
+                break;
+            }
+            case IpcBusCommand.Kind.RequestClose: {
+                trace.peer = ipcBusCommand.peer;
+                trace.timestamp = ipcBusCommand.log.timestamp - this.baseTime;
+                trace.local = ipcBusCommand.log.local;
+
+                trace.kind = IpcBusLog.Kind.SEND_CLOSE_REQUEST;
+                trace.channel = ipcBusCommand.request.channel;
+                trace.request = ipcBusCommand.request;
                 trace.payload = payload;
                 break;
             }
@@ -75,7 +86,10 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
                 trace.peer = ipcBusCommand.peer;
                 trace.timestamp = ipcBusCommand.log.timestamp - this.baseTime;
                 trace.local = ipcBusCommand.log.local;
-                trace.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE
+
+                trace.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE;
+                trace.channel = ipcBusCommand.request.channel;
+                trace.request = ipcBusCommand.request;
                 trace.payload = payload;
                 break;
             }
@@ -91,6 +105,11 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
                 else if (current_command.kind === IpcBusCommand.Kind.RequestResponse) {
                     trace.kind = IpcBusLog.Kind.GET_REQUEST_RESPONSE;
                 }
+                else if (current_command.kind === IpcBusCommand.Kind.RequestClose) {
+                    trace.kind = IpcBusLog.Kind.GET_CLOSE_REQUEST;
+                }
+                trace.channel = current_command.channel;
+                trace.request = current_command.request;
                 break;
             }
         }

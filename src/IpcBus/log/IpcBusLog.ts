@@ -9,6 +9,15 @@ export namespace IpcBusLog {
         GET_REQUEST,
         SEND_REQUEST_RESPONSE,
         GET_REQUEST_RESPONSE,
+        SEND_CLOSE_REQUEST,
+        GET_CLOSE_REQUEST
+    }
+
+    export interface Request {
+        channel: string;
+        replyChannel: string;
+        resolve?: boolean;
+        reject?: boolean;
     }
 
     export interface Trace {
@@ -22,6 +31,7 @@ export namespace IpcBusLog {
 
         kind: Kind;
 
+        request?: Request; 
         local?: boolean;
         payload?: number;
         args?: any[];
@@ -41,7 +51,11 @@ export namespace IpcBusLog {
                 return 'SendRequestResponse';
             case Kind.GET_REQUEST_RESPONSE:
                 return 'GetRequestResponse';
-        }
+            case Kind.SEND_CLOSE_REQUEST:
+                return 'SEndCloseRequest';
+            case Kind.GET_CLOSE_REQUEST:
+                return 'GetCloseRequest';
+            }
     }
 
     export interface Callback {

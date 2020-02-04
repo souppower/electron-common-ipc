@@ -24,6 +24,7 @@ export class CSVLogger {
             'local',
             'peer',
             'peer-source',
+            'request',
             'payload',
             'arg0',
             'arg1',
@@ -60,23 +61,28 @@ export class CSVLogger {
             case IpcBusLog.Kind.SEND_MESSAGE:
             case IpcBusLog.Kind.SEND_REQUEST: {
                 cols.push('');
+                break;
+            }
+            case IpcBusLog.Kind.SEND_CLOSE_REQUEST: {
+                // const delay = trace.timestamp - trace.timestamp_source;
+                // cols.push(delay.toString());
                 cols.push('');
                 break;
             }
             case IpcBusLog.Kind.SEND_REQUEST_RESPONSE: {
                 const delay = trace.timestamp - trace.timestamp_source;
                 cols.push(delay.toString());
-                cols.push(trace.local ? 'local' : '');
                 break;
             }
+            case IpcBusLog.Kind.GET_CLOSE_REQUEST:
             case IpcBusLog.Kind.GET_MESSAGE:
             case IpcBusLog.Kind.GET_REQUEST:
             case IpcBusLog.Kind.GET_REQUEST_RESPONSE:
                 const delay = trace.timestamp - trace.timestamp_source;
                 cols.push(delay.toString());
-                cols.push(trace.local ? 'local' : '');
                 break;
         }
+        cols.push(trace.local ? 'local' : '');
         cols.push(JSON.stringify(peer));
         if (trace.peer != trace.peer_source) {
             cols.push(JSON.stringify(trace.peer_source));
@@ -84,12 +90,9 @@ export class CSVLogger {
         else {
             cols.push('');
         }
-        if (trace.payload) {
-            cols.push(trace.payload.toString());
-        }
-        else {
-            cols.push('');
-        }
+        cols.push(trace.payload ? trace.payload.toString() : '');
+        cols.push(trace.request ? JSON.stringify(trace.request) : '');
+
         let remainingArgs = 6;
         if (trace.args && trace.args.length) {
             remainingArgs -= trace.args.length;

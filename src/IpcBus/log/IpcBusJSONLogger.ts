@@ -9,7 +9,7 @@ import { IpcBusLog } from './IpcBusLog';
 import { IpcBusLogConfig } from './IpcBusLogConfig';
 
 /** @internal */
-interface JSONLog {
+export interface JSONLog {
     order: number,
     channel?: string,
     id: string,
@@ -18,7 +18,9 @@ interface JSONLog {
     peer: Client.IpcBusPeer,
     peer_source?: Client.IpcBusPeer,
     delay?: number,
+    local?: boolean,
     payload?: number,
+    request?: string;
     arg0?: string,
     arg1?: string,
     arg2?: string,
@@ -28,24 +30,13 @@ interface JSONLog {
 }
 
 /** @internal */
-export class JSONLogger {
-    private _logger: winston.LoggerInstance;
-
-    constructor(logPath: string) {
-        !fs.existsSync(logPath) && fs.mkdirSync(logPath);
-
-        this._logger = new (winston.Logger)({
-            transports: [
-                new (winston.transports.File)({
-                    filename: path.join(logPath, 'electron-common-ipcbus-bridge.log')
-                })
-            ]
-        });
+export class JSONLoggerBase {
+    constructor() {
     }
 
     addLog(trace: IpcBusLog.Trace): void {
         const peer = trace.peer;
-        const log: JSONLog = {
+        const jsonLog: JSONLog = {
             order: trace.order,
             channel: trace.channel,
             id: trace.id,
@@ -57,27 +48,35 @@ export class JSONLogger {
         };
 
         if (trace.peer != trace.peer_source) {
-            log.peer_source = trace.peer_source;
+            jsonLog.peer_source = trace.peer_source;
         }
+
+        if (jsonLog.request) {
+            jsonLog.request = JSON.stringify(trace.request);
+        }
+        jsonLog.local = trace.local;
 
         switch (trace.kind) {
             case IpcBusLog.Kind.SEND_MESSAGE:
             case IpcBusLog.Kind.SEND_REQUEST: {
                 if (trace.args && trace.args.length) {
                     for (let i = 0, l = trace.args.length; i < l; ++i) {
-                        (log as any)[`arg${i}`] = JSON_stringify(trace.args[i], 255);
+                        (jsonLog as any)[`arg${i}`] = JSON_stringify(trace.args[i], 255);
                     }
                 }
                 break;
             }
+            case IpcBusLog.Kind.SEND_CLOSE_REQUEST: {
+                break;
+            }
             case IpcBusLog.Kind.SEND_REQUEST_RESPONSE: {
-                log.delay = trace.timestamp - trace.timestamp_source;
+                jsonLog.delay = trace.timestamp - trace.timestamp_source;
                 if (trace.local) {
-                    log.kind += '-local';
+                    jsonLog.kind += '-local';
                 }
                 if (trace.args && trace.args.length) {
                     for (let i = 0, l = trace.args.length; i < l; ++i) {
-                        (log as any)[`arg${i}`] = JSON_stringify(trace.args[i], 255);
+                        (jsonLog as any)[`arg${i}`] = JSON_stringify(trace.args[i], 255);
                     }
                 }
                 break;
@@ -85,13 +84,41 @@ export class JSONLogger {
             case IpcBusLog.Kind.GET_MESSAGE:
             case IpcBusLog.Kind.GET_REQUEST:
             case IpcBusLog.Kind.GET_REQUEST_RESPONSE:
-                log.delay = trace.timestamp - trace.timestamp_source;
+            case IpcBusLog.Kind.GET_CLOSE_REQUEST:
+                jsonLog.delay = trace.timestamp - trace.timestamp_source;
                 if (trace.local) {
-                    log.kind += '-local';
+                    jsonLog.kind += '-local';
                 }
                 break;
         }
-        this._logger.info(log.order.toString(), log);
+
+        this.writeLog(jsonLog);
+    }
+
+    writeLog(jsonLog: JSONLog): void {
+    }
+}
+
+/** @internal */
+export class JSONLogger extends JSONLoggerBase {
+    private _winstonLogger: winston.LoggerInstance;
+
+    constructor(logPath: string) {
+        super();
+
+        !fs.existsSync(logPath) && fs.mkdirSync(logPath);
+
+        this._winstonLogger = new (winston.Logger)({
+            transports: [
+                new (winston.transports.File)({
+                    filename: path.join(logPath, 'electron-common-ipcbus-bridge.log')
+                })
+            ]
+        });
+    }
+
+    writeLog(jsonLog: JSONLog): void {
+        this._winstonLogger.info(jsonLog.order.toString(), jsonLog);
     }
 }
 

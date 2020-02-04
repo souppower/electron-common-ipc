@@ -384,7 +384,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
             Logger.enable && this._warn(`forEachChannel: Unknown channel '${channel}' !`);
         }
         else {
-            connsMap.forEach((connData, conn) => {
+            connsMap.forEach((connData) => {
                 Logger.enable && this._info(`forEachChannel '${channel}' - ${JSON.stringify(Array.from(connData.peerRefCounts.keys()))} (${connData.peerRefCounts.size})`);
                 callback(connData, channel);
             });
@@ -394,7 +394,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
     forEach(callback: ConnectionPeers.ForEachHandler<T, M>) {
         Logger.enable && this._info('forEach');
         this._channelsMap.forEach((connsMap, channel: string) => {
-            connsMap.forEach((connData, conn) => {
+            connsMap.forEach((connData) => {
                 Logger.enable && this._info(`forEach '${channel}' - ${JSON.stringify(Array.from(connData.peerRefCounts.keys()))} (${connData.peerRefCounts.size})`);
                 callback(connData, channel);
             });

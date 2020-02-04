@@ -29,7 +29,7 @@ class DeferredRequestPromise {
             this.resolve = resolve;
         })
         // Prevent unhandled rejected promise
-        this.promise.catch(() => {});
+        this.promise.catch(() => { });
         this._settled = false;
     }
 
@@ -66,7 +66,7 @@ class DeferredRequestPromise {
     }
 
     timeout(): void {
-        const response: Client.IpcBusRequestResponse = { 
+        const response: Client.IpcBusRequestResponse = {
             event: {
                 channel: this.request.channel,
                 sender: this.client.peer
@@ -98,14 +98,14 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._peer = { id: uuid.v1(), name: '', process: connector.process };
         this._requestFunctions = new Map<string, DeferredRequestPromise>();
         this._packetDecoder = new IpcPacketBuffer();
-        this._postCommandBind = () => {};
+        this._postCommandBind = () => { };
         this._connectCloseState = new IpcBusUtils.ConnectCloseState<Client.IpcBusPeer>();
     }
 
     get peer(): Client.IpcBusPeer {
         return this._peer;
     }
-    
+
     // hasRequestChannel(channel: string): boolean {
     //     return this._requestFunctions.get(channel) != null;
     // }
@@ -187,25 +187,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
     }
 
-    protected cancelRequest(client: IpcBusTransport.Client): void {
-        this._requestFunctions.forEach((request, key) => {
-            if (client === request.client) {
-                const ipcMessage: IpcBusCommand = { 
-                    kind: IpcBusCommand.Kind.RequestClose,
-                    channel: request.request.channel,
-                    peer: request.client.peer,
-                    request: request.request
-                };
-                // if (this._logLevel) {
-                //    this._connector.trackCommandReceived(client.peer, true, ipcMessage);
-                // }
-                this.postMessage(ipcMessage);
-                request.timeout();
-                this._requestFunctions.delete(key);
-            }
-        });
-    }
-
     onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
@@ -267,7 +248,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     sendMessage(client: IpcBusTransport.Client, channel: string, args: any[]): void {
-        const ipcMessage: IpcBusCommand = { 
+        const ipcMessage: IpcBusCommand = {
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer
@@ -282,30 +263,37 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this.postMessage(ipcMessage, args);
     }
 
+    protected cancelRequest(client: IpcBusTransport.Client): void {
+        this._requestFunctions.forEach((request, key) => {
+            if (client === request.client) {
+                const ipcMessageClose: IpcBusCommand = {
+                    kind: IpcBusCommand.Kind.RequestClose,
+                    channel: request.request.channel,
+                    peer: request.client.peer,
+                    request: request.request
+                };
+                // if (this._logLevel) {
+                //    this._connector.trackCommandReceived(client.peer, true, ipcMessage);
+                // }
+                if (this._logActivate) {
+                    this._connector.logMessageCreation(ipcMessageClose);
+                }
+                this.postMessage(ipcMessageClose);
+                request.timeout();
+                this._requestFunctions.delete(key);
+            }
+        });
+    }
+
     requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
         if (timeoutDelay == null) {
             timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
         }
-        const ipcBusCommandRequest: IpcBusCommand.Request = {channel, replyChannel: IpcBusTransportImpl.generateReplyChannel(client.peer) };
+        const ipcBusCommandRequest: IpcBusCommand.Request = { channel, replyChannel: IpcBusTransportImpl.generateReplyChannel(client.peer) };
         const deferredRequest = new DeferredRequestPromise(client, ipcBusCommandRequest);
         // Register locally
-         this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
-        // Clean-up
-        if (timeoutDelay >= 0) {
-            setTimeout(() => {
-                if (this._requestFunctions.delete(ipcBusCommandRequest.replyChannel)) {
-                    deferredRequest.timeout();
-                }
-                // Unregister remotely
-                this.postMessage({ 
-                    kind: IpcBusCommand.Kind.RequestClose,
-                    channel,
-                    peer: client.peer,
-                    request: ipcBusCommandRequest
-                });
-            }, timeoutDelay);
-        }
-        const ipcMessage: IpcBusCommand = { 
+        this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
+        const ipcMessage: IpcBusCommand = {
             kind: IpcBusCommand.Kind.SendMessage,
             channel,
             peer: client.peer,
@@ -320,6 +308,24 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
         // If not resolved by local clients
         if (deferredRequest.isSettled() === false) {
+            // Clean-up
+            if (timeoutDelay >= 0) {
+                setTimeout(() => {
+                    if (this._requestFunctions.delete(ipcBusCommandRequest.replyChannel)) {
+                        deferredRequest.timeout();
+                        const ipcMessageClose: IpcBusCommand = {
+                            kind: IpcBusCommand.Kind.RequestClose,
+                            channel,
+                            peer: client.peer,
+                            request: ipcBusCommandRequest
+                        };
+                        if (this._logActivate) {
+                            this._connector.logMessageCreation(ipcMessageClose);
+                        }
+                        this.postMessage(ipcMessageClose);
+                    }
+                }, timeoutDelay);
+            }
             this.postMessage(ipcMessage, args);
         }
         return deferredRequest.promise;
@@ -328,22 +334,22 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
         return this._connectCloseState.connect(() => {
             return this._connector.handshake(this, options)
-            .then((handshake) => {
-                const peer = { id: uuid.v1(), name: '', process: handshake.process };
-                peer.name = options.peerName || IpcBusTransportImpl.generateName(peer);
-                this._logActivate = handshake.logLevel > 0;
-                this._postCommandBind = this._connector.postCommand.bind(this._connector);
-                return peer;
-            });
+                .then((handshake) => {
+                    const peer = { id: uuid.v1(), name: '', process: handshake.process };
+                    peer.name = options.peerName || IpcBusTransportImpl.generateName(peer);
+                    this._logActivate = handshake.logLevel > 0;
+                    this._postCommandBind = this._connector.postCommand.bind(this._connector);
+                    return peer;
+                });
         });
     }
 
     close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         return this._connectCloseState.close(() => {
             return this._connector.shutdown(this, options)
-            .then(() => {
-                this._postCommandBind = () => {};
-            });
+                .then(() => {
+                    this._postCommandBind = () => { };
+                });
         });
     }
 

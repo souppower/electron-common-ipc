@@ -4,8 +4,8 @@ import * as IpcBusUtils from '../IpcBusUtils';
 
 import { IpcBusBroker } from './IpcBusBroker';
 import { IpcBusBrokerNode } from './IpcBusBrokerNode';
-import { IpcBusBrokerJSONLogger } from './IpcBusBrokerJSONLogger';
-import { IpcBusBrokerCSVLogger } from './IpcBusBrokerCSVLogger';
+// import { IpcBusBrokerJSONLogger } from './IpcBusBrokerJSONLogger';
+// import { IpcBusBrokerCSVLogger } from './IpcBusBrokerCSVLogger';
 
 export const CreateIpcBusBroker: IpcBusBroker.CreateFunction = (): IpcBusBroker | null => {
     let ipcBusBroker: IpcBusBroker = null;
@@ -14,19 +14,19 @@ export const CreateIpcBusBroker: IpcBusBroker.CreateFunction = (): IpcBusBroker 
     switch (electronProcessType) {
         case 'main':
         case 'node':
-            const logPath = process.env['ELECTRON_IPC_BROKER_LOG_JSON'];
-            if (logPath) {
-                ipcBusBroker = new IpcBusBrokerJSONLogger(electronProcessType, logPath);
-            }
-            else {
-                const logPath = process.env['ELECTRON_IPC_BROKER_LOG_CSV'];
-                if (logPath) {
-                    ipcBusBroker = new IpcBusBrokerCSVLogger(electronProcessType, logPath);
-                }
-                else {
+            // const logPath = process.env['ELECTRON_IPC_BROKER_LOG_JSON'];
+            // if (logPath) {
+            //     ipcBusBroker = new IpcBusBrokerJSONLogger(electronProcessType, logPath);
+            // }
+            // else {
+            //     const logPath = process.env['ELECTRON_IPC_BROKER_LOG_CSV'];
+            //     if (logPath) {
+            //         ipcBusBroker = new IpcBusBrokerCSVLogger(electronProcessType, logPath);
+            //     }
+            //     else {
                     ipcBusBroker = new IpcBusBrokerNode(electronProcessType);
-                }
-            }
+                // }
+            // }
             break;
         // not supported process
         case 'renderer':
