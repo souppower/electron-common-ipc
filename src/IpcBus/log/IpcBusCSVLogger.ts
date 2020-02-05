@@ -90,8 +90,8 @@ export class CSVLogger {
         else {
             cols.push('');
         }
-        cols.push(trace.payload ? trace.payload.toString() : '');
         cols.push(trace.request ? JSON.stringify(trace.request) : '');
+        cols.push(trace.payload ? trace.payload.toString() : '');
 
         let remainingArgs = 6;
         if (trace.args && trace.args.length) {

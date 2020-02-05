@@ -56,7 +56,9 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
 
             case IpcBusCommand.Kind.RequestClose:
                 // this._subscriptions.emitter = false;
-                this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                if (this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel)) {
+                    // log IpcBusLog.Kind.GET_CLOSE_REQUEST
+                }
                 // this._subscriptions.emitter = true;
                 break;
         }

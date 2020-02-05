@@ -122,6 +122,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
                 // To inform Broker
                 if (buffer && hasChannel) {
                     this._connector.postBuffer(buffer);
+                    // log IpcBusLog.Kind.GET_CLOSE_REQUEST
                 }
                 break;
         }

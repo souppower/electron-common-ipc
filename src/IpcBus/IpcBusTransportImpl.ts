@@ -131,12 +131,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     // We assume prior to call this function client is not empty and have listeners for this channel !!
     protected _onClientMessageReceived(client: IpcBusTransport.Client, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
+        // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
         const listeners = client.listeners(ipcBusCommand.channel);
         const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
         if (ipcBusCommand.request) {
             const settled = (resolve: boolean, argsResponse: any[]) => {
-                // Is it a local request ?
                 const ipcBusCommandResponse: IpcBusCommand = {
                     kind: IpcBusCommand.Kind.RequestResponse,
                     channel: ipcBusCommand.request.replyChannel,
@@ -152,6 +151,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 if (this._logActivate) {
                     this._connector.logResponseCreation(ipcBusCommand, ipcBusCommandResponse);
                 }
+                // Is it a local request ?
                 if (local) {
                     const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
                     if (deferredRequest) {
@@ -182,7 +182,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         if (this._logActivate) {
             this._connector.logMessageReceived(client.peer, local, ipcBusCommand, args);
         }
-        for (let i = 0; i < listeners.length; ++i) {
+        for (let i = 0, l = listeners.length; i < l; ++i) {
             listeners[i].call(client, ipcBusEvent, ...args);
         }
     }
@@ -266,6 +266,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected cancelRequest(client: IpcBusTransport.Client): void {
         this._requestFunctions.forEach((request, key) => {
             if (client === request.client) {
+                request.timeout();
+                this._requestFunctions.delete(key);
                 const ipcMessageClose: IpcBusCommand = {
                     kind: IpcBusCommand.Kind.RequestClose,
                     channel: request.request.channel,
@@ -279,8 +281,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     this._connector.logMessageCreation(ipcMessageClose);
                 }
                 this.postMessage(ipcMessageClose);
-                request.timeout();
-                this._requestFunctions.delete(key);
             }
         });
     }

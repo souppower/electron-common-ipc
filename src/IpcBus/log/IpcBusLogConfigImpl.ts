@@ -22,8 +22,8 @@ const performanceNow =
 
 /** @internal */
 export class IpcBusLogConfigImpl implements IpcBusLogConfig {
-    private _level: IpcBusLogConfig.Level;
-    private _baseTime: number;
+    protected _level: IpcBusLogConfig.Level;
+    protected _baseTime: number;
 
     constructor() {
         const levelFromEnv = this.getLevelFromEnv();

@@ -317,7 +317,9 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             case IpcBusCommand.Kind.RequestClose: {
                 const previous = this._subscriptions.emitter;
                 this._subscriptions.emitter = false;
-                this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                if (this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel)) {
+                    // log IpcBusLog.Kind.GET_CLOSE_REQUEST
+                }
                 this._subscriptions.emitter = previous;
                 // If this message does not come from the IpcBusBridge, send it to it
                 if (!ipcBusCommand.bridge) {

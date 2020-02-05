@@ -57,7 +57,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
 
         const trace: Partial<IpcBusLog.Trace> = {
             order: this._order,
-            args
+            args: (this._level & IpcBusLogConfig.Level.Args) ? args : undefined
         };
 
         trace.peer = trace.peer_source = source_command.peer;
