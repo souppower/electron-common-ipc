@@ -133,6 +133,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected _onClientMessageReceived(client: IpcBusTransport.Client, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
         const listeners = client.listeners(ipcBusCommand.channel);
+        let ipcBusCommentGet: IpcBusCommand;
+        if (this._logActivate) {
+            ipcBusCommentGet = this._connector.logMessageReceived(client.peer, local, ipcBusCommand, args);
+        }
         const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
         if (ipcBusCommand.request) {
             const settled = (resolve: boolean, argsResponse: any[]) => {
@@ -156,14 +160,14 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                         this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
                         // Send the local response to log
                         if (this._logActivate) {
-                            this._connector.logLocalResponse(ipcBusCommand, ipcBusCommandResponse, argsResponse);
+                            this._connector.logLocalResponse(ipcBusCommentGet, ipcBusCommandResponse, argsResponse);
                         }
                         deferredRequest.settled(ipcBusCommandResponse, argsResponse);
                     }
                 }
                 else {
                     if (this._logActivate) {
-                        this._connector.logMessageCreation(ipcBusCommand, ipcBusCommandResponse);
+                        this._connector.logMessageCreation(ipcBusCommentGet, ipcBusCommandResponse);
                     } 
                     this.postMessage(ipcBusCommandResponse, argsResponse);
                 }
@@ -178,9 +182,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     settled(false, [err]);
                 }
             };
-        }
-        if (this._logActivate) {
-            this._connector.logMessageReceived(client.peer, local, ipcBusCommand, args);
         }
         for (let i = 0, l = listeners.length; i < l; ++i) {
             listeners[i].call(client, ipcBusEvent, ...args);

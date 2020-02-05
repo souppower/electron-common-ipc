@@ -63,7 +63,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         }
     }
 
-    logMessageReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommandPrevious: IpcBusCommand, args?: any[]): void {
+    logMessageReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommandPrevious: IpcBusCommand, args?: any[]): IpcBusCommand {
         if (this._log.level >= IpcBusLogConfig.Level.Received) {
             const ipcBusCommandLog: IpcBusCommand = {
                 kind: IpcBusCommand.Kind.LogGetMessage,
@@ -74,7 +74,9 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
             ipcBusCommandLog.log.local = local;
             // no args
             this.postCommand(ipcBusCommandLog);
+            return ipcBusCommandLog;
         }
+        return null;
     }
 
     abstract handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;

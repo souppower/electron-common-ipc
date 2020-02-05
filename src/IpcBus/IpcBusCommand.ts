@@ -38,7 +38,7 @@ export namespace IpcBusCommand {
         id: string;
         timestamp: number;
         local?: boolean;
-        previous?: IpcBusCommand
+        previous?: IpcBusCommand;
     }
 }
 

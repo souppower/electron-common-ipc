@@ -35,15 +35,16 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         this._cb = cb;
     }
 
-    private buildMessage(message: Partial<IpcBusLog.Message>, ipcBusCommand: IpcBusCommand, args?: any[], payload?: number): IpcBusCommand {
-        message.id = ipcBusCommand.log.id;
-        message.peer = ipcBusCommand.peer;
-        message.timestamp = ipcBusCommand.log.timestamp - this.baseTime;
-        message.local = ipcBusCommand.log.local;
-        message.args = (this._level & IpcBusLogConfig.Level.Args) ? args : undefined;
-        message.payload = payload;
+    private buildMessage(ipcBusCommand: IpcBusCommand, args?: any[], payload?: number): IpcBusLog.Message {
+        const message: Partial<IpcBusLog.Message> = {
+            id: ipcBusCommand.log.id,
+            peer: ipcBusCommand.peer,
+            timestamp: ipcBusCommand.log.timestamp - this.baseTime,
+            local: ipcBusCommand.log.local,
+            args: (this._level & IpcBusLogConfig.Level.Args) ? args : undefined,
+            payload
+        };
 
-        let nextCommand = ipcBusCommand.log.previous;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 message.kind = ipcBusCommand.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
@@ -69,21 +70,22 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
                 const current_command = ipcBusCommand.log.previous;
                 if (current_command.kind === IpcBusCommand.Kind.SendMessage) {
                     message.kind = current_command.request ? IpcBusLog.Kind.GET_REQUEST : IpcBusLog.Kind.GET_MESSAGE;
+                    message.channel = current_command.channel;
                 }
                 else if (current_command.kind === IpcBusCommand.Kind.RequestResponse) {
                     message.kind = IpcBusLog.Kind.GET_REQUEST_RESPONSE;
                     message.responseChannel = current_command.request.replyChannel;
                     message.responseStatus = current_command.request.resolve ? 'resolved' : 'rejected';
-                    }
+                    message.channel = current_command.request.channel;
+                }
                 else if (current_command.kind === IpcBusCommand.Kind.RequestClose) {
                     message.kind = IpcBusLog.Kind.GET_CLOSE_REQUEST;
+                    message.channel = current_command.channel;
                 }
-                message.channel = current_command.channel;
-                nextCommand = current_command.log.previous
                 break;
             }
         }
-        return nextCommand;
+        return message as IpcBusLog.Message;
     }
 
     addLog(ipcBusCommand: IpcBusCommand, args: any[], payload?: number): boolean {
@@ -101,12 +103,16 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
             order: this._order,
         };
 
-        trace.stack = [];
         let nextCommand = ipcBusCommand;
-        while (nextCommand) {
-            let message: Partial<IpcBusLog.Message> = {};
-            nextCommand = this.buildMessage(message, nextCommand, args, payload);
-            trace.stack.push(message as IpcBusLog.Message);
+        const message = this.buildMessage(nextCommand, args, payload);
+        trace.stack = [message];
+        while (nextCommand.log.previous) {
+            nextCommand = nextCommand.log.previous;
+            if (nextCommand.log == null) {
+                break;
+            }
+            const message = this.buildMessage(nextCommand, args, payload);
+            trace.stack.push(message);
         }
         trace.first = trace.stack[trace.stack.length - 1];
         trace.current = trace.stack[0];
