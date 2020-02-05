@@ -179,7 +179,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             }
 
             case IpcBusCommand.Kind.RequestClose:
-                if (this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel) {
+                if (this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel)) {
                     // log IpcBusLog.Kind.GET_CLOSE_REQUEST
                 }
                 break;
