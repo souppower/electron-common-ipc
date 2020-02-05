@@ -148,9 +148,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 else {
                     ipcBusCommand.request.reject = true;
                 }
-                if (this._logActivate) {
-                    this._connector.logResponseCreation(ipcBusCommand, ipcBusCommandResponse);
-                }
                 // Is it a local request ?
                 if (local) {
                     const deferredRequest = this._requestFunctions.get(ipcBusCommand.request.replyChannel);
@@ -159,7 +156,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                         this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
                         // Send the local response to log
                         if (this._logActivate) {
-                            this._connector.logResponse(ipcBusCommandResponse, argsResponse);
+                            this._connector.logLocalResponse(ipcBusCommand, ipcBusCommandResponse, argsResponse);
                         }
                         deferredRequest.settled(ipcBusCommandResponse, argsResponse);
                     }

@@ -10,31 +10,28 @@ export namespace IpcBusLog {
         SEND_REQUEST_RESPONSE,
         GET_REQUEST_RESPONSE,
         SEND_CLOSE_REQUEST,
-        GET_CLOSE_REQUEST
+        GET_CLOSE_REQUEST,
     }
 
-    export interface Request {
+    export interface Message {
+        peer: IpcBusPeer;
+        timestamp: number;
         channel: string;
-        replyChannel: string;
-        resolve?: boolean;
-        reject?: boolean;
+        kind: Kind;
+        responseChannel?: string;
+        responseStatus?: 'resolved' | 'rejected';
+        local?: boolean;
+        payload?: number;
+        args?: any[];
     }
 
     export interface Trace {
         order: number;
-        channel: string;
         id: string;
-        peer_source: IpcBusPeer;
-        timestamp_source: number;
-        peer: IpcBusPeer;
-        timestamp: number;
 
-        kind: Kind;
-
-        request?: Request; 
-        local?: boolean;
-        payload?: number;
-        args?: any[];
+        first: Message;
+        current: Message;
+        stack: Message[];
     }
 
     export function KindToStr(kind: Kind): string {

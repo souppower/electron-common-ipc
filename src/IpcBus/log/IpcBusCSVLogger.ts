@@ -1,5 +1,5 @@
 import * as path from 'path';
-import * as fs from 'fs';
+import * as fse from 'fs-extra';
 
 const csvWriter = require('csv-write-stream');
 
@@ -12,7 +12,9 @@ export class CSVLogger {
     private _logger: any;
 
     constructor(logPath: string) {
-        !fs.existsSync(logPath) && fs.mkdirSync(logPath);
+        const filename = path.join(logPath, 'electron-common-ipcbus-bridge.csv.txt');
+        fse.ensureDir(logPath);
+        fse.unlink(filename);
 
         this._logger = csvWriter({ separator: '\t', headers: [
             '#',
@@ -33,7 +35,7 @@ export class CSVLogger {
             'arg4',
             'arg5'
         ]});
-        this._logger.pipe(fs.createWriteStream(path.join(logPath, 'electron-common-ipcbus-bridge.csv.txt')));
+        this._logger.pipe(fse.createWriteStream(filename));
     }
 
     // writeLine(cols: string[]) {
@@ -47,17 +49,15 @@ export class CSVLogger {
     // }
 
     addLog(trace: IpcBusLog.Trace): void {
-        const peer = trace.peer;
         const cols: string[] = [
             trace.order.toString(),
-            trace.channel,
+            trace.first.channel,
             trace.id,
-            IpcBusLog.KindToStr(trace.kind),
-
-            peer.id,
+            IpcBusLog.KindToStr(trace.current.kind),
+            trace.first.peer.id,
         ];
 
-        switch (trace.kind) {
+        switch (trace.current.kind) {
             case IpcBusLog.Kind.SEND_MESSAGE:
             case IpcBusLog.Kind.SEND_REQUEST: {
                 cols.push('');
@@ -70,7 +70,7 @@ export class CSVLogger {
                 break;
             }
             case IpcBusLog.Kind.SEND_REQUEST_RESPONSE: {
-                const delay = trace.timestamp - trace.timestamp_source;
+                const delay = trace.current.timestamp - trace.first.timestamp;
                 cols.push(delay.toString());
                 break;
             }
@@ -78,26 +78,27 @@ export class CSVLogger {
             case IpcBusLog.Kind.GET_MESSAGE:
             case IpcBusLog.Kind.GET_REQUEST:
             case IpcBusLog.Kind.GET_REQUEST_RESPONSE:
-                const delay = trace.timestamp - trace.timestamp_source;
+                const delay = trace.current.timestamp - trace.first.timestamp;
                 cols.push(delay.toString());
                 break;
         }
-        cols.push(trace.local ? 'local' : '');
-        cols.push(JSON.stringify(peer));
-        if (trace.peer != trace.peer_source) {
-            cols.push(JSON.stringify(trace.peer_source));
+        cols.push(trace.current.local ? 'local' : '');
+        cols.push(JSON.stringify(trace.first.peer));
+        if (trace.first.peer != trace.current.peer) {
+            cols.push(JSON.stringify(trace.first.peer));
         }
         else {
             cols.push('');
         }
-        cols.push(trace.request ? JSON.stringify(trace.request) : '');
-        cols.push(trace.payload ? trace.payload.toString() : '');
+        cols.push(trace.current.responseChannel ? `${trace.current.responseChannel} => ${trace.current.responseStatus}` : '');
+        cols.push(trace.current.payload ? trace.current.payload.toString() : '');
 
         let remainingArgs = 6;
-        if (trace.args && trace.args.length) {
-            remainingArgs -= trace.args.length;
-            for (let i = 0, l = trace.args.length; i < l; ++i) {
-                cols.push(JSON_stringify(trace.args[i], 255));
+        const args = trace.current.args;
+        if (args && args.length) {
+            remainingArgs -= args.length;
+            for (let i = 0, l = args.length; i < l; ++i) {
+                cols.push(JSON_stringify(args[i], 255));
             }
         }
         for (let i = 0, l = remainingArgs; i < l; ++i) {

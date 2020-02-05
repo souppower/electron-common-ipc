@@ -51,23 +51,14 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         }
     }
 
-    logResponseCreation(ipcBusCommandOrigin: IpcBusCommand, ipcBusCommand: IpcBusCommand) {
-        if (this._log.level & IpcBusLogConfig.Level.Sent) {
-            const id = ipcBusCommandOrigin.log?.id || `${this._messageId}-${this._messageCount++}`;
-            ipcBusCommand.log = ipcBusCommand.log || {
-                id,
-                timestamp: this._log.now
-            };
-            ipcBusCommand.log.previous = ipcBusCommandOrigin;
-        }
-    }
-
-    logResponse(ipcBusCommand: IpcBusCommand, args?: any[]) {
+    logLocalResponse(ipcBusCommandOrigin: IpcBusCommand, ipcBusCommand: IpcBusCommand, args?: any[]) {
         if (this._log.level & IpcBusLogConfig.Level.Sent) {
             // Clone first level
             const ipcBusCommandLog: IpcBusCommand = Object.assign({}, ipcBusCommand);
             ipcBusCommandLog.kind = IpcBusCommand.Kind.LogRequestResponse;
-            ipcBusCommand.log.local = true;
+            this.logMessageCreation(ipcBusCommandLog);
+            ipcBusCommandLog.log.local = true;
+            ipcBusCommandLog.log.previous = ipcBusCommand;
             this.postCommand(ipcBusCommandLog, args);
         }
     }
