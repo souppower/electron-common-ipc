@@ -475,7 +475,7 @@ util.inherits(TimeServiceImpl, EventEmitter);
 
 function startApp() {
     console.log('<MAIN> Connected to broker !');
-    var testService = true;
+    var testService = false;
 
     if (testService) {
         // Create the proxy (client-side)

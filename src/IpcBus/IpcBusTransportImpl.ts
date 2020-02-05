@@ -162,6 +162,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     }
                 }
                 else {
+                    if (this._logActivate) {
+                        this._connector.logMessageCreation(ipcBusCommand, ipcBusCommandResponse);
+                    } 
                     this.postMessage(ipcBusCommandResponse, argsResponse);
                 }
             }
@@ -252,7 +255,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
         // Broadcast locally
         if (this._logActivate) {
-            this._connector.logMessageCreation(ipcMessage);
+            this._connector.logMessageCreation(null, ipcMessage);
         }
         if (this.hasChannel(channel)) {
             this.onMessageReceived(true, ipcMessage, args);
@@ -271,11 +274,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     peer: request.client.peer,
                     request: request.request
                 };
-                // if (this._logLevel) {
-                //    this._connector.trackCommandReceived(client.peer, true, ipcMessage);
-                // }
                 if (this._logActivate) {
-                    this._connector.logMessageCreation(ipcMessageClose);
+                    this._connector.logMessageCreation(null, ipcMessageClose);
                 }
                 this.postMessage(ipcMessageClose);
             }
@@ -297,7 +297,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             request: ipcBusCommandRequest
         }
         if (this._logActivate) {
-            this._connector.logMessageCreation(ipcMessage);
+            this._connector.logMessageCreation(null, ipcMessage);
         }
         // Broadcast locally
         if (this.hasChannel(channel)) {
@@ -317,7 +317,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                             request: ipcBusCommandRequest
                         };
                         if (this._logActivate) {
-                            this._connector.logMessageCreation(ipcMessageClose);
+                            this._connector.logMessageCreation(null, ipcMessageClose);
                         }
                         this.postMessage(ipcMessageClose);
                     }

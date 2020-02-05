@@ -35,14 +35,15 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         this._cb = cb;
     }
 
-    private buildMessage(ipcBusCommand: IpcBusCommand, args?: any[], payload?: number): IpcBusLog.Message {
-        const message: Partial<IpcBusLog.Message> = {
-            peer: ipcBusCommand.peer,
-            timestamp: ipcBusCommand.log.timestamp - this.baseTime,
-            local: ipcBusCommand.log.local,
-            args: (this._level & IpcBusLogConfig.Level.Args) ? args : undefined,
-            payload
-        };
+    private buildMessage(message: Partial<IpcBusLog.Message>, ipcBusCommand: IpcBusCommand, args?: any[], payload?: number): IpcBusCommand {
+        message.id = ipcBusCommand.log.id;
+        message.peer = ipcBusCommand.peer;
+        message.timestamp = ipcBusCommand.log.timestamp - this.baseTime;
+        message.local = ipcBusCommand.log.local;
+        message.args = (this._level & IpcBusLogConfig.Level.Args) ? args : undefined;
+        message.payload = payload;
+
+        let nextCommand = ipcBusCommand.log.previous;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 message.kind = ipcBusCommand.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
@@ -78,10 +79,11 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
                     message.kind = IpcBusLog.Kind.GET_CLOSE_REQUEST;
                 }
                 message.channel = current_command.channel;
+                nextCommand = current_command.log.previous
                 break;
             }
         }
-        return message as IpcBusLog.Message;
+        return nextCommand;
     }
 
     addLog(ipcBusCommand: IpcBusCommand, args: any[], payload?: number): boolean {
@@ -100,19 +102,15 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         };
 
         trace.stack = [];
-        let source_command = ipcBusCommand;
-        const message = trace.current = trace.first = this.buildMessage(ipcBusCommand, args, payload);
-        trace.stack.push(message)
-        while (source_command.log.previous) {
-            const previous = source_command.log.previous;
-            if (previous.log == null) {
-                break;
-            }
-            source_command = previous;
-            const message = trace.first = this.buildMessage(source_command);
-            trace.stack.push(message)
+        let nextCommand = ipcBusCommand;
+        while (nextCommand) {
+            let message: Partial<IpcBusLog.Message> = {};
+            nextCommand = this.buildMessage(message, nextCommand, args, payload);
+            trace.stack.push(message as IpcBusLog.Message);
         }
-        trace.id = `${source_command.log.id}_${trace.current.kind}`;
+        trace.first = trace.stack[trace.stack.length - 1];
+        trace.current = trace.stack[0];
+        trace.id = `${trace.first.id}_${trace.current.kind >= IpcBusLog.Kind.SEND_REQUEST ? trace.current.kind - 2 : trace.current.kind }`;
 
         this._cb(trace as IpcBusLog.Trace);
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);

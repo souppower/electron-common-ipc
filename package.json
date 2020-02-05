@@ -39,7 +39,6 @@
   "types": "./lib/electron-common-ipc.d.ts",
   "browser": "./lib/electron-common-ipc-browser.js",
   "dependencies": {
-    "@types/fs-extra": "^8.0.1",
     "csv-write-stream": "^2.0.0",
     "electron-process-type": "^4.1.0",
     "fs-extra": "^8.1.0",
@@ -49,6 +48,7 @@
     "winston": "^2.4.1"
   },
   "devDependencies": {
+    "@types/fs-extra": "^8.0.1",
     "@types/node": "^12.4.0",
     "@types/uuid": "3.4.5",
     "@types/winston": "^2.3.9",

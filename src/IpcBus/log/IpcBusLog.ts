@@ -14,6 +14,7 @@ export namespace IpcBusLog {
     }
 
     export interface Message {
+        id: string;
         peer: IpcBusPeer;
         timestamp: number;
         channel: string;
@@ -49,7 +50,7 @@ export namespace IpcBusLog {
             case Kind.GET_REQUEST_RESPONSE:
                 return 'GetRequestResponse';
             case Kind.SEND_CLOSE_REQUEST:
-                return 'SEndCloseRequest';
+                return 'SendCloseRequest';
             case Kind.GET_CLOSE_REQUEST:
                 return 'GetCloseRequest';
             }

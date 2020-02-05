@@ -41,38 +41,37 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         }
     }
 
-    logMessageCreation(ipcBusCommand: IpcBusCommand) {
+    logMessageCreation(ipcBusCommandPrevious: IpcBusCommand, ipcBusCommand: IpcBusCommand) {
         if (this._log.level & IpcBusLogConfig.Level.Sent) {
             const id = `${this._messageId}-${this._messageCount++}`;
-            ipcBusCommand.log = ipcBusCommand.log || {
+            ipcBusCommand.log = {
                 id,
-                timestamp: this._log.now
+                timestamp: this._log.now,
+                previous: ipcBusCommandPrevious
             };
         }
     }
 
-    logLocalResponse(ipcBusCommandOrigin: IpcBusCommand, ipcBusCommand: IpcBusCommand, args?: any[]) {
+    logLocalResponse(ipcBusCommandPrevious: IpcBusCommand, ipcBusCommandResponse: IpcBusCommand, argsResponse?: any[]) {
         if (this._log.level & IpcBusLogConfig.Level.Sent) {
             // Clone first level
-            const ipcBusCommandLog: IpcBusCommand = Object.assign({}, ipcBusCommand);
+            const ipcBusCommandLog: IpcBusCommand = Object.assign({}, ipcBusCommandResponse);
             ipcBusCommandLog.kind = IpcBusCommand.Kind.LogRequestResponse;
-            this.logMessageCreation(ipcBusCommandLog);
+            this.logMessageCreation(ipcBusCommandPrevious, ipcBusCommandLog);
             ipcBusCommandLog.log.local = true;
-            ipcBusCommandLog.log.previous = ipcBusCommand;
-            this.postCommand(ipcBusCommandLog, args);
+            this.postCommand(ipcBusCommandLog, argsResponse);
         }
     }
 
-    logMessageReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    logMessageReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommandPrevious: IpcBusCommand, args?: any[]): void {
         if (this._log.level >= IpcBusLogConfig.Level.Received) {
             const ipcBusCommandLog: IpcBusCommand = {
                 kind: IpcBusCommand.Kind.LogGetMessage,
                 peer,
                 channel: ''
             };
-            this.logMessageCreation(ipcBusCommandLog);
+            this.logMessageCreation(ipcBusCommandPrevious, ipcBusCommandLog);
             ipcBusCommandLog.log.local = local;
-            ipcBusCommandLog.log.previous = ipcBusCommand;
             // no args
             this.postCommand(ipcBusCommandLog);
         }

@@ -30,7 +30,7 @@ export interface IpcBusConnector {
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
     postBuffer(buffer: Buffer): void;
 
-    logMessageCreation(ipcBusCommand: IpcBusCommand): void;
+    logMessageCreation(ipcBusCommandOrigin: IpcBusCommand, ipcBusCommand: IpcBusCommand): void;
 
     logLocalResponse(ipcBusCommandOrigin: IpcBusCommand, ipcBusCommand: IpcBusCommand, args?: any[]): void;
     logMessageReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void;
