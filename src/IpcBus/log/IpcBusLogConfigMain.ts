@@ -40,7 +40,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         const message: Partial<IpcBusLog.Message> = {
             id: logMessage.id,
             peer: logMessage.peer,
-            related_peer: logMessage.command.peer,
+            related_peer: logMessage.related_peer || logMessage.peer,
             timestamp: logMessage.timestamp - this.baseTime,
             local: logMessage.local,
             args: (this._level & IpcBusLogConfig.Level.Args) ? args : undefined,

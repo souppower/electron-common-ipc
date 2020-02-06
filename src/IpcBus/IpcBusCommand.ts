@@ -45,6 +45,7 @@ export namespace IpcBusCommand {
     export interface Log {
         id: string;
         peer: IpcBusPeer;
+        related_peer?: IpcBusPeer;
         kind: IpcBusCommand.Kind;
         timestamp: number;
         local?: boolean;

@@ -62,6 +62,10 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
                 command: this.cloneCommand(ipcBusCommand),
                 previous: previousLog,
             };
+            while (previousLog) {
+                ipcBusCommand.log.related_peer = previousLog.peer;
+                previousLog = previousLog.previous;
+            }
         }
     }
 
@@ -85,6 +89,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
             };
             this.logMessageCreation(ipcBusCommandPrevious.log, ipcBusCommandLog);
             ipcBusCommandLog.log.command = this.cloneCommand(ipcBusCommandPrevious);
+            ipcBusCommandLog.log.related_peer = ipcBusCommandPrevious.peer;
             ipcBusCommandLog.log.local = local;
             // no args
             this.postCommand(ipcBusCommandLog);

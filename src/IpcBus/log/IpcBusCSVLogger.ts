@@ -25,7 +25,7 @@ export class CSVLogger {
             'delay',
             'local',
             'peer',
-            'peer-source',
+            'related peer',
             'request',
             'payload',
             'arg0',
