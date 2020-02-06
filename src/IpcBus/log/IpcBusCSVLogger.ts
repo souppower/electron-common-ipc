@@ -83,9 +83,9 @@ export class CSVLogger {
                 break;
         }
         cols.push(trace.current.local ? 'local' : '');
-        cols.push(JSON.stringify(trace.first.peer));
-        if (trace.first.peer != trace.current.peer) {
-            cols.push(JSON.stringify(trace.first.peer));
+        cols.push(JSON.stringify(trace.current.peer));
+        if (trace.current.related_peer.id != trace.current.peer.id) {
+            cols.push(JSON.stringify(trace.current.related_peer));
         }
         else {
             cols.push('');

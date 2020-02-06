@@ -41,40 +41,54 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         }
     }
 
-    logMessageCreation(ipcBusCommandPrevious: IpcBusCommand, ipcBusCommand: IpcBusCommand) {
+    protected cloneCommand(command: IpcBusCommand): IpcBusCommand.LogCommand {
+        const logCommand: IpcBusCommand.LogCommand = {
+            kind: command.kind,
+            peer: command.peer,
+            channel: command.channel,
+            request: command.request
+        };
+        return logCommand;
+    }
+
+    logMessageCreation(previousLog: IpcBusCommand.Log, ipcBusCommand: IpcBusCommand) {
         if (this._log.level & IpcBusLogConfig.Level.Sent) {
             const id = `${this._messageId}-${this._messageCount++}`;
             ipcBusCommand.log = {
                 id,
+                kind: ipcBusCommand.kind,
+                peer: ipcBusCommand.peer,
                 timestamp: this._log.now,
-                previous: ipcBusCommandPrevious
+                command: this.cloneCommand(ipcBusCommand),
+                previous: previousLog,
             };
         }
     }
 
-    logLocalResponse(ipcBusCommandPrevious: IpcBusCommand, ipcBusCommandResponse: IpcBusCommand, argsResponse?: any[]) {
+    logLocalResponse(previousLog: IpcBusCommand.Log, ipcBusCommandResponse: IpcBusCommand, argsResponse?: any[]) {
         if (this._log.level & IpcBusLogConfig.Level.Sent) {
             // Clone first level
             const ipcBusCommandLog: IpcBusCommand = Object.assign({}, ipcBusCommandResponse);
             ipcBusCommandLog.kind = IpcBusCommand.Kind.LogRequestResponse;
-            this.logMessageCreation(ipcBusCommandPrevious, ipcBusCommandLog);
+            this.logMessageCreation(previousLog, ipcBusCommandLog);
             ipcBusCommandLog.log.local = true;
             this.postCommand(ipcBusCommandLog, argsResponse);
         }
     }
 
-    logMessageReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommandPrevious: IpcBusCommand, args?: any[]): IpcBusCommand {
+    logMessageReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommandPrevious: IpcBusCommand, args?: any[]): IpcBusCommand.Log {
         if (this._log.level >= IpcBusLogConfig.Level.Received) {
             const ipcBusCommandLog: IpcBusCommand = {
                 kind: IpcBusCommand.Kind.LogGetMessage,
                 peer,
                 channel: ''
             };
-            this.logMessageCreation(ipcBusCommandPrevious, ipcBusCommandLog);
+            this.logMessageCreation(ipcBusCommandPrevious.log, ipcBusCommandLog);
+            ipcBusCommandLog.log.command = this.cloneCommand(ipcBusCommandPrevious);
             ipcBusCommandLog.log.local = local;
             // no args
             this.postCommand(ipcBusCommandLog);
-            return ipcBusCommandLog;
+            return ipcBusCommandLog.log;
         }
         return null;
     }

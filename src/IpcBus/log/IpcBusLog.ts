@@ -16,6 +16,7 @@ export namespace IpcBusLog {
     export interface Message {
         id: string;
         peer: IpcBusPeer;
+        related_peer: IpcBusPeer;
         timestamp: number;
         channel: string;
         kind: Kind;

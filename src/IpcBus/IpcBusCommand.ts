@@ -34,11 +34,22 @@ export namespace IpcBusCommand {
     }
 
     /** @internal */
+    export interface LogCommand {
+        peer: IpcBusPeer;
+        kind: IpcBusCommand.Kind;
+        channel: string;
+        request?: IpcBusCommand.Request;
+    }
+
+    /** @internal */
     export interface Log {
         id: string;
+        peer: IpcBusPeer;
+        kind: IpcBusCommand.Kind;
         timestamp: number;
         local?: boolean;
-        previous?: IpcBusCommand;
+        command?: IpcBusCommand.LogCommand;
+        previous?: Log;
     }
 }
 

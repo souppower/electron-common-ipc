@@ -35,52 +35,53 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         this._cb = cb;
     }
 
-    private buildMessage(ipcBusCommand: IpcBusCommand, args?: any[], payload?: number): IpcBusLog.Message {
+    private buildMessage(logMessage: IpcBusCommand.Log, args?: any[], payload?: number): IpcBusLog.Message {
+        const command = logMessage.command;
         const message: Partial<IpcBusLog.Message> = {
-            id: ipcBusCommand.log.id,
-            peer: ipcBusCommand.peer,
-            timestamp: ipcBusCommand.log.timestamp - this.baseTime,
-            local: ipcBusCommand.log.local,
+            id: logMessage.id,
+            peer: logMessage.peer,
+            related_peer: logMessage.command.peer,
+            timestamp: logMessage.timestamp - this.baseTime,
+            local: logMessage.local,
             args: (this._level & IpcBusLogConfig.Level.Args) ? args : undefined,
             payload
         };
 
-        switch (ipcBusCommand.kind) {
+        switch (logMessage.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                message.kind = ipcBusCommand.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
-                message.channel = ipcBusCommand.channel;
+                message.kind = command.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
+                message.channel = command.channel;
                 break;
             }
             case IpcBusCommand.Kind.RequestClose: {
                 message.kind = IpcBusLog.Kind.SEND_CLOSE_REQUEST;
-                message.channel = ipcBusCommand.request.channel;
-                message.responseChannel = ipcBusCommand.request.replyChannel;
+                message.channel = command.request.channel;
+                message.responseChannel = command.request.replyChannel;
                 message.responseStatus = 'rejected';
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse:
             case IpcBusCommand.Kind.LogRequestResponse: {
                 message.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE;
-                message.channel = ipcBusCommand.request.channel;
-                message.responseChannel = ipcBusCommand.request.replyChannel;
-                message.responseStatus = ipcBusCommand.request.resolve ? 'resolved' : 'rejected';
+                message.channel = command.request.channel;
+                message.responseChannel = command.request.replyChannel;
+                message.responseStatus = command.request.resolve ? 'resolved' : 'rejected';
                 break;
             }
             case IpcBusCommand.Kind.LogGetMessage: {
-                const current_command = ipcBusCommand.log.previous;
-                if (current_command.kind === IpcBusCommand.Kind.SendMessage) {
-                    message.kind = current_command.request ? IpcBusLog.Kind.GET_REQUEST : IpcBusLog.Kind.GET_MESSAGE;
-                    message.channel = current_command.channel;
+                if (command.kind === IpcBusCommand.Kind.SendMessage) {
+                    message.kind = command.request ? IpcBusLog.Kind.GET_REQUEST : IpcBusLog.Kind.GET_MESSAGE;
+                    message.channel = command.channel;
                 }
-                else if (current_command.kind === IpcBusCommand.Kind.RequestResponse) {
+                else if (command.kind === IpcBusCommand.Kind.RequestResponse) {
                     message.kind = IpcBusLog.Kind.GET_REQUEST_RESPONSE;
-                    message.responseChannel = current_command.request.replyChannel;
-                    message.responseStatus = current_command.request.resolve ? 'resolved' : 'rejected';
-                    message.channel = current_command.request.channel;
+                    message.channel = command.request.channel;
+                    message.responseChannel = command.request.replyChannel;
+                    message.responseStatus = command.request.resolve ? 'resolved' : 'rejected';
                 }
-                else if (current_command.kind === IpcBusCommand.Kind.RequestClose) {
+                else if (command.kind === IpcBusCommand.Kind.RequestClose) {
                     message.kind = IpcBusLog.Kind.GET_CLOSE_REQUEST;
-                    message.channel = current_command.channel;
+                    message.channel = command.channel;
                 }
                 break;
             }
@@ -93,30 +94,29 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         // Some C++ lib can not manage log, so we have to simulate the minimum at this level
         if (ipcBusCommand.log == null) {
             const id = `external-${ipcBusCommand.peer.id}-${this._order}`;
-            ipcBusCommand.log = ipcBusCommand.log || {
+            ipcBusCommand.log = {
                 id,
-                timestamp: this.now
+                kind: ipcBusCommand.kind,
+                timestamp: this.now,
+                peer: ipcBusCommand.peer,
+                command: ipcBusCommand
             };
         }
 
         const trace: Partial<IpcBusLog.Trace> = {
             order: this._order,
         };
-
-        let nextCommand = ipcBusCommand;
-        const message = this.buildMessage(nextCommand, args, payload);
-        trace.stack = [message];
-        while (nextCommand.log.previous) {
-            nextCommand = nextCommand.log.previous;
-            if (nextCommand.log == null) {
-                break;
-            }
-            const message = this.buildMessage(nextCommand, args, payload);
+        trace.stack = [];
+        let logMessage = ipcBusCommand.log;
+        while (logMessage) {
+            const message = this.buildMessage(logMessage, args, payload);
             trace.stack.push(message);
+            logMessage = logMessage.previous;
         }
         trace.first = trace.stack[trace.stack.length - 1];
         trace.current = trace.stack[0];
-        trace.id = `${trace.first.id}_${trace.current.kind >= IpcBusLog.Kind.SEND_REQUEST ? trace.current.kind - 2 : trace.current.kind }`;
+        const subOrder = trace.current.kind >= IpcBusLog.Kind.SEND_REQUEST ? trace.current.kind - 2 : trace.current.kind;
+        trace.id = `${trace.first.id}_${String.fromCharCode(97 + subOrder)}`;
 
         this._cb(trace as IpcBusLog.Trace);
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
