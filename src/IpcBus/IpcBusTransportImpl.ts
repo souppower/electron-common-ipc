@@ -254,10 +254,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             channel,
             peer: client.peer
         }
-        // Broadcast locally
         if (this._logActivate) {
             this._connector.logMessageCreation(null, ipcMessage);
         }
+        // Broadcast locally
         if (this.hasChannel(channel)) {
             this.onMessageReceived(true, ipcMessage, args);
         }

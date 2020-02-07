@@ -1,111 +1,79 @@
 import * as path from 'path';
 import * as fse from 'fs-extra';
 
-const csvWriter = require('csv-write-stream');
+// import CVS_stringify from 'csv-stringify';
+const CVS_stringify = require('csv-stringify')
 
-import { JSON_stringify } from './IpcBusLogUtils';
 import { IpcBusLog } from './IpcBusLog';
 import { IpcBusLogConfig } from './IpcBusLogConfig';
+import { JSONLoggerBase, JSONLog } from './IpcBusJSONLogger';
+import { JSON_stringify_object } from './IpcBusLogUtils';
+
 
 /** @internal */
-export class CSVLogger {
-    private _logger: any;
+export class CSVLogger extends JSONLoggerBase {
+    private _stringifyer: any; // CVS_stringify.Stringifier;
 
     constructor(logPath: string) {
-        const filename = path.join(logPath, 'electron-common-ipcbus-bridge.csv.txt');
-        fse.ensureDir(logPath);
-        fse.unlink(filename);
+        super();
 
-        this._logger = csvWriter({ separator: '\t', headers: [
-            '#',
-            'channel',
-            'id',
-            'kind',
-            'peer id',
-            'delay',
-            'local',
-            'peer',
-            'related peer',
-            'request',
-            'payload',
-            'arg0',
-            'arg1',
-            'arg2',
-            'arg3',
-            'arg4',
-            'arg5'
-        ]});
-        this._logger.pipe(fse.createWriteStream(filename));
+        const filename = path.join(logPath, 'electron-common-ipcbus-bridge.csv');
+        fse.ensureDirSync(logPath);
+        try {
+            fse.unlinkSync(filename);
+        }
+        catch (_) {}
+
+        const options: any = {
+            // delimiter: '\t',
+            header: true,
+            columns: [
+                { key: 'order', header: '#' },
+                { key: 'channel', header: 'channel' },
+                { key: 'id', header: 'id' },
+                { key: 'kind', header: 'kind' },
+                { key: 'peer_id', header: 'peer id' },
+                { key: 'delay', header: 'delay' },
+                { key: 'local', header: 'local' },
+                { key: 'peer', header: 'peer' },
+                { key: 'peer_related', header: 'peer related' },
+                { key: 'request', header: 'request' },
+                { key: 'payload', header: 'payload' },
+                { key: 'arg0', header: 'arg0' },
+                { key: 'arg1', header: 'arg0' },
+                { key: 'arg2', header: 'arg0' },
+                { key: 'arg3', header: 'arg0' },
+                { key: 'arg4', header: 'arg0' },
+                { key: 'arg5', header: 'arg0' }
+            ]
+        };
+
+        const columLengthMax = 255;
+        if (columLengthMax > 0) {
+            const cast: any = options.cast = {};
+            cast.string = (value: string) => {
+                if (value.length > columLengthMax) {
+                    return value.substr(0, columLengthMax) + '\'__cut__\'';
+                }
+                else {
+                    return value;
+                }
+            };
+            cast.object = (value: any) => {
+                let output: string = '';
+                return JSON_stringify_object(value, columLengthMax, output)
+            };
+        }
+
+        this._stringifyer = CVS_stringify(options);
+        this._stringifyer.pipe(fse.createWriteStream(filename, { highWaterMark: 1024 }));
     }
 
-    // writeLine(cols: string[]) {
-    //     for (let i = 0, l = cols.length; i < l; ++i) {
-    //         const col = cols[i].replace(/\n|\r\n|\r|\t/g, '_');
-    //         console.log(col);
-    //         this._logger.write(col);
-    //         this._logger.write('\t');
-    //     }
-    //     this._logger.write('\n');
-    // }
-
-    addLog(trace: IpcBusLog.Trace): void {
-        const cols: string[] = [
-            trace.order.toString(),
-            trace.first.channel,
-            trace.id,
-            IpcBusLog.KindToStr(trace.current.kind),
-            trace.first.peer.id,
-        ];
-
-        switch (trace.current.kind) {
-            case IpcBusLog.Kind.SEND_MESSAGE:
-            case IpcBusLog.Kind.SEND_REQUEST: {
-                cols.push('');
-                break;
-            }
-            case IpcBusLog.Kind.SEND_CLOSE_REQUEST: {
-                // const delay = trace.timestamp - trace.timestamp_source;
-                // cols.push(delay.toString());
-                cols.push('');
-                break;
-            }
-            case IpcBusLog.Kind.SEND_REQUEST_RESPONSE: {
-                const delay = trace.current.timestamp - trace.first.timestamp;
-                cols.push(delay.toString());
-                break;
-            }
-            case IpcBusLog.Kind.GET_CLOSE_REQUEST:
-            case IpcBusLog.Kind.GET_MESSAGE:
-            case IpcBusLog.Kind.GET_REQUEST:
-            case IpcBusLog.Kind.GET_REQUEST_RESPONSE:
-                const delay = trace.current.timestamp - trace.first.timestamp;
-                cols.push(delay.toString());
-                break;
-        }
-        cols.push(trace.current.local ? 'local' : '');
-        cols.push(JSON.stringify(trace.current.peer));
-        if (trace.current.related_peer.id != trace.current.peer.id) {
-            cols.push(JSON.stringify(trace.current.related_peer));
-        }
-        else {
-            cols.push('');
-        }
-        cols.push(trace.current.responseChannel ? `${trace.current.responseChannel} => ${trace.current.responseStatus}` : '');
-        cols.push(trace.current.payload ? trace.current.payload.toString() : '');
-
-        let remainingArgs = 6;
-        const args = trace.current.args;
-        if (args && args.length) {
-            remainingArgs -= args.length;
-            for (let i = 0, l = args.length; i < l; ++i) {
-                cols.push(JSON_stringify(args[i], 255));
-            }
-        }
-        for (let i = 0, l = remainingArgs; i < l; ++i) {
-            cols.push('');
-        }
-        this._logger.write(cols);
-        // this.writeLine(cols);
+    writeLog(jsonLog: JSONLog): void {
+        const csvJsonLog = jsonLog as any;
+        csvJsonLog.local = jsonLog.local ? 'local' : '';
+        csvJsonLog.request = jsonLog.responseChannel ? `${jsonLog.responseChannel} => ${jsonLog.responseStatus}` : '';
+        this._stringifyer.write(csvJsonLog);
     }
 }
 

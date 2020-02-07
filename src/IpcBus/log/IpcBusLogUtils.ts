@@ -1,4 +1,4 @@
-function JSON_stringify_array(data: any[], maxLen: number, output: string): string {
+export function JSON_stringify_array(data: any[], maxLen: number, output: string): string {
     output += '[';
     for (let i = 0, l = data.length; i < l; ++i) {
         if (output.length >= maxLen) {
@@ -12,7 +12,7 @@ function JSON_stringify_array(data: any[], maxLen: number, output: string): stri
     return output;
 }
 
-function JSON_stringify_object(data: any, maxLen: number, output: string): string {
+export function JSON_stringify_object(data: any, maxLen: number, output: string): string {
     output += '{';
     if (data) {
         const keys = Object.keys(data);

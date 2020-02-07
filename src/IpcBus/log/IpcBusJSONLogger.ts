@@ -1,6 +1,5 @@
 import * as path from 'path';
-import * as fs from 'fs';
-
+import * as fse from 'fs-extra';
 import * as winston from 'winston';
 
 import * as Client from '../IpcBusClient';
@@ -13,14 +12,15 @@ export interface JSONLog {
     order: number,
     channel?: string,
     id: string,
-    kind?: string,
+    kind: string,
     peer_id: string,
     peer: Client.IpcBusPeer,
-    peer_source?: Client.IpcBusPeer,
+    peer_related?: Client.IpcBusPeer,
     delay?: number,
     local?: boolean,
     payload?: number,
-    request?: string;
+    responseChannel?: string;
+    responseStatus?: string;
     arg0?: string,
     arg1?: string,
     arg2?: string,
@@ -35,64 +35,51 @@ export class JSONLoggerBase {
     }
 
     addLog(trace: IpcBusLog.Trace): void {
-        // const peer = trace.peer;
-        // const jsonLog: JSONLog = {
-        //     order: trace.order,
-        //     channel: trace.channel,
-        //     id: trace.id,
-        //     kind: IpcBusLog.KindToStr(trace.kind),
+        const jsonLog: JSONLog = {
+            order: trace.order,
+            channel: trace.first.channel,
+            id: trace.id,
+            kind: IpcBusLog.KindToStr(trace.current.kind),
+            peer: trace.current.peer,
+            peer_id: trace.first.peer.id,
+        };
 
-        //     peer_id: peer.id,
-        //     peer,
-        //     payload: trace.payload
-        // };
+        switch (trace.current.kind) {
+            case IpcBusLog.Kind.SEND_MESSAGE:
+            case IpcBusLog.Kind.SEND_REQUEST: {
+                break;
+            }
+            case IpcBusLog.Kind.SEND_CLOSE_REQUEST: {
+                break;
+            }
+            case IpcBusLog.Kind.SEND_REQUEST_RESPONSE: {
+                const delay = trace.current.timestamp - trace.first.timestamp;
+                jsonLog.delay = delay;
+                break;
+            }
+            case IpcBusLog.Kind.GET_CLOSE_REQUEST:
+            case IpcBusLog.Kind.GET_MESSAGE:
+            case IpcBusLog.Kind.GET_REQUEST:
+            case IpcBusLog.Kind.GET_REQUEST_RESPONSE:
+                const delay = trace.current.timestamp - trace.first.timestamp;
+                jsonLog.delay = delay;
+                break;
+        }
+        jsonLog.local = trace.current.local;
+        if (trace.current.related_peer.id != trace.current.peer.id) {
+            jsonLog.peer_related = trace.current.related_peer;
+        }
+        jsonLog.responseChannel = trace.current.responseChannel;
+        jsonLog.responseStatus = trace.current.responseStatus;
+        jsonLog.payload = trace.current.payload;
 
-        // if (trace.peer != trace.peer_source) {
-        //     jsonLog.peer_source = trace.peer_source;
-        // }
-
-        // if (jsonLog.request) {
-        //     jsonLog.request = JSON.stringify(trace.request);
-        // }
-        // jsonLog.local = trace.local;
-
-        // switch (trace.kind) {
-        //     case IpcBusLog.Kind.SEND_MESSAGE:
-        //     case IpcBusLog.Kind.SEND_REQUEST: {
-        //         if (trace.args && trace.args.length) {
-        //             for (let i = 0, l = trace.args.length; i < l; ++i) {
-        //                 (jsonLog as any)[`arg${i}`] = JSON_stringify(trace.args[i], 255);
-        //             }
-        //         }
-        //         break;
-        //     }
-        //     case IpcBusLog.Kind.SEND_CLOSE_REQUEST: {
-        //         break;
-        //     }
-        //     case IpcBusLog.Kind.SEND_REQUEST_RESPONSE: {
-        //         jsonLog.delay = trace.timestamp - trace.timestamp_source;
-        //         if (trace.local) {
-        //             jsonLog.kind += '-local';
-        //         }
-        //         if (trace.args && trace.args.length) {
-        //             for (let i = 0, l = trace.args.length; i < l; ++i) {
-        //                 (jsonLog as any)[`arg${i}`] = JSON_stringify(trace.args[i], 255);
-        //             }
-        //         }
-        //         break;
-        //     }
-        //     case IpcBusLog.Kind.GET_MESSAGE:
-        //     case IpcBusLog.Kind.GET_REQUEST:
-        //     case IpcBusLog.Kind.GET_REQUEST_RESPONSE:
-        //     case IpcBusLog.Kind.GET_CLOSE_REQUEST:
-        //         jsonLog.delay = trace.timestamp - trace.timestamp_source;
-        //         if (trace.local) {
-        //             jsonLog.kind += '-local';
-        //         }
-        //         break;
-        // }
-
-        // this.writeLog(jsonLog);
+        const args = trace.current.args;
+        if (args) {
+            for (let i = 0, l = args.length; i < l; ++i) {
+                (jsonLog as any)[`arg${i}`] = args[i];
+            }
+        }
+        this.writeLog(jsonLog);
     }
 
     writeLog(jsonLog: JSONLog): void {
@@ -106,12 +93,17 @@ export class JSONLogger extends JSONLoggerBase {
     constructor(logPath: string) {
         super();
 
-        !fs.existsSync(logPath) && fs.mkdirSync(logPath);
+        const filename = path.join(logPath, 'electron-common-ipcbus-bridge.json');
+        fse.ensureDirSync(logPath);
+        try {
+            fse.unlinkSync(filename);
+        }
+        catch (_) {}
 
         this._winstonLogger = new (winston.Logger)({
             transports: [
                 new (winston.transports.File)({
-                    filename: path.join(logPath, 'electron-common-ipcbus-bridge.log')
+                    filename
                 })
             ]
         });
