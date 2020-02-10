@@ -1,6 +1,6 @@
 {
   "name": "electron-common-ipc",
-  "version": "8.0.0-beta.17",
+  "version": "8.0.0",
   "description": "A safe IPC bus for applications built on Node or Electron.",
   "repository": {
     "type": "git",
@@ -53,7 +53,6 @@
     "@types/node": "^12.4.0",
     "@types/shortid": "0.0.29",
     "@types/uuid": "3.4.5",
-    "@types/winston": "^2.3.9",
     "browserify": "^16.5.0",
     "chai": "^4.2.0",
     "del": "^5.1.0",

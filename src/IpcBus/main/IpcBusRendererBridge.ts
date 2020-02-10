@@ -137,6 +137,10 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         throw 'not implemented';
     }
 
+    broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
+        this._broadcastMessage(null, ipcBusCommand, args);
+    }
+
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
         const rawContent = ipcPacketBuffer.getRawContent();
         this._broadcastMessage(null, ipcBusCommand, rawContent);
@@ -146,7 +150,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._broadcastMessage(null, ipcBusCommand, rawContent);
     }
 
-    private _broadcastMessage(webContents: Electron.WebContents | null, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
+    private _broadcastMessage<T>(webContents: Electron.WebContents | null, ipcBusCommand: IpcBusCommand, rawContent: T) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 if (webContents) {
