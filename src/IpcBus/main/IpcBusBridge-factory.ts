@@ -24,9 +24,9 @@ export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge 
                     if (logger.level === IpcBusLogConfig.Level.None) {
                         logger.level = IpcBusLogConfig.Level.Args;
                     }
-                    if (logger.argMaxContentLen < 0) {
-                        logger.argMaxContentLen = 255;
-                    }
+                    // if (logger.argMaxContentLen < 0) {
+                    //     logger.argMaxContentLen = 255;
+                    // }
                     IpcBusLog.SetLogLevelCVS(logger.level, process.env['ELECTRON_IPC_LOG_CSV'], logger.argMaxContentLen);
                 }
                 // For backward
@@ -34,9 +34,9 @@ export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge 
                     if (logger.level === IpcBusLogConfig.Level.None) {
                         logger.level = IpcBusLogConfig.Level.Args;
                     }
-                    if (logger.argMaxContentLen < 0) {
-                        logger.argMaxContentLen = 255;
-                    }
+                    // if (logger.argMaxContentLen < 0) {
+                    //     logger.argMaxContentLen = 255;
+                    // }
                     IpcBusLog.SetLogLevelJSON(logger.level, process.env['ELECTRON_IPC_LOG_JSON'], logger.argMaxContentLen);
                 }
                 if (logger.level > IpcBusLogConfig.Level.None) {

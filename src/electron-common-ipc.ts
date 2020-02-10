@@ -9,6 +9,8 @@ export * from './IpcBus/node/IpcBusClientNet';
 export * from './IpcBus/main/IpcBusBridge';
 export * from './IpcBus/main/IpcBusBridge-factory';
 
+export * from './IpcBus/service/IpcBusService-factory';
+
 export * from './IpcBus/log/IpcBusLog';
 export * from './IpcBus/log/IpcBusCSVLogger';
 export * from './IpcBus/log/IpcBusJSONLogger';
@@ -21,6 +23,8 @@ import './IpcBus/IpcBusClient-factory';
 import './IpcBus/node/IpcBusBroker-factory';
 /** @internal */
 import './IpcBus/main/IpcBusBridge-factory';
+/** @internal */
+import './IpcBus/service/IpcBusService-factory';
 /** @internal */
 import './IpcBus/node/IpcBusClientNet-factory';
 /** @internal */

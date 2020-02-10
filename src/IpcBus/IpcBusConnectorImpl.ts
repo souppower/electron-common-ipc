@@ -22,7 +22,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         };
 
         this._log = CreateIpcBusLog();
-        this._messageId = CreateUniqId();
+        this._messageId = `m_${this._process.type}.${CreateUniqId()}`
         this._messageCount = 0;
     }
 

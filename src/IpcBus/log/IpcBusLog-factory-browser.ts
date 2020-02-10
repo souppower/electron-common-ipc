@@ -10,3 +10,6 @@ export const CreateIpcBusLog = (): IpcBusLogConfig => {
     }
     return g_log;
 };
+
+const windowLocal = window as any;
+windowLocal.CreateIpcBusLog = CreateIpcBusLog

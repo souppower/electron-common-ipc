@@ -96,7 +96,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._connector = connector;
 
         this._peer = { 
-            id: IpcBusUtils.CreateUniqId(),
+            id: `t_${connector.process.type}.${IpcBusUtils.CreateUniqId()}`,
             name: 'IPCTransport',
             process: connector.process
         };
@@ -122,7 +122,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected createPeer(process: Client.IpcBusProcess, name?: string): Client.IpcBusPeer{
         ++IpcBusTransportImpl.s_clientNumber;
         const peer: Client.IpcBusPeer = { 
-            id: `${this._peer.id}.${IpcBusTransportImpl.s_clientNumber}`,
+            id: `c_${process.type}.${IpcBusUtils.CreateUniqId()}`,
             process,
             name: ''
         }
@@ -148,7 +148,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
         return name;
     }
-
 
     // We assume prior to call this function client is not empty and have listeners for this channel !!
     protected _onClientMessageReceived(client: IpcBusTransport.Client, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {

@@ -26,6 +26,7 @@ export class CSVLogger extends JSONLoggerBase {
             header: true,
             columns: [
                 { key: 'order', header: '#' },
+                { key: 'timestamp', header: 'timestamp' },
                 { key: 'channel', header: 'channel' },
                 { key: 'id', header: 'id' },
                 { key: 'kind', header: 'kind' },

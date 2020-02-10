@@ -23,29 +23,6 @@ export interface IpcBusBridgeClient {
     broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void;
 }
 
-// class IpcBusBridgeClientFake implements IpcBusBridgeClient {
-//     connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
-//         return Promise.resolve();
-//     }
-
-//     close(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-//         return Promise.resolve();
-//     }
-
-//     hasChannel(channel: string): boolean {
-//         return false;
-//     }
-
-//     broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void {
-//     }
-
-//     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
-//     }
-
-//     broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
-//     }
-// }
-
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
 export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {

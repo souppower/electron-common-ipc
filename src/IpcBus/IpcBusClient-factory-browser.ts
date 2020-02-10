@@ -4,7 +4,8 @@ import { IpcBusClient } from './IpcBusClient';
 
 // import { IpcBusClientRenderer } from './IpcBusClientRenderer';
 
-export const CreateIpcBusClient: IpcBusClient.CreateFunction = () => {
+const windowLocal = window as any;
+windowLocal.CreateIpcBusClient = () => {
     const windowLocal = window as any;
     if (windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.CreateIpcBusClient) {
         return windowLocal.ElectronCommonIpc.CreateIpcBusClient();
@@ -12,4 +13,4 @@ export const CreateIpcBusClient: IpcBusClient.CreateFunction = () => {
     return null;
 };
 
-IpcBusClient.Create = CreateIpcBusClient;
+IpcBusClient.Create = windowLocal.CreateIpcBusClient;
