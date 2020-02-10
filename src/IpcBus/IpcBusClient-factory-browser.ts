@@ -5,12 +5,13 @@ import { IpcBusClient } from './IpcBusClient';
 // import { IpcBusClientRenderer } from './IpcBusClientRenderer';
 
 const windowLocal = window as any;
-windowLocal.CreateIpcBusClient = () => {
-    const windowLocal = window as any;
+export const CreateIpcBusClient: IpcBusClient.CreateFunction = () => {
     if (windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.CreateIpcBusClient) {
         return windowLocal.ElectronCommonIpc.CreateIpcBusClient();
     }
     return null;
-};
+}
 
-IpcBusClient.Create = windowLocal.CreateIpcBusClient;
+windowLocal.CreateIpcBusClient = CreateIpcBusClient;
+
+IpcBusClient.Create = CreateIpcBusClient;

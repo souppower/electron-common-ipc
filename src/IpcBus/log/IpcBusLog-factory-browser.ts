@@ -12,4 +12,4 @@ export const CreateIpcBusLog = (): IpcBusLogConfig => {
 };
 
 const windowLocal = window as any;
-windowLocal.CreateIpcBusLog = CreateIpcBusLog
+windowLocal.CreateIpcBusLog = CreateIpcBusLog;
