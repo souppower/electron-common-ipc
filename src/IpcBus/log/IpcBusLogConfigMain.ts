@@ -37,11 +37,10 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
     }
 
     private buildMessage(logMessage: IpcBusCommand.Log, args?: any[], payload?: number): IpcBusLog.Message {
-
         let managed_args: any[] = undefined;
         if (this._level >= IpcBusLogConfig.Level.Args) {
             // We want full data
-            if (this._argMaxContentLen < 0) {
+            if (this._argMaxContentLen <= 0) {
                 managed_args = args;
             }
             else if (args) {
@@ -57,7 +56,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
             id: logMessage.id,
             peer: logMessage.peer,
             related_peer: logMessage.related_peer || logMessage.peer,
-            timestamp: logMessage.timestamp - this.baseTime,
+            timestamp: logMessage.timestamp - this._baseTime,
             local: logMessage.local,
             args: managed_args,
             payload

@@ -10,6 +10,7 @@ import { IpcBusLogConfig } from './IpcBusLogConfig';
 /** @internal */
 export interface JSONLog {
     order: number,
+    timestamp: number;
     channel?: string,
     id: string,
     kind: string,
@@ -37,6 +38,7 @@ export class JSONLoggerBase {
     addLog(trace: IpcBusLog.Trace): void {
         const jsonLog: JSONLog = {
             order: trace.order,
+            timestamp: trace.current.timestamp,
             channel: trace.first.channel,
             id: trace.id,
             kind: IpcBusLog.KindToStr(trace.current.kind),

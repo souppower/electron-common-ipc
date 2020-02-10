@@ -3,6 +3,7 @@
 var processId;
 var peerName;
 var processToMaster = null;
+var ipcBus;
 
 function doNewNodeProcess(event) {
     processToMaster.send('new-process', 'node');
@@ -278,6 +279,9 @@ ipcRenderer.on('initializeWindow', function (event, data) {
     processToMaster = new ProcessConnector('browser', ipcRenderer);
 
     processToMonitor = new ProcessConnector(args['type'], ipcRenderer, args['id']);
+
+    ipcBus = CreateIpcBusClient();
+
     if (args['type'] === 'browser') {
         processToMonitor.onRequestThen(onIPCBus_OnRequestThen);
         processToMonitor.onRequestCatch(onIPCBus_OnRequestCatch);

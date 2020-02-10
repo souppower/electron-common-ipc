@@ -31,7 +31,7 @@ export class IpcBusLogConfigImpl implements IpcBusLogConfig {
         const levelFromEnv = this.getLevelFromEnv();
         this._level = Math.max(IpcBusLogConfig.Level.None, levelFromEnv);
         const baseTimeFromEnv = this.getBaseTimeFromEnv();
-        this._baseTime = Math.max(this.hrnow, baseTimeFromEnv);
+        this._baseTime = Math.max(this.now, baseTimeFromEnv);
         const argMaxLenFromEnv = this.getArgMaxContentLenFromEnv();
         this._argMaxContentLen = Math.max(-1, argMaxLenFromEnv);
     }
@@ -62,7 +62,6 @@ export class IpcBusLogConfigImpl implements IpcBusLogConfig {
         return -1;
     }
 
-    
     protected getArgMaxContentLenFromEnv(): number {
         // In renderer process, there is no process object
         if (process && process.env) {
