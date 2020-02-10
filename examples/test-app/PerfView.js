@@ -5,7 +5,7 @@ var transaction = 1;
 var generateReportTimer;
 var generateReport = false;
 var noUpdate = false;
-var ipcBus;
+var ipcBus = CreateIpcBusClient();
 
 function doPerformance(type) {
     var bufferSize = 1024 * 1024;
@@ -213,7 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-ipcBus = CreateIpcBusClient();
 ipcBus.connect()
     .then(() => {
         console.log('renderer : connected to ipcBus');

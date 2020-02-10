@@ -71,7 +71,7 @@ export function CheckConnectOptions<T extends IpcConnectOptions>(arg1: T | strin
     return options;
 }
 
-shortid.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#*')
+shortid.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#&')
 export function CreateUniqId(): string {
     // return uuid.v1();
     return shortid.generate();

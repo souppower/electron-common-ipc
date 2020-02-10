@@ -122,7 +122,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected createPeer(process: Client.IpcBusProcess, name?: string): Client.IpcBusPeer{
         ++IpcBusTransportImpl.s_clientNumber;
         const peer: Client.IpcBusPeer = { 
-            id: `c_${process.type}.${IpcBusUtils.CreateUniqId()}`,
+            id: `${process.type}.${IpcBusUtils.CreateUniqId()}`,
             process,
             name: ''
         }
