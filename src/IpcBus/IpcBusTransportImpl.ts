@@ -132,6 +132,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     protected generateName(peer: Client.IpcBusPeer, name?: string) : string {
         if (name == null) {
+            // static part
             name = `${peer.process.type}`;
             if (peer.process.wcid) {
                 name += `-${peer.process.wcid}`;
@@ -140,8 +141,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 name += `-r${peer.process.rid}`;
             }
             if (peer.process.pid) {
-                name += `_p${peer.process.pid}`;
+                name += `-p${peer.process.pid}`;
             }
+            // dynamic part
             name += `.${IpcBusTransportImpl.s_clientNumber}`;
         }
         return name;

@@ -52,7 +52,8 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
 
     logMessageCreation(previousLog: IpcBusCommand.Log, ipcBusCommand: IpcBusCommand) {
         if (this._log.level >= IpcBusLogConfig.Level.Sent) {
-            const id = `${this._messageId}-${this._messageCount++}`;
+            // static part . dynamic part
+            const id = `${this._messageId}.${this._messageCount++}`;
             ipcBusCommand.log = {
                 id,
                 kind: ipcBusCommand.kind,
