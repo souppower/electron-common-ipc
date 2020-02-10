@@ -13,4 +13,5 @@ export interface IpcBusLogConfig {
     baseTime: number;
     now: number;
     hrnow: number;
+    argMaxContentLen: number;
 }

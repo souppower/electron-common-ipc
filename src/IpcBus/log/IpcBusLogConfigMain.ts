@@ -5,6 +5,7 @@ import { IpcBusLog } from './IpcBusLog';
 import { IpcBusLogConfigImpl } from './IpcBusLogConfigImpl';
 import { IpcBusLogConfig } from './IpcBusLogConfig';
 import { CreateIpcBusLog } from "./IpcBusLog-factory";
+import { CutData } from "./IpcBusLogUtils";
 
 /** @internal */
 export interface IpcBusLogMain extends IpcBusLogConfig {
@@ -36,6 +37,21 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
     }
 
     private buildMessage(logMessage: IpcBusCommand.Log, args?: any[], payload?: number): IpcBusLog.Message {
+
+        let managed_args: any[] = undefined;
+        if (this._level >= IpcBusLogConfig.Level.Args) {
+            // We want full data
+            if (this._argMaxContentLen < 0) {
+                managed_args = args;
+            }
+            else if (args) {
+                managed_args = [];
+                for (let i = 0, l = args.length; i < l; ++i) {
+                    managed_args.push(CutData(args[i], this._argMaxContentLen));
+                }
+            }
+        }
+
         const command = logMessage.command;
         const message: Partial<IpcBusLog.Message> = {
             id: logMessage.id,
@@ -43,7 +59,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
             related_peer: logMessage.related_peer || logMessage.peer,
             timestamp: logMessage.timestamp - this.baseTime,
             local: logMessage.local,
-            args: (this._level & IpcBusLogConfig.Level.Args) ? args : undefined,
+            args: managed_args,
             payload
         };
 
@@ -138,10 +154,11 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
     }
 }
 
-IpcBusLog.SetLogLevel = (level: IpcBusLogConfig.Level, cb?: IpcBusLog.Callback): void => {
+IpcBusLog.SetLogLevel = (level: IpcBusLogConfig.Level, cb: IpcBusLog.Callback, argContentLen?: number): void => {
     const logger = CreateIpcBusLog() as IpcBusLogMain;
     logger.level = level;
     logger.setCallback(cb);
+    logger.argMaxContentLen = argContentLen;
 }
 
 

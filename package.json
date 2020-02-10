@@ -43,6 +43,7 @@
     "electron-process-type": "^4.1.0",
     "fs-extra": "^8.1.0",
     "json-helpers": "^2.1.0",
+    "shortid": "^2.2.15",
     "socket-serializer": "^4.0.3",
     "uuid": "^3.3.3",
     "winston": "^2.4.1"
@@ -50,6 +51,7 @@
   "devDependencies": {
     "@types/fs-extra": "^8.0.1",
     "@types/node": "^12.4.0",
+    "@types/shortid": "0.0.29",
     "@types/uuid": "3.4.5",
     "@types/winston": "^2.3.9",
     "browserify": "^16.5.0",

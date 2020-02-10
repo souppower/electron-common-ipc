@@ -115,12 +115,12 @@ export class JSONLogger extends JSONLoggerBase {
 }
 
 let jsonLogger: JSONLogger;
-IpcBusLog.SetLogLevelJSON = (level: IpcBusLogConfig.Level, filename: string): void => {
+IpcBusLog.SetLogLevelJSON = (level: IpcBusLogConfig.Level, filename: string, argContentLen?: number): void => {
     if (level >= IpcBusLogConfig.Level.None) {
         if (jsonLogger == null) {
             jsonLogger = new JSONLogger(filename);
             const cb = jsonLogger.addLog.bind(jsonLogger);
-            IpcBusLog.SetLogLevel(level, cb);
+            IpcBusLog.SetLogLevel(level, cb, argContentLen);
         }
     }
     else {

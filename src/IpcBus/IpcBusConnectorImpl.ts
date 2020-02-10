@@ -1,11 +1,10 @@
-import * as uuid from 'uuid';
-
 // import { IpcPacketBuffer } from 'socket-serializer';
 import { IpcBusConnector } from './IpcBusConnector';
 import { IpcBusCommand } from './IpcBusCommand';
 import * as Client from './IpcBusClient';
 import { IpcBusLogConfig } from './log/IpcBusLogConfig';
 import { CreateIpcBusLog } from './log/IpcBusLog-factory';
+import { CreateUniqId } from './IpcBusUtils';
 
 // Implementation for renderer process
 /** @internal */
@@ -23,7 +22,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         };
 
         this._log = CreateIpcBusLog();
-        this._messageId = uuid.v1();
+        this._messageId = CreateUniqId();
         this._messageCount = 0;
     }
 
@@ -52,7 +51,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     }
 
     logMessageCreation(previousLog: IpcBusCommand.Log, ipcBusCommand: IpcBusCommand) {
-        if (this._log.level & IpcBusLogConfig.Level.Sent) {
+        if (this._log.level >= IpcBusLogConfig.Level.Sent) {
             const id = `${this._messageId}-${this._messageCount++}`;
             ipcBusCommand.log = {
                 id,
@@ -70,7 +69,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     }
 
     logLocalResponse(previousLog: IpcBusCommand.Log, ipcBusCommandResponse: IpcBusCommand, argsResponse?: any[]) {
-        if (this._log.level & IpcBusLogConfig.Level.Sent) {
+        if (this._log.level >= IpcBusLogConfig.Level.Sent) {
             // Clone first level
             const ipcBusCommandLog: IpcBusCommand = Object.assign({}, ipcBusCommandResponse);
             ipcBusCommandLog.kind = IpcBusCommand.Kind.LogRequestResponse;

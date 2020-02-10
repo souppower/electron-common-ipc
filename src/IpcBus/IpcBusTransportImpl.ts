@@ -1,4 +1,3 @@
-import * as uuid from 'uuid';
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as Client from './IpcBusClient';
@@ -80,6 +79,7 @@ class DeferredRequestPromise {
 /** @internal */
 export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConnector.Client {
     private static s_requestNumber: number = 0;
+    private static s_clientNumber: number = 0;
 
     protected _connector: IpcBusConnector;
 
@@ -95,7 +95,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     constructor(connector: IpcBusConnector) {
         this._connector = connector;
 
-        this._peer = { id: uuid.v1(), name: '', process: connector.process };
+        this._peer = { 
+            id: IpcBusUtils.CreateUniqId(),
+            name: 'IPCTransport',
+            process: connector.process
+        };
         this._requestFunctions = new Map<string, DeferredRequestPromise>();
         this._packetDecoder = new IpcPacketBuffer();
         this._postCommandBind = () => { };
@@ -112,22 +116,37 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     protected static generateReplyChannel(peer: Client.IpcBusPeer): string {
         ++IpcBusTransportImpl.s_requestNumber;
-        return `${replyChannelPrefix}${peer.id}-${IpcBusTransportImpl.s_requestNumber.toString()}`;
+        return `${replyChannelPrefix}${peer.id}-${IpcBusTransportImpl.s_requestNumber}`;
     }
 
-    protected static generateName(peer: Client.IpcBusPeer): string {
-        let name = `${peer.process.type}`;
-        if (peer.process.wcid) {
-            name += `-${peer.process.wcid}`;
+    protected createPeer(process: Client.IpcBusProcess, name?: string): Client.IpcBusPeer{
+        ++IpcBusTransportImpl.s_clientNumber;
+        const peer: Client.IpcBusPeer = { 
+            id: `${this._peer.id}.${IpcBusTransportImpl.s_clientNumber}`,
+            process,
+            name: ''
         }
-        if (peer.process.rid && (peer.process.rid !== peer.process.wcid)) {
-            name += `-r${peer.process.rid}`;
-        }
-        if (peer.process.pid) {
-            name += `_p${peer.process.pid}`;
+        peer.name = this.generateName(peer, name);
+        return peer;
+    }
+
+    protected generateName(peer: Client.IpcBusPeer, name?: string) : string {
+        if (name == null) {
+            name = `${peer.process.type}`;
+            if (peer.process.wcid) {
+                name += `-${peer.process.wcid}`;
+            }
+            if (peer.process.rid && (peer.process.rid !== peer.process.wcid)) {
+                name += `-r${peer.process.rid}`;
+            }
+            if (peer.process.pid) {
+                name += `_p${peer.process.pid}`;
+            }
+            name += `.${IpcBusTransportImpl.s_clientNumber}`;
         }
         return name;
     }
+
 
     // We assume prior to call this function client is not empty and have listeners for this channel !!
     protected _onClientMessageReceived(client: IpcBusTransport.Client, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
@@ -333,8 +352,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return this._connectCloseState.connect(() => {
             return this._connector.handshake(this, options)
                 .then((handshake) => {
-                    const peer = { id: uuid.v1(), name: '', process: handshake.process };
-                    peer.name = options.peerName || IpcBusTransportImpl.generateName(peer);
+                    const peer = this.createPeer(handshake.process, options.peerName);
                     this._logActivate = handshake.logLevel > 0;
                     this._postCommandBind = this._connector.postCommand.bind(this._connector);
                     return peer;

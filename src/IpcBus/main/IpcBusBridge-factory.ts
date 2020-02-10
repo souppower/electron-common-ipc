@@ -17,15 +17,28 @@ export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge 
         const electronProcessType = GetElectronProcessType();
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBridge process type = ${electronProcessType}`);
         switch (electronProcessType) {
-            case 'main':
-                // For backward
-                if (process.env['ELECTRON_IPC_LOG'] && process.env['ELECTRON_IPC_LOG_CSV']) {
-                    IpcBusLog.SetLogLevelCVS(Number(process.env['ELECTRON_IPC_LOG']), process.env['ELECTRON_IPC_LOG_CSV']);
-                }
-                if (process.env['ELECTRON_IPC_LOG'] && process.env['ELECTRON_IPC_LOG_JSON']) {
-                    IpcBusLog.SetLogLevelJSON(Number(process.env['ELECTRON_IPC_LOG']), process.env['ELECTRON_IPC_LOG_JSON']);
-                }
+            case 'main': {
                 const logger = CreateIpcBusLog() as IpcBusLogMain;
+                // For backward
+                if (process.env['ELECTRON_IPC_LOG_CSV']) {
+                    if (logger.level === IpcBusLogConfig.Level.None) {
+                        logger.level = IpcBusLogConfig.Level.Args;
+                    }
+                    if (logger.argMaxContentLen < 0) {
+                        logger.argMaxContentLen = 255;
+                    }
+                    IpcBusLog.SetLogLevelCVS(logger.level, process.env['ELECTRON_IPC_LOG_CSV'], logger.argMaxContentLen);
+                }
+                // For backward
+                if (process.env['ELECTRON_IPC_LOG_JSON']) {
+                    if (logger.level === IpcBusLogConfig.Level.None) {
+                        logger.level = IpcBusLogConfig.Level.Args;
+                    }
+                    if (logger.argMaxContentLen < 0) {
+                        logger.argMaxContentLen = 255;
+                    }
+                    IpcBusLog.SetLogLevelJSON(logger.level, process.env['ELECTRON_IPC_LOG_JSON'], logger.argMaxContentLen);
+                }
                 if (logger.level > IpcBusLogConfig.Level.None) {
                     g_bridge = new IpcBusBridgeLogger(electronProcessType, logger);
                 }
@@ -33,6 +46,7 @@ export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge 
                     g_bridge = new IpcBusBridgeImpl(electronProcessType);
                 }
                 break;
+            }
             // not supported process
             case 'renderer':
             case 'node':

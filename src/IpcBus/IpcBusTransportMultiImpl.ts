@@ -45,7 +45,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         .then((peer) => {
             if (this._subscriptions == null) {
                 this._subscriptions = new IpcBusUtils.ChannelConnectionMap<IpcBusTransport.Client, string>(
-                    `IPCBus:Transport-${IpcBusTransportImpl.generateName(this._peer)}`,
+                    this._peer.name,
                     (conn) => conn.peer.id,
                     true);
                 this._subscriptions.on('channel-added', (channel) => {

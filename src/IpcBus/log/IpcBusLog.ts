@@ -61,7 +61,7 @@ export namespace IpcBusLog {
         (trace: Trace): void;
     }
 
-    export let SetLogLevel: (level: IpcBusLogConfig.Level, cb?: IpcBusLog.Callback) => void;
-    export let SetLogLevelJSON: (level: IpcBusLogConfig.Level, filename: string) => void;
-    export let SetLogLevelCVS: (level: IpcBusLogConfig.Level, filename: string) => void;
+    export let SetLogLevel: (level: IpcBusLogConfig.Level, cb: IpcBusLog.Callback, argContentLen?: number) => void;
+    export let SetLogLevelJSON: (level: IpcBusLogConfig.Level, filename: string, argContentLen?: number) => void;
+    export let SetLogLevelCVS: (level: IpcBusLogConfig.Level, filename: string, argContentLen?: number) => void;
 }

@@ -2,6 +2,7 @@ import { IpcBusLogConfig } from './IpcBusLogConfig';
 
 const LogLevelEnv = 'ELECTRON_IPC_LOG_LEVEL';
 const LogBaseTimeEnv = 'ELECTRON_IPC_LOG_BASE_TIME';
+const ArgMaxContentLenEnv = 'ELECTRON_IPC_LOG_ARG_MAX_CONTENT_LEN';
 
 let performanceNode: any;
 try {
@@ -24,12 +25,15 @@ const performanceNow =
 export class IpcBusLogConfigImpl implements IpcBusLogConfig {
     protected _level: IpcBusLogConfig.Level;
     protected _baseTime: number;
+    protected _argMaxContentLen: number;
 
     constructor() {
         const levelFromEnv = this.getLevelFromEnv();
         this._level = Math.max(IpcBusLogConfig.Level.None, levelFromEnv);
         const baseTimeFromEnv = this.getBaseTimeFromEnv();
         this._baseTime = Math.max(this.hrnow, baseTimeFromEnv);
+        const argMaxLenFromEnv = this.getArgMaxContentLenFromEnv();
+        this._argMaxContentLen = Math.max(-1, argMaxLenFromEnv);
     }
 
     protected getLevelFromEnv(): number {
@@ -53,6 +57,19 @@ export class IpcBusLogConfigImpl implements IpcBusLogConfig {
             if (baseTimeAny != null) {
                 const baseline = Number(baseTimeAny);
                 return baseline;
+            }
+        }
+        return -1;
+    }
+
+    
+    protected getArgMaxContentLenFromEnv(): number {
+        // In renderer process, there is no process object
+        if (process && process.env) {
+            const argMaxContentLenAny = process.env[ArgMaxContentLenEnv];
+            if (argMaxContentLenAny != null) {
+                const argMaxContentLen = Number(argMaxContentLenAny);
+                return argMaxContentLen;
             }
         }
         return -1;
@@ -87,5 +104,16 @@ export class IpcBusLogConfigImpl implements IpcBusLogConfig {
             process.env[LogBaseTimeEnv] = baseTime.toString();
         }
         this._baseTime = baseTime;
+    }
+
+    set argMaxContentLen(argMaxContentLen: number) {
+        if (process && process.env) {
+            process.env[ArgMaxContentLenEnv] = argMaxContentLen.toString();
+        }
+        this._argMaxContentLen = argMaxContentLen;
+    }
+
+    get argMaxContentLen(): number {
+        return this._argMaxContentLen;
     }
 }

@@ -7,8 +7,6 @@ const CVS_stringify = require('csv-stringify')
 import { IpcBusLog } from './IpcBusLog';
 import { IpcBusLogConfig } from './IpcBusLogConfig';
 import { JSONLoggerBase, JSONLog } from './IpcBusJSONLogger';
-import { JSON_stringify_object } from './IpcBusLogUtils';
-
 
 /** @internal */
 export class CSVLogger extends JSONLoggerBase {
@@ -25,7 +23,6 @@ export class CSVLogger extends JSONLoggerBase {
         catch (_) {}
 
         const options: any = {
-            // delimiter: '\t',
             header: true,
             columns: [
                 { key: 'order', header: '#' },
@@ -40,30 +37,13 @@ export class CSVLogger extends JSONLoggerBase {
                 { key: 'request', header: 'request' },
                 { key: 'payload', header: 'payload' },
                 { key: 'arg0', header: 'arg0' },
-                { key: 'arg1', header: 'arg0' },
-                { key: 'arg2', header: 'arg0' },
-                { key: 'arg3', header: 'arg0' },
-                { key: 'arg4', header: 'arg0' },
-                { key: 'arg5', header: 'arg0' }
+                { key: 'arg1', header: 'arg1' },
+                { key: 'arg2', header: 'arg2' },
+                { key: 'arg3', header: 'arg3' },
+                { key: 'arg4', header: 'arg4' },
+                { key: 'arg5', header: 'arg5' }
             ]
         };
-
-        const columLengthMax = 255;
-        if (columLengthMax > 0) {
-            const cast: any = options.cast = {};
-            cast.string = (value: string) => {
-                if (value.length > columLengthMax) {
-                    return value.substr(0, columLengthMax) + '\'__cut__\'';
-                }
-                else {
-                    return value;
-                }
-            };
-            cast.object = (value: any) => {
-                let output: string = '';
-                return JSON_stringify_object(value, columLengthMax, output)
-            };
-        }
 
         this._stringifyer = CVS_stringify(options);
         this._stringifyer.pipe(fse.createWriteStream(filename, { highWaterMark: 1024 }));
@@ -78,12 +58,12 @@ export class CSVLogger extends JSONLoggerBase {
 }
 
 let cvsLogger: CSVLogger;
-IpcBusLog.SetLogLevelCVS = (level: IpcBusLogConfig.Level, filename: string): void => {
+IpcBusLog.SetLogLevelCVS = (level: IpcBusLogConfig.Level, filename: string, argContentLen?: number): void => {
     if (level >= IpcBusLogConfig.Level.None) {
         if (cvsLogger == null) {
             cvsLogger = new CSVLogger(filename);
             const cb = cvsLogger.addLog.bind(cvsLogger);
-            IpcBusLog.SetLogLevel(level, cb);
+            IpcBusLog.SetLogLevel(level, cb, argContentLen);
         }
     }
     else {

@@ -72,7 +72,8 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                     this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, onIpcConnect);
                     this.addClient(client);
                     const handshake = this._onConnect(eventOrPeer, peerOrArgs, handshakeArg);
-                    this._process = handshake.process;
+                    // Keep the this._process ref intact as shared with client peers
+                    this._process = Object.assign(this._process, handshake.process);
                     this._log.level = handshake.logLevel;
                     clearTimeout(timer);
                     resolve(handshake);

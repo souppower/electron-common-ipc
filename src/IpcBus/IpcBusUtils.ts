@@ -1,3 +1,6 @@
+// import * as uuid from 'uuid';
+import * as shortid from 'shortid';
+
 import { EventEmitter } from 'events';
 
 import { IpcConnectOptions, IpcBusPeer } from './IpcBusClient';
@@ -66,6 +69,12 @@ export function CheckConnectOptions<T extends IpcConnectOptions>(arg1: T | strin
         options.timeoutDelay = IPC_BUS_TIMEOUT;
     }
     return options;
+}
+
+shortid.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#%')
+export function CreateUniqId(): string {
+    // return uuid.v1();
+    return shortid.generate();
 }
 
 export function BinarySearch<T>(array: T[], target: T, compareFn: (l: T, r: T) => number) {
