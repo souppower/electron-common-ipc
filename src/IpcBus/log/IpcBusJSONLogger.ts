@@ -90,7 +90,7 @@ export class JSONLoggerBase {
 
 /** @internal */
 export class JSONLogger extends JSONLoggerBase {
-    private _winstonLogger: winston.LoggerInstance;
+    private _winstonLogger: winston.Logger;
 
     constructor(logPath: string) {
         super();
@@ -102,7 +102,7 @@ export class JSONLogger extends JSONLoggerBase {
         }
         catch (_) {}
 
-        this._winstonLogger = new (winston.Logger)({
+        this._winstonLogger = winston.createLogger({
             transports: [
                 new (winston.transports.File)({
                     filename
