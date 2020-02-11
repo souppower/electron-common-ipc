@@ -153,9 +153,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected _onClientMessageReceived(client: IpcBusTransport.Client, local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
         const listeners = client.listeners(ipcBusCommand.channel);
-        let logMessage: IpcBusCommand.Log;
+        let logGetMessage: IpcBusCommand.Log;
         if (this._logActivate) {
-            logMessage = this._connector.logMessageReceived(client.peer, local, ipcBusCommand, args);
+            logGetMessage = this._connector.logMessageReceived(client.peer, local, ipcBusCommand, args);
         }
         const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
         if (ipcBusCommand.request) {
@@ -179,15 +179,15 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
                         this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
                         // Send the local response to log
-                        if (logMessage) {
-                            this._connector.logLocalResponse(logMessage, ipcBusCommandResponse, argsResponse);
+                        if (logGetMessage) {
+                            this._connector.logLocalResponse(logGetMessage, ipcBusCommandResponse, argsResponse);
                         }
                         deferredRequest.settled(ipcBusCommandResponse, argsResponse);
                     }
                 }
                 else {
-                    if (logMessage) {
-                        this._connector.logMessageCreation(logMessage, ipcBusCommandResponse);
+                    if (logGetMessage) {
+                        this._connector.logMessageCreation(logGetMessage, ipcBusCommandResponse);
                     } 
                     this.postMessage(ipcBusCommandResponse, argsResponse);
                 }
