@@ -130,7 +130,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         }
         trace.first = trace.stack[trace.stack.length - 1];
         trace.current = trace.stack[0];
-        const subOrder = trace.current.kind >= IpcBusLog.Kind.SEND_REQUEST ? trace.current.kind - 2 : trace.current.kind;
+        const subOrder = trace.current.kind >= IpcBusLog.Kind.SEND_REQUEST ? trace.current.kind - IpcBusLog.Kind.SEND_REQUEST : trace.current.kind;
         trace.id = `${trace.first.id}_${String.fromCharCode(97 + subOrder)}`;
 
         this._cb(trace as IpcBusLog.Trace);
