@@ -208,11 +208,12 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
     }
 
-    onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+    // IpcConnectorClient~getArgs
+    onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[], getArgs?: () => any[]) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 if (this.hasChannel(ipcBusCommand.channel)) {
-                    const args = ipcPacketBuffer.parseArrayAt(1);
+                    args = args || getArgs();
                     this.onMessageReceived(false, ipcBusCommand, args);
                 }
                 break;
@@ -220,9 +221,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             case IpcBusCommand.Kind.RequestResponse: {
                 const deferredRequest = this._requestFunctions.get(ipcBusCommand.channel);
                 if (deferredRequest) {
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
+                    args = args || getArgs();
+                    // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
                     this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
-                    const args = ipcPacketBuffer.parseArrayAt(1);
                     if (this._logActivate) {
                         this._connector.logMessageReceived(deferredRequest.client.peer, false, ipcBusCommand, args);
                     }
@@ -233,33 +234,21 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
     }
 
-    // We have to simulate a fake first parameter as this function can be called from an Electron ipc with an event
-    // or directly from our code.
-    onConnectorBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
-        switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.SendMessage: {
-                if (this.hasChannel(ipcBusCommand.channel)) {
-                    this._packetDecoder.setRawContent(rawContent);
-                    const args = this._packetDecoder.parseArrayAt(1);
-                    this.onMessageReceived(false, ipcBusCommand, args);
-                }
-                break;
-            }
-            case IpcBusCommand.Kind.RequestResponse: {
-                const deferredRequest = this._requestFunctions.get(ipcBusCommand.channel);
-                if (deferredRequest) {
-                    IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit request response received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name} (replyChannel '${ipcBusCommand.request.replyChannel}')`);
-                    this._requestFunctions.delete(ipcBusCommand.channel);
-                    this._packetDecoder.setRawContent(rawContent);
-                    const args = this._packetDecoder.parseArrayAt(1);
-                    if (this._logActivate) {
-                        this._connector.logMessageReceived(deferredRequest.client.peer, false, ipcBusCommand, args);
-                    }
-                    deferredRequest.settled(ipcBusCommand, args);
-                }
-                break;
-            }
-        }
+    // IpcConnectorClient
+    onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+        const getArgs = () => {
+            return ipcPacketBuffer.parseArrayAt(1);
+        };
+        return this.onConnectorArgsReceived(ipcBusCommand, undefined, getArgs);
+    }
+
+    // IpcConnectorClient
+    onConnectorBufferReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
+        const getArgs = () => {
+            this._packetDecoder.setRawContent(rawContent);
+            return this._packetDecoder.parseArrayAt(1);
+        };
+        return this.onConnectorArgsReceived(ipcBusCommand, undefined, getArgs);
     }
 
     // IpcConnectorClient
@@ -380,7 +369,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     abstract hasChannel(channel: string): boolean;
     // abstract getChannels(): string[];
-    abstract onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): void;
+    protected abstract onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): void;
 
     abstract addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
     abstract removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;

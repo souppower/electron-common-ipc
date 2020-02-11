@@ -10,13 +10,15 @@ export namespace IpcBusConnector {
     export interface Handshake {
         process: Client.IpcBusProcess;
         logLevel: IpcBusLogConfig.Level;
+        noSerialization?: boolean;
     }
 
     /** @internal */
     export interface Client {
         peer: Client.IpcBusPeer;
         onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void;
-        onConnectorBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void;
+        onConnectorBufferReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void;
+        onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]): void;
         onConnectorShutdown(): void;
     }
 }

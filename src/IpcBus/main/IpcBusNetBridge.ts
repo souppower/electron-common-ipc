@@ -89,7 +89,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         throw 'not implemented';
     }
 
-    onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): void {
+    protected onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): void {
         throw 'not implemented';
     }
 
@@ -153,7 +153,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         }
     }
 
-    onConnectorBufferReceived(__ignore__: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
+    onConnectorBufferReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
         throw 'not implemented';
     }
 
@@ -165,9 +165,12 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
 export class IpcBusNetBridge implements IpcBusBridgeClient {
     protected _bridge: IpcBusBridgeImpl;
     protected _transport: IpcBusTransportNetBridge;
+    protected _packet: IpcPacketBuffer;
 
     constructor(bridge: IpcBusBridgeImpl) {
         this._bridge = bridge;
+
+        this._packet = new IpcPacketBuffer();
         const connector = new IpcBusConnectorNet('main');
         this._transport = new IpcBusTransportNetBridge(connector, bridge);
     }
@@ -183,6 +186,19 @@ export class IpcBusNetBridge implements IpcBusBridgeClient {
 
     hasChannel(channel: string): boolean {
         return this._transport.hasChannel(channel);
+    }
+
+    broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
+        if (this.hasChannel(ipcBusCommand.channel)) {
+            ipcBusCommand.bridge = true;
+            if (args) {
+                this._packet.serializeArray([ipcBusCommand, args]);
+            }
+            else {
+                this._packet.serializeArray([ipcBusCommand]);
+            }
+            this.broadcastBuffer(ipcBusCommand, this._packet.buffer);
+        }
     }
 
     broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {

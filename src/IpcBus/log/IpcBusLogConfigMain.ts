@@ -140,14 +140,14 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
     addLogRawContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
         if (ipcBusCommand.log) {
             this._packet.setRawContent(rawContent);
-            this.addLog(ipcBusCommand, this._packet.parseArrayAt(1), this._packet.buffer.length);
+            return this.addLog(ipcBusCommand, this._packet.parseArrayAt(1), this._packet.buffer.length);
         }
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }
 
     addLogPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean {
         if (ipcBusCommand.log) {
-            this.addLog(ipcBusCommand, ipcPacketBuffer.parseArrayAt(1), ipcPacketBuffer.buffer.length);
+            return this.addLog(ipcBusCommand, ipcPacketBuffer.parseArrayAt(1), ipcPacketBuffer.buffer.length);
         }
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }

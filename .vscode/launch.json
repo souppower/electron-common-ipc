@@ -22,6 +22,7 @@
             "args": [],
             "cwd": "${workspaceRoot}/examples/test-app/",
             "runtimeExecutable": "${workspaceRoot}/examples/test-app/node_modules/electron/dist/electron.exe",
+            "_runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
             "runtimeArgs": [
                 // "--enable-sandbox",
                 // "--inspect-brk=50000",

@@ -25,6 +25,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
 
     private _onIpcEventReceived: (...args: any[]) => void;
     private _packetOut: IpcPacketBuffer;
+    private _noSerialization: boolean;
 
     protected _connectCloseState: IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>;
 
@@ -49,14 +50,32 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         // In sandbox mode, 1st parameter is no more the event, but directly arguments !!!
         if (handshakeArg) {
             const handshake = handshakeArg;
-            this._onIpcEventReceived = this._client.onConnectorBufferReceived.bind(this._client);
+            if (handshake.noSerialization) {
+                this._onIpcEventReceived = (event, ipcBusCommand, args) => {
+                    this._client.onConnectorArgsReceived(ipcBusCommand, args);
+                };
+            }
+            else {
+                this._onIpcEventReceived = (event, ipcBusCommand, rawContent) => {
+                    this._client.onConnectorBufferReceived(ipcBusCommand, rawContent);
+                };
+            }
             this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             return handshake;
         }
         else {
             const handshake = peerOrArgs as IpcBusConnector.Handshake;
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._messageId}`);
-            this._onIpcEventReceived = this._client.onConnectorBufferReceived.bind(this._client, undefined);
+            if (handshake.noSerialization) {
+                this._onIpcEventReceived = (ipcBusCommand, args) => {
+                    this._client.onConnectorArgsReceived(ipcBusCommand, args);
+                };
+            }
+            else {
+                this._onIpcEventReceived = (ipcBusCommand, rawContent) => {
+                    this._client.onConnectorBufferReceived(ipcBusCommand, rawContent);
+                 };
+             }
             this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             return handshake;
         }
@@ -75,6 +94,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                     // Keep the this._process ref intact as shared with client peers
                     this._process = Object.assign(this._process, handshake.process);
                     this._log.level = handshake.logLevel;
+                    this._noSerialization = handshake.noSerialization;
                     clearTimeout(timer);
                     resolve(handshake);
                 };
@@ -111,14 +131,18 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         ipcBusCommand.bridge = true;
-        // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
-        if (args) {
-            this._packetOut.serializeArray([ipcBusCommand, args]);
+        if (this._noSerialization) {
+            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, args);
         }
         else {
-            this._packetOut.serializeArray([ipcBusCommand]);
+            if (args) {
+                this._packetOut.serializeArray([ipcBusCommand, args]);
+            }
+            else {
+                this._packetOut.serializeArray([ipcBusCommand]);
+            }
+            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, this._packetOut.getRawContent());
         }
-        this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, this._packetOut.getRawContent());
     }
 
     postBuffer(buffer: Buffer) {

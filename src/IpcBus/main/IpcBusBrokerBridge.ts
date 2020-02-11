@@ -9,11 +9,13 @@ import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 /** @internal */
 export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridgeClient {
     private _bridge: IpcBusBridgeImpl;
+    protected _packet: IpcPacketBuffer;
 
     constructor(contextType: Client.IpcBusProcessType, bridge: IpcBusBridgeImpl) {
         super(contextType);
 
         this._bridge = bridge;
+        this._packet = new IpcPacketBuffer();
     }
 
     hasChannel(channel: string) {
@@ -26,6 +28,19 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
 
     close(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         return super.close(options);
+    }
+
+    broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
+        if (this.hasChannel(ipcBusCommand.channel)) {
+            ipcBusCommand.bridge = true;
+            if (args) {
+                this._packet.serializeArray([ipcBusCommand, args]);
+            }
+            else {
+                this._packet.serializeArray([ipcBusCommand]);
+            }
+            this.broadcastBuffer(ipcBusCommand, this._packet.buffer);
+        }
     }
 
     broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
