@@ -42,7 +42,7 @@ export class IpcBusLogConfigImpl implements IpcBusLogConfig {
             const levelAny = process.env[LogLevelEnv];
             if (levelAny != null) {
                 let level = Number(levelAny);
-                level = Math.min(level, IpcBusLogConfig.Level.Args);
+                level = Math.min(level, IpcBusLogConfig.Level.GetArgs);
                 level = Math.max(level, IpcBusLogConfig.Level.None);
                 return level;
             }

@@ -2,8 +2,9 @@ export namespace IpcBusLogConfig {
     export enum Level {
         None = 0,
         Sent = 1,
-        Received = 2,
-        Args = 4
+        Get = 2,
+        SentArgs = 4,
+        GetArgs = 8,
     }
 }
 

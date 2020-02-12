@@ -38,7 +38,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
 
     private buildMessage(logMessage: IpcBusCommand.Log, args?: any[], payload?: number): IpcBusLog.Message {
         let managed_args: any[] = undefined;
-        if (this._level >= IpcBusLogConfig.Level.Args) {
+        if (this._level >= IpcBusLogConfig.Level.SentArgs) {
             // We want full data
             if (this._argMaxContentLen <= 0) {
                 managed_args = args;

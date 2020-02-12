@@ -31,7 +31,7 @@
             ],
             "env": {
                 // "ELECTRON_IPC_BROKER_LOG_CSV": "c:\\temp\\ipc-log",
-                "ELECTRON_IPC_LOG": "7",
+                "ELECTRON_IPC_LOG_LEVEL": "15",
                 "ELECTRON_IPC_LOG_CSV": "c:\\temp\\ipc-log",
                 "ELECTRON_IPC_LOG_ARG_MAX_CONTENT_LEN": "255",
                 // "ELECTRON_IPC_LOG_JSON": "c:\\temp\\ipc-log",
