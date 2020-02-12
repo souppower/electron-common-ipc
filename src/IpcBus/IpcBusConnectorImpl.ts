@@ -66,7 +66,9 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
                 ipcBusCommand.log.related_peer = previousLog.peer;
                 previousLog = previousLog.previous;
             }
+            return ipcBusCommand.log;
         }
+        return null;
     }
 
     logLocalResponse(previousLog: IpcBusCommand.Log, ipcBusCommandResponse: IpcBusCommand, argsResponse?: any[]) {

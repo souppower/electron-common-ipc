@@ -306,8 +306,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             peer: client.peer,
             request: ipcBusCommandRequest
         }
+        let logCloseMessage: IpcBusCommand.Log;
         if (this._logActivate) {
-            this._connector.logMessageCreation(null, ipcMessage);
+            logCloseMessage = this._connector.logMessageCreation(null, ipcMessage);
         }
         // Broadcast locally
         if (this.hasChannel(channel)) {
@@ -326,8 +327,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                             peer: client.peer,
                             request: ipcBusCommandRequest
                         };
-                        if (this._logActivate) {
-                            this._connector.logMessageCreation(null, ipcMessageClose);
+                        if (logCloseMessage) {
+                            this._connector.logMessageCreation(logCloseMessage, ipcMessageClose);
                         }
                         this.postMessage(ipcMessageClose);
                     }
