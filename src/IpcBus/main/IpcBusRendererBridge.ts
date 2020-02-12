@@ -48,6 +48,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         else {
             this._rendererCallback = this._onRendererRawContentReceived.bind(this);
         }
+        this._onRendererHandshake = this._onRendererHandshake.bind(this);
     }
 
     hasChannel(channel: string): boolean {
@@ -58,12 +59,15 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         // To manage re-entrance
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._rendererCallback);
         this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._rendererCallback);
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererHandshake);
+        this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererHandshake);
 
         return Promise.resolve();
     }
 
     close(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
-        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._rendererCallback);
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererHandshake);
+        this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererHandshake);
         return Promise.resolve();
     }
 
@@ -80,7 +84,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     // This is coming from the Electron Renderer Proces/s (Electron ipc)
     // =================================================================================================
-    private _completePeerInfo(webContents: Electron.WebContents, peer: Client.IpcBusPeer): IpcBusConnector.Handshake {
+    private _getHandshake(webContents: Electron.WebContents, peer: Client.IpcBusPeer): IpcBusConnector.Handshake {
         const logger = CreateIpcBusLog();
 
         const handshake: IpcBusConnector.Handshake = {
@@ -106,9 +110,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return handshake;
     }
 
-    private _onRendererHandshake(webContents: Electron.WebContents, ipcBusCommand: IpcBusCommand): void {
-        const ipcBusPeer = ipcBusCommand.peer;
-        const handshake = this._completePeerInfo(webContents, ipcBusPeer);
+    private _onRendererHandshake(event: any, ipcBusPeer: Client.IpcBusPeer): void {
+        const webContents: Electron.WebContents = event.sender;
+        const handshake = this._getHandshake(webContents, ipcBusPeer);
 
         // if we have several clients within the same webcontents, the callback may be called several times !
         webContents.addListener('destroyed', () => {
@@ -185,12 +189,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         }
     }
 
-    _onRendererAdmindReceived(webContents: Electron.WebContents, ipcBusCommand: IpcBusCommand): boolean {
+    private _onRendererAdmindReceived(webContents: Electron.WebContents, ipcBusCommand: IpcBusCommand): boolean {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.Handshake:
-                this._onRendererHandshake(webContents, ipcBusCommand);
-                return true;
-
             case IpcBusCommand.Kind.AddChannelListener:
                 this._subscriptions.addRef(ipcBusCommand.channel, webContents, ipcBusCommand.peer);
                 return true;
@@ -210,7 +210,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return false;
     }
 
-    _onRendererRawContentReceived(event: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
+    private _onRendererRawContentReceived(event: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         const webContents: Electron.WebContents = event.sender;
         if (this._onRendererAdmindReceived(webContents, ipcBusCommand) === false) {
             this._broadcastMessage(webContents, ipcBusCommand, rawContent);
@@ -218,7 +218,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         }
     }
 
-    _onRendererArgsReceived(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
+    private _onRendererArgsReceived(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
         const webContents: Electron.WebContents = event.sender;
         if (this._onRendererAdmindReceived(webContents, ipcBusCommand) === false) {
             this._broadcastMessage(webContents, ipcBusCommand, args);

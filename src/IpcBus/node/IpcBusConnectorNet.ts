@@ -136,7 +136,7 @@ export class IpcBusConnectorNet extends IpcBusConnectorImpl {
                 const socket = new net.Socket();
                 socket.unref();
                 let socketLocalBinds: { [key: string]: (...args: any[]) => void } = {};
-                const catchConnect = (conn: any) => {
+                const catchConnect = () => {
                     clearTimeout(timer);
 
                     this.addClient(client);
