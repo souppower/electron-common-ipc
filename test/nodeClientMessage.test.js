@@ -66,7 +66,7 @@ function test(remoteBroker, busPath) {
               return new Promise((resolve, reject) => {
                 const args = [
                   path.join(__dirname, 'nodeClient.js'),
-                  '--inspect-brk=9000',
+                  // '--inspect-brk=9000',
                   `--busPath=${ipcBusPath}`,
                   `--busTimeout=${timeoutDelay}`
                 ];
@@ -91,7 +91,9 @@ function test(remoteBroker, busPath) {
                   const message = JSON.parse(rawmessage);
                   console.log(`ProcessHost, onChildMessage, [pid:${nodeChildProcess.pid}], ${JSON.stringify(message)}.`);
                   if (message.resolve) {
-                    resolve();
+                    setTimeout(() => {
+                      resolve();
+                    }, 100);
                   }
                   if (message.reject) {
                     reject(message.error);
@@ -106,6 +108,7 @@ function test(remoteBroker, busPath) {
     after(() => {
       return Promise.all([ipcClient1.close({ timeoutDelay })])
         .then(() => {
+          nodeChildProcess.removeAllListeners();
           nodeChildProcess.kill('SIGTERM');
           return brokers.stop();
         })
@@ -278,4 +281,5 @@ function test(remoteBroker, busPath) {
 }
 
 test(true, brokersLifeCycle.getLocalBusPath());
+test(false);
 test(true);

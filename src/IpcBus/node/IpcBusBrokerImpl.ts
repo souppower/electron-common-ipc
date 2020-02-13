@@ -68,7 +68,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             // this._ipcBusBrokerClient.close();
 
             this._socketClients.forEach((socket) => {
-                socket.release();
+                socket.release(closeServer);
             });
 
             server.close();

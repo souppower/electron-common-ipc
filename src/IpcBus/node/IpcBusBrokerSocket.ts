@@ -23,7 +23,7 @@ export class IpcBusBrokerSocket {
         this._socket = socket;
         this._client = client;
 
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Connect: ${this._socket.remotePort}`);
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:BrokerSocket] Connect: ${this._socket.remotePort}`);
 
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBuffer();
@@ -43,15 +43,23 @@ export class IpcBusBrokerSocket {
         return this._socket;
     }
 
-    release() {
+    release(closeServer: boolean) {
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:BrokerSocket] Release: ${this._socket.remotePort}`);
         if (this._socket) {
-            for (let key in this._socketBinds) {
-                this._socket.removeListener(key, this._socketBinds[key]);
+            const socket = this._socket;
+            if (closeServer) {
+                this._client = null;
             }
-            this._socket.end();
-            this._socket.unref();
+            else {
+                for (let key in this._socketBinds) {
+                    socket.removeListener(key, this._socketBinds[key]);
+                }
+                this._socket = null;
+            }
+            socket.end();
+            socket.unref();
             // this._socket.destroy();
-            this._socket = null;
+
         }
     }
 
@@ -66,19 +74,19 @@ export class IpcBusBrokerSocket {
 
     protected _onSocketError(err: any) {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Error on connection: ${this._socket.remotePort} - ${err}`);
-        this._client.onSocketError(this._socket, err);
+        this._client && this._client.onSocketError(this._socket, err);
         // this.release();
     }
 
     protected _onSocketClose() {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Close on connection: ${this._socket.remotePort}`);
-        this._client.onSocketClose(this._socket);
-        // this.release();
+        this._client && this._client.onSocketClose(this._socket);
+        this.release(false);
     }
 
     protected _onSocketEnd() {
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Close on connection: ${this._socket.remotePort}`);
-        this._client.onSocketEnd(this._socket);
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] End on connection: ${this._socket.remotePort}`);
+        this._client && this._client.onSocketEnd(this._socket);
         // this.release();
     }
 }

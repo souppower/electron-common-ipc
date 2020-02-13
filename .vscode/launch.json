@@ -5,14 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "node",
-            "request": "attach",
-            "protocol": "inspector",
-            "name": "Attach to Node process",
-            "address": "localhost",
-            "port": 9000,
-        },
-        {
             "name": "Launch Test apps",
             "type": "node",
             "request": "launch",
@@ -71,6 +63,60 @@
             ]
         },
         {
+            "name": "Launch Electron Test App",
+            "type": "node",
+            "request": "launch",
+            "protocol": "inspector",
+            "port": 5828,
+            // "program": "${workspaceRoot}/test/electron-tests/app.js",
+            "stopOnEntry": false,
+            "args": [],
+            "cwd": "${workspaceRoot}/test/electron-tests/",
+            "preLaunchTask": null,
+            "windows": {
+                "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe"
+            },
+            "osx": {
+                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron"
+            },
+            "linux": {
+                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron"
+            },
+            "outputCapture": "std",
+            "runtimeArgs": [
+                "${workspaceRoot}/test/electron-tests/app.js",
+                "--remote-debugging-port=8315",
+                "--inspect-brk=5828",
+                // "--disable-sandbox",
+                // "--enable-sandbox",
+            ],
+            "env": {
+                "NODE_ENV": "development",
+            },
+            "console": "internalConsole",
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/lib/**/*.js"
+            ],
+            "trace": false
+        },
+         {
+            "type": "node",
+            "request": "attach",
+            "protocol": "inspector",
+            "name": "Attach to Client Node process",
+            "address": "localhost",
+            "port": 9000,
+        },
+        {
+            "type": "node",
+            "request": "attach",
+            "protocol": "inspector",
+            "name": "Attach to Broker Node process",
+            "address": "localhost",
+            "port": 9001,
+        },
+        {
             "name": "Run Electron-Mocha Tests",
             "type": "node",
             "request": "launch",
@@ -125,44 +171,6 @@
             "outFiles": [
                 "${workspaceRoot}/build/**/*.js",
                 "!${workspaceRoot}/build/**/node_modules/**/*.js"
-            ],
-            "trace": false
-        },
-        {
-            "name": "Launch Electron Test App",
-            "type": "node",
-            "request": "launch",
-            "protocol": "inspector",
-            "port": 5828,
-            // "program": "${workspaceRoot}/test/electron-tests/app.js",
-            "stopOnEntry": false,
-            "args": [],
-            "cwd": "${workspaceRoot}/test/electron-tests/",
-            "preLaunchTask": null,
-            "windows": {
-                "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe"
-            },
-            "osx": {
-                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron"
-            },
-            "linux": {
-                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron"
-            },
-            "outputCapture": "std",
-            "runtimeArgs": [
-                "${workspaceRoot}/test/electron-tests/app.js",
-                "--remote-debugging-port=8315",
-                "--inspect-brk=5828",
-                // "--disable-sandbox",
-                // "--enable-sandbox",
-            ],
-            "env": {
-                "NODE_ENV": "development",
-            },
-            "console": "internalConsole",
-            "sourceMaps": true,
-            "outFiles": [
-                "${workspaceRoot}/lib/**/*.js"
             ],
             "trace": false
         },

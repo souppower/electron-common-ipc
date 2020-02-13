@@ -355,7 +355,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
     }
 
     private _removeConnectionOrPeer(conn: T, peer: IpcBusPeer | null) {
-        Logger.enable && this._info(`removeConnectionOrPeer: conn = ${this._getKey(conn)}, peerId = ${peer ? peer.id : 'unknown'}`);
+        Logger.enable && this._info(`removeConnectionOrPeer: peerId = ${peer ? peer.id : 'unknown'}`);
         // We can not use _getKey as it may access a property which is no more accessible when the 'conn' is destroyed
         this._channelsMap.forEach((connsMap, channel) => {
             connsMap.forEach((connData) => {
