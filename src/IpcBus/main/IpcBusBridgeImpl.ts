@@ -155,18 +155,17 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // =================================================================================================
     _onNetMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
         if (this._noSerialization) {
-            this._mainTransport.onConnectorPacketReceived(ipcBusCommand, ipcPacketBuffer);
-            this._rendererConnector.broadcastPacket(ipcBusCommand, ipcPacketBuffer);
-        }
-        else {
             // Prevent deserializing for nothing !
             const hasRendererChannel = this._rendererConnector.hasChannel(ipcBusCommand.channel);
             const hasMainChannel = this._mainTransport.hasChannel(ipcBusCommand.channel);
             if (hasRendererChannel || hasMainChannel) {
                 const args = ipcPacketBuffer.parseArrayAt(1);
-                hasRendererChannel && this._rendererConnector.broadcastArgs(ipcBusCommand, args);
                 hasMainChannel && this._mainTransport.onConnectorArgsReceived(ipcBusCommand, args);
              }
+        }
+        else {
+            this._mainTransport.onConnectorPacketReceived(ipcBusCommand, ipcPacketBuffer);
+            this._rendererConnector.broadcastPacket(ipcBusCommand, ipcPacketBuffer);
         }
     }
 
