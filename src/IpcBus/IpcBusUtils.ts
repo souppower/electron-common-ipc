@@ -234,7 +234,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
     }
 
     protected _declareNewChannel(channel: string, conn: T, peer: IpcBusPeer, count?: number): Map<M, ConnectionPeers<T, M>> {
-        Logger.enable && this._info(`SetChannel: '${channel}', peerId = ${peer.id}`);
+        Logger.enable && this._info(`SetChannel: '${channel}', peerId =  ${peer ? peer.id : 'unknown'}`);
 
         const connsMap = new Map<M, ConnectionPeers<T, M>>();
         // This channel has NOT been subscribed yet, add it to the map
@@ -267,7 +267,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
     }
 
     addRefCount(channel: string, conn: T, peer: IpcBusPeer, count: number): number {
-        Logger.enable && this._info(`AddRef: '${channel}', peerId = ${peer.id}`);
+        Logger.enable && this._info(`AddRef: '${channel}': conn = ${this._getKey(conn)}, peerId =  ${peer ? peer.id : 'unknown'}`);
 
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
@@ -300,7 +300,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
         else {
             if (all) {
                 if (connData.removePeer(peer) === false) {
-                    Logger.enable && this._warn(`Release '${channel}': peerId #${peer.id} is unknown`);
+                    Logger.enable && this._warn(`Release '${channel}': peerId # ${peer ? peer.id : 'unknown'} is unknown`);
                 }
             }
             else {
@@ -321,7 +321,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
     }
 
     private _releaseChannel(channel: string, conn: T, peer: IpcBusPeer, all: boolean): number {
-        Logger.enable && this._info(`Release '${channel}' (${all}): peerId = ${peer.id}`);
+        Logger.enable && this._info(`Release '${channel}' (${all}): peerId = ${peer ? peer.id : 'unknown'}`);
         const connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`Release '${channel}': '${channel}' is unknown`);
@@ -355,7 +355,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
     }
 
     private _removeConnectionOrPeer(conn: T, peer: IpcBusPeer | null) {
-        Logger.enable && this._info(`releasePeerId: peerId = ${peer.id}`);
+        Logger.enable && this._info(`removeConnectionOrPeer: conn = ${this._getKey(conn)}, peerId = ${peer ? peer.id : 'unknown'}`);
         // We can not use _getKey as it may access a property which is no more accessible when the 'conn' is destroyed
         this._channelsMap.forEach((connsMap, channel) => {
             connsMap.forEach((connData) => {

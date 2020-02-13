@@ -112,7 +112,7 @@ Brokers = (function () {
         const args = [
           path.join(__dirname, './brokerNodeInstance.js'),
           `--busPath=${busPath}`,
-          // `--inspect-brk=9000`,
+          // `--inspect-brk=9001`,
           // `--busTimeout=${timeoutDelay}`
         ];
         let options = { env: {} };

@@ -5,7 +5,7 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as Client from '../IpcBusClient';
 import * as Broker from './IpcBusBroker';
 import * as IpcBusUtils from '../IpcBusUtils';
-import { Create as CreateIpcBusClientNet } from './IpcBusClientNet-factory';
+// import { Create as CreateIpcBusClientNet } from './IpcBusClientNet-factory';
 
 import { IpcBusCommand } from '../IpcBusCommand';
 
@@ -13,8 +13,10 @@ import {IpcBusBrokerSocketClient, IpcBusBrokerSocket } from './IpcBusBrokerSocke
 
 /** @internal */
 export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocketClient {
-    protected _ipcBusBrokerClient: Client.IpcBusClient;
+    // protected _ipcBusBrokerClient: Client.IpcBusClient;
     private _socketClients: Map<net.Socket, IpcBusBrokerSocket>;
+    private _socketIdValue: number;
+    private _socketIdProperty: any;
 
     private _server: net.Server;
     private _netBinds: { [key: string]: (...args: any[]) => void };
@@ -30,27 +32,29 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         this._netBinds['close'] = this._onServerClose.bind(this);
         this._netBinds['connection'] = this._onServerConnection.bind(this);
 
-        this._onQueryState = this._onQueryState.bind(this);
+        // this._onQueryState = this._onQueryState.bind(this);
         this._socketClients = new Map<net.Socket, IpcBusBrokerSocket>();
+        this._socketIdValue = 0;
+        this._socketIdProperty = Symbol("__ecipc__");
 
         // this._bridgeChannels = new Set<string>();
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<net.Socket, number>(
             'IPCBus:Broker',
-            (conn) => conn.remotePort,
+            (conn) => (conn as any)[this._socketIdProperty],
             false);
-        this._ipcBusBrokerClient = CreateIpcBusClientNet(contextType);
+        // this._ipcBusBrokerClient = CreateIpcBusClientNet(contextType);
     }
 
-    protected _onQueryState(ipcBusEvent: Client.IpcBusEvent, replyChannel: string) {
-        const queryState = this.queryState();
-        if (ipcBusEvent.request) {
-            ipcBusEvent.request.resolve(queryState);
-        }
-        else if (replyChannel != null) {
-            this._ipcBusBrokerClient.send(replyChannel, queryState);
-        }
-    }
+    // protected _onQueryState(ipcBusEvent: Client.IpcBusEvent, replyChannel: string) {
+    //     const queryState = this.queryState();
+    //     if (ipcBusEvent.request) {
+    //         ipcBusEvent.request.resolve(queryState);
+    //     }
+    //     else if (replyChannel != null) {
+    //         this._ipcBusBrokerClient.send(replyChannel, queryState);
+    //     }
+    // }
 
     protected _reset(closeServer: boolean) {
         if (this._server) {
@@ -60,8 +64,8 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 server.removeListener(key, this._netBinds[key]);
             }
 
-            this._ipcBusBrokerClient.removeListener(Client.IPCBUS_CHANNEL_QUERY_STATE, this._onQueryState);
-            this._ipcBusBrokerClient.close();
+            // this._ipcBusBrokerClient.removeListener(Client.IPCBUS_CHANNEL_QUERY_STATE, this._onQueryState);
+            // this._ipcBusBrokerClient.close();
 
             this._socketClients.forEach((socket) => {
                 socket.release();
@@ -127,18 +131,19 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                     for (let key in this._netBinds) {
                         this._server.addListener(key, this._netBinds[key]);
                     }
+                    resolve();
 
-                    this._ipcBusBrokerClient.connect(options)
-                        .then(() => {
-                            this._ipcBusBrokerClient.addListener(Client.IPCBUS_CHANNEL_QUERY_STATE, this._onQueryState);
-                            resolve();
-                        })
-                        .catch((err) => {
-                            this._reset(true);
-                            const msg = `[IPCBus:Broker] error = ${err}`;
-                            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
-                            reject(msg);
-                        });
+                    // this._ipcBusBrokerClient.connect(options)
+                    //     .then(() => {
+                    //         this._ipcBusBrokerClient.addListener(Client.IPCBUS_CHANNEL_QUERY_STATE, this._onQueryState);
+                    //         resolve();
+                    //     })
+                    //     .catch((err) => {
+                    //         this._reset(true);
+                    //         const msg = `[IPCBus:Broker] error = ${err}`;
+                    //         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
+                    //         reject(msg);
+                    //     });
                 };
 
                 fctReject = (msg: string) => {
@@ -203,6 +208,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     }
 
     protected _onSocketConnected(socket: net.Socket): void {
+        (socket as any)[this._socketIdProperty] = ++this._socketIdValue;
         this._socketClients.set(socket, new IpcBusBrokerSocket(socket, this));
     }
 
