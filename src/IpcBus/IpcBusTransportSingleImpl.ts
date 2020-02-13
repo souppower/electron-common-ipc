@@ -24,8 +24,8 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
     //     return channels;
     // }
 
-    onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        this._client && this._onClientMessageReceived(this._client, local, ipcBusCommand, args);
+    protected onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
+        this._onClientMessageReceived(this._client, local, ipcBusCommand, args);
     }
 
     onConnectorShutdown() {

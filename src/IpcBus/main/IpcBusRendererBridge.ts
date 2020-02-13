@@ -87,6 +87,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _getHandshake(webContents: Electron.WebContents, peer: Client.IpcBusPeer): IpcBusConnector.Handshake {
         const logger = CreateIpcBusLog();
 
+        // Inherit from the peer.process and then complete missing information
         const handshake: IpcBusConnector.Handshake = {
             process: peer.process,
             logLevel: logger.level,
@@ -149,7 +150,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._broadcastMessage(null, ipcBusCommand, rawContent);
     }
 
-    private _broadcastMessage<T>(webContents: Electron.WebContents | null, ipcBusCommand: IpcBusCommand, rawContent: T) {
+    private _broadcastMessage<T>(webContents: Electron.WebContents | null, ipcBusCommand: IpcBusCommand, content: T) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 if (webContents) {
@@ -160,13 +161,13 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                     const sourceKey = this._subscriptions.getKey(webContents);
                     this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                         if (connData.key !== sourceKey) {
-                            connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                            connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, content);
                         }
                     });
                 }
                 else {
                     this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-                        connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                        connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, content);
                     });
                 }
                 break;
@@ -175,7 +176,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             case IpcBusCommand.Kind.RequestResponse: {
                 const connData = this._subscriptions.getSingleChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, content);
                     this._subscriptions.removeChannel(ipcBusCommand.channel);
                 }
                 break;
