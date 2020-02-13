@@ -233,7 +233,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
         }
     }
 
-    protected _setSingleChannel(channel: string, conn: T, peer: IpcBusPeer): Map<M, ConnectionPeers<T, M>> {
+    protected _declareNewChannel(channel: string, conn: T, peer: IpcBusPeer, count?: number): Map<M, ConnectionPeers<T, M>> {
         Logger.enable && this._info(`SetChannel: '${channel}', peerId = ${peer.id}`);
 
         const connsMap = new Map<M, ConnectionPeers<T, M>>();
@@ -241,7 +241,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
         this._channelsMap.set(channel, connsMap);
 
         const key = this._getKey(conn);
-        const connData = new ConnectionPeers<T, M>(key, conn, peer, 1);
+        const connData = new ConnectionPeers<T, M>(key, conn, peer, count);
         connsMap.set(key, connData);
 
         this.emitter && this.emit('channel-added', channel);
@@ -251,7 +251,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
 
     // Channel is supposed to be new
     setSingleChannel(channel: string, conn: T, peer: IpcBusPeer) {
-        this._setSingleChannel(channel, conn, peer);
+        this._declareNewChannel(channel, conn, peer, 1);
     }
 
     getSingleChannel(channel: string): ConnectionPeers<T, M> | null {
@@ -271,7 +271,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
 
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
-            connsMap = this._setSingleChannel(channel, conn, peer);
+            connsMap = this._declareNewChannel(channel, conn, peer, count);
         }
         else {
             const key = this._getKey(conn);

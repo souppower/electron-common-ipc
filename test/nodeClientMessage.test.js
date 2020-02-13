@@ -66,7 +66,7 @@ function test(remoteBroker, busPath) {
               return new Promise((resolve, reject) => {
                 const args = [
                   path.join(__dirname, 'nodeClient.js'),
-                  // '--inspect-brk=9000',
+                  '--inspect-brk=9000',
                   `--busPath=${ipcBusPath}`,
                   `--busTimeout=${timeoutDelay}`
                 ];
@@ -277,5 +277,5 @@ function test(remoteBroker, busPath) {
   })
 }
 
-// test(false);
-// test(true);
+test(true, brokersLifeCycle.getLocalBusPath());
+test(true);

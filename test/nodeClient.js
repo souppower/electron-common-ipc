@@ -10,6 +10,9 @@ let ipcBusPath = 0;
 if (args.busPath) {
     ipcBusPath = parseInt(args.busPath);
 }
+if (isNaN(ipcBusPath)) {
+    ipcBusPath = args.busPath;
+}
 
 const ipcBusModule = require('../lib/electron-common-ipc');
 const ipcClient = ipcBusModule.CreateIpcBusClient();
