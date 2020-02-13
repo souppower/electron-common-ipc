@@ -228,6 +228,10 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         }
     }
 
+    onSocketEnd(socket: net.Socket): void {
+        this.onSocketClose(socket);
+    }
+
     protected _onServerClose(): void {
         const msg = `[IPCBus:Broker] server close`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(msg);

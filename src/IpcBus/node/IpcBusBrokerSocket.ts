@@ -8,6 +8,7 @@ export interface IpcBusBrokerSocketClient {
     onSocketPacket(socket: net.Socket, ipcPacketBuffer: IpcPacketBuffer): void;
     onSocketError(socket: net.Socket, err: string): void;
     onSocketClose(socket: net.Socket): void;
+    onSocketEnd(socket: net.Socket): void;
 };
 
 export class IpcBusBrokerSocket {
@@ -38,6 +39,10 @@ export class IpcBusBrokerSocket {
         }
     }
 
+    get socket(): net.Socket {
+        return this._socket;
+    }
+
     release() {
         if (this._socket) {
             for (let key in this._socketBinds) {
@@ -62,15 +67,18 @@ export class IpcBusBrokerSocket {
     protected _onSocketError(err: any) {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Error on connection: ${this._socket.remotePort} - ${err}`);
         this._client.onSocketError(this._socket, err);
+        // this.release();
     }
 
     protected _onSocketClose() {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Close on connection: ${this._socket.remotePort}`);
         this._client.onSocketClose(this._socket);
+        // this.release();
     }
 
     protected _onSocketEnd() {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Close on connection: ${this._socket.remotePort}`);
-        // this._client.onSocketClose(this._socket);
+        this._client.onSocketEnd(this._socket);
+        // this.release();
     }
 }
