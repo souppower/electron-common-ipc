@@ -116,12 +116,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         // Prevent serializing for nothing !
         if (hasNetChannel) {
             ipcBusCommand.bridge = true;
-            if (args) {
-                this._packet.serializeArray([ipcBusCommand, args]);
-            }
-            else {
-                this._packet.serializeArray([ipcBusCommand]);
-            }
+            this._packet.serializeArray([ipcBusCommand, args]);
             this._netTransport.broadcastBuffer(ipcBusCommand, this._packet.buffer);
         }
     }
@@ -139,12 +134,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             // Prevent serializing for nothing !
             if (hasRendererChannel || hasNetChannel) {
                 ipcBusCommand.bridge = true;
-                if (args) {
-                    this._packet.serializeArray([ipcBusCommand, args]);
-                }
-                else {
-                    this._packet.serializeArray([ipcBusCommand]);
-                }
+                this._packet.serializeArray([ipcBusCommand, args]);
                 hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, this._packet);
                 hasNetChannel && this._netTransport.broadcastBuffer(ipcBusCommand, this._packet.buffer);
             }

@@ -49,6 +49,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] _onConnect`);
         // In sandbox mode, 1st parameter is no more the event, but directly arguments !!!
         if (handshakeArg) {
+            // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Sandbox off listening for #${this._messageId}`);
             const handshake = handshakeArg;
             if (handshake.noSerialization) {
                 this._onIpcEventReceived = (event, ipcBusCommand, args) => {
@@ -65,7 +66,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         }
         else {
             const handshake = peerOrArgs as IpcBusConnector.Handshake;
-            IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Activate Sandbox listening for #${this._messageId}`);
+            // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Sandbox on listening for #${this._messageId}`);
             if (handshake.noSerialization) {
                 this._onIpcEventReceived = (ipcBusCommand, args) => {
                     this._client.onConnectorArgsReceived(ipcBusCommand, args);
@@ -131,12 +132,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, args);
         }
         else {
-            if (args) {
-                this._packetOut.serializeArray([ipcBusCommand, args]);
-            }
-            else {
-                this._packetOut.serializeArray([ipcBusCommand]);
-            }
+            this._packetOut.serializeArray([ipcBusCommand, args]);
             this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, this._packetOut.getRawContent());
         }
     }
