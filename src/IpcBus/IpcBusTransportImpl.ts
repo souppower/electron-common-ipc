@@ -173,15 +173,16 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     ipcBusCommand.request.reject = true;
                 }
                 // Is it a local request ?
+                let logSendMessage: IpcBusCommand.Log;
+                if (logGetMessage) {
+                    logSendMessage = this._connector.logMessageCreation(logGetMessage, ipcBusCommandResponse);
+                } 
                 if (local) {
                     if (this._onClientResponseReceived(true, ipcBusCommandResponse, argsResponse) && logGetMessage) {
-                        this._connector.logLocalMessage(logGetMessage, ipcBusCommandResponse, argsResponse);
+                        this._connector.logLocalMessage(logSendMessage, ipcBusCommandResponse, argsResponse);
                     }
                 }
                 else {
-                    if (logGetMessage) {
-                        this._connector.logMessageCreation(logGetMessage, ipcBusCommandResponse);
-                    } 
                     this.postMessage(ipcBusCommandResponse, argsResponse);
                 }
             }
