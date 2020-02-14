@@ -71,7 +71,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         return null;
     }
 
-    logLocalMessage(previousLog: IpcBusCommand.Log, ipcBusCommandLocal: IpcBusCommand, argsResponse: any[]) {
+    logLocalMessage(previousLog: IpcBusCommand.Log, ipcBusCommandLocal: IpcBusCommand, argsResponse: any[]): IpcBusCommand.Log {
         if (this._log.level >= IpcBusLogConfig.Level.Sent) {
             // Clone first level
             const ipcBusCommandLog: IpcBusCommand = Object.assign({}, ipcBusCommandLocal);
@@ -79,7 +79,9 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
             this.logMessageCreation(previousLog, ipcBusCommandLog);
             ipcBusCommandLog.log.local = true;
             this.postCommand(ipcBusCommandLog, argsResponse);
+            return ipcBusCommandLog.log;
         }
+        return null;
     }
 
     logMessageReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommandPrevious: IpcBusCommand, args: any[]): IpcBusCommand.Log {

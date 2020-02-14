@@ -128,7 +128,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         }
     }
 
-    onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
+    onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.AddChannelListener:
                 this._subscriptions.addRef(ipcBusCommand.channel, PeerName, ipcBusCommand.peer);
@@ -151,9 +151,10 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
                 this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
                 break;
         }
+        return true;
     }
 
-    onConnectorBufferReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
+    onConnectorBufferReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
         throw 'not implemented';
     }
 
