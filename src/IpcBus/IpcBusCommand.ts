@@ -18,8 +18,9 @@ export namespace IpcBusCommand {
         RequestResponse             = 'RQR',
         RequestClose                = 'RQC',
 
-        LogGetMessage               = 'LOGMES',
-        LogRequestResponse          = 'LOGRQR',
+        LogGetMessage               = 'LOGGET',
+        LogLocalSendRequest         = 'LOGMES',
+        LogLocalRequestResponse     = 'LOGRQR',
 
         BridgeConnect               = 'BCOO',    // COnnexion
         BridgeClose                 = 'BCOC',

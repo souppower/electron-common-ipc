@@ -63,7 +63,8 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         };
 
         switch (logMessage.kind) {
-            case IpcBusCommand.Kind.SendMessage: {
+            case IpcBusCommand.Kind.SendMessage:
+            case IpcBusCommand.Kind.LogLocalSendRequest: {
                 message.kind = command.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
                 message.channel = command.channel;
                 break;
@@ -76,7 +77,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse:
-            case IpcBusCommand.Kind.LogRequestResponse: {
+            case IpcBusCommand.Kind.LogLocalRequestResponse: {
                 message.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE;
                 message.channel = command.request.channel;
                 message.responseChannel = command.request.replyChannel;

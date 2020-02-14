@@ -180,7 +180,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                         this._requestFunctions.delete(ipcBusCommand.request.replyChannel);
                         // Send the local response to log
                         if (logGetMessage) {
-                            this._connector.logLocalResponse(logGetMessage, ipcBusCommandResponse, argsResponse);
+                            this._connector.logLocalMessage(logGetMessage, ipcBusCommandResponse, argsResponse);
                         }
                         deferredRequest.settled(ipcBusCommandResponse, argsResponse);
                     }
@@ -300,16 +300,19 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             peer: client.peer,
             request: ipcBusCommandRequest
         }
-        let logCloseMessage: IpcBusCommand.Log;
+        let logSendMessage: IpcBusCommand.Log;
         if (this._logActivate) {
-            logCloseMessage = this._connector.logMessageCreation(null, ipcMessage);
+            logSendMessage = this._connector.logMessageCreation(null, ipcMessage);
         }
         // Broadcast locally
         if (this.hasChannel(channel)) {
             this.onMessageReceived(true, ipcMessage, args);
         }
+        if (deferredRequest.isSettled()) {
+            this._connector.logLocalMessage(logSendMessage, ipcMessage, args);
+        }
         // If not resolved by local clients
-        if (deferredRequest.isSettled() === false) {
+        else {
             // Clean-up
             if (timeoutDelay >= 0) {
                 setTimeout(() => {
@@ -321,8 +324,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                             peer: client.peer,
                             request: ipcBusCommandRequest
                         };
-                        if (logCloseMessage) {
-                            this._connector.logMessageCreation(logCloseMessage, ipcMessageClose);
+                        if (logSendMessage) {
+                            this._connector.logMessageCreation(logSendMessage, ipcMessageClose);
                         }
                         this.postMessage(ipcMessageClose);
                     }
