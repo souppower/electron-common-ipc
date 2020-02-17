@@ -173,13 +173,12 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     ipcBusCommand.request.reject = true;
                 }
                 // Is it a local request ?
-                let logSendMessage: IpcBusCommand.Log;
                 if (logGetMessage) {
-                    logSendMessage = this._connector.logMessageCreation(logGetMessage, ipcBusCommandResponse);
+                   this._connector.logMessageCreation(logGetMessage, ipcBusCommandResponse);
                 } 
                 if (local) {
-                    if (this._onClientResponseReceived(true, ipcBusCommandResponse, argsResponse) && logGetMessage) {
-                        this._connector.logLocalMessage(logSendMessage, ipcBusCommandResponse, argsResponse);
+                    if (this._onResponseReceived(true, ipcBusCommandResponse, argsResponse) && logGetMessage) {
+                        this._connector.logLocalMessage(ipcBusCommandResponse, argsResponse);
                     }
                 }
                 else {
@@ -202,7 +201,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
     }
 
-    protected _onClientResponseReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[], ipcPacketBuffer?: IpcPacketBuffer): boolean {
+    protected _onResponseReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[], ipcPacketBuffer?: IpcPacketBuffer): boolean {
         const deferredRequest = this._requestFunctions.get(ipcBusCommand.channel);
         if (deferredRequest) {
             args = args || ipcPacketBuffer.parseArrayAt(1);
@@ -229,7 +228,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse:
-                return this._onClientResponseReceived(false, ipcBusCommand, args, ipcPacketBuffer);
+                return this._onResponseReceived(false, ipcBusCommand, args, ipcPacketBuffer);
         }
         return false;
     }
@@ -309,7 +308,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             this.onMessageReceived(true, ipcMessage, args);
         }
         if (deferredRequest.isSettled()) {
-            this._connector.logLocalMessage(logSendMessage, ipcMessage, args);
+            this._connector.logLocalMessage(ipcMessage, args);
         }
         // If not resolved by local clients
         else {
