@@ -71,11 +71,12 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         return null;
     }
 
-    logLocalMessage(ipcBusCommandLocal: IpcBusCommand, argsResponse: any[]): IpcBusCommand.Log {
+    logLocalMessage(peer: Client.IpcBusPeer, ipcBusCommandLocal: IpcBusCommand, argsResponse: any[]): IpcBusCommand.Log {
         if (this._log.level >= IpcBusLogConfig.Level.Sent) {
             // Clone first level
             const ipcBusCommandLog: IpcBusCommand = Object.assign({}, ipcBusCommandLocal);
             ipcBusCommandLog.kind = `LOG${ipcBusCommandLocal.kind}` as IpcBusCommand.Kind;
+            ipcBusCommandLog.log = ipcBusCommandLocal.log; 
             ipcBusCommandLog.log.local = true;
             this.postCommand(ipcBusCommandLog, argsResponse);
             return ipcBusCommandLog.log;
