@@ -12,11 +12,10 @@ import { JSONLoggerBase, JSONLog } from './IpcBusJSONLogger';
 export class CSVLogger extends JSONLoggerBase {
     private _stringifyer: any; // CVS_stringify.Stringifier;
 
-    constructor(logPath: string) {
+    constructor(filename: string) {
         super();
 
-        const filename = path.join(logPath, 'electron-common-ipcbus-bridge.csv');
-        fse.ensureDirSync(logPath);
+        fse.ensureDirSync(path.dirname(filename));
         try {
             fse.unlinkSync(filename);
         }

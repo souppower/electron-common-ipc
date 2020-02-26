@@ -1,7 +1,10 @@
 export * from './electron-common-ipc-common';
 
 export * from './IpcBus/IpcBusClient-factory-browser';
+
+export * from './IpcBus/log/IpcBusLog';
 export * from './IpcBus/log/IpcBusLog-factory-browser';
+
 export * from './IpcBus/service/IpcBusService-factory-browser';
 
 // Force to execute code

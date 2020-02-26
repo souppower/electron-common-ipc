@@ -1,3 +1,5 @@
+import * as path from 'path';
+
 import { GetElectronProcessType } from 'electron-process-type/lib/v2';
 
 import * as IpcBusUtils from '../IpcBusUtils';
@@ -27,7 +29,8 @@ export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge 
                     // if (logger.argMaxContentLen < 0) {
                     //     logger.argMaxContentLen = 255;
                     // }
-                    IpcBusLog.SetLogLevelCVS(logger.level, process.env['ELECTRON_IPC_LOG_CSV'], logger.argMaxContentLen);
+                    const filename = path.join(process.env['ELECTRON_IPC_LOG_CSV'], 'electron-common-ipc.csv');
+                    IpcBusLog.SetLogLevelCVS(logger.level, filename, logger.argMaxContentLen);
                 }
                 // For backward
                 if (process.env['ELECTRON_IPC_LOG_JSON']) {
@@ -37,7 +40,8 @@ export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge 
                     // if (logger.argMaxContentLen < 0) {
                     //     logger.argMaxContentLen = 255;
                     // }
-                    IpcBusLog.SetLogLevelJSON(logger.level, process.env['ELECTRON_IPC_LOG_JSON'], logger.argMaxContentLen);
+                    const filename = path.join(process.env['ELECTRON_IPC_LOG_JSON'], 'electron-common-ipc.json');
+                    IpcBusLog.SetLogLevelJSON(logger.level, filename, logger.argMaxContentLen);
                 }
                 if (logger.level > IpcBusLogConfig.Level.None) {
                     g_bridge = new IpcBusBridgeLogger(electronProcessType, logger);

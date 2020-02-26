@@ -92,11 +92,10 @@ export class JSONLoggerBase {
 export class JSONLogger extends JSONLoggerBase {
     private _winstonLogger: winston.Logger;
 
-    constructor(logPath: string) {
+    constructor(filename: string) {
         super();
 
-        const filename = path.join(logPath, 'electron-common-ipcbus-bridge.json');
-        fse.ensureDirSync(logPath);
+        fse.ensureDirSync(path.dirname(filename));
         try {
             fse.unlinkSync(filename);
         }
