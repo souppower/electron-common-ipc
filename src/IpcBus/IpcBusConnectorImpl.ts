@@ -50,7 +50,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         return logCommand;
     }
 
-    logMessageCreation(previousLog: IpcBusCommand.Log, ipcBusCommand: IpcBusCommand): IpcBusCommand.Log {
+    logMessageSend(previousLog: IpcBusCommand.Log, ipcBusCommand: IpcBusCommand): IpcBusCommand.Log {
         if (this._log.level >= IpcBusLogConfig.Level.Sent) {
             // static part . dynamic part
             const id = `${this._messageId}.${this._messageCount++}`;
@@ -76,7 +76,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
             // Clone first level
             const ipcBusCommandLog: IpcBusCommand = Object.assign({}, ipcBusCommandLocal);
             ipcBusCommandLog.kind = `LOG${ipcBusCommandLocal.kind}` as IpcBusCommand.Kind;
-            ipcBusCommandLog.log = ipcBusCommandLocal.log; 
+            // ipcBusCommandLog.log = ipcBusCommandLocal.log; 
             ipcBusCommandLog.log.local = true;
             this.postCommand(ipcBusCommandLog, argsResponse);
             return ipcBusCommandLog.log;
@@ -84,14 +84,14 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         return null;
     }
 
-    logMessageReceived(peer: Client.IpcBusPeer, local: boolean, ipcBusCommandPrevious: IpcBusCommand, args: any[]): IpcBusCommand.Log {
+    logMessageGet(peer: Client.IpcBusPeer, local: boolean, ipcBusCommandPrevious: IpcBusCommand, args: any[]): IpcBusCommand.Log {
         if (this._log.level & IpcBusLogConfig.Level.Get) {
             const ipcBusCommandLog: IpcBusCommand = {
                 kind: IpcBusCommand.Kind.LogGetMessage,
                 peer,
                 channel: ''
             };
-            this.logMessageCreation(ipcBusCommandPrevious.log, ipcBusCommandLog);
+            this.logMessageSend(ipcBusCommandPrevious.log, ipcBusCommandLog);
             ipcBusCommandLog.log.command = this.cloneCommand(ipcBusCommandPrevious);
             ipcBusCommandLog.log.related_peer = ipcBusCommandPrevious.peer;
             ipcBusCommandLog.log.local = local;

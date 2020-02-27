@@ -53,50 +53,62 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         }
     }
 
-    private buildMessage(logMessage: IpcBusCommand.Log, args?: any[], payload?: number): IpcBusLog.Message {
+    private buildMessage(logMessage: IpcBusCommand.Log, args: any[], payload: number, stack: number): IpcBusLog.Message | null {
         const command = logMessage.command;
-        const message: Partial<IpcBusLog.Message> = {
-            id: logMessage.id,
-            peer: logMessage.peer,
-            related_peer: logMessage.related_peer || logMessage.peer,
-            timestamp: logMessage.timestamp - this._baseTime,
-            local: logMessage.local,
-            payload
-        };
 
         let needArgs = false;
+        let kind: IpcBusLog.Kind;
         switch (logMessage.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.LogLocalSendRequest: {
-                message.kind = command.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
+                if ((stack === 0) && ((this._level & IpcBusLogConfig.Level.Sent) === 0)) {
+                    return null;
+                }
+                kind = command.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
                 needArgs = (this._level & IpcBusLogConfig.Level.SentArgs) === IpcBusLogConfig.Level.SentArgs;
                 break;
             }
             case IpcBusCommand.Kind.RequestClose: {
-                message.kind = IpcBusLog.Kind.SEND_CLOSE_REQUEST;
+                if ((stack === 0) && ((this._level & IpcBusLogConfig.Level.Sent) === 0)) {
+                    return null;
+                }
+                kind = IpcBusLog.Kind.SEND_CLOSE_REQUEST;
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse:
             case IpcBusCommand.Kind.LogLocalRequestResponse: {
-                message.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE;
+                if ((stack === 0) && ((this._level & IpcBusLogConfig.Level.Sent) === 0)) {
+                    return null;
+                }
+                kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE;
                 needArgs = (this._level & IpcBusLogConfig.Level.SentArgs) === IpcBusLogConfig.Level.SentArgs;
                 break;
             }
             case IpcBusCommand.Kind.LogGetMessage: {
                 if (command.kind === IpcBusCommand.Kind.SendMessage) {
-                    message.kind = command.request ? IpcBusLog.Kind.GET_REQUEST : IpcBusLog.Kind.GET_MESSAGE;
+                    kind = command.request ? IpcBusLog.Kind.GET_REQUEST : IpcBusLog.Kind.GET_MESSAGE;
                 }
                 else if (command.kind === IpcBusCommand.Kind.RequestResponse) {
-                    message.kind = IpcBusLog.Kind.GET_REQUEST_RESPONSE;
+                    kind = IpcBusLog.Kind.GET_REQUEST_RESPONSE;
                 }
                 else if (command.kind === IpcBusCommand.Kind.RequestClose) {
-                    message.kind = IpcBusLog.Kind.GET_CLOSE_REQUEST;
+                    kind = IpcBusLog.Kind.GET_CLOSE_REQUEST;
                 }
                 needArgs = (this._level & IpcBusLogConfig.Level.GetArgs) === IpcBusLogConfig.Level.GetArgs;
                 break;
             }
         }
 
+        const message: Partial<IpcBusLog.Message> = {
+            kind,
+            id: logMessage.id,
+            peer: logMessage.peer,
+            related_peer: logMessage.related_peer || logMessage.peer,
+            timestamp: logMessage.timestamp - this._baseTime,
+            local: logMessage.local,
+            payload,
+            args: needArgs ? this.getArgs(args) : undefined
+        };
         switch (message.kind) {
             case IpcBusLog.Kind.SEND_MESSAGE:
             case IpcBusLog.Kind.GET_MESSAGE: {
@@ -125,9 +137,6 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
                 break;
             }
         }
-        if (needArgs) {
-            message.args = this.getArgs(args);
-        }
         return message as IpcBusLog.Message;
     }
 
@@ -151,7 +160,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         trace.stack = [];
         let logMessage = ipcBusCommand.log;
         while (logMessage) {
-            const message = this.buildMessage(logMessage, args, payload);
+            const message = this.buildMessage(logMessage, args, payload, trace.stack.length);
             trace.stack.push(message);
             logMessage = logMessage.previous;
         }
