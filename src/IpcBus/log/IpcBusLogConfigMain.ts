@@ -53,7 +53,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         }
     }
 
-    private buildMessage(logMessage: IpcBusCommand.Log, args: any[], payload: number, stack: number): IpcBusLog.Message | null {
+    private buildMessage(logMessage: IpcBusCommand.Log, args: any[], payload: number, top: boolean): IpcBusLog.Message | null {
         const command = logMessage.command;
 
         let needArgs = false;
@@ -61,7 +61,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         switch (logMessage.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.LogLocalSendRequest: {
-                if ((stack === 0) && ((this._level & IpcBusLogConfig.Level.Sent) === 0)) {
+                if (top && ((this._level & IpcBusLogConfig.Level.Sent) === 0)) {
                     return null;
                 }
                 kind = command.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
@@ -69,7 +69,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
                 break;
             }
             case IpcBusCommand.Kind.RequestClose: {
-                if ((stack === 0) && ((this._level & IpcBusLogConfig.Level.Sent) === 0)) {
+                if (top && ((this._level & IpcBusLogConfig.Level.Sent) === 0)) {
                     return null;
                 }
                 kind = IpcBusLog.Kind.SEND_CLOSE_REQUEST;
@@ -77,7 +77,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
             }
             case IpcBusCommand.Kind.RequestResponse:
             case IpcBusCommand.Kind.LogLocalRequestResponse: {
-                if ((stack === 0) && ((this._level & IpcBusLogConfig.Level.Sent) === 0)) {
+                if (top && ((this._level & IpcBusLogConfig.Level.Sent) === 0)) {
                     return null;
                 }
                 kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE;
@@ -154,22 +154,26 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
             };
         }
 
-        const trace: Partial<IpcBusLog.Trace> = {
-            order: this._order,
-        };
-        trace.stack = [];
         let logMessage = ipcBusCommand.log;
-        while (logMessage) {
-            const message = this.buildMessage(logMessage, args, payload, trace.stack.length);
-            trace.stack.push(message);
+        const message = this.buildMessage(logMessage, args, payload, true);
+        if (message != null) {
+            const trace: Partial<IpcBusLog.Trace> = {
+                order: this._order,
+                stack: [message]
+            };
             logMessage = logMessage.previous;
-        }
-        trace.first = trace.stack[trace.stack.length - 1];
-        trace.current = trace.stack[0];
-        const subOrder = (trace.current.kind >= IpcBusLog.Kind.SEND_REQUEST) ? trace.current.kind - IpcBusLog.Kind.SEND_REQUEST : trace.current.kind;
-        trace.id = `${trace.first.id}_${String.fromCharCode(97 + subOrder)}`;
+            while (logMessage) {
+                const message = this.buildMessage(logMessage, args, payload, false);
+                trace.stack.push(message);
+                logMessage = logMessage.previous;
+            }
+            trace.first = trace.stack[trace.stack.length - 1];
+            trace.current = trace.stack[0];
+            const subOrder = (trace.current.kind >= IpcBusLog.Kind.SEND_REQUEST) ? trace.current.kind - IpcBusLog.Kind.SEND_REQUEST : trace.current.kind;
+            trace.id = `${trace.first.id}_${String.fromCharCode(97 + subOrder)}`;
 
-        this._cb(trace as IpcBusLog.Trace);
+            this._cb(trace as IpcBusLog.Trace);
+        }
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }
 
