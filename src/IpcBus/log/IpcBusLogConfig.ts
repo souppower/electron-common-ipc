@@ -6,6 +6,9 @@ export namespace IpcBusLogConfig {
         SentArgs = 4,
         GetArgs = 8,
     }
+
+    export const LevelMax = IpcBusLogConfig.Level.Sent | IpcBusLogConfig.Level.Get | IpcBusLogConfig.Level.SentArgs | IpcBusLogConfig.Level.GetArgs;
+    export const LevelMin = IpcBusLogConfig.Level.None;
 }
 
 /** @internal */

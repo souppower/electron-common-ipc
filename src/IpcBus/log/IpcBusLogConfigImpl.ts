@@ -29,7 +29,7 @@ export class IpcBusLogConfigImpl implements IpcBusLogConfig {
 
     constructor() {
         const levelFromEnv = this.getLevelFromEnv();
-        this._level = Math.max(IpcBusLogConfig.Level.None, levelFromEnv);
+        this._level = Math.max(IpcBusLogConfig.LevelMin, levelFromEnv);
         const baseTimeFromEnv = this.getBaseTimeFromEnv();
         this._baseTime = Math.max(this.now, baseTimeFromEnv);
         const argMaxLenFromEnv = this.getArgMaxContentLenFromEnv();
@@ -42,8 +42,8 @@ export class IpcBusLogConfigImpl implements IpcBusLogConfig {
             const levelAny = process.env[LogLevelEnv];
             if (levelAny != null) {
                 let level = Number(levelAny);
-                level = Math.min(level, IpcBusLogConfig.Level.GetArgs);
-                level = Math.max(level, IpcBusLogConfig.Level.None);
+                level = Math.min(level, IpcBusLogConfig.LevelMax);
+                level = Math.max(level, IpcBusLogConfig.LevelMin);
                 return level;
             }
         }
@@ -106,6 +106,7 @@ export class IpcBusLogConfigImpl implements IpcBusLogConfig {
     }
 
     set argMaxContentLen(argMaxContentLen: number) {
+        argMaxContentLen = (argMaxContentLen == null) ? -1 : argMaxContentLen;
         if (process && process.env) {
             process.env[ArgMaxContentLenEnv] = argMaxContentLen.toString();
         }

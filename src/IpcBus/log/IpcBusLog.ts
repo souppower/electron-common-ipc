@@ -21,7 +21,7 @@ export namespace IpcBusLog {
         channel: string;
         kind: Kind;
         responseChannel?: string;
-        responseStatus?: 'resolved' | 'rejected';
+        responseStatus?: 'resolved' | 'rejected' | 'cancelled';
         local?: boolean;
         payload?: number;
         args?: any[];

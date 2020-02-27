@@ -36,21 +36,24 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         this._cb = cb;
     }
 
-    private buildMessage(logMessage: IpcBusCommand.Log, args?: any[], payload?: number): IpcBusLog.Message {
-        let managed_args: any[] = undefined;
-        if (this._level >= IpcBusLogConfig.Level.SentArgs) {
-            // We want full data
-            if (this._argMaxContentLen <= 0) {
-                managed_args = args;
-            }
-            else if (args) {
-                managed_args = [];
-                for (let i = 0, l = args.length; i < l; ++i) {
-                    managed_args.push(CutData(args[i], this._argMaxContentLen));
-                }
-            }
+    private getArgs(args?: any[]): any[] {
+        if (args == null) {
+            return [];
         }
+        // We want full data
+        if (this._argMaxContentLen <= 0) {
+            return args;
+        }
+        else {
+            const managed_args = [];
+            for (let i = 0, l = args.length; i < l; ++i) {
+                managed_args.push(CutData(args[i], this._argMaxContentLen));
+            }
+            return managed_args;
+        }
+    }
 
+    private buildMessage(logMessage: IpcBusCommand.Log, args?: any[], payload?: number): IpcBusLog.Message {
         const command = logMessage.command;
         const message: Partial<IpcBusLog.Message> = {
             id: logMessage.id,
@@ -58,49 +61,72 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
             related_peer: logMessage.related_peer || logMessage.peer,
             timestamp: logMessage.timestamp - this._baseTime,
             local: logMessage.local,
-            args: managed_args,
             payload
         };
 
+        let needArgs = false;
         switch (logMessage.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.LogLocalSendRequest: {
                 message.kind = command.request ? IpcBusLog.Kind.SEND_REQUEST : IpcBusLog.Kind.SEND_MESSAGE;
-                message.channel = command.channel;
+                needArgs = (this._level & IpcBusLogConfig.Level.SentArgs) === IpcBusLogConfig.Level.SentArgs;
                 break;
             }
             case IpcBusCommand.Kind.RequestClose: {
                 message.kind = IpcBusLog.Kind.SEND_CLOSE_REQUEST;
-                message.channel = command.request.channel;
-                message.responseChannel = command.request.replyChannel;
-                message.responseStatus = 'rejected';
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse:
             case IpcBusCommand.Kind.LogLocalRequestResponse: {
                 message.kind = IpcBusLog.Kind.SEND_REQUEST_RESPONSE;
-                message.channel = command.request.channel;
-                message.responseChannel = command.request.replyChannel;
-                message.responseStatus = command.request.resolve ? 'resolved' : 'rejected';
+                needArgs = (this._level & IpcBusLogConfig.Level.SentArgs) === IpcBusLogConfig.Level.SentArgs;
                 break;
             }
             case IpcBusCommand.Kind.LogGetMessage: {
                 if (command.kind === IpcBusCommand.Kind.SendMessage) {
                     message.kind = command.request ? IpcBusLog.Kind.GET_REQUEST : IpcBusLog.Kind.GET_MESSAGE;
-                    message.channel = command.channel;
                 }
                 else if (command.kind === IpcBusCommand.Kind.RequestResponse) {
                     message.kind = IpcBusLog.Kind.GET_REQUEST_RESPONSE;
-                    message.channel = command.request.channel;
-                    message.responseChannel = command.request.replyChannel;
-                    message.responseStatus = command.request.resolve ? 'resolved' : 'rejected';
                 }
                 else if (command.kind === IpcBusCommand.Kind.RequestClose) {
                     message.kind = IpcBusLog.Kind.GET_CLOSE_REQUEST;
-                    message.channel = command.channel;
                 }
+                needArgs = (this._level & IpcBusLogConfig.Level.GetArgs) === IpcBusLogConfig.Level.GetArgs;
                 break;
             }
+        }
+
+        switch (message.kind) {
+            case IpcBusLog.Kind.SEND_MESSAGE:
+            case IpcBusLog.Kind.GET_MESSAGE: {
+                message.channel = command.channel;
+                break;
+            }
+            case IpcBusLog.Kind.SEND_REQUEST:
+            case IpcBusLog.Kind.GET_REQUEST: {
+                message.channel = command.request.channel;
+                message.responseChannel = command.request.replyChannel;
+                break;
+            }
+            case IpcBusLog.Kind.SEND_CLOSE_REQUEST:
+            case IpcBusLog.Kind.GET_CLOSE_REQUEST: {
+                message.channel = command.request.channel;
+                message.responseChannel = command.request.replyChannel;
+                message.responseStatus = 'cancelled';
+                break;
+            }
+
+            case IpcBusLog.Kind.SEND_REQUEST_RESPONSE:
+            case IpcBusLog.Kind.GET_REQUEST_RESPONSE: {
+                message.channel = command.request.channel;
+                message.responseChannel = command.request.replyChannel;
+                message.responseStatus = command.request.resolve ? 'resolved' : 'rejected';
+                break;
+            }
+        }
+        if (needArgs) {
+            message.args = this.getArgs(args);
         }
         return message as IpcBusLog.Message;
     }
