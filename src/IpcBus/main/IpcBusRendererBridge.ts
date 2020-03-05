@@ -214,6 +214,10 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _onRendererRawContentReceived(event: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         const webContents: Electron.WebContents = event.sender;
         if (this._onRendererAdmindReceived(webContents, ipcBusCommand) === false) {
+            // Seems to have an issue with Electron 9.x.x, Buffer received through IPC is no more a buffer but a pure TypedArray !!
+            if (Buffer.isBuffer(rawContent.buffer) === false) {
+                rawContent.buffer = Buffer.from(rawContent.buffer);
+            }
             this._broadcastMessage(webContents, ipcBusCommand, rawContent);
             this._bridge._onRendererRawContentReceived(ipcBusCommand, rawContent);
         }
