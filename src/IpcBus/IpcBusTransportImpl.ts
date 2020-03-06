@@ -240,6 +240,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     // IpcConnectorClient
     onConnectorBufferReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
+        // Seems to have an issue with Electron 9.x.x, Buffer received through IPC is no more a buffer but a pure TypedArray !!
+        if (Buffer.isBuffer(rawContent.buffer) === false) {
+            rawContent.buffer = Buffer.from(rawContent.buffer);
+        }
         this._packetDecoder.setRawContent(rawContent);
         return this.onConnectorArgsReceived(ipcBusCommand, undefined, this._packetDecoder);
     }
