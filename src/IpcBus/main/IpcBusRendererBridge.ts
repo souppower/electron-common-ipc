@@ -3,6 +3,8 @@
 // import * as semver from 'semver';
 import { IpcPacketBuffer } from 'socket-serializer';
 
+const typedarray2buffer = require('typedarray-to-buffer');
+
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
@@ -216,7 +218,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         if (this._onRendererAdmindReceived(webContents, ipcBusCommand) === false) {
             // Seems to have an issue with Electron 9.x.x, Buffer received through IPC is no more a buffer but a pure TypedArray !!
             if (Buffer.isBuffer(rawContent.buffer) === false) {
-                rawContent.buffer = Buffer.from(rawContent.buffer);
+                rawContent.buffer = typedarray2buffer(rawContent.buffer);
             }
             this._broadcastMessage(webContents, ipcBusCommand, rawContent);
             this._bridge._onRendererRawContentReceived(ipcBusCommand, rawContent);
