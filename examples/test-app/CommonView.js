@@ -4,7 +4,7 @@ var processId;
 var peerName;
 var processToMaster = null;
 var ipcBus = CreateIpcBusClient();
-
+var bigpayload = null;
 
 function doNewNodeProcess(event) {
     processToMaster.send('new-process', 'node');
@@ -177,6 +177,7 @@ function doSendMessageToTopic(event) {
     var args = { topic: topicName, msg: topicMsg };
     if (processToMonitor.Type() === 'renderer') {
         ipcBus.send(topicName, topicMsg);
+        // ipcBus.send(topicName, bigpayload);
     }
     else {
         processToMonitor.postSendMessage(topicName, topicMsg);
@@ -251,6 +252,20 @@ function onIPC_BrokerStatusTopic(ipcContent) {
     }
 }
 
+
+function loadJSON(callback) {
+    const xobj = new XMLHttpRequest();
+    xobj.overrideMimeType("application/json");
+    xobj.open('GET', 'huge-payload.json', true); // Replace 'appDataServices' with the path to your file
+    xobj.onreadystatechange = () => {
+        if (xobj.readyState == 4 && xobj.status == "200") {
+            // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
+            callback(xobj.responseText);
+        }
+    };
+    xobj.send(null);  
+}
+
 var processToMonitor = null;
 
 ipcRenderer.on('initializeWindow', function (event, data) {
@@ -305,6 +320,10 @@ ipcRenderer.on('initializeWindow', function (event, data) {
 
         var processToolbar = document.getElementById('ProcessRendererToolbar');
         processToolbar.style.display = 'block';
+
+        loadJSON((txt) => {
+            bigpayload = JSON.stringify(txt);
+        });
 
         ipcBus.connect()
             .then(() => {

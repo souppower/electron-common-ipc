@@ -31,6 +31,9 @@ const ipcBusClient = ipcBusModule.CreateIpcBusClient();
 // ipcBusModule.ActivateIpcBusTrace(true);
 // ipcBusModule.ActivateServiceTrace(true);
 
+const bigpayload = require('./huge-payload.json');
+
+
 // Startup
 let ipcBrokerProcess = null;
 let ipcBroker = null;
@@ -235,6 +238,7 @@ var MainProcess = (function () {
         function onIPCElectron_SendMessage(topicName, topicMsg) {
             console.log('Master - onIPCElectron_SendMessage : topic:' + topicName + ' msg:' + topicMsg);
             ipcBusClient.send(topicName, topicMsg);
+            // ipcBusClient.send(topicName, bigpayload);
         }
 
         function onIPCElectron_RequestMessage(topicName, topicMsg) {

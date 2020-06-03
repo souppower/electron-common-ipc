@@ -1,11 +1,11 @@
 import { IpcPacketBuffer } from 'socket-serializer';
-const typedarray2buffer = require('typedarray-to-buffer');
 
 import * as Client from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusTransport } from './IpcBusTransport';
 import { IpcBusConnector } from './IpcBusConnector';
+import { CreateBuffer } from './buffer-utils';
 
 const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
 
@@ -245,7 +245,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         if (Buffer.isBuffer(rawContent.buffer) === false) {
             // rawContent.buffer = Buffer.from(rawContent.buffer);
             // rawContent.buffer = Buffer.from(rawContent.buffer.buffer);
-            rawContent.buffer = typedarray2buffer(rawContent.buffer);
+            rawContent.buffer = CreateBuffer(rawContent.buffer);
         }
         this._packetDecoder.setRawContent(rawContent);
         return this.onConnectorArgsReceived(ipcBusCommand, undefined, this._packetDecoder);
