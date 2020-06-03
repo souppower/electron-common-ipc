@@ -94,6 +94,6 @@
     "test": "electron-mocha --no-timeouts --reporter spec test/*.test.js",
     "tsc": "tsc",
     "tslint": "tslint",
-    "publish": "npm publish ./ --registry https://registry.npmjs.org"
+    "deploy": "npm publish ./ --registry https://registry.npmjs.org"
   }
 }
