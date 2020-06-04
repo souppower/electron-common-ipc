@@ -2,8 +2,9 @@ import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
-
+import { IpcBusContent } from '../IpcBusContent';
 import { IpcBusBrokerImpl } from '../node/IpcBusBrokerImpl';
+
 import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
 /** @internal */
@@ -30,16 +31,17 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         return super.close(options);
     }
 
-    broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
-        if (this.hasChannel(ipcBusCommand.channel)) {
-            ipcBusCommand.bridge = true;
-            this._packet.serializeArray([ipcBusCommand, args]);
-            this.broadcastBuffer(ipcBusCommand, this._packet.buffer);
-        }
-    }
+    // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
+    //     if (this.hasChannel(ipcBusCommand.channel)) {
+    //         ipcBusCommand.bridge = true;
+    //         this._packet.serializeArray([ipcBusCommand, args]);
+    //         this.broadcastBuffer(ipcBusCommand, this._packet.buffer);
+    //     }
+    // }
 
-    broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
-        this.broadcastBuffer(ipcBusCommand, rawContent.buffer);
+    broadcastPacketRaw(ipcBusCommand: IpcBusCommand, ipcBusContent: IpcBusContent): void {
+        IpcBusContent.Unpack(ipcBusContent);
+        this.broadcastBuffer(ipcBusCommand, ipcBusContent.buffer);
     }
 
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {

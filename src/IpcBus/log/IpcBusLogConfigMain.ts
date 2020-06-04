@@ -1,6 +1,8 @@
 import { IpcPacketBuffer } from "socket-serializer";
 
 import { IpcBusCommand } from "../IpcBusCommand";
+import { IpcBusContent } from "../IpcBusContent";
+
 import { IpcBusLog } from './IpcBusLog';
 import { IpcBusLogConfigImpl } from './IpcBusLogConfigImpl';
 import { IpcBusLogConfig } from './IpcBusLogConfig';
@@ -12,7 +14,7 @@ export interface IpcBusLogMain extends IpcBusLogConfig {
     getCallback(): IpcBusLog.Callback;
     setCallback(cb?: IpcBusLog.Callback): void;
     addLog(command: IpcBusCommand, args: any[], payload?: number): boolean;
-    addLogRawContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean;
+    addLogRawContent(ipcBusCommand: IpcBusCommand, ipcBusContent: IpcBusContent): boolean;
     addLogPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean;
 }
 
@@ -177,8 +179,9 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }
 
-    addLogRawContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
+    addLogRawContent(ipcBusCommand: IpcBusCommand, ipcBusContent: IpcBusContent): boolean {
         if (ipcBusCommand.log) {
+            const rawContent = IpcBusContent.UnpackRawContent(ipcBusContent);
             this._packet.setRawContent(rawContent);
             return this.addLog(ipcBusCommand, this._packet.parseArrayAt(1), this._packet.buffer.length);
         }

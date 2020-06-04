@@ -5,11 +5,13 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
+import { IpcBusContent } from '../IpcBusContent';
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import { IpcBusTransport } from '../IpcBusTransport';
 import { IpcBusConnectorNet } from '../node/IpcBusConnectorNet';
 import { IpcBusConnector } from '../IpcBusConnector';
+
+import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
 const PeerName = 'NetBridge';
 
@@ -154,7 +156,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         return true;
     }
 
-    onConnectorBufferReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
+    onConnectorContentReceived(ipcBusCommand: IpcBusCommand, ipcBusContent: IpcBusContent): boolean {
         throw 'not implemented';
     }
 
@@ -189,16 +191,17 @@ export class IpcBusNetBridge implements IpcBusBridgeClient {
         return this._transport.hasChannel(channel);
     }
 
-    broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
-        if (this.hasChannel(ipcBusCommand.channel)) {
-            ipcBusCommand.bridge = true;
-            this._packet.serializeArray([ipcBusCommand, args]);
-            this.broadcastBuffer(ipcBusCommand, this._packet.buffer);
-        }
-    }
+    // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
+    //     if (this.hasChannel(ipcBusCommand.channel)) {
+    //         ipcBusCommand.bridge = true;
+    //         this._packet.serializeArray([ipcBusCommand, args]);
+    //         this.broadcastBuffer(ipcBusCommand, this._packet.buffer);
+    //     }
+    // }
 
-    broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
-        this._transport.broadcastBuffer(ipcBusCommand, rawContent.buffer);
+    broadcastPacketRaw(ipcBusCommand: IpcBusCommand, ipcBusContent: IpcBusContent): void {
+        IpcBusContent.Unpack(ipcBusContent);
+        this._transport.broadcastBuffer(ipcBusCommand, ipcBusContent.buffer);
     }
 
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {

@@ -176,8 +176,8 @@ function doSendMessageToTopic(event) {
 
     var args = { topic: topicName, msg: topicMsg };
     if (processToMonitor.Type() === 'renderer') {
-        ipcBus.send(topicName, topicMsg);
-        // ipcBus.send(topicName, bigpayload);
+        // ipcBus.send(topicName, topicMsg);
+        ipcBus.send(topicName, bigpayload);
     }
     else {
         processToMonitor.postSendMessage(topicName, topicMsg);

@@ -3,9 +3,10 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as Client from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommand } from './IpcBusCommand';
+import { IpcBusContent } from './IpcBusContent';
+
 import { IpcBusTransport } from './IpcBusTransport';
 import { IpcBusConnector } from './IpcBusConnector';
-import { CreateBuffer } from './buffer-utils';
 
 const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
 
@@ -240,14 +241,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // IpcConnectorClient
-    onConnectorBufferReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
-        // Seems to have an issue with Electron 9.x.x, Buffer received through IPC is no more a buffer but a pure TypedArray !!
-        if (Buffer.isBuffer(rawContent.buffer) === false) {
-            // rawContent.buffer = Buffer.from(rawContent.buffer);
-            // rawContent.buffer = Buffer.from(rawContent.buffer.buffer);
-            rawContent.buffer = CreateBuffer(rawContent.buffer);
-        }
-        this._packetDecoder.setRawContent(rawContent);
+    onConnectorContentReceived(ipcBusCommand: IpcBusCommand, ipcBusContent: IpcBusContent): boolean {
+        const rawContant = IpcBusContent.UnpackRawContent(ipcBusContent);
+        this._packetDecoder.setRawContent(rawContant);
         return this.onConnectorArgsReceived(ipcBusCommand, undefined, this._packetDecoder);
     }
 

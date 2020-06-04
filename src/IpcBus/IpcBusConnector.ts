@@ -1,6 +1,7 @@
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import { IpcBusCommand } from './IpcBusCommand';
+import { IpcBusContent } from './IpcBusContent';
 import * as Client from './IpcBusClient';
 import { IpcBusLogConfig } from './log/IpcBusLogConfig';
 
@@ -10,14 +11,14 @@ export namespace IpcBusConnector {
     export interface Handshake {
         process: Client.IpcBusProcess;
         logLevel: IpcBusLogConfig.Level;
-        noSerialization?: boolean;
+        // noSerialization?: boolean;
     }
 
     /** @internal */
     export interface Client {
         peer: Client.IpcBusPeer;
         onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean;
-        onConnectorBufferReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean;
+        onConnectorContentReceived(ipcBusCommand: IpcBusCommand, ipcBusContent: IpcBusContent): boolean;
         onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]): boolean;
         onConnectorShutdown(): void;
     }

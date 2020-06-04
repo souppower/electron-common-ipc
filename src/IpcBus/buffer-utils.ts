@@ -1,5 +1,6 @@
 // const typedarray2buffer = require('typedarray-to-buffer');
 const isTypedArray = require('is-typedarray').strict;
+import * as zlib from 'zlib';
 
 function fromArrayBuffer(array: ArrayBuffer | SharedArrayBuffer, byteOffset: number, length: number): Buffer {
     if (byteOffset < 0 || array.byteLength < byteOffset) {
@@ -40,3 +41,16 @@ export function CreateBuffer(value: any, encodingOrOffset?: string | number, len
         return Buffer.from(value)
     }
 }
+
+export function CompressBuffer(buff: Buffer): Buffer {
+    return zlib.gzipSync(buff, {
+        chunkSize: 65536
+    });
+}
+
+export function DecompressBuffer(buff: Buffer): Buffer {
+    return zlib.gunzipSync(buff, {
+        chunkSize: 65536
+    });
+}
+
