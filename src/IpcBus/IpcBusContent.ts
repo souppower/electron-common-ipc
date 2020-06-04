@@ -1,6 +1,7 @@
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import { CreateBuffer, DecompressBuffer, CompressBuffer } from './buffer-utils';
+CompressBuffer;
 
 /** @internal */
 export interface IpcBusContent extends IpcPacketBuffer.RawContent {
@@ -12,12 +13,7 @@ export interface IpcBusContent extends IpcPacketBuffer.RawContent {
 export namespace IpcBusContent {
     export function UnpackRawContent(ipcBusContent: IpcBusContent): IpcPacketBuffer.RawContent {
         Unpack(ipcBusContent);
-        const rawContent: IpcPacketBuffer.RawContent = {
-            type: ipcBusContent.type,
-            contentSize: ipcBusContent.contentSize,
-            buffer: ipcBusContent.buffer
-        };
-        return rawContent;
+        return ipcBusContent as IpcPacketBuffer.RawContent;
     }
 
     export function Unpack(ipcBusContent: IpcBusContent) {
@@ -25,35 +21,29 @@ export namespace IpcBusContent {
         if (Buffer.isBuffer(ipcBusContent.buffer) === false) {
             ipcBusContent.buffer = CreateBuffer(ipcBusContent.buffer);
         }
-        if (ipcBusContent.compressed) {
-            ipcBusContent.buffer = DecompressBuffer(ipcBusContent.buffer);
-        }
-        else {
+        if (ipcBusContent.compressed && (ipcBusContent.bufferCompressed == null)) {
             ipcBusContent.bufferCompressed = ipcBusContent.buffer;
+            ipcBusContent.buffer = DecompressBuffer(ipcBusContent.buffer);
         }
     }
 
     export function PackRawContent(rawContent: IpcPacketBuffer.RawContent): IpcBusContent {
-        let compressed = false;
-        let buffer = rawContent.buffer;
-        if (rawContent.buffer.length > 1000000) {
-            compressed = true;
-            buffer = CompressBuffer(rawContent.buffer);
-        }
-        const packContent: IpcBusContent = {
-            type: rawContent.type,
-            contentSize: rawContent.contentSize,
-            compressed,
-            buffer
-        };
-        return packContent;
+        const ipcBusContent = rawContent as IpcBusContent;
+        // if (ipcBusContent.buffer.length > 1000000) {
+        //     ipcBusContent.compressed = true;
+        //     ipcBusContent.buffer = CompressBuffer(ipcBusContent.buffer);
+        // }
+        // else {
+            ipcBusContent.compressed = false;
+        // }
+        return ipcBusContent;
     }
 
     export function Pack(ipcBusContent: IpcBusContent): IpcBusContent {
-        if ((ipcBusContent.buffer.length > 1000000) && !ipcBusContent.compressed) {
-            ipcBusContent.compressed = true;
-            ipcBusContent.bufferCompressed = CompressBuffer(ipcBusContent.buffer);
-        }
+        // if ((ipcBusContent.buffer.length > 1000000) && !ipcBusContent.compressed) {
+        //     ipcBusContent.compressed = true;
+        //     ipcBusContent.bufferCompressed = CompressBuffer(ipcBusContent.buffer);
+        // }
         const packContent: IpcBusContent = {
             type: ipcBusContent.type,
             contentSize: ipcBusContent.contentSize,

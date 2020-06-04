@@ -154,7 +154,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _broadcastMessage(webContents: Electron.WebContents | null, ipcBusCommand: IpcBusCommand, ipcBusContent: IpcBusContent) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                const pack = IpcBusContent.Pack(ipcBusContent);
+                let pack: IpcBusContent;
                 if (webContents) {
                     if (ipcBusCommand.request) {
                         this._subscriptions.setSingleChannel(ipcBusCommand.request.replyChannel, webContents, ipcBusCommand.peer);
@@ -163,12 +163,14 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                     const sourceKey = this._subscriptions.getKey(webContents);
                     this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                         if (connData.key !== sourceKey) {
+                            pack = pack || IpcBusContent.Pack(ipcBusContent);
                             connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, pack);
                         }
                     });
                 }
                 else {
                     this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
+                        pack = pack || IpcBusContent.Pack(ipcBusContent);
                         connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, pack);
                     });
                 }

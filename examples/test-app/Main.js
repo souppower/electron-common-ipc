@@ -186,7 +186,7 @@ var MainProcess = (function () {
             }
             else {
                 perfView = new BrowserWindow({
-                    width: width, height: 800,
+                    width: width + 200, height: 800,
                     autoHideMenuBar: true,
                     webPreferences:
                     {
@@ -237,8 +237,8 @@ var MainProcess = (function () {
 
         function onIPCElectron_SendMessage(topicName, topicMsg) {
             console.log('Master - onIPCElectron_SendMessage : topic:' + topicName + ' msg:' + topicMsg);
-            // ipcBusClient.send(topicName, topicMsg);
-            ipcBusClient.send(topicName, bigpayload);
+            ipcBusClient.send(topicName, topicMsg);
+            // ipcBusClient.send(topicName, bigpayload);
         }
 
         function onIPCElectron_RequestMessage(topicName, topicMsg) {
