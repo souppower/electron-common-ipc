@@ -3,7 +3,7 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusLogMain } from '../log/IpcBusLogConfigMain';
-import { IpcBusContent } from '../IpcBusContent';
+import { IpcBusRawContent } from '../IpcBusContent';
 
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 
@@ -21,8 +21,8 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         return this._ipcBusLog.addLog(command, args);
     }
 
-    addLogRawContent(ipcBusCommand: IpcBusCommand, ipcBusContent: IpcBusContent): boolean {
-        return this._ipcBusLog.addLogRawContent(ipcBusCommand, ipcBusContent);
+    addLogRawContent(ipcBusCommand: IpcBusCommand, IpcBusRawContent: IpcBusRawContent): boolean {
+        return this._ipcBusLog.addLogRawContent(ipcBusCommand, IpcBusRawContent);
     }
 
     addLogPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean {
@@ -35,9 +35,9 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
     //     }
     // }
 
-    _onRendererRawContentReceived(ipcBusCommand: IpcBusCommand, ipcBusContent: IpcBusContent) {
-        if (this._ipcBusLog.addLogRawContent(ipcBusCommand, ipcBusContent)) {
-            super._onRendererRawContentReceived(ipcBusCommand, ipcBusContent);
+    _onRendererContentReceived(ipcBusCommand: IpcBusCommand, IpcBusRawContent: IpcBusRawContent) {
+        if (this._ipcBusLog.addLogRawContent(ipcBusCommand, IpcBusRawContent)) {
+            super._onRendererContentReceived(ipcBusCommand, IpcBusRawContent);
         }
     }
 

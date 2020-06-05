@@ -5,7 +5,7 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusContent } from '../IpcBusContent';
+import { IpcBusRawContent } from '../IpcBusContent';
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import { IpcBusTransport } from '../IpcBusTransport';
 import { IpcBusConnectorNet } from '../node/IpcBusConnectorNet';
@@ -156,7 +156,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         return true;
     }
 
-    onConnectorContentReceived(ipcBusCommand: IpcBusCommand, ipcBusContent: IpcBusContent): boolean {
+    onConnectorContentReceived(ipcBusCommand: IpcBusCommand, IpcBusRawContent: IpcBusRawContent): boolean {
         throw 'not implemented';
     }
 
@@ -199,9 +199,8 @@ export class IpcBusNetBridge implements IpcBusBridgeClient {
     //     }
     // }
 
-    broadcastPacketRaw(ipcBusCommand: IpcBusCommand, ipcBusContent: IpcBusContent): void {
-        IpcBusContent.Unpack(ipcBusContent);
-        this._transport.broadcastBuffer(ipcBusCommand, ipcBusContent.buffer);
+    broadcastContent(ipcBusCommand: IpcBusCommand, IpcBusRawContent: IpcBusRawContent): void {
+        this._transport.broadcastBuffer(ipcBusCommand, IpcBusRawContent.buffer);
     }
 
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {

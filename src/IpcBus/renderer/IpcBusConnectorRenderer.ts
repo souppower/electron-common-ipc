@@ -7,7 +7,7 @@ import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusContent } from '../IpcBusContent';
+import { IpcBusRawContent } from '../IpcBusContent';
 import { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 
@@ -59,6 +59,8 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             // }
             // else {
                 this._onIpcEventReceived = (event, ipcBusCommand, rawContent) => {
+                    IpcBusRawContent.FixRawContent(rawContent);
+                    IpcBusRawContent.UnpackRawContent(rawContent);
                     this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
                 };
             // }
@@ -75,6 +77,8 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             // }
             // else {
                 this._onIpcEventReceived = (ipcBusCommand, rawContent) => {
+                    IpcBusRawContent.FixRawContent(rawContent);
+                    IpcBusRawContent.UnpackRawContent(rawContent);
                     this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
                  };
             //  }
@@ -134,7 +138,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         // }
         // else {
             this._packetOut.serializeArray([ipcBusCommand, args]);
-            const packRawContent = IpcBusContent.PackRawContent(this._packetOut.getRawContent());
+            const packRawContent = IpcBusRawContent.PackRawContent(this._packetOut.getRawContent());
             this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, packRawContent);
         // }
     }
