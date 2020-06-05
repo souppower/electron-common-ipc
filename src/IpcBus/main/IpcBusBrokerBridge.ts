@@ -2,7 +2,6 @@ import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 import { IpcBusBrokerImpl } from '../node/IpcBusBrokerImpl';
 
 import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
