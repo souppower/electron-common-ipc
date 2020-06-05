@@ -42,12 +42,10 @@
     "csv-stringify": "^5.5.0",
     "electron-process-type": "^4.1.0",
     "fs-extra": "^9.0.0",
-    "is-typedarray": "^1.0.0",
     "json-helpers": "^2.1.3",
     "semver": "^7.3.2",
     "shortid": "^2.2.15",
     "socket-serializer": "^4.0.4",
-    "typedarray-to-buffer": "^3.1.5",
     "uuid": "^8.1.0",
     "winston": "^3.2.1"
   },

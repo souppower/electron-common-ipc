@@ -1,6 +1,5 @@
 import { IpcPacketBuffer } from 'socket-serializer';
-
-import { CreateBuffer, DecompressBuffer, CompressBuffer } from './buffer-utils';
+import * as zlib from 'zlib';
 
 const threshold = 4000000;
 
@@ -18,9 +17,10 @@ export namespace IpcBusContent {
     }
 
     export function Unpack(ipcBusContent: IpcBusContent) {
-        // Seems to have an issue with Electron 9.x.x, Buffer received through IPC is no more a buffer but a pure TypedArray !!
-        if (Buffer.isBuffer(ipcBusContent.buffer) === false) {
-            ipcBusContent.buffer = CreateBuffer(ipcBusContent.buffer);
+        // Seems to have an issue with Electron 8.x.x, Buffer received through IPC is no more a Buffer but an Uint8Array !!
+        if (ipcBusContent.buffer instanceof Uint8Array) {
+            // // To avoid a copy, use the typed array's underlying ArrayBuffer to back new Buffer
+            ipcBusContent.buffer = Buffer.from(ipcBusContent.buffer.buffer);
         }
         if (ipcBusContent.compressed && (ipcBusContent.bufferCompressed == null)) {
             ipcBusContent.bufferCompressed = ipcBusContent.buffer;
@@ -53,5 +53,17 @@ export namespace IpcBusContent {
         }
         return packContent;
     }
+}
+
+function CompressBuffer(buff: Buffer): Buffer {
+    return zlib.gzipSync(buff, {
+        chunkSize: 65536
+    });
+}
+
+function DecompressBuffer(buff: Buffer): Buffer {
+    return zlib.gunzipSync(buff, {
+        chunkSize: 65536
+    });
 }
 
