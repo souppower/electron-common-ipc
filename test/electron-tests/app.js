@@ -15,14 +15,15 @@ let x = 0, y = 0
 let idWindow  = 0;
 
 function testIPC(id) {
-    const buffer = Buffer.alloc(4000000);
     const ipcBus = ipcBusModule.CreateIpcBusClient();
     ipcBus.connect().then(() => {
         let counter = 0;
         setInterval(() => {
-            ipcBus.send(`test-perf-${id}`, counter, { buffer });
+            const buffer = Buffer.alloc(8000000 * Math.random());
+            ipcBus.send(`test-perf`, counter, { buffer });
+            console.log(`test-perf ${counter} - ${buffer.length}`)
             ++counter;
-        }, 100);
+        }, 50);
     });
 }
 
