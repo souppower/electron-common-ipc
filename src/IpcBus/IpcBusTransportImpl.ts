@@ -3,7 +3,6 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as Client from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommand } from './IpcBusCommand';
-import { IpcBusRawContent } from './IpcBusContent';
 
 import { IpcBusTransport } from './IpcBusTransport';
 import { IpcBusConnector } from './IpcBusConnector';
@@ -241,7 +240,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // IpcConnectorClient
-    onConnectorContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcBusRawContent): boolean {
+    onConnectorContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
         this._packetDecoder.setRawContent(rawContent);
         return this.onConnectorArgsReceived(ipcBusCommand, undefined, this._packetDecoder);
     }

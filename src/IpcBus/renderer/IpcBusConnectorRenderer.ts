@@ -5,11 +5,11 @@ import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
-
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusRawContent } from '../IpcBusContent';
 import { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
+
+import { IpcBusRendererContent } from './IpcBusRendererContent';
 
 export const IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Handshake';
 export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:Command';
@@ -59,8 +59,8 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             // }
             // else {
                 this._onIpcEventReceived = (event, ipcBusCommand, rawContent) => {
-                    IpcBusRawContent.FixRawContent(rawContent);
-                    IpcBusRawContent.UnpackRawContent(rawContent);
+                    IpcBusRendererContent.FixRawContent(rawContent);
+                    IpcBusRendererContent.UnpackRawContent(rawContent);
                     this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
                 };
             // }
@@ -77,8 +77,8 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             // }
             // else {
                 this._onIpcEventReceived = (ipcBusCommand, rawContent) => {
-                    IpcBusRawContent.FixRawContent(rawContent);
-                    IpcBusRawContent.UnpackRawContent(rawContent);
+                    IpcBusRendererContent.FixRawContent(rawContent);
+                    IpcBusRendererContent.UnpackRawContent(rawContent);
                     this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
                  };
             //  }
@@ -138,7 +138,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         // }
         // else {
             this._packetOut.serializeArray([ipcBusCommand, args]);
-            const packRawContent = IpcBusRawContent.PackRawContent(this._packetOut.getRawContent());
+            const packRawContent = IpcBusRendererContent.PackRawContent(this._packetOut.getRawContent());
             this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, packRawContent);
         // }
     }

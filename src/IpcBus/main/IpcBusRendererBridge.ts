@@ -6,7 +6,7 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusRawContent } from '../IpcBusContent';
+import { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 import { IpcBusConnector } from '../IpcBusConnector';
 
 import {
@@ -138,7 +138,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         throw 'not implemented';
     }
 
-    broadcastContent(ipcBusCommand: IpcBusCommand, IpcBusRawContent: IpcBusRawContent): void {
+    broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent): void {
         throw 'not implemented';
     }
     
@@ -148,13 +148,13 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     // From main or net transport
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
-        const rawContent = ipcPacketBuffer.getRawContent() as IpcBusRawContent;
-        IpcBusRawContent.PackRawContent(rawContent);
+        const rawContent = ipcPacketBuffer.getRawContent() as IpcBusRendererContent;
+        IpcBusRendererContent.PackRawContent(rawContent);
         this._broadcastRawContent(null, ipcBusCommand, rawContent);
     }
 
     // From renderer transport
-    private _broadcastRawContent(webContents: Electron.WebContents | null, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRawContent) {
+    private _broadcastRawContent(webContents: Electron.WebContents | null, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 if (webContents) {
@@ -215,12 +215,12 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return false;
     }
 
-    private _onRendererRawContentReceived(event: any, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRawContent) {
+    private _onRendererRawContentReceived(event: any, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
         const webContents: Electron.WebContents = event.sender;
         if (this._onRendererAdmindReceived(webContents, ipcBusCommand) === false) {
-           IpcBusRawContent.FixRawContent(rawContent);
+            IpcBusRendererContent.FixRawContent(rawContent);
             this._broadcastRawContent(webContents, ipcBusCommand, rawContent);
-            IpcBusRawContent.UnpackRawContent(rawContent);
+            IpcBusRendererContent.UnpackRawContent(rawContent);
             this._bridge._onRendererContentReceived(ipcBusCommand, rawContent);
         }
     }

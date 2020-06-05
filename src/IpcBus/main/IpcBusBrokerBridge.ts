@@ -2,7 +2,7 @@ import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusRawContent } from '../IpcBusContent';
+import { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 import { IpcBusBrokerImpl } from '../node/IpcBusBrokerImpl';
 
 import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
@@ -39,8 +39,8 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
     //     }
     // }
 
-    broadcastContent(ipcBusCommand: IpcBusCommand, IpcBusRawContent: IpcBusRawContent): void {
-        this.broadcastBuffer(ipcBusCommand, IpcBusRawContent.buffer);
+    broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
+        this.broadcastBuffer(ipcBusCommand, rawContent.buffer);
     }
 
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {

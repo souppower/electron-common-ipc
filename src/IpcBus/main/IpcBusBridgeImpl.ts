@@ -7,7 +7,6 @@ import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 import * as Bridge from './IpcBusBridge';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusRawContent } from '../IpcBusContent';
 
 import { IpcBusRendererBridge } from './IpcBusRendererBridge';
 import { IpcBusNetBridge } from './IpcBusNetBridge';
@@ -23,7 +22,7 @@ export interface IpcBusBridgeClient {
     broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void;
     // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void;
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void;
-    broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcBusRawContent): void;
+    broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void;
 }
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
@@ -106,7 +105,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     // This is coming from the Electron Renderer Process (Electron main ipc)
     // =================================================================================================
-    _onRendererContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcBusRawContent) {
+    _onRendererContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         this._mainTransport.onConnectorContentReceived(ipcBusCommand, rawContent);
         this._netTransport && this._netTransport.broadcastContent(ipcBusCommand, rawContent);
     }
