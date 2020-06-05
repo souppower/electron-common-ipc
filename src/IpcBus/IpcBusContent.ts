@@ -15,7 +15,8 @@ export interface IpcBusRawContent extends IpcPacketBuffer.RawContent {
 /** @internal */
 export namespace IpcBusRawContent {
     export function FixRawContent(rawContent: IpcBusRawContent) {
-        // Seems to have an issue with Electron 8.x.x, Buffer received through IPC is no more a Buffer but an Uint8Array !!
+        // Have an issue with Electron 8.x.x, Buffer sends through IPC is no more a Buffer at the destination but an Uint8Array !!
+        // https://github.com/electron/electron/pull/20214
         if (rawContent.buffer instanceof Uint8Array) {
             // See https://github.com/feross/typedarray-to-buffer/blob/master/index.js
             // To avoid a copy, use the typed array's underlying ArrayBuffer to back new Buffer
@@ -28,13 +29,13 @@ export namespace IpcBusRawContent {
         }
     }
 
-    export function PackRawContent(rawContent: IpcPacketBuffer.RawContent): IpcBusRawContent {
-        const ipcBusContent = rawContent as IpcBusRawContent;
-        if (ipcBusContent.buffer.length > threshold) {
-            ipcBusContent.compressed = true;
-            ipcBusContent.buffer = CompressBuffer(ipcBusContent.buffer);
+    export function PackRawContent(buffRawContent: IpcPacketBuffer.RawContent): IpcBusRawContent {
+        const rawContent = buffRawContent as IpcBusRawContent;
+        if ((rawContent.buffer.length > threshold) && !rawContent.compressed) {
+            rawContent.compressed = true;
+            rawContent.buffer = CompressBuffer(rawContent.buffer);
         }
-        return ipcBusContent;
+        return rawContent;
     }
 
     export function UnpackRawContent(rawContent: IpcBusRawContent) {
