@@ -25,7 +25,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     private _ipcMain: Electron.IpcMain;
     private _subscriptions: IpcBusUtils.ChannelConnectionMap<Electron.WebContents, number>;
-    private _noSerialization: boolean;
+    // private _noSerialization: boolean;
 
     private _rendererCallback: (...args: any[]) => void;
 
@@ -40,15 +40,15 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         );
 
 //        this._noSerialization = semver.gte(process.versions.electron, '8.0.0');
-        this._noSerialization = false;
+        // this._noSerialization = false;
 
         // callbacks
-        if (this._noSerialization) {
-            this._rendererCallback = this._onRendererArgsReceived.bind(this);
-        }
-        else {
+        // if (this._noSerialization) {
+        //     this._rendererCallback = this._onRendererArgsReceived.bind(this);
+        // }
+        // else {
             this._rendererCallback = this._onRendererRawContentReceived.bind(this);
-        }
+        // }
         this._onRendererHandshake = this._onRendererHandshake.bind(this);
     }
 
@@ -92,7 +92,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         const handshake: IpcBusConnector.Handshake = {
             process: peer.process,
             logLevel: logger.level,
-            noSerialization: this._noSerialization
+            // noSerialization: this._noSerialization
         };
         handshake.process.wcid = webContents.id;
         // Following functions are not implemented in all Electrons
@@ -224,12 +224,12 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         }
     }
 
-    private _onRendererArgsReceived(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
-        const webContents: Electron.WebContents = event.sender;
-        if (this._onRendererAdmindReceived(webContents, ipcBusCommand) === false) {
-            this._broadcastMessage(webContents, ipcBusCommand, args);
-            this._bridge._onRendererArgsReceived(ipcBusCommand, args);
-        }
-    }
+    // private _onRendererArgsReceived(event: any, ipcBusCommand: IpcBusCommand, args: any[]) {
+    //     const webContents: Electron.WebContents = event.sender;
+    //     if (this._onRendererAdmindReceived(webContents, ipcBusCommand) === false) {
+    //         this._broadcastMessage(webContents, ipcBusCommand, args);
+    //         this._bridge._onRendererArgsReceived(ipcBusCommand, args);
+    //     }
+    // }
 }
 

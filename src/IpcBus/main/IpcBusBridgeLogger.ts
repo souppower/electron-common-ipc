@@ -27,11 +27,11 @@ export class IpcBusBridgeLogger extends IpcBusBridgeImpl {
         return this._ipcBusLog.addLogPacket(ipcBusCommand, ipcPacketBuffer);
     }
     
-    _onRendererArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
-        if (this._ipcBusLog.addLog(ipcBusCommand, args)) {
-            super._onRendererArgsReceived(ipcBusCommand, args);
-        }
-    }
+    // _onRendererArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
+    //     if (this._ipcBusLog.addLog(ipcBusCommand, args)) {
+    //         super._onRendererArgsReceived(ipcBusCommand, args);
+    //     }
+    // }
 
     _onRendererRawContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         if (this._ipcBusLog.addLogRawContent(ipcBusCommand, rawContent)) {

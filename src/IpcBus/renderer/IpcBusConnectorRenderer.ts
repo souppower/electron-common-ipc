@@ -25,7 +25,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
 
     private _onIpcEventReceived: (...args: any[]) => void;
     private _packetOut: IpcPacketBuffer;
-    private _noSerialization: boolean;
+    // private _noSerialization: boolean;
 
     protected _connectCloseState: IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>;
 
@@ -51,32 +51,32 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         if (handshakeArg) {
             // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Sandbox off listening for #${this._messageId}`);
             const handshake = handshakeArg;
-            if (handshake.noSerialization) {
-                this._onIpcEventReceived = (event, ipcBusCommand, args) => {
-                    this._client.onConnectorArgsReceived(ipcBusCommand, args);
-                };
-            }
-            else {
+            // if (handshake.noSerialization) {
+            //     this._onIpcEventReceived = (event, ipcBusCommand, args) => {
+            //         this._client.onConnectorArgsReceived(ipcBusCommand, args);
+            //     };
+            // }
+            // else {
                 this._onIpcEventReceived = (event, ipcBusCommand, rawContent) => {
                     this._client.onConnectorBufferReceived(ipcBusCommand, rawContent);
                 };
-            }
+            // }
             this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             return handshake;
         }
         else {
             const handshake = peerOrArgs as IpcBusConnector.Handshake;
             // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Sandbox on listening for #${this._messageId}`);
-            if (handshake.noSerialization) {
-                this._onIpcEventReceived = (ipcBusCommand, args) => {
-                    this._client.onConnectorArgsReceived(ipcBusCommand, args);
-                };
-            }
-            else {
+            // if (handshake.noSerialization) {
+            //     this._onIpcEventReceived = (ipcBusCommand, args) => {
+            //         this._client.onConnectorArgsReceived(ipcBusCommand, args);
+            //     };
+            // }
+            // else {
                 this._onIpcEventReceived = (ipcBusCommand, rawContent) => {
                     this._client.onConnectorBufferReceived(ipcBusCommand, rawContent);
                  };
-             }
+            //  }
             this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             return handshake;
         }
@@ -95,7 +95,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                     // Keep the this._process ref intact as shared with client peers
                     this._process = Object.assign(this._process, handshake.process);
                     this._log.level = handshake.logLevel;
-                    this._noSerialization = handshake.noSerialization;
+                    // this._noSerialization = handshake.noSerialization;
                     clearTimeout(timer);
                     resolve(handshake);
                 };
@@ -128,13 +128,13 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         ipcBusCommand.bridge = true;
-        if (this._noSerialization) {
-            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, args);
-        }
-        else {
+        // if (this._noSerialization) {
+        //     this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, args);
+        // }
+        // else {
             this._packetOut.serializeArray([ipcBusCommand, args]);
             this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, this._packetOut.getRawContent());
-        }
+        // }
     }
 
     postBuffer(buffer: Buffer) {
