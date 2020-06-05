@@ -1,7 +1,8 @@
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import { CreateBuffer, DecompressBuffer, CompressBuffer } from './buffer-utils';
-CompressBuffer;
+
+const threshold = 4000000;
 
 /** @internal */
 export interface IpcBusContent extends IpcPacketBuffer.RawContent {
@@ -29,21 +30,21 @@ export namespace IpcBusContent {
 
     export function PackRawContent(rawContent: IpcPacketBuffer.RawContent): IpcBusContent {
         const ipcBusContent = rawContent as IpcBusContent;
-        // if (ipcBusContent.buffer.length > 1000000) {
-        //     ipcBusContent.compressed = true;
-        //     ipcBusContent.buffer = CompressBuffer(ipcBusContent.buffer);
-        // }
-        // else {
+        if (ipcBusContent.buffer.length > threshold) {
+            ipcBusContent.compressed = true;
+            ipcBusContent.buffer = CompressBuffer(ipcBusContent.buffer);
+        }
+        else {
             ipcBusContent.compressed = false;
-        // }
+        }
         return ipcBusContent;
     }
 
     export function Pack(ipcBusContent: IpcBusContent): IpcBusContent {
-        // if ((ipcBusContent.buffer.length > 1000000) && !ipcBusContent.compressed) {
-        //     ipcBusContent.compressed = true;
-        //     ipcBusContent.bufferCompressed = CompressBuffer(ipcBusContent.buffer);
-        // }
+        if ((ipcBusContent.buffer.length > threshold) && !ipcBusContent.compressed) {
+            ipcBusContent.compressed = true;
+            ipcBusContent.bufferCompressed = CompressBuffer(ipcBusContent.buffer);
+        }
         const packContent: IpcBusContent = {
             type: ipcBusContent.type,
             contentSize: ipcBusContent.contentSize,

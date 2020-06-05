@@ -134,7 +134,8 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         // }
         // else {
             this._packetOut.serializeArray([ipcBusCommand, args]);
-            const pack = IpcBusContent.PackRawContent(this._packetOut.getRawContent());
+            const packRawContent = IpcBusContent.PackRawContent(this._packetOut.getRawContent());
+            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, packRawContent);
         // }
     }
 
