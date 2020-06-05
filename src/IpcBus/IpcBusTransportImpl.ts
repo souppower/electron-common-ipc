@@ -242,8 +242,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     // IpcConnectorClient
     onConnectorContentReceived(ipcBusCommand: IpcBusCommand, ipcBusContent: IpcBusContent): boolean {
-        const rawContant = IpcBusContent.UnpackRawContent(ipcBusContent);
-        this._packetDecoder.setRawContent(rawContant);
+        const rawContent = IpcBusContent.UnpackRawContent(ipcBusContent);
+        this._packetDecoder.setRawContent(rawContent);
         return this.onConnectorArgsReceived(ipcBusCommand, undefined, this._packetDecoder);
     }
 

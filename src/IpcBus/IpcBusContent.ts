@@ -19,8 +19,14 @@ export namespace IpcBusContent {
     export function Unpack(ipcBusContent: IpcBusContent) {
         // Seems to have an issue with Electron 8.x.x, Buffer received through IPC is no more a Buffer but an Uint8Array !!
         if (ipcBusContent.buffer instanceof Uint8Array) {
-            // // To avoid a copy, use the typed array's underlying ArrayBuffer to back new Buffer
-            ipcBusContent.buffer = Buffer.from(ipcBusContent.buffer.buffer);
+            // See https://github.com/feross/typedarray-to-buffer/blob/master/index.js
+            // To avoid a copy, use the typed array's underlying ArrayBuffer to back new Buffer
+            const arr = ipcBusContent.buffer;
+            ipcBusContent.buffer = Buffer.from(arr.buffer);
+            if (arr.byteLength !== arr.buffer.byteLength) {
+                // Respect the "view", i.e. byteOffset and byteLength, without doing a copy
+                ipcBusContent.buffer = ipcBusContent.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength)
+              }
         }
         if (ipcBusContent.compressed && (ipcBusContent.bufferCompressed == null)) {
             ipcBusContent.bufferCompressed = ipcBusContent.buffer;
