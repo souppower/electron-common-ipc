@@ -1,7 +1,7 @@
 import { IpcPacketBuffer } from 'socket-serializer';
 import * as zlib from 'zlib';
 
-const threshold = 4000000;
+// const threshold = 4000000;
 
 /** @internal */
 export interface IpcBusRendererContent extends IpcPacketBuffer.RawContent {
@@ -31,28 +31,30 @@ export namespace IpcBusRendererContent {
 
     export function PackRawContent(buffRawContent: IpcPacketBuffer.RawContent): IpcBusRendererContent {
         const rawContent = buffRawContent as IpcBusRendererContent;
-        if ((rawContent.buffer.length > threshold) && !rawContent.compressed) {
-            rawContent.compressed = true;
-            rawContent.buffer = CompressBuffer(rawContent.buffer);
-        }
+        // if ((rawContent.buffer.length > threshold) && !rawContent.compressed) {
+        //     rawContent.compressed = true;
+        //     rawContent.buffer = CompressBuffer(rawContent.buffer);
+        // }
         return rawContent;
     }
 
     export function UnpackRawContent(rawContent: IpcBusRendererContent) {
-        if (rawContent.compressed) {
-            rawContent.compressed = false;
-            rawContent.buffer = DecompressBuffer(rawContent.buffer);
-        }
+        // if (rawContent.compressed) {
+        //     rawContent.compressed = false;
+        //     rawContent.buffer = DecompressBuffer(rawContent.buffer);
+        // }
         return rawContent;
     }
 }
 
+CompressBuffer;
 function CompressBuffer(buff: Buffer): Buffer {
     return zlib.gzipSync(buff, {
         chunkSize: 65536
     });
 }
 
+DecompressBuffer;
 function DecompressBuffer(buff: Buffer): Buffer {
     return zlib.gunzipSync(buff, {
         chunkSize: 65536

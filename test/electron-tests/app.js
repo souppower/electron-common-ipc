@@ -18,12 +18,13 @@ function testIPC(id) {
     const ipcBus = ipcBusModule.CreateIpcBusClient();
     ipcBus.connect().then(() => {
         let counter = 0;
+        const buffer = Buffer.alloc(8000000);
         setInterval(() => {
-            const buffer = Buffer.alloc(8000000 * Math.random());
-            ipcBus.send(`test-perf`, counter, { buffer });
-            console.log(`test-perf ${counter} - ${buffer.length}`)
+            const subbuffer = buffer.slice(0, 8000000 * Math.random());
+            ipcBus.send(`test-perf`, counter, { buffer: subbuffer });
+            console.log(`test-perf ${counter} - ${subbuffer.length}`)
             ++counter;
-        }, 50);
+        }, 1);
     });
 }
 

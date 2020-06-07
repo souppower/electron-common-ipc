@@ -135,8 +135,9 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             if (hasRendererChannel || hasNetChannel) {
                 ipcBusCommand.bridge = true;
                 this._packet.serializeArray([ipcBusCommand, args]);
-                hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, this._packet);
                 hasNetChannel && this._netTransport.broadcastBuffer(ipcBusCommand, this._packet.buffer);
+                // End with renderer if have to compress
+                hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, this._packet);
             }
         // }
     }
@@ -155,6 +156,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         // }
         // else {
             this._mainTransport.onConnectorPacketReceived(ipcBusCommand, ipcPacketBuffer);
+            // End with renderer if have to compress
             hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, ipcPacketBuffer);
         // }
     }

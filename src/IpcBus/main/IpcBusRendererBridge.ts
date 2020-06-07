@@ -219,7 +219,10 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         const webContents: Electron.WebContents = event.sender;
         if (this._onRendererAdmindReceived(webContents, ipcBusCommand) === false) {
             IpcBusRendererContent.FixRawContent(rawContent);
+
+            // Start with renderer if we have to keep compressed buffer
             this._broadcastRawContent(webContents, ipcBusCommand, rawContent);
+
             IpcBusRendererContent.UnpackRawContent(rawContent);
             this._bridge._onRendererContentReceived(ipcBusCommand, rawContent);
         }
