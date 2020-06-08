@@ -12,19 +12,15 @@ let ipcBrokerProcess = null;
 let ipcBroker = null;
 let ipcBridge = null;
 
-
-// const ipcBusModule = require('../../lib/electron-common-ipc');
-// ipcBusModule.ActivateIpcBusTrace(true);
-
-function createIPCBusNodeClient(busPath, busTimeout) {
+// Helpers
+function spawnNodeInstance(scriptPath, busPath, busTimeout, newArgs) {
     return new Promise((resolve, reject) => {
-
         const args = [
-            path.join(__dirname, 'node.js'),
+            path.join(__dirname, scriptPath),
             // '--inspect-brk=9000',
             `--busPath=${busPath}`,
             `--busTimeout=${busTimeout}`,
-        ];
+        ].concat(newArgs || []);
         let options = { env: {} };
         for (let key of Object.keys(process.env)) {
             options.env[key] = process.env[key];
@@ -51,15 +47,24 @@ function createIPCBusNodeClient(busPath, busTimeout) {
     });
 }
 
+// const ipcBusModule = require('../../lib/electron-common-ipc');
+// ipcBusModule.ActivateIpcBusTrace(true);
+
+function createIPCBusNodeClient(busPath, busTimeout) {
+    return spawnNodeInstance('node.js', busPath, busTimeout
+        // ,['--inspect-brk=9000']
+    );
+}
+
 function createIPCBusRendererClient(busPath, busTimeout) {
     const id = 1;
     return new Promise((resolve, reject) => {
-        const browserWindow = new BrowserWindow({ 
+        const browserWindow = new BrowserWindow({
             width: 800, height: 800,
             show: true,
-            webPreferences: { 
-                nodeIntegration: false, 
-                preload: path.join(__dirname, 'renderer-preload.bundle.js') 
+            webPreferences: {
+                nodeIntegration: false,
+                preload: path.join(__dirname, 'renderer-preload.bundle.js')
             }
         });
         ipcMain.on(`ready-${id}`, (event, msg) => {
@@ -86,14 +91,14 @@ function createIPCBusRendererClient(busPath, busTimeout) {
 function createIPCBusMainClient(busPath, busTimeout) {
     const ipcClient = ipcBusModule.IpcBusClient.Create();
     return ipcClient.connect(busPath, { peerName: 'client Main', timeoutDelay: busTimeout })
-    .then(() => {
-        ipcClient.on('client Main ACK', (event) => {
-            if (event.request) {
-                event.request.resolve('ACK');
-            }
+        .then(() => {
+            ipcClient.on('client Main ACK', (event) => {
+                if (event.request) {
+                    event.request.resolve('ACK');
+                }
+            });
+            return ipcClient;
         });
-        return ipcClient;
-    });
 }
 
 var localIpcBroker = undefined;
@@ -109,20 +114,20 @@ function prepareApp() {
                 createIPCBusNodeClient(busPath, busTimeout),
                 createIPCBusRendererClient(busPath, busTimeout)
             ])
-            .then(([ipcClient, nodeProcess, browserWindow]) => {
-                console.log('ready');
-                return Promise.all([
-                    ipcClient.request('client Main ACK', busTimeout),
-                    ipcClient.request('client Node ACK', busTimeout*10),
-                    ipcClient.request('client Renderer ACK', busTimeout)
-                ])
-                .then(([mainAnswer, nodeAnswer, rendererAnswer]) => {
-                    console.log('bus ready');
-                })
-                .catch((err) => {
-                    console.error(err);
+                .then(([ipcClient, nodeProcess, browserWindow]) => {
+                    console.log('ready');
+                    return Promise.all([
+                        ipcClient.request('client Main ACK', busTimeout),
+                        ipcClient.request('client Node ACK', busTimeout),
+                        ipcClient.request('client Renderer ACK', busTimeout)
+                    ])
+                        .then(([mainAnswer, nodeAnswer, rendererAnswer]) => {
+                            console.log('bus ready');
+                        })
+                        .catch((err) => {
+                            console.error(err);
+                        });
                 });
-            });
         });
 }
 
@@ -143,12 +148,10 @@ function createIPCBusClients() {
     }
     else if (localIpcBroker === false) {
         // Setup Remote Broker
-        ipcBrokerProcess = spawnNodeInstance(
-            'BrokerNodeInstance.js', -1,
-            // ['--inspect-brk=9000']
-        );
-        ipcBrokerProcess.on('message', function (msg) {
-            console.log('<MAIN> IPC broker is ready !');
+        ipcBrokerProcess = spawnNodeInstance('BrokerNodeInstance.js', busPath, busTimeout
+        // ,['--inspect-brk=9000']
+        )
+        .then(() => {
             prepareApp();
         });
         // ipcBrokerProcess.stdout.addListener('data', data => { console.log('<BROKER> ' + data.toString()); });

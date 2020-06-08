@@ -44,8 +44,8 @@
             "stopOnEntry": false,
             "args": [],
             "cwd": "${workspaceRoot}/examples/basic-app/",
-            "__runtimeExecutable": "${workspaceRoot}/examples/test-app/node_modules/electron/dist/electron.exe",
-            "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
+            "runtimeExecutable": "${workspaceRoot}/examples/basic-app/node_modules/electron/dist/electron.exe",
+            "__runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
             "runtimeArgs": [
                 // "--enable-sandbox",
                 // "--inspect-brk=50000",
