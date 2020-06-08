@@ -1,6 +1,5 @@
 const minimist = require('minimist');
-
-const { IpcClientTest } = require('./ipcClientTest.js');
+const ipcBusModule = require('electron-common-ipc');
 
 console.log(process.argv);
 
@@ -14,12 +13,19 @@ if (args.busPath) {
     busPath = parseInt(args.busPath);
 }
 
-const ipcClientTest = new IpcClientTest('client Node', busPath, busTimeout);
-ipcClientTest.create()
+const ipcClient = ipcBusModule.IpcBusClient.Create();
+ipcClient.connect(busPath, { peerName: 'client Node', timeoutDelay: busTimeout })
 .then(() => {
+    ipcClient.on('client Node ACK', (event) => {
+        if (event.request) {
+            event.request.resolve('ACK');
+        }
+    });
     process.send(JSON.stringify({ ready: { resolve: true }}));
 })
 .catch((err) => {
     process.send(JSON.stringify({ ready: { reject: true, error: err }}));
 });
 
+// Keep process alive
+process.stdin.on("data", () => {});

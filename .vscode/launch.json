@@ -36,6 +36,37 @@
             ]
         },
         {
+            "name": "Launch Basic app",
+            "type": "node",
+            "request": "launch",
+            "protocol": "inspector",
+            // "port": 50000,
+            "stopOnEntry": false,
+            "args": [],
+            "cwd": "${workspaceRoot}/examples/basic-app/",
+            "__runtimeExecutable": "${workspaceRoot}/examples/test-app/node_modules/electron/dist/electron.exe",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/electron/dist/electron.exe",
+            "runtimeArgs": [
+                // "--enable-sandbox",
+                // "--inspect-brk=50000",
+                "app.js",
+                "--remote-debugging-port=8315"
+            ],
+            "env": {
+                // "ELECTRON_IPC_BROKER_LOG_CSV": "c:\\temp\\ipc-log",
+                // "ELECTRON_IPC_LOG_LEVEL": "15",
+                // "ELECTRON_IPC_LOG_CSV": "c:\\temp\\ipc-log",
+                // "ELECTRON_IPC_LOG_ARG_MAX_CONTENT_LEN": "255",
+                // "ELECTRON_IPC_LOG_JSON": "c:\\temp\\ipc-log",
+            },
+            "outputCapture": "std",
+            "console": "internalConsole",
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/**/*.js"
+            ]
+        },
+        {
             "name": "Launch Basic Sample app",
             "type": "node",
             "request": "launch",
