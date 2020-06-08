@@ -41,7 +41,6 @@ ipcClient.connect(busPath, { peerName: 'client Node', timeoutDelay: busTimeout }
         testIPC(ipcClient);
     }, 5000);
 
-
     process.send(JSON.stringify({ ready: { resolve: true }}));
 })
 .catch((err) => {

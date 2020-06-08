@@ -47,9 +47,6 @@ function spawnNodeInstance(scriptPath, busPath, busTimeout, newArgs) {
     });
 }
 
-// const ipcBusModule = require('../../lib/electron-common-ipc');
-// ipcBusModule.ActivateIpcBusTrace(true);
-
 function createIPCBusNodeClient(busPath, busTimeout) {
     return spawnNodeInstance('node.js', busPath, busTimeout
         // ,['--inspect-brk=9000']
