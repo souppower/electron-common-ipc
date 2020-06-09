@@ -44,7 +44,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         this.broadcastBuffer(ipcBusCommand, ipcPacketBuffer.buffer);
     }
 
-    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void {
+    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {

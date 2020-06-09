@@ -19,7 +19,7 @@ export interface IpcBusBridgeClient {
     close(options?: Client.IpcBusClient.CloseOptions): Promise<void>;
 
     hasChannel(channel: string): boolean;
-    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void;
+    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void;
     // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void;
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void;
     broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void;

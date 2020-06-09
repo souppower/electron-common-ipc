@@ -204,7 +204,7 @@ export class IpcBusNetBridge implements IpcBusBridgeClient {
         this._transport.broadcastBuffer(ipcBusCommand, ipcPacketBuffer.buffer);
     }
 
-    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void {
+    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
         this._transport.broadcastBuffer(ipcBusCommand, buffer);
     }
 }
