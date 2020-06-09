@@ -32,17 +32,10 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.AddChannelListener:
-                break;
-
             case IpcBusCommand.Kind.RemoveChannelListener:
-                break;
-
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
-                break;
-
             case IpcBusCommand.Kind.RemoveListeners:
                 break;
-
             default :
                 this._bridge._onMainMessageReceived(ipcBusCommand, args);
                 break;

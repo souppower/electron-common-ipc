@@ -194,37 +194,34 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         }
     }
 
-    private _onRendererAdmindReceived(webContents: Electron.WebContents, ipcBusCommand: IpcBusCommand): boolean {
+    private _onRendererRawContentReceived(event: any, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
+        const webContents: Electron.WebContents = event.sender;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.AddChannelListener:
                 this._subscriptions.addRef(ipcBusCommand.channel, webContents, ipcBusCommand.peer);
-                return true;
+                break;
 
             case IpcBusCommand.Kind.RemoveChannelListener:
                 this._subscriptions.release(ipcBusCommand.channel, webContents, ipcBusCommand.peer);
-                return true;
+                break;
 
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
                 this._subscriptions.releaseAll(ipcBusCommand.channel, webContents, ipcBusCommand.peer);
-                return true;
+                break;
 
             case IpcBusCommand.Kind.RemoveListeners:
                 this._subscriptions.removePeer(webContents, ipcBusCommand.peer);
-                return true;
-        }
-        return false;
-    }
+                break;
 
-    private _onRendererRawContentReceived(event: any, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
-        const webContents: Electron.WebContents = event.sender;
-        if (this._onRendererAdmindReceived(webContents, ipcBusCommand) === false) {
-            IpcBusRendererContent.FixRawContent(rawContent);
+            default:
+                IpcBusRendererContent.FixRawContent(rawContent);
 
-            // Start with renderer if we have to keep compressed buffer
-            this._broadcastRawContent(webContents, ipcBusCommand, rawContent);
+                // Start with renderer if we have to keep compressed buffer
+                this._broadcastRawContent(webContents, ipcBusCommand, rawContent);
 
-            IpcBusRendererContent.UnpackRawContent(rawContent);
-            this._bridge._onRendererContentReceived(ipcBusCommand, rawContent);
+                IpcBusRendererContent.UnpackRawContent(rawContent);
+                this._bridge._onRendererContentReceived(ipcBusCommand, rawContent);
+                break;
         }
     }
 
