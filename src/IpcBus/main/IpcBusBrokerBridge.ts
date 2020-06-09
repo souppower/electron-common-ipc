@@ -9,13 +9,11 @@ import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 /** @internal */
 export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridgeClient {
     private _bridge: IpcBusBridgeImpl;
-    protected _packet: IpcPacketBuffer;
 
     constructor(contextType: Client.IpcBusProcessType, bridge: IpcBusBridgeImpl) {
         super(contextType);
 
         this._bridge = bridge;
-        this._packet = new IpcPacketBuffer();
     }
 
     hasChannel(channel: string) {

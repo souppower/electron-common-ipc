@@ -90,6 +90,7 @@
     "browserify-test:performance-preload": "browserify -o ./test/performance/renderer-preload.bundle.js -x electron ./test/performance/renderer-preload.js",
     "browserify-test:performance-renderer": "browserify -o ./test/performance/renderer.bundle.js -x electron ./test/performance/renderer.js",
     "test": "electron-mocha --no-timeouts --reporter spec test/*.test.js",
+    "test:performance": "electron-mocha --no-timeouts --reporter spec test/performance.test.js",
     "tsc": "tsc",
     "tslint": "tslint",
     "deploy": "npm publish ./ --registry https://registry.npmjs.org"

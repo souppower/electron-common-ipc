@@ -167,12 +167,10 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
 export class IpcBusNetBridge implements IpcBusBridgeClient {
     protected _bridge: IpcBusBridgeImpl;
     protected _transport: IpcBusTransportNetBridge;
-    protected _packet: IpcPacketBuffer;
 
     constructor(bridge: IpcBusBridgeImpl) {
         this._bridge = bridge;
 
-        this._packet = new IpcPacketBuffer();
         const connector = new IpcBusConnectorNet('main');
         this._transport = new IpcBusTransportNetBridge(connector, bridge);
     }

@@ -25,7 +25,6 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     private _ipcWindow: IpcWindow;
 
     private _onIpcEventReceived: (...args: any[]) => void;
-    private _packetOut: IpcPacketBuffer;
     // private _noSerialization: boolean;
 
     protected _connectCloseState: IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>;
@@ -34,7 +33,6 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
         super(contextType);
         this._ipcWindow = ipcWindow;
-        this._packetOut = new IpcPacketBuffer();
         this._connectCloseState = new IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>();
     }
 
@@ -137,10 +135,10 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         //     this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, args);
         // }
         // else {
-            this._packetOut.serializeArray([ipcBusCommand, args]);
-            const packRawContent = IpcBusRendererContent.PackRawContent(this._packetOut.getRawContent());
+            const packetOut = new IpcPacketBuffer();
+            packetOut.serializeArray([ipcBusCommand, args]);
+            const packRawContent = IpcBusRendererContent.PackRawContent(packetOut.getRawContent());
             this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, packRawContent);
-            this._packetOut.reset();
         // }
     }
 

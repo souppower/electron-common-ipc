@@ -32,11 +32,9 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     protected _netTransport: IpcBusBridgeClient;
     protected _rendererConnector: IpcBusBridgeClient;
 
-    protected _packet: IpcPacketBuffer;
     // private _noSerialization: boolean;
 
     constructor(contextType: Client.IpcBusProcessType) {
-        this._packet = new IpcPacketBuffer();
         // this._noSerialization = semver.gte(process.versions.electron, '8.0.0');
         // this._noSerialization = false;
 
@@ -135,11 +133,11 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             // Prevent serializing for nothing !
             if (hasRendererChannel || hasNetChannel) {
                 ipcBusCommand.bridge = true;
-                this._packet.serializeArray([ipcBusCommand, args]);
-                hasNetChannel && this._netTransport.broadcastBuffer(ipcBusCommand, this._packet.buffer);
+                const packet = new IpcPacketBuffer();
+                packet.serializeArray([ipcBusCommand, args]);
+                hasNetChannel && this._netTransport.broadcastBuffer(ipcBusCommand, packet.buffer);
                 // End with renderer if have to compress
-                hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, this._packet);
-                this._packet.reset();
+                hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, packet);
             }
         // }
     }
