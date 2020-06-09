@@ -118,6 +118,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     //         ipcBusCommand.bridge = true;
     //         this._packet.serializeArray([ipcBusCommand, args]);
     //         this._netTransport.broadcastBuffer(ipcBusCommand, this._packet.buffer);
+    //         this._packet.reset();
     //     }
     // }
 
@@ -138,6 +139,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
                 hasNetChannel && this._netTransport.broadcastBuffer(ipcBusCommand, this._packet.buffer);
                 // End with renderer if have to compress
                 hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, this._packet);
+                this._packet.reset();
             }
         // }
     }

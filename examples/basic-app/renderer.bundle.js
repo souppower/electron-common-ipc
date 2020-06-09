@@ -13862,11 +13862,14 @@ const ipcBusModule = require('electron-common-ipc');
 
 window.ipcRenderer.on('init-window', (event, id, busPath, busTimeout) => {
     const ipcClient = ipcBusModule.IpcBusClient.Create();
-    return ipcClient.connect(busPath, { peerName: 'client Renderer', timeoutDelay: busTimeout })
+    return ipcClient.connect(busPath, { peerName: 'Renderer client', timeoutDelay: busTimeout })
     .then(() => {
 
-        ipcClient.on('client Renderer ACK', (event) => {
+        console.log(`Renderer client: connected`);
+
+        ipcClient.on('Renderer client ACK', (event) => {
             if (event.request) {
+                console.log('Renderer client ACK');
                 event.request.resolve('ACK');
             }
         });

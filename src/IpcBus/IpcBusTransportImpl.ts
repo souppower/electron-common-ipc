@@ -90,7 +90,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected _connectCloseState: IpcBusUtils.ConnectCloseState<Client.IpcBusPeer>;
 
     protected _requestFunctions: Map<string, DeferredRequestPromise>;
-    protected _packetDecoder: IpcPacketBuffer;
     protected _postCommandBind: Function;
 
     constructor(connector: IpcBusConnector) {
@@ -102,7 +101,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             process: connector.process
         };
         this._requestFunctions = new Map<string, DeferredRequestPromise>();
-        this._packetDecoder = new IpcPacketBuffer();
         this._postCommandBind = () => { };
         this._connectCloseState = new IpcBusUtils.ConnectCloseState<Client.IpcBusPeer>();
     }
@@ -241,8 +239,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     // IpcConnectorClient
     onConnectorContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
-        this._packetDecoder.setRawContent(rawContent);
-        return this.onConnectorArgsReceived(ipcBusCommand, undefined, this._packetDecoder);
+        const packetDecoder = new IpcPacketBuffer(rawContent);
+        return this.onConnectorArgsReceived(ipcBusCommand, undefined, packetDecoder);
     }
 
     // IpcConnectorClient

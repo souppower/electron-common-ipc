@@ -21,12 +21,10 @@ export interface IpcBusLogMain extends IpcBusLogConfig {
 /** @internal */
 export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLogMain {
     private _cb: IpcBusLog.Callback;
-    protected _packet: IpcPacketBuffer;
     protected _order: number;
 
     constructor() {
         super();
-        this._packet = new IpcPacketBuffer();
         this._order = 0;
     }
 
@@ -184,8 +182,8 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
             const lograwContent = Object.assign({}, rawContent);
             IpcBusRendererContent.FixRawContent(lograwContent);
             IpcBusRendererContent.UnpackRawContent(lograwContent);
-            this._packet.setRawContent(lograwContent);
-            return this.addLog(ipcBusCommand, this._packet.parseArrayAt(1), this._packet.buffer.length);
+            const packet = new IpcPacketBuffer(lograwContent);
+            return this.addLog(ipcBusCommand, packet.parseArrayAt(1), packet.buffer.length);
         }
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }

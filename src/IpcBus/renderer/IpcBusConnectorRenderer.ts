@@ -140,6 +140,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             this._packetOut.serializeArray([ipcBusCommand, args]);
             const packRawContent = IpcBusRendererContent.PackRawContent(this._packetOut.getRawContent());
             this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, packRawContent);
+            this._packetOut.reset();
         // }
     }
 

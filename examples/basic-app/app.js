@@ -4,7 +4,7 @@ const child_process = require('child_process');
 const ipcBusModule = require('electron-common-ipc');
 
 const busPath = 49158; // '/tr-ipc-bus/' + uuid.v4();
-const busTimeout = 3000;
+const busTimeout = 1000;
 console.log('IPC Bus Path : ' + busPath);
 
 // Startup
@@ -28,8 +28,8 @@ function spawnNodeInstance(scriptPath, busPath, busTimeout, newArgs) {
         options.env['ELECTRON_RUN_AS_NODE'] = '1';
         options['stdio'] = ['pipe', 'pipe', 'pipe', 'ipc'];
         const nodeProcess = child_process.spawn(process.argv[0], args, options);
-        nodeProcess.stdout.addListener('data', data => { console.log('<Node> ' + data.toString()); });
-        nodeProcess.stderr.addListener('data', data => { console.log('<Node> ' + data.toString()); });
+        nodeProcess.stdout.addListener('data', data => { console.log(`<Node ${nodeProcess.pid}> ` + data.toString()); });
+        nodeProcess.stderr.addListener('data', data => { console.log(`<Node ${nodeProcess.pid}> ` + data.toString()); });
         nodeProcess.on('message', (msgStr) => {
             const msg = JSON.parse(msgStr);
             if (msg.ready) {
@@ -87,10 +87,11 @@ function createIPCBusRendererClient(busPath, busTimeout) {
 
 function createIPCBusMainClient(busPath, busTimeout) {
     const ipcClient = ipcBusModule.IpcBusClient.Create();
-    return ipcClient.connect(busPath, { peerName: 'client Main', timeoutDelay: busTimeout })
+    return ipcClient.connect(busPath, { peerName: 'Main client', timeoutDelay: busTimeout })
         .then(() => {
-            ipcClient.on('client Main ACK', (event) => {
+            ipcClient.on('Main client ACK', (event) => {
                 if (event.request) {
+                    console.log('Main client ACK');
                     event.request.resolve('ACK');
                 }
             });
@@ -114,9 +115,9 @@ function prepareApp() {
                 .then(([ipcClient, nodeProcess, browserWindow]) => {
                     console.log('ready');
                     return Promise.all([
-                        ipcClient.request('client Main ACK', busTimeout),
-                        ipcClient.request('client Node ACK', busTimeout),
-                        ipcClient.request('client Renderer ACK', busTimeout)
+                        ipcClient.request('Main client ACK', busTimeout),
+                        ipcClient.request('Node client ACK', busTimeout),
+                        ipcClient.request('Renderer client ACK', busTimeout)
                     ])
                         .then(([mainAnswer, nodeAnswer, rendererAnswer]) => {
                             console.log('bus ready');
