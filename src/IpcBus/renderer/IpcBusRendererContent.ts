@@ -24,8 +24,8 @@ export namespace IpcBusRendererContent {
             rawContent.buffer = Buffer.from(arr.buffer);
             if (arr.byteLength !== arr.buffer.byteLength) {
                 // Respect the "view", i.e. byteOffset and byteLength, without doing a copy
-                rawContent.buffer = rawContent.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength)
-              }
+                rawContent.buffer = rawContent.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength);
+            }
         }
     }
 
