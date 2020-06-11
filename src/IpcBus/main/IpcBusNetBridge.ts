@@ -189,13 +189,13 @@ export class IpcBusNetBridge implements IpcBusBridgeClient {
         return this._transport.hasChannel(channel);
     }
 
-    broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
-        if (this.hasChannel(ipcBusCommand.channel)) {
-            ipcBusCommand.bridge = true;
-            this._packet.serializeArray([ipcBusCommand, args]);
-            this.broadcastBuffer(ipcBusCommand, this._packet.buffer);
-        }
-    }
+    // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
+    //     if (this.hasChannel(ipcBusCommand.channel)) {
+    //         ipcBusCommand.bridge = true;
+    //         this._packet.serializeArray([ipcBusCommand, args]);
+    //         this.broadcastBuffer(ipcBusCommand, this._packet.buffer);
+    //     }
+    // }
 
     broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
         this._transport.broadcastBuffer(ipcBusCommand, rawContent.buffer);

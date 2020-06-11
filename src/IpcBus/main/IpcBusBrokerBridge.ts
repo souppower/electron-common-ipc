@@ -30,13 +30,13 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         return super.close(options);
     }
 
-    broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
-        if (this.hasChannel(ipcBusCommand.channel)) {
-            ipcBusCommand.bridge = true;
-            this._packet.serializeArray([ipcBusCommand, args]);
-            this.broadcastBuffer(ipcBusCommand, this._packet.buffer);
-        }
-    }
+    // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
+    //     if (this.hasChannel(ipcBusCommand.channel)) {
+    //         ipcBusCommand.bridge = true;
+    //         this._packet.serializeArray([ipcBusCommand, args]);
+    //         this.broadcastBuffer(ipcBusCommand, this._packet.buffer);
+    //     }
+    // }
 
     broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
         this.broadcastBuffer(ipcBusCommand, rawContent.buffer);
