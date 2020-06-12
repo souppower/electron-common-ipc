@@ -1,6 +1,8 @@
 import { IpcPacketBuffer } from "socket-serializer";
 
 import { IpcBusCommand } from "../IpcBusCommand";
+import { IpcBusRendererContent } from "../renderer/IpcBusRendererContent";
+
 import { IpcBusLog } from './IpcBusLog';
 import { IpcBusLogConfigImpl } from './IpcBusLogConfigImpl';
 import { IpcBusLogConfig } from './IpcBusLogConfig';
@@ -12,19 +14,17 @@ export interface IpcBusLogMain extends IpcBusLogConfig {
     getCallback(): IpcBusLog.Callback;
     setCallback(cb?: IpcBusLog.Callback): void;
     addLog(command: IpcBusCommand, args: any[], payload?: number): boolean;
-    addLogRawContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean;
+    addLogRawContent(ipcBusCommand: IpcBusCommand, IpcBusRendererContent: IpcBusRendererContent): boolean;
     addLogPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean;
 }
 
 /** @internal */
 export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLogMain {
     private _cb: IpcBusLog.Callback;
-    protected _packet: IpcPacketBuffer;
     protected _order: number;
 
     constructor() {
         super();
-        this._packet = new IpcPacketBuffer();
         this._order = 0;
     }
 
@@ -177,10 +177,13 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }
 
-    addLogRawContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
+    addLogRawContent(ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent): boolean {
         if (ipcBusCommand.log) {
-            this._packet.setRawContent(rawContent);
-            return this.addLog(ipcBusCommand, this._packet.parseArrayAt(1), this._packet.buffer.length);
+            const lograwContent = Object.assign({}, rawContent);
+            IpcBusRendererContent.FixRawContent(lograwContent);
+            IpcBusRendererContent.UnpackRawContent(lograwContent);
+            const packet = new IpcPacketBuffer(lograwContent);
+            return this.addLog(ipcBusCommand, packet.parseArrayAt(1), packet.buffer.length);
         }
         return (ipcBusCommand.kind.lastIndexOf('LOG', 0) !== 0);
     }

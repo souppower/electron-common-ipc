@@ -56,7 +56,7 @@ function doSave() {
         if (result.start && result.stop) {
             let cvsRow = [];
             cvsRow.push(`${result.start.test.typeCommand} ${result.start.test.typeArgs} (${result.start.test.bufferSize})`);
-            cvsRow.push(`${result.start.peer.name} => ${result.stop.peer.name}`);
+            cvsRow.push(`${result.start.peer.process.type} => ${result.stop.peer.process.type}`);
             cvsRow.push(`${result.start.test.typeCommand} ${result.start.test.typeArgs} (${result.start.test.bufferSize}) ${result.start.type} => ${result.stop.type}`);
             cvsRow.push(result.delay);
             cvsLike.push(cvsRow);
@@ -159,7 +159,7 @@ function onIPCBus_TestPerformanceResult(result) {
         var cell2 = row.insertCell(-1);
         var cell3 = row.insertCell(-1);
         cellType.innerHTML = `${msgTestStart.test.typeCommand} ${msgTestStart.test.typeArgs} (${msgTestStart.test.bufferSize})`;
-        cellLink.innerHTML = `${msgTestStart.peer.name} => ${msgTestStop.peer.name}`;
+        cellLink.innerHTML = `${msgTestStart.peer.process.type} => ${msgTestStop.peer.process.type}`;
         cell1.innerHTML = JSON.stringify(msgTestStart.peer);
         cell2.innerHTML = JSON.stringify(msgTestStop.peer);
         cell3.setAttribute('delay', result.delay);

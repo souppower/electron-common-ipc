@@ -53,6 +53,9 @@ window.addEventListener('load', () => {
         const ipcBus = electronCommonIpcModule.CreateIpcBusClient();
         ipcBus.connect({ peerName: `client-parent-${window_id}` })
         .then(() => {
+            ipcBus.on(`test-perf`, (event, counter, obj) => {
+                console.log(`test-perf ${counter} - ${obj.buffer.length}`)
+            });
             ipcBus.on(`test-parent-${window_id}`, (...args) => {
                 console.log(`ipcBus - Parent receive message : ${args}`);
             });

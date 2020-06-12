@@ -227,7 +227,7 @@ export interface IpcTimeoutOptions {
 - **timeoutDelay** < 0 : an infinite waiting
 - **timeoutDelay** > 0 : wait for the expected time
 
-A timeoutdelay below zero leads to an infinite waiting.
+A timeoutdelay below zero leads to an infinite waiting and may lead to memory leak as internals will not be freed if there is an issue.
 
 ```ts
 export interface IpcSocketBufferingOptions {

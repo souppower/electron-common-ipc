@@ -12,11 +12,33 @@ const ipcBusModule = require("../..");
 
 let done
 let x = 0, y = 0
+let idWindow  = 0;
+
+function testIPC(id) {
+    const ipcBus = ipcBusModule.CreateIpcBusClient();
+    ipcBus.connect().then(() => {
+        let counter = 0;
+        const buffer = Buffer.alloc(8000000);
+        setInterval(() => {
+            const subbuffer = buffer.slice(0, 8000000 * Math.random());
+            ipcBus.send(`test-perf`, counter, { buffer: subbuffer });
+            console.log(`test-perf ${counter} - ${subbuffer.length}`)
+            ++counter;
+        }, 1);
+    });
+}
 
 function createWindow(page, title, webPreferences) {
     // Create the browser window.
     let win = new BrowserWindow({ x, y, width: 800, height: 200, webPreferences })
-    win.loadFile(path.join(__dirname, page))
+    // win.loadFile(path.join(__dirname, page) + `?id=${idWindow}`);
+    win.loadURL(`file://${path.join(__dirname, page)}?id=${idWindow}`);
+
+    if (idWindow === 0) {
+        testIPC(idWindow);
+    }
+
+    ++idWindow;
     win.setTitle(`${page} - ${JSON.stringify(webPreferences)}`)
 
     // Open the DevTools.
@@ -55,28 +77,28 @@ function createWindows() {
         // createWindow('page.html', 'nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true })
         // createWindow('page.html', 'sandbox: true', { nodeIntegration: false, sandbox: true })
 
-        createWindow('page.html', 'preload', 
-            { preload: path.join(__dirname, 'page-preload.bundle.js') })
+        // createWindow('page.html', 'preload', 
+        //     { preload: path.join(__dirname, 'page-preload.bundle.js') })
         createWindow('page.html', 'preload nodeIntegration: false', 
             { nodeIntegration: false, preload: path.join(__dirname, 'page-preload.bundle.js') })
-        createWindow('page.html', 'preload nodeIntegration: false, sandbox: true', 
-            { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
-        createWindow('page.html', 'preload sandbox: true', 
-            { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
+        // createWindow('page.html', 'preload nodeIntegration: false, sandbox: true', 
+        //     { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
+        // createWindow('page.html', 'preload sandbox: true', 
+        //     { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
 
-        // createWindow('page-parent.html', '{}', {})
-        // createWindow('page-parent.html', 'nodeIntegration: false', { nodeIntegration: false })
-        // createWindow('page-parent.html', 'nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true })
-        // createWindow('page-parent.html', 'sandbox: true', { nodeIntegration: false, sandbox: true })
+        // // createWindow('page-parent.html', '{}', {})
+        // // createWindow('page-parent.html', 'nodeIntegration: false', { nodeIntegration: false })
+        // // createWindow('page-parent.html', 'nodeIntegration: false, sandbox: true', { nodeIntegration: false, sandbox: true })
+        // // createWindow('page-parent.html', 'sandbox: true', { nodeIntegration: false, sandbox: true })
 
-        createWindow('page-parent.html', 'preload',
-            { preload: path.join(__dirname, 'page-preload.bundle.js') })
-        createWindow('page-parent.html', 'preload nodeIntegration: false',
-            { nodeIntegration: false, preload: path.join(__dirname, 'page-preload.bundle.js') })
-        createWindow('page-parent.html', 'preload nodeIntegration: false, sandbox: true', 
-            { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
-        createWindow('page-parent.html', 'preload sandbox: true',
-            { nodeIntegration: true, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
+        // createWindow('page-parent.html', 'preload',
+        //     { preload: path.join(__dirname, 'page-preload.bundle.js') })
+        // createWindow('page-parent.html', 'preload nodeIntegration: false',
+        //     { nodeIntegration: false, preload: path.join(__dirname, 'page-preload.bundle.js') })
+        // createWindow('page-parent.html', 'preload nodeIntegration: false, sandbox: true', 
+        //     { nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
+        // createWindow('page-parent.html', 'preload sandbox: true',
+        //     { nodeIntegration: true, sandbox: true, preload: path.join(__dirname, 'page-preload.bundle.js') })
     });
 }
 

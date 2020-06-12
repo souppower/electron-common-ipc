@@ -3,9 +3,9 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as Client from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommand } from './IpcBusCommand';
+
 import { IpcBusTransport } from './IpcBusTransport';
 import { IpcBusConnector } from './IpcBusConnector';
-import { CreateBuffer } from './buffer-utils';
 
 const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
 
@@ -90,7 +90,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected _connectCloseState: IpcBusUtils.ConnectCloseState<Client.IpcBusPeer>;
 
     protected _requestFunctions: Map<string, DeferredRequestPromise>;
-    protected _packetDecoder: IpcPacketBuffer;
     protected _postCommandBind: Function;
 
     constructor(connector: IpcBusConnector) {
@@ -102,7 +101,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             process: connector.process
         };
         this._requestFunctions = new Map<string, DeferredRequestPromise>();
-        this._packetDecoder = new IpcPacketBuffer();
         this._postCommandBind = () => { };
         this._connectCloseState = new IpcBusUtils.ConnectCloseState<Client.IpcBusPeer>();
     }
@@ -240,15 +238,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // IpcConnectorClient
-    onConnectorBufferReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
-        // Seems to have an issue with Electron 9.x.x, Buffer received through IPC is no more a buffer but a pure TypedArray !!
-        if (Buffer.isBuffer(rawContent.buffer) === false) {
-            // rawContent.buffer = Buffer.from(rawContent.buffer);
-            // rawContent.buffer = Buffer.from(rawContent.buffer.buffer);
-            rawContent.buffer = CreateBuffer(rawContent.buffer);
-        }
-        this._packetDecoder.setRawContent(rawContent);
-        return this.onConnectorArgsReceived(ipcBusCommand, undefined, this._packetDecoder);
+    onConnectorContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
+        const packetDecoder = new IpcPacketBuffer(rawContent);
+        return this.onConnectorArgsReceived(ipcBusCommand, undefined, packetDecoder);
     }
 
     // IpcConnectorClient
@@ -293,9 +285,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
-        if (timeoutDelay == null) {
-            timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
-        }
+        timeoutDelay = IpcBusUtils.checkTimeout(timeoutDelay);
         const ipcBusCommandRequest: IpcBusCommand.Request = { channel, replyChannel: IpcBusTransportImpl.generateReplyChannel(client.peer) };
         const deferredRequest = new DeferredRequestPromise(client, ipcBusCommandRequest);
         // Register locally

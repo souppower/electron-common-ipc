@@ -5,11 +5,12 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import { IpcBusTransport } from '../IpcBusTransport';
 import { IpcBusConnectorNet } from '../node/IpcBusConnectorNet';
 import { IpcBusConnector } from '../IpcBusConnector';
+
+import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
 const PeerName = 'NetBridge';
 
@@ -154,7 +155,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         return true;
     }
 
-    onConnectorBufferReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
+    onConnectorContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
         throw 'not implemented';
     }
 
@@ -166,12 +167,10 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
 export class IpcBusNetBridge implements IpcBusBridgeClient {
     protected _bridge: IpcBusBridgeImpl;
     protected _transport: IpcBusTransportNetBridge;
-    protected _packet: IpcPacketBuffer;
 
     constructor(bridge: IpcBusBridgeImpl) {
         this._bridge = bridge;
 
-        this._packet = new IpcPacketBuffer();
         const connector = new IpcBusConnectorNet('main');
         this._transport = new IpcBusTransportNetBridge(connector, bridge);
     }
@@ -189,15 +188,15 @@ export class IpcBusNetBridge implements IpcBusBridgeClient {
         return this._transport.hasChannel(channel);
     }
 
-    broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
-        if (this.hasChannel(ipcBusCommand.channel)) {
-            ipcBusCommand.bridge = true;
-            this._packet.serializeArray([ipcBusCommand, args]);
-            this.broadcastBuffer(ipcBusCommand, this._packet.buffer);
-        }
-    }
+    // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
+    //     if (this.hasChannel(ipcBusCommand.channel)) {
+    //         ipcBusCommand.bridge = true;
+    //         this._packet.serializeArray([ipcBusCommand, args]);
+    //         this.broadcastBuffer(ipcBusCommand, this._packet.buffer);
+    //     }
+    // }
 
-    broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
+    broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
         this._transport.broadcastBuffer(ipcBusCommand, rawContent.buffer);
     }
 
@@ -205,7 +204,7 @@ export class IpcBusNetBridge implements IpcBusBridgeClient {
         this._transport.broadcastBuffer(ipcBusCommand, ipcPacketBuffer.buffer);
     }
 
-    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void {
+    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
         this._transport.broadcastBuffer(ipcBusCommand, buffer);
     }
 }

@@ -6,8 +6,8 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as IpcBusUtils from '../IpcBusUtils';
 import * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
+import { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 import { IpcBusConnector } from '../IpcBusConnector';
-import { CreateBuffer } from '../buffer-utils';
 
 import {
     IPCBUS_TRANSPORT_RENDERER_HANDSHAKE,
@@ -138,20 +138,23 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         throw 'not implemented';
     }
 
-    broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
-        this._broadcastMessage(null, ipcBusCommand, args);
+    broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent): void {
+        throw 'not implemented';
     }
+    
+    // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
+    //     this._broadcastMessage(null, ipcBusCommand, args);
+    // }
 
+    // From main or net transport
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
-        const rawContent = ipcPacketBuffer.getRawContent();
-        this._broadcastMessage(null, ipcBusCommand, rawContent);
+        const rawContent = ipcPacketBuffer.getRawContent() as IpcBusRendererContent;
+        IpcBusRendererContent.PackRawContent(rawContent);
+        this._broadcastRawContent(null, ipcBusCommand, rawContent);
     }
 
-    broadcastPacketRaw(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
-        this._broadcastMessage(null, ipcBusCommand, rawContent);
-    }
-
-    private _broadcastMessage<T>(webContents: Electron.WebContents | null, ipcBusCommand: IpcBusCommand, content: T) {
+    // From renderer transport
+    private _broadcastRawContent(webContents: Electron.WebContents | null, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 if (webContents) {
@@ -162,13 +165,13 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                     const sourceKey = this._subscriptions.getKey(webContents);
                     this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                         if (connData.key !== sourceKey) {
-                            connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, content);
+                            connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                         }
                     });
                 }
                 else {
                     this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-                        connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, content);
+                        connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                     });
                 }
                 break;
@@ -177,7 +180,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             case IpcBusCommand.Kind.RequestResponse: {
                 const connData = this._subscriptions.getSingleChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, content);
+                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                     this._subscriptions.removeChannel(ipcBusCommand.channel);
                 }
                 break;
@@ -191,36 +194,34 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         }
     }
 
-    private _onRendererAdmindReceived(webContents: Electron.WebContents, ipcBusCommand: IpcBusCommand): boolean {
+    private _onRendererRawContentReceived(event: any, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
+        const webContents: Electron.WebContents = event.sender;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.AddChannelListener:
                 this._subscriptions.addRef(ipcBusCommand.channel, webContents, ipcBusCommand.peer);
-                return true;
+                break;
 
             case IpcBusCommand.Kind.RemoveChannelListener:
                 this._subscriptions.release(ipcBusCommand.channel, webContents, ipcBusCommand.peer);
-                return true;
+                break;
 
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
                 this._subscriptions.releaseAll(ipcBusCommand.channel, webContents, ipcBusCommand.peer);
-                return true;
+                break;
 
             case IpcBusCommand.Kind.RemoveListeners:
                 this._subscriptions.removePeer(webContents, ipcBusCommand.peer);
-                return true;
-        }
-        return false;
-    }
+                break;
 
-    private _onRendererRawContentReceived(event: any, ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
-        const webContents: Electron.WebContents = event.sender;
-        if (this._onRendererAdmindReceived(webContents, ipcBusCommand) === false) {
-            // Seems to have an issue with Electron 9.x.x, Buffer received through IPC is no more a buffer but a pure TypedArray !!
-            if (Buffer.isBuffer(rawContent.buffer) === false) {
-                rawContent.buffer = CreateBuffer(rawContent.buffer);
-            }
-            this._broadcastMessage(webContents, ipcBusCommand, rawContent);
-            this._bridge._onRendererRawContentReceived(ipcBusCommand, rawContent);
+            default:
+                IpcBusRendererContent.FixRawContent(rawContent);
+
+                // Start with renderer if we have to keep compressed buffer
+                this._broadcastRawContent(webContents, ipcBusCommand, rawContent);
+
+                IpcBusRendererContent.UnpackRawContent(rawContent);
+                this._bridge._onRendererContentReceived(ipcBusCommand, rawContent);
+                break;
         }
     }
 

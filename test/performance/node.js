@@ -17,8 +17,6 @@ if (args.busPath) {
 const ipcClientTest = new IpcClientTest('client Node', busPath, busTimeout);
 ipcClientTest.create()
 .then(() => {
-})
-.then(() => {
     process.send(JSON.stringify({ ready: { resolve: true }}));
 })
 .catch((err) => {

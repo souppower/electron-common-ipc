@@ -186,7 +186,7 @@ var MainProcess = (function () {
             }
             else {
                 perfView = new BrowserWindow({
-                    width: width, height: 800,
+                    width: width + 200, height: 800,
                     autoHideMenuBar: true,
                     webPreferences:
                     {
