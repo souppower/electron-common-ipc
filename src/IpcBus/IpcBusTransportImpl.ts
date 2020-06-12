@@ -285,9 +285,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
-        if (timeoutDelay == null) {
-            timeoutDelay = IpcBusUtils.IPC_BUS_TIMEOUT;
-        }
+        timeoutDelay = IpcBusUtils.checkTimeout(timeoutDelay);
         const ipcBusCommandRequest: IpcBusCommand.Request = { channel, replyChannel: IpcBusTransportImpl.generateReplyChannel(client.peer) };
         const deferredRequest = new DeferredRequestPromise(client, ipcBusCommandRequest);
         // Register locally
