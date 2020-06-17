@@ -12,7 +12,7 @@ let g_log: IpcBusLogConfig;
 export const CreateIpcBusLog = (): IpcBusLogConfig => {
     if (g_log == null) {
         const electronProcessType = GetElectronProcessType();
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBridge process type = ${electronProcessType}`);
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`CreateIpcBusLog process type = ${electronProcessType}`);
         switch (electronProcessType) {
             case 'main':
                 g_log = new IpcBusLogConfigMain();

@@ -1,5 +1,5 @@
 import { IpcPacketBuffer } from 'socket-serializer';
-import * as zlib from 'zlib';
+// import * as zlib from 'zlib';
 
 // const threshold = 4000000;
 
@@ -47,17 +47,17 @@ export namespace IpcBusRendererContent {
     }
 }
 
-CompressBuffer;
-function CompressBuffer(buff: Buffer): Buffer {
-    return zlib.gzipSync(buff, {
-        chunkSize: 65536
-    });
-}
+// CompressBuffer;
+// function CompressBuffer(buff: Buffer): Buffer {
+//     return zlib.gzipSync(buff, {
+//         chunkSize: 65536
+//     });
+// }
 
-DecompressBuffer;
-function DecompressBuffer(buff: Buffer): Buffer {
-    return zlib.gunzipSync(buff, {
-        chunkSize: 65536
-    });
-}
+// DecompressBuffer;
+// function DecompressBuffer(buff: Buffer): Buffer {
+//     return zlib.gunzipSync(buff, {
+//         chunkSize: 65536
+//     });
+// }
 

@@ -17,7 +17,7 @@ let g_bridge: IpcBusBridge;
 export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge => {
     if (g_bridge == null) {
         const electronProcessType = GetElectronProcessType();
-        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`_CreateIpcBusBridge process type = ${electronProcessType}`);
+        IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`CreateIpcBusBridge process type = ${electronProcessType}`);
         switch (electronProcessType) {
             case 'main': {
                 const logger = CreateIpcBusLog() as IpcBusLogMain;
