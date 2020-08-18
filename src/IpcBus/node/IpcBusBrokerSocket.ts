@@ -49,6 +49,8 @@ export class IpcBusBrokerSocket {
             const socket = this._socket;
             if (closeServer) {
                 this._client = null;
+                const key = 'data';
+                socket.removeListener(key, this._socketBinds[key]);
             }
             else {
                 for (let key in this._socketBinds) {
