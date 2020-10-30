@@ -88,9 +88,9 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
             const methodNames = getInstanceMethodNames(this._exposedInstance);
             // Register handlers for functions of service's Implementation (except the ones inherited from EventEmitter)
             // Looking in legacy class
-            methodNames.forEach((methodDesc, methodName) => {
+            for (let [methodName, methodDesc] of methodNames) {
                 this.registerCallHandler(methodName, methodDesc.value);
-            });
+            }
         }
         else {
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcService] Service '${this._serviceName}' does NOT have an implementation`);

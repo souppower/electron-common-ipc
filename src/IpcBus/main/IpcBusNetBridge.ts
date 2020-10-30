@@ -148,7 +148,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
                 break;
 
             default:
-                this.broadcastBuffer(ipcBusCommand, null);
+                this.broadcastBuffer(ipcBusCommand);
                 this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
                 break;
         }

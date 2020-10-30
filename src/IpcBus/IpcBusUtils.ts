@@ -3,7 +3,7 @@ import * as shortid from 'shortid';
 
 import { EventEmitter } from 'events';
 
-import { IpcConnectOptions, IpcBusPeer } from './IpcBusClient';
+import { IpcConnectOptions, IpcBusPeer, IPCBUS_CHANNEL } from './IpcBusClient';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
 
@@ -22,25 +22,23 @@ function CleanPipeName(str: string) {
     return str;
 }
 
-const DirectChannelPrefix = 'direct:';
-const DirectChannelPrefixLength = DirectChannelPrefix.length;
+const ResponseChannelPrefix = `response-wcid:`;
+const ResponseChannelPrefixLength = ResponseChannelPrefix.length;
 
-export function CreateDirectChannel(peer: IpcBusPeer, uniqId: string): string {
+export function CreateResponseChannel(peer: IpcBusPeer, uniqId: string | number): string {
     if (peer.process.wcid) {
-        const channel = `${DirectChannelPrefix}${peer.process.wcid}_${uniqId}`;
-        return channel;
+        return `${ResponseChannelPrefix}${peer.process.wcid}_${uniqId}`;
     }
     else {
-        const channel = `${peer.id}_${uniqId}`;
-        return channel;
+        return `response:${peer.id}_${uniqId}`;
     }
 }
 
-export function IsDirectChannel(channel: string): number {
-    if (channel.lastIndexOf(DirectChannelPrefix, 0) === 0) {
-        return parseInt(channel.substr(DirectChannelPrefixLength), 10);
+export function IsWebContentsChannel(channel: string): number {
+    if (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0) {
+        return parseInt(channel.substr(ResponseChannelPrefixLength), 10);
     }
-    return -1;
+    return NaN;
 }
 
 export function CheckChannel(channel: any): string {
@@ -388,13 +386,13 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
     private _removeConnectionOrPeer(conn: T, peer: IpcBusPeer | null) {
         Logger.enable && this._info(`removeConnectionOrPeer: peerId = ${peer ? peer.id : 'unknown'}`);
         // We can not use _getKey as it may access a property which is no more accessible when the 'conn' is destroyed
-        this._channelsMap.forEach((connsMap, channel) => {
-            connsMap.forEach((connData) => {
+        for (let [channel, connsMap] of this._channelsMap) {
+            for (let [, connData] of connsMap) {
                 if (connData.conn === conn) {
                     this._releaseConnData(channel, connData, connsMap, peer, true);
                 }
-            });
-        });
+            }
+        }
     }
 
     removePeer(conn: T, peer: IpcBusPeer) {
@@ -424,21 +422,21 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
             Logger.enable && this._warn(`forEachChannel: Unknown channel '${channel}' !`);
         }
         else {
-            connsMap.forEach((connData) => {
+            for (let [, connData] of connsMap) {
                 Logger.enable && this._info(`forEachChannel '${channel}' - ${JSON.stringify(Array.from(connData.peerRefCounts.keys()))} (${connData.peerRefCounts.size})`);
                 callback(connData, channel);
-            });
+            }
         }
     }
 
     forEach(callback: ConnectionPeers.ForEachHandler<T, M>) {
         Logger.enable && this._info('forEach');
-        this._channelsMap.forEach((connsMap, channel: string) => {
-            connsMap.forEach((connData) => {
+        for (let [channel, connsMap] of this._channelsMap) {
+            for (let [, connData] of connsMap) {
                 Logger.enable && this._info(`forEach '${channel}' - ${JSON.stringify(Array.from(connData.peerRefCounts.keys()))} (${connData.peerRefCounts.size})`);
                 callback(connData, channel);
-            });
-        });
+            }
+        }
     }
 
     // on(event: 'channel-added', listener: (channel: string) => void): this;

@@ -158,16 +158,18 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 if (webContents) {
-                    if (ipcBusCommand.request) {
-                        this._subscriptions.setSingleChannel(ipcBusCommand.request.replyChannel, webContents, ipcBusCommand.peer);
-                    }
                     // Prevent echo message
                     const sourceKey = this._subscriptions.getKey(webContents);
+                    let found = false;
                     this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                         if (connData.key !== sourceKey) {
                             connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                            found = true;
                         }
                     });
+                    if (!found && ipcBusCommand.request) {
+                        this._subscriptions.setSingleChannel(ipcBusCommand.request.replyChannel, webContents, ipcBusCommand.peer);
+                    }
                 }
                 else {
                     this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {

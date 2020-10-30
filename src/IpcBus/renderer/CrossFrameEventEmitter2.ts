@@ -155,10 +155,10 @@ export class CrossFrameEventDispatcher {
                 target.detachEvent('onmessage', this._lifecycleHandler);
             }
 
-            this._ports.forEach((port) => {
+            for (let [, port] of this._ports) {
                 port.removeEventListener('message', this._messageHandler);
                 port.close();
-            });
+            }
             this._ports.clear();
             this._ports = null;
         }
@@ -196,12 +196,12 @@ export class CrossFrameEventDispatcher {
         const packet = CrossFrameMessage.Decode(event.data);
         if (packet) {
             trace && console.log(`CFEDisp ${this._uuid} - messageHandler - ${packet}`);
-            this._ports.forEach((port, uuid) => {
+            for (let [uuid, port] of this._ports) {
                 // Prevent Echo
                 if (uuid !== packet.uuid) {
                     port.postMessage(event.data);
                 }
-            });
+            }
         }
     }
 }
@@ -247,17 +247,17 @@ export class IpcBusFrameBridge extends CrossFrameEventDispatcher {
     protected _messageTransportHandlerEvent(...args: any[]) {
         trace && console.log(`_messageTransportHandlerEvent ${JSON.stringify(args)}`);
         const packet = CrossFrameMessage.Encode('dispatcher', IPCBUS_TRANSPORT_RENDERER_EVENT, args);
-        this._ports.forEach((port) => {
+        for (let [, port] of this._ports) {
             port.postMessage(packet);
-        });
+        }
     }
 
     protected _messageTransportHandlerConnect(...args: any[]) {
         trace && console.log(`_messageTransportHandlerConnect ${JSON.stringify(args)}`);
         const packet = CrossFrameMessage.Encode('dispatcher', IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, args);
-        this._ports.forEach((port) => {
+        for (let [, port] of this._ports) {
             port.postMessage(packet);
-        });
+        }
     }
 }
 

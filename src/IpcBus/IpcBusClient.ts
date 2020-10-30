@@ -1,8 +1,8 @@
 import { EventEmitter } from 'events';
 
 // Special channels
-export const IPCBUS_CHANNEL: string = '/electron-ipc-bus';
-export const IPCBUS_CHANNEL_QUERY_STATE: string = `${IPCBUS_CHANNEL}/queryState`;
+export const IPCBUS_CHANNEL = '/electron-ipc-bus';
+export const IPCBUS_CHANNEL_QUERY_STATE = `${IPCBUS_CHANNEL}/queryState`;
 
 // Log en vars
 export const ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH';
@@ -94,7 +94,7 @@ export interface IpcBusClient extends EventEmitter {
     connect: IpcBusClient.ConnectFunction;
     close: IpcBusClient.CloseFunction;
 
-    createDirectChannel(): string;
+    createResponseChannel(): string;
 
     send(channel: string, ...args: any[]): boolean;
     request(channel: string, timeoutDelay: number, ...args: any[]): Promise<IpcBusRequestResponse>;

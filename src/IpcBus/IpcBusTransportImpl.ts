@@ -117,7 +117,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         ++IpcBusTransportImpl.s_requestNumber;
         // return `${replyChannelPrefix}${peer.id}-${IpcBusTransportImpl.s_requestNumber}`;
         replyChannelPrefix;
-        return IpcBusUtils.CreateDirectChannel(peer, IpcBusTransportImpl.s_requestNumber.toString());
+        return IpcBusUtils.CreateResponseChannel(peer, IpcBusTransportImpl.s_requestNumber);
     }
 
     protected createPeer(process: Client.IpcBusProcess, name?: string): Client.IpcBusPeer{
@@ -268,7 +268,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     protected cancelRequest(client: IpcBusTransport.Client): void {
-        this._requestFunctions.forEach((request, key) => {
+        for (let [key, request] of this._requestFunctions) {
             if (client === request.client) {
                 request.timeout();
                 this._requestFunctions.delete(key);
@@ -283,7 +283,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 }
                 this.postMessage(ipcMessageClose);
             }
-        });
+        }
     }
 
     requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
