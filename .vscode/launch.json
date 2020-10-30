@@ -32,6 +32,8 @@
             "console": "internalConsole",
             "sourceMaps": true,
             "outFiles": [
+                "!${workspaceRoot}/node_modules/",
+                "!${workspaceRoot}/examples/test-app/node_modules/",
                 "${workspaceRoot}/**/*.js"
             ]
         },
@@ -72,11 +74,11 @@
             "request": "launch",
             "protocol": "inspector",
             "port": 50000,
-            "program": "${workspaceRoot}/examples/basic/Sample.js",
+            "program": "${workspaceRoot}/examples/basic-app/app.js",
             "stopOnEntry": false,
             "args": [],
             "cwd": "${workspaceRoot}/examples/test-app/",
-            "runtimeExecutable": "${workspaceRoot}/examples/basic/node_modules/electron/dist/electron.exe",
+            "runtimeExecutable": "${workspaceRoot}/examples/basic-app/node_modules/electron/dist/electron.exe",
             "runtimeArgs": [
                 // "--enable-sandbox",
                 "--inspect-brk=50000",
@@ -90,6 +92,8 @@
             "console": "internalConsole",
             "sourceMaps": true,
             "outFiles": [
+                "!${workspaceRoot}/node_modules/",
+                "!${workspaceRoot}/examples/basic-app/node_modules/",
                 "${workspaceRoot}/**/*.js"
             ]
         },

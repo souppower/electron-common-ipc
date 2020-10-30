@@ -22,6 +22,27 @@ function CleanPipeName(str: string) {
     return str;
 }
 
+const DirectChannelPrefix = 'direct:';
+const DirectChannelPrefixLength = DirectChannelPrefix.length;
+
+export function CreateDirectChannel(peer: IpcBusPeer, uniqId: string): string {
+    if (peer.process.wcid) {
+        const channel = `${DirectChannelPrefix}${peer.process.wcid}_${uniqId}`;
+        return channel;
+    }
+    else {
+        const channel = `${peer.id}_${uniqId}`;
+        return channel;
+    }
+}
+
+export function IsDirectChannel(channel: string): number {
+    if (channel.lastIndexOf(DirectChannelPrefix, 0) === 0) {
+        return parseInt(channel.substr(DirectChannelPrefixLength), 10);
+    }
+    return -1;
+}
+
 export function CheckChannel(channel: any): string {
     switch (typeof channel) {
         case 'string':

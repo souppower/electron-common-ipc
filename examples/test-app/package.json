@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron .",
     "start-sandboxed": "electron . --enable-sandbox",
-    "build": "npm run local-ipc && npm run build-bundle-preload",
+    "build": "npm run build-bundle-preload",
     "local-ipc-1": "npm install ../..",
     "local-ipc-mklink": "mklink /j node_modules\\electron-common-ipc ..\\..\\..\\electron-common-ipc",
     "local-ipc-2": "npm uninstall electron-common-ipc && npm install ../..",
@@ -22,7 +22,7 @@
   "dependencies": {
     "bootstrap": "^3.3.7",
     "electron": "^6.0.0",
-    "electron-common-ipc": "^6.0.0",
+    "electron-common-ipc": "../..",
     "typescript": "^2.5.2",
     "uuid": "2.0.3"
   }

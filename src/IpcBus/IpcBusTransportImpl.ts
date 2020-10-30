@@ -115,7 +115,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     protected static generateReplyChannel(peer: Client.IpcBusPeer): string {
         ++IpcBusTransportImpl.s_requestNumber;
-        return `${replyChannelPrefix}${peer.id}-${IpcBusTransportImpl.s_requestNumber}`;
+        // return `${replyChannelPrefix}${peer.id}-${IpcBusTransportImpl.s_requestNumber}`;
+        replyChannelPrefix;
+        return IpcBusUtils.CreateDirectChannel(peer, IpcBusTransportImpl.s_requestNumber.toString());
     }
 
     protected createPeer(process: Client.IpcBusProcess, name?: string): Client.IpcBusPeer{

@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import * as shortid from 'shortid';
 
 import * as Client from './IpcBusClient';
 
@@ -47,6 +48,10 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
                 this._peer = null;
             });
         });
+    }
+
+    createDirectChannel(): string {
+        return IpcBusUtils.CreateDirectChannel(this._peer, shortid.generate());
     }
 
     send(channel: string, ...args: any[]): boolean {

@@ -17,6 +17,7 @@ export const IPCBUS_TRANSPORT_RENDERER_EVENT = 'ECIPC:IpcBusRenderer:Event';
 
 export interface IpcWindow extends EventEmitter {
     send(channel: string, ...args: any[]): void;
+    sendTo(webContentsId: number, channel: string, ...args: any[]): void;
 }
 
 // Implementation for renderer process
@@ -138,7 +139,13 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             const packetOut = new IpcPacketBuffer();
             packetOut.serializeArray([ipcBusCommand, args]);
             const packRawContent = IpcBusRendererContent.PackRawContent(packetOut.getRawContent());
-            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, packRawContent);
+            const webContentsId = IpcBusUtils.IsDirectChannel(ipcBusCommand.channel);
+            if (webContentsId === -1) {
+                this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, packRawContent);
+            }
+            else {
+                this._ipcWindow.sendTo(webContentsId, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, packRawContent);
+            }
         // }
     }
 

@@ -79,6 +79,12 @@ export class CrossFrameEventEmitter extends EventEmitter implements IpcWindow {
         this._messageChannel.port1.postMessage(packet);
     }
 
+    sendTo(webContentsId: number, channel: string, ...args: any[]): void {
+        trace && console.log(`CFEE ${this._uuid} - sendTo: ${channel} - ${JSON.stringify(args)}`);
+        const packet = CrossFrameMessage.Encode(this._uuid, channel, args);
+        this._messageChannel.port1.postMessage(packet);
+    }
+
     // Unpacks and emits
     protected _eventHandler(channel: string, ...args: any[]) {
         trace && console.log(`CFEE ${this._uuid} - emit: ${channel} - ${JSON.stringify(args)} => ${this.listenerCount(channel)}`);
