@@ -7,8 +7,6 @@ import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusTransport } from './IpcBusTransport';
 import { IpcBusConnector } from './IpcBusConnector';
 
-const replyChannelPrefix = `${Client.IPCBUS_CHANNEL}/request-`;
-
 /** @internal */
 class DeferredRequestPromise {
     public promise: Promise<Client.IpcBusRequestResponse>;
@@ -115,8 +113,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     protected static generateReplyChannel(peer: Client.IpcBusPeer): string {
         ++IpcBusTransportImpl.s_requestNumber;
-        // return `${replyChannelPrefix}${peer.id}-${IpcBusTransportImpl.s_requestNumber}`;
-        replyChannelPrefix;
         return IpcBusUtils.CreateResponseChannel(peer, IpcBusTransportImpl.s_requestNumber);
     }
 
@@ -288,7 +284,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
         timeoutDelay = IpcBusUtils.checkTimeout(timeoutDelay);
-        const ipcBusCommandRequest: IpcBusCommand.Request = { channel, replyChannel: IpcBusTransportImpl.generateReplyChannel(client.peer) };
+        ++IpcBusTransportImpl.s_requestNumber;
+        const replyChannel = IpcBusUtils.CreateResponseChannel(client.peer, IpcBusTransportImpl.s_requestNumber);
+        const ipcBusCommandRequest: IpcBusCommand.Request = { channel, replyChannel };
         const deferredRequest = new DeferredRequestPromise(client, ipcBusCommandRequest);
         // Register locally
         this._requestFunctions.set(ipcBusCommandRequest.replyChannel, deferredRequest);
