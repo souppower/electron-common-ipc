@@ -102,7 +102,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 if (ipcBusCommand.request) {
-                    this._subscriptions.setSingleChannel(ipcBusCommand.request.replyChannel, PeerName, ipcBusCommand.peer);
+                    this._subscriptions.setResponseChannel(ipcBusCommand.request.replyChannel, PeerName, ipcBusCommand.peer);
                 }
                 if (buffer && this.hasChannel(ipcBusCommand.channel)) {
                     this._connector.postBuffer(buffer);
@@ -111,7 +111,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
             }
 
             case IpcBusCommand.Kind.RequestResponse: {
-                const hasChannel = this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                const hasChannel = this._subscriptions.removeResponseChannel(ipcBusCommand.request.replyChannel);
                 if (buffer && hasChannel) {
                     this._connector.postBuffer(buffer);
                 }
@@ -119,7 +119,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
             }
 
             case IpcBusCommand.Kind.RequestClose:
-                const hasChannel = this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel);
+                const hasChannel = this._subscriptions.removeResponseChannel(ipcBusCommand.request.replyChannel);
                 // To inform Broker
                 if (buffer && hasChannel) {
                     this._connector.postBuffer(buffer);
