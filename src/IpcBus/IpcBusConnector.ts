@@ -13,6 +13,12 @@ export namespace IpcBusConnector {
         // noSerialization?: boolean;
     }
 
+    export enum ReceivedFeedback {
+        Managed,
+        UnManaged,
+        Eaten
+    }
+
     /** @internal */
     export interface Client {
         peer: Client.IpcBusPeer;

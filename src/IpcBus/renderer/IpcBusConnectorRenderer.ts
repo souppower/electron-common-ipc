@@ -59,7 +59,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             // else {
                 this._onIpcEventReceived = (event, ipcBusCommand, rawContent) => {
                     IpcBusRendererContent.FixRawContent(rawContent);
-                    IpcBusRendererContent.UnpackRawContent(rawContent);
+                    // IpcBusRendererContent.UnpackRawContent(rawContent);
                     this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
                 };
             // }
@@ -77,7 +77,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             // else {
                 this._onIpcEventReceived = (ipcBusCommand, rawContent) => {
                     IpcBusRendererContent.FixRawContent(rawContent);
-                    IpcBusRendererContent.UnpackRawContent(rawContent);
+                    // IpcBusRendererContent.UnpackRawContent(rawContent);
                     this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
                  };
             //  }
@@ -138,13 +138,14 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         // else {
             const packetOut = new IpcPacketBuffer();
             packetOut.serializeArray([ipcBusCommand, args]);
-            const packRawContent = IpcBusRendererContent.PackRawContent(packetOut.getRawContent());
-            const webContentsId = IpcBusUtils.IsWebContentsChannel(ipcBusCommand.channel);
+            const rawContent = packetOut.getRawContent();
+            // const packRawContent = IpcBusRendererContent.PackRawContentrawContent);
+            const webContentsId = IpcBusUtils.GetWebContentsChannel(ipcBusCommand.channel);
             if (isNaN(webContentsId)) {
-                this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, packRawContent);
+                this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, rawContent);
             }
             else {
-                this._ipcWindow.sendTo(webContentsId, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, packRawContent);
+                this._ipcWindow.sendTo(webContentsId, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
             }
         // }
     }

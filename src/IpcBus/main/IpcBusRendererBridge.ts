@@ -54,7 +54,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     hasChannel(channel: string): boolean {
-        return this._subscriptions.hasChannel(channel);
+        return this._subscriptions.hasChannel(channel) || IpcBusUtils.IsWebContentsChannel(channel);
     }
 
     connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
@@ -150,7 +150,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     // From main or net transport
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
         const rawContent = ipcPacketBuffer.getRawContent() as IpcBusRendererContent;
-        IpcBusRendererContent.PackRawContent(rawContent);
+        // IpcBusRendererContent.PackRawContent(rawContent);
         this._broadcastRawContent(null, ipcBusCommand, rawContent);
     }
 
@@ -169,7 +169,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             }
 
             case IpcBusCommand.Kind.RequestResponse: {
-                const webContentsId = IpcBusUtils.IsWebContentsChannel(ipcBusCommand.request.replyChannel);
+                const webContentsId = IpcBusUtils.GetWebContentsChannel(ipcBusCommand.request.replyChannel);
                 if (webContentsId) {
                     const webContents = WebContents.fromId(webContentsId);
                     if (webContents) {
@@ -209,7 +209,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 // Start with renderer if we have to keep compressed buffer
                 this._broadcastRawContent(webContents, ipcBusCommand, rawContent);
 
-                IpcBusRendererContent.UnpackRawContent(rawContent);
+                // IpcBusRendererContent.UnpackRawContent(rawContent);
                 this._bridge._onRendererContentReceived(ipcBusCommand, rawContent);
                 break;
         }
