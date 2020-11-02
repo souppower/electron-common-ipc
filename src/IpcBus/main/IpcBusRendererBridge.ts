@@ -17,6 +17,7 @@ import {
 import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
 
 import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
+import { WebContents } from 'electron';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
@@ -157,41 +158,28 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _broadcastRawContent(webContents: Electron.WebContents | null, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                if (webContents) {
-                    // Prevent echo message
-                    const sourceKey = this._subscriptions.getKey(webContents);
-                    let found = false;
-                    this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-                        if (connData.key !== sourceKey) {
-                            connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
-                            found = true;
-                        }
-                    });
-                    if (!found && ipcBusCommand.request) {
-                        this._subscriptions.setSingleChannel(ipcBusCommand.request.replyChannel, webContents, ipcBusCommand.peer);
-                    }
-                }
-                else {
-                    this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
+                // Prevent echo message
+                const sourceKey = webContents ? this._subscriptions.getKey(webContents) : undefined;
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
+                    if (connData.key !== sourceKey) {
                         connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
-                    });
-                }
+                    }
+                });
                 break;
             }
 
             case IpcBusCommand.Kind.RequestResponse: {
-                const connData = this._subscriptions.getSingleChannel(ipcBusCommand.request.replyChannel);
-                if (connData) {
-                    connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
-                    this._subscriptions.removeChannel(ipcBusCommand.channel);
+                const webContentsId = IpcBusUtils.IsWebContentsChannel(ipcBusCommand.request.replyChannel);
+                if (webContentsId) {
+                    const webContents = WebContents.fromId(webContentsId);
+                    if (webContents) {
+                        webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                    }
                 }
                 break;
             }
 
             case IpcBusCommand.Kind.RequestClose:
-                if (this._subscriptions.removeChannel(ipcBusCommand.request.replyChannel)) {
-                    // log IpcBusLog.Kind.GET_CLOSE_REQUEST
-                }
                 break;
         }
     }

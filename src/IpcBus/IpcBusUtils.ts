@@ -3,7 +3,7 @@ import * as shortid from 'shortid';
 
 import { EventEmitter } from 'events';
 
-import { IpcConnectOptions, IpcBusPeer, IPCBUS_CHANNEL } from './IpcBusClient';
+import { IpcConnectOptions, IpcBusPeer } from './IpcBusClient';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
 
