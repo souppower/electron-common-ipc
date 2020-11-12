@@ -277,25 +277,28 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
         const connData = new ConnectionPeers<T, M>(key, conn, peer, count);
         connsMap.set(key, connData);
 
-        this.emitter && this.emit('channel-added', channel);
+        this.emitter && this.emit('channel-added', channel, conn);
 
         return connsMap;
     }
 
-    private _removeChannel(channel: string): boolean {
+    private _removeChannel(channel: string, conn: T): boolean {
         if (this._channelsMap.delete(channel)) {
-            this.emitter && this.emit('channel-removed', channel);
+            this.emitter && this.emit('channel-removed', channel, conn);
             return true;
         }
         return false;
     }
 
     // Channel is supposed to be new
-    setResponseChannel(channel: string, conn: T, peer: IpcBusPeer) {
+    pushResponseChannel(channel: string, conn: T, peer: IpcBusPeer) {
+        const previous = this.emitter;
+        this.emitter = false;
         this._addChannel(channel, conn, peer, 1);
+        this.emitter = previous;
     }
 
-    getResponseChannel(channel: string): ConnectionPeers<T, M> | null {
+    popResponseChannel(channel: string): ConnectionPeers<T, M> | null {
         const connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             return null;
@@ -304,11 +307,12 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
             throw 'should not happen';
             return null;
         }
-        return connsMap.values().next().value;
-    }
-
-    removeResponseChannel(channel: string): boolean {
-        return this._removeChannel(channel);
+        const connData = connsMap.values().next().value;
+        const previous = this.emitter;
+        this.emitter = false;
+        this._removeChannel(channel, connData.conn);
+        this.emitter = previous;
+        return connData;
     }
 
     addRefCount(channel: string, conn: T, peer: IpcBusPeer, count: number): number {
@@ -356,7 +360,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
             connsMap.delete(connData.key);
             // Logger.enable && this._info(`Release: conn = ${conn} is released`);
             if (connsMap.size === 0) {
-                this._removeChannel(channel);
+                this._removeChannel(channel, connData.conn);
             }
         }
         Logger.enable && this._info(`Release '${channel}': count = ${connData.peerRefCounts.size}`);
