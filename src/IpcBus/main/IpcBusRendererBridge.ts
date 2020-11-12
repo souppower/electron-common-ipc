@@ -173,9 +173,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             case IpcBusCommand.Kind.RequestResponse: {
                 const webContentsId = IpcBusUtils.GetWebContentsChannel(ipcBusCommand.request.replyChannel);
                 if (webContentsId) {
-                    const webContentsTarget = ElectronWebContents.fromId(webContentsId);
-                    if (webContentsTarget) {
-                        webContentsTarget.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                    const webContents = ElectronWebContents.fromId(webContentsId);
+                    if (webContents) {
+                        webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                     }
                 }
                 break;
