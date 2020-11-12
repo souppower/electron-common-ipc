@@ -17,7 +17,9 @@ import {
 import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
 
 import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
-import { WebContents } from 'electron';
+
+// Seems to have a conflict between Electron.WebContents, WebContents, webContents.....
+import { webContents as ElectronWebContents } from 'electron';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
@@ -113,8 +115,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return handshake;
     }
 
-    private _onRendererHandshake(event: any, ipcBusPeer: Client.IpcBusPeer): void {
-        const webContents: Electron.WebContents = event.sender;
+    private _onRendererHandshake(event: Electron.IpcMainEvent, ipcBusPeer: Client.IpcBusPeer): void {
+        const webContents = event.sender;
         const handshake = this._getHandshake(webContents, ipcBusPeer);
 
         // if we have several clients within the same webcontents, the callback may be called several times !
@@ -171,9 +173,9 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             case IpcBusCommand.Kind.RequestResponse: {
                 const webContentsId = IpcBusUtils.GetWebContentsChannel(ipcBusCommand.request.replyChannel);
                 if (webContentsId) {
-                    const webContents = WebContents.fromId(webContentsId);
-                    if (webContents) {
-                        webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                    const webContentsTarget = ElectronWebContents.fromId(webContentsId);
+                    if (webContentsTarget) {
+                        webContentsTarget.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                     }
                 }
                 break;
@@ -184,8 +186,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         }
     }
 
-    private _onRendererRawContentReceived(event: any, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
-        const webContents: Electron.WebContents = event.sender;
+    private _onRendererRawContentReceived(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
+        const webContents = event.sender;
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.AddChannelListener:
                 this._subscriptions.addRef(ipcBusCommand.channel, webContents, ipcBusCommand.peer);

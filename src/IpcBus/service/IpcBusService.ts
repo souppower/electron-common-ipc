@@ -35,8 +35,7 @@ export namespace IpcBusServiceProxy {
     export interface ConnectOptions extends IpcTimeoutOptions {
     }
 
-    export interface CloseOptions {
-        // not yet options
+    export interface CloseOptions extends IpcTimeoutOptions {
     }
 
     export interface CreateOptions extends IpcTimeoutOptions {
@@ -44,21 +43,21 @@ export namespace IpcBusServiceProxy {
     }
 
     export interface CreateFunction {
-        <T>(client: IpcBusClient, serviceName: string, options?: CreateOptions): IpcBusServiceProxy<T> | null ;
+        (client: IpcBusClient, serviceName: string, options?: CreateOptions): IpcBusServiceProxy | null ;
     }
 
     export let Create: CreateFunction;
 }
 
-export interface IpcBusServiceProxy<T> extends EventEmitter {
+export interface IpcBusServiceProxy extends EventEmitter {
     readonly isStarted: boolean;
     readonly wrapper: Object;
 
-    connect(options?: IpcBusServiceProxy.ConnectOptions): Promise<T>;
+    connect<R>(options?: IpcBusServiceProxy.ConnectOptions): Promise<R>;
     close(options?: IpcBusServiceProxy.CloseOptions): Promise<void>;
 
     getStatus(): Promise<ServiceStatus>;
-    getWrapper(): T;
+    getWrapper<R>(): R;
 
     // Kept for backward
     call<R>(name: string, ...args: any[]): Promise<R>;

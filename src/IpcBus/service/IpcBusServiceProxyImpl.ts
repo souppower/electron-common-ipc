@@ -55,13 +55,13 @@ class CallWrapperEventEmitter extends EventEmitter {
 
 // Implementation of IPC service
 /** @internal */
-export class IpcBusServiceProxyImpl<T> extends EventEmitter implements Service.IpcBusServiceProxy<T> {
+export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcBusServiceProxy {
     private _ipcBusClient: Client.IpcBusClient;
     private _serviceName: string;
     private _options: Service.IpcBusServiceProxy.CreateOptions;
 
     private _wrapper: CallWrapperEventEmitter;
-    private _connectCloseState: IpcBusUtils.ConnectCloseState<T>;
+    private _connectCloseState: IpcBusUtils.ConnectCloseState<any>;
     private _isStarted: boolean;
     private _pendingCalls: Map<number, Deferred<any>>;
 
@@ -78,7 +78,7 @@ export class IpcBusServiceProxyImpl<T> extends EventEmitter implements Service.I
         this._options = options;
 
         this._isStarted = false;
-        this._connectCloseState = new IpcBusUtils.ConnectCloseState<T>();
+        this._connectCloseState = new IpcBusUtils.ConnectCloseState<any>();
 
         this._pendingCalls = new Map<number, Deferred<any>>();
         this._wrapper = new CallWrapperEventEmitter();
@@ -87,9 +87,9 @@ export class IpcBusServiceProxyImpl<T> extends EventEmitter implements Service.I
         this._onServiceReceived = this._onServiceReceived.bind(this);
     }
 
-    connect(options?: Service.IpcBusServiceProxy.ConnectOptions): Promise<T> {
+    connect<R>(options?: Service.IpcBusServiceProxy.ConnectOptions): Promise<R> {
         return this._connectCloseState.connect(() => {
-            return new Promise<T>((resolve, reject) => {
+            return new Promise<R>((resolve, reject) => {
                 options = options || {};
                 if (options.timeoutDelay == null) {
                     options.timeoutDelay = this._options.timeoutDelay;
@@ -106,7 +106,7 @@ export class IpcBusServiceProxyImpl<T> extends EventEmitter implements Service.I
                 .then((serviceStatus) => {
                     if (serviceStatus?.started) {
                         this._onServiceStart(serviceStatus);
-                        return resolve(this.getWrapper<T>());
+                        return resolve(this.getWrapper<R>());
                     }
                     IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] first status to '${this._serviceName}' - not started`);
                     reject(new Error(`${this._serviceName} not started`));
@@ -134,9 +134,9 @@ export class IpcBusServiceProxyImpl<T> extends EventEmitter implements Service.I
         return this._isStarted;
     }
 
-    getWrapper<T>(): T {
+    getWrapper<R>(): R {
         const typed_wrapper: any = this._wrapper;
-        return <T> typed_wrapper;
+        return <R> typed_wrapper;
     }
 
     get wrapper(): Object {

@@ -11,8 +11,8 @@ export const CreateIpcBusService: IpcBusService.CreateFunction = (client: IpcBus
 
 IpcBusService.Create = CreateIpcBusService;
 
-export const CreateIpcBusServiceProxy: IpcBusServiceProxy.CreateFunction = <T>(client: IpcBusClient, serviceName: string, options?: IpcBusServiceProxy.CreateOptions): IpcBusServiceProxy<T> => {
-    return new IpcBusServiceProxyImpl<T>(client, serviceName, options);
+export const CreateIpcBusServiceProxy: IpcBusServiceProxy.CreateFunction = (client: IpcBusClient, serviceName: string, options?: IpcBusServiceProxy.CreateOptions): IpcBusServiceProxy => {
+    return new IpcBusServiceProxyImpl(client, serviceName, options);
 };
 
 IpcBusServiceProxy.Create = CreateIpcBusServiceProxy;
