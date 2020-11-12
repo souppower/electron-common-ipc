@@ -152,6 +152,32 @@
             "port": 9001,
         },
         {
+            "type": "node",
+            "request": "launch",
+            "name": "Run Mocha tests",
+            "port": 5858,
+            "protocol": "inspector",
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "runtimeArgs": [
+                "--inspect-brk=5858",
+            ],
+            "args": [
+                "--timeout", "999999",
+                "--colors",
+                // "${workspaceFolder}/lib-test/unit-test.js"
+                // "${workspaceFolder}/lib-test/unit-test.misc.js"
+                // "${workspaceFolder}/lib-test/unit-test.engine.js"
+                "${workspaceRoot}/test/service.test.js",
+            ],
+            "outFiles": [
+                // "!${workspaceFolder}/node-modules/**/*.js",
+                "${workspaceFolder}/lib/**/*.js",
+                "${workspaceFolder}/test/**/*.js"
+            ],
+            "internalConsoleOptions": "openOnSessionStart",
+            "sourceMaps": true
+        },
+        {
             "name": "Run Electron-Mocha Tests",
             "type": "node",
             "request": "launch",
@@ -159,7 +185,7 @@
             "port": 5858,
             "protocol": "inspector",
             // "autoAttachChildProcesses": true,
-            "cwd": "${workspaceRoot}/lib",
+            "cwd": "${workspaceRoot}",
             "args": [
                 // "--grep=Master",
                 // "--grep=Brokers",
@@ -171,14 +197,15 @@
                 // "${workspaceRoot}/test/clientLifeCycle.test.js",
                 // "${workspaceRoot}/test/clientWildListening.test.js",
                 // "${workspaceRoot}/test/nodeClientMessage.test.js",
-                "${workspaceRoot}/test/performance.test.js",
+                // "${workspaceRoot}/test/performance.test.js",
                 // "${workspaceRoot}/test/service.test.js",
+                "${workspaceRoot}/test/serviceLifeCycle.test.js",
                 // "--recursive",
                 "--reporter", "spec",
                 "--no-timeouts",
                 // "--colors",
                 // "--debug",
-                "--inspect-brk=5858",
+                // "--inspect-brk=5858",
                 // "--inspect-brk",
                 // "--debug-brk"
             ],
@@ -205,8 +232,9 @@
             // "internalConsoleOptions": "openOnSessionStart",
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceRoot}/build/**/*.js",
-                "!${workspaceRoot}/build/**/node_modules/**/*.js"
+                "${workspaceRoot}/lib/**/*.js",
+                "${workspaceRoot}/test/**/*.js",
+                "!${workspaceRoot}/**/node_modules/**/*.js"
             ],
             "trace": false
         },

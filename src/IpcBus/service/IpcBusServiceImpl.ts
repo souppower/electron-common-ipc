@@ -133,8 +133,9 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
     // }
 
     private _getServiceStatus(): Service.ServiceStatus {
+        const callChannel = ServiceUtils.getServiceCallChannel(this._serviceName);
         const serviceStatus: Service.ServiceStatus = {
-            started: true,
+            started: this._ipcBusClient.listenerCount(callChannel) > 0,
             callHandlers: this._getCallHandlerNames(),
             supportEventEmitter: (this._prevImplEmit != null)
         };
@@ -158,7 +159,10 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
         }
 
         // Listening to call messages
-        this._ipcBusClient.addListener(ServiceUtils.getServiceCallChannel(this._serviceName), this._onCallReceived);
+        // Manage re-entrance
+        const callChannel = ServiceUtils.getServiceCallChannel(this._serviceName);
+        this._ipcBusClient.removeListener(callChannel, this._onCallReceived);
+        this._ipcBusClient.addListener(callChannel, this._onCallReceived);
 
         // The service is started, send available call handlers to clients
         this.sendEvent(Service.IPCBUS_SERVICE_EVENT_START, this._getServiceStatus());
@@ -177,7 +181,8 @@ export class IpcBusServiceImpl implements Service.IpcBusService {
         this.sendEvent(Service.IPCBUS_SERVICE_EVENT_STOP, {});
 
         // No more listening to call messages
-        this._ipcBusClient.removeListener(ServiceUtils.getServiceCallChannel(this._serviceName), this._onCallReceived);
+        const callChannel = ServiceUtils.getServiceCallChannel(this._serviceName);
+        this._ipcBusClient.removeListener(callChannel, this._onCallReceived);
 
         IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcService] Service '${this._serviceName}' is STOPPED`);
     }
