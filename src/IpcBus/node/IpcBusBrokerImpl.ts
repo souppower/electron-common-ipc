@@ -296,12 +296,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                         connData.conn.write(packet.buffer);
                     }
                 });
-                // If this message does not come from the IpcBusBridge, send it to it
-                if (!ipcBusCommand.bridge) {
-                    // if (this._bridgeChannels.has(ipcBusCommand.channel)) {
-                        this.bridgeBroadcastMessage(ipcBusCommand, packet);
-                    // }
-                }
+                this.bridgeBroadcastMessage(socket, ipcBusCommand, packet);
                 break;
 
             case IpcBusCommand.Kind.RequestResponse: {
@@ -309,11 +304,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 if (connData) {
                     connData.conn.write(packet.buffer);
                 }
-                if (!ipcBusCommand.bridge) {
-                    // if (this._bridgeChannels.has(ipcBusCommand.channel)) {
-                    this.bridgeBroadcastMessage(ipcBusCommand, packet);
-                    // }
-                }
+                this.bridgeBroadcastMessage(socket, ipcBusCommand, packet);
                 break;
             }
 
@@ -321,19 +312,14 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 if (this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel)) {
                     // log IpcBusLog.Kind.GET_CLOSE_REQUEST
                 }
-                // If this message does not come from the IpcBusBridge, send it to it
-                if (!ipcBusCommand.bridge) {
-                    // if (this._bridgeChannels.has(ipcBusCommand.channel)) {
-                    this.bridgeBroadcastMessage(ipcBusCommand, packet);
-                    // }
-                }
+                this.bridgeBroadcastMessage(socket, ipcBusCommand, packet);
                 break;
             }
 
             case IpcBusCommand.Kind.LogGetMessage:
             case IpcBusCommand.Kind.LogLocalSendRequest:
             case IpcBusCommand.Kind.LogLocalRequestResponse: {
-                this.bridgeBroadcastMessage(ipcBusCommand, packet);
+                this.bridgeBroadcastMessage(socket, ipcBusCommand, packet);
                 break;
             }
 
@@ -376,6 +362,6 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     protected bridgeRemoveChannel(channel: string) {
     }
 
-    protected bridgeBroadcastMessage(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+    protected bridgeBroadcastMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
     }
 }

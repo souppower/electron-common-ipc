@@ -131,7 +131,6 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     // We serialize in renderer process to save master CPU.
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        ipcBusCommand.bridge = true;
         // if (this._noSerialization) {
         //     this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, args);
         // }
