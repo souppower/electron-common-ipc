@@ -181,7 +181,7 @@ export class IpcBusLogConfigMain extends IpcBusLogConfigImpl implements IpcBusLo
         if (ipcBusCommand.log) {
             const lograwContent = Object.assign({}, rawContent);
             IpcBusRendererContent.FixRawContent(lograwContent);
-            IpcBusRendererContent.UnpackRawContent(lograwContent);
+            // IpcBusRendererContent.UnpackRawContent(lograwContent);
             const packet = new IpcPacketBuffer(lograwContent);
             return this.addLog(ipcBusCommand, packet.parseArrayAt(1), packet.buffer.length);
         }

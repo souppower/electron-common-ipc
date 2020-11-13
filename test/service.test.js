@@ -4,7 +4,7 @@ const expect = require('expect');
 const EventEmitter = require('events');
 const util = require('util');
 
-const ipcBusModule = require('../lib/electron-common-ipc');
+const ipcBusModule = require('../');
 // ipcBusModule.ActivateIpcBusTrace(true);
 // ipcBusModule.ActivateServiceTrace(true);
 
@@ -108,6 +108,7 @@ function test(remoteBroker, busPath, factory) {
 
         // Create the proxy (client-side)
         const testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName);
+        testServiceProxy.connect();
         if (testServiceProxy.isStarted) {
           done();
         }
@@ -138,6 +139,7 @@ function test(remoteBroker, busPath, factory) {
 
         // Create the proxy (client-side)
         const testServiceProxy = ipcBusModule.CreateIpcBusServiceProxy(ipcBusClient, testServiceName, { timeoutDelay: delayService + 100 });
+        testServiceProxy.connect();
         if (testServiceProxy.isStarted) {
           done();
         }

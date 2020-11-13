@@ -35,7 +35,11 @@ export namespace IpcBusServiceProxy {
     export interface ConnectOptions extends IpcTimeoutOptions {
     }
 
+    export interface CloseOptions extends IpcTimeoutOptions {
+    }
+
     export interface CreateOptions extends IpcTimeoutOptions {
+        rejectRequestWhenStopped?: boolean; // true by default
     }
 
     export interface CreateFunction {
@@ -49,17 +53,19 @@ export interface IpcBusServiceProxy extends EventEmitter {
     readonly isStarted: boolean;
     readonly wrapper: Object;
 
-    connect<T>(options?: IpcBusServiceProxy.ConnectOptions): Promise<T>;
+    connect<R>(options?: IpcBusServiceProxy.ConnectOptions): Promise<R>;
+    close(options?: IpcBusServiceProxy.CloseOptions): Promise<void>;
+
     getStatus(): Promise<ServiceStatus>;
-    getWrapper<T>(): T;
+    getWrapper<R>(): R;
 
     // Kept for backward
-    call<T>(name: string, ...args: any[]): Promise<T>;
-    apply<T>(name: string, args?: any[]): Promise<T>;
+    call<R>(name: string, ...args: any[]): Promise<R>;
+    apply<R>(name: string, args?: any[]): Promise<R>;
 
     // Do wait for the stub response, equivalent to call/apply.
-    requestCall<T>(name: string, ...args: any[]): Promise<T>;
-    requestApply<T>(name: string, args?: any[]): Promise<T>;
+    requestCall<R>(name: string, ...args: any[]): Promise<R>;
+    requestApply<R>(name: string, args?: any[]): Promise<R>;
 
     // Do not wait for the stub response, more efficient.
     sendCall(name: string, ...args: any[]): void;

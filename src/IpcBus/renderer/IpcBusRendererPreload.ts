@@ -1,7 +1,40 @@
 import { Create as CreateIpcBusClientWindow } from './IpcBusClientRenderer-factory';
 
 import { CrossFrameEventEmitter, IpcBusFrameBridge } from './CrossFrameEventEmitter2';
+
 // import { CrossFrameEventDispatcher } from './CrossFrameEventEmitter';
+
+// let useContextBridge = process.argv.includes('--context-isolation');
+	// if (useContextBridge) {
+	// 	try {
+	// 		contextBridge.exposeInMainWorld('vscode', globals);
+	// 	} catch (error) {
+	// 		console.error(error);
+
+	// 		useContextBridge = false;
+	// 	}
+	// }
+
+	// if (!useContextBridge) {
+	// 	// @ts-ignore
+	// 	window.vscode = globals;
+	// }
+
+// const globals = {
+//     ElectronCommonIpc: {
+//         CreateIpcBusClient() {
+//             // Will work in a preload or with nodeIntegration=true
+//             const electron = require('electron');
+//             if (electron && electron.ipcRenderer) {
+//                 const ipcBusClient = CreateIpcBusClientWindow('renderer', electron.ipcRenderer as any);
+//                 return ipcBusClient;
+//             }
+//         },
+//         FrameBridge: {
+
+//         }
+//     }
+// }
 
 const trace = false; // true;
 

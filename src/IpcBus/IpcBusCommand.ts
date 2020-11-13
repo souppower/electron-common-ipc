@@ -58,9 +58,9 @@ export namespace IpcBusCommand {
 /** @internal */
 export interface IpcBusCommand {
     peer: IpcBusPeer;
+
     kind: IpcBusCommand.Kind;
     channel: string;
     request?: IpcBusCommand.Request;
     log?: IpcBusCommand.Log;
-    bridge?: boolean;
 }

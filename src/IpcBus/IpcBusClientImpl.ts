@@ -49,6 +49,10 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         });
     }
 
+    createResponseChannel(): string {
+        return IpcBusUtils.CreateResponseChannel(this._peer, IpcBusUtils.CreateUniqId());
+    }
+
     send(channel: string, ...args: any[]): boolean {
         // in nodejs eventEmitter, undefined is converted to 'undefined'
         channel = IpcBusUtils.CheckChannel(channel);

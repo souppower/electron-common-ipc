@@ -5,7 +5,7 @@ import { IpcPacketBuffer } from 'socket-serializer';
 
 /** @internal */
 export interface IpcBusRendererContent extends IpcPacketBuffer.RawContent {
-    compressed: boolean;
+    // compressed: boolean;
 }
 
 // export interface IpcBusContent extends IpcBusRendererContent {
@@ -29,22 +29,22 @@ export namespace IpcBusRendererContent {
         }
     }
 
-    export function PackRawContent(buffRawContent: IpcPacketBuffer.RawContent): IpcBusRendererContent {
-        const rawContent = buffRawContent as IpcBusRendererContent;
-        // if ((rawContent.buffer.length > threshold) && !rawContent.compressed) {
-        //     rawContent.compressed = true;
-        //     rawContent.buffer = CompressBuffer(rawContent.buffer);
-        // }
-        return rawContent;
-    }
+    // export function PackRawContent(buffRawContent: IpcPacketBuffer.RawContent): IpcBusRendererContent {
+    //     const rawContent = buffRawContent as IpcBusRendererContent;
+    //     // if ((rawContent.buffer.length > threshold) && !rawContent.compressed) {
+    //     //     rawContent.compressed = true;
+    //     //     rawContent.buffer = CompressBuffer(rawContent.buffer);
+    //     // }
+    //     return rawContent;
+    // }
 
-    export function UnpackRawContent(rawContent: IpcBusRendererContent) {
-        // if (rawContent.compressed) {
-        //     rawContent.compressed = false;
-        //     rawContent.buffer = DecompressBuffer(rawContent.buffer);
-        // }
-        return rawContent;
-    }
+    // export function UnpackRawContent(rawContent: IpcBusRendererContent) {
+    //     // if (rawContent.compressed) {
+    //     //     rawContent.compressed = false;
+    //     //     rawContent.buffer = DecompressBuffer(rawContent.buffer);
+    //     // }
+    //     return rawContent;
+    // }
 }
 
 // CompressBuffer;

@@ -113,7 +113,6 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     //     const hasNetChannel = this._netTransport && this._netTransport.hasChannel(ipcBusCommand.channel);
     //     // Prevent serializing for nothing !
     //     if (hasNetChannel) {
-    //         ipcBusCommand.bridge = true;
     //         this._packet.serializeArray([ipcBusCommand, args]);
     //         this._netTransport.broadcastBuffer(ipcBusCommand, this._packet.buffer);
     //         this._packet.reset();
@@ -132,7 +131,6 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             const hasNetChannel = this._netTransport && this._netTransport.hasChannel(ipcBusCommand.channel);
             // Prevent serializing for nothing !
             if (hasRendererChannel || hasNetChannel) {
-                ipcBusCommand.bridge = true;
                 const packet = new IpcPacketBuffer();
                 packet.serializeArray([ipcBusCommand, args]);
                 hasNetChannel && this._netTransport.broadcastBuffer(ipcBusCommand, packet.buffer);

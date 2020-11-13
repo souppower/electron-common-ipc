@@ -102,7 +102,9 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         ipcPacketBuffer.writeArray(socketWriter, [ipcBusCommand]);
     }
 
-    protected bridgeBroadcastMessage(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        this._socketBridge && this._socketBridge.socket.write(ipcPacketBuffer.buffer);
+    protected bridgeBroadcastMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+        if (socket !== this._socketBridge.socket) {
+            this._socketBridge.socket.write(ipcPacketBuffer.buffer);
+        }
     }
 }

@@ -17,6 +17,7 @@ export const IPCBUS_TRANSPORT_RENDERER_EVENT = 'ECIPC:IpcBusRenderer:Event';
 
 export interface IpcWindow extends EventEmitter {
     send(channel: string, ...args: any[]): void;
+    sendTo(webContentsId: number, channel: string, ...args: any[]): void;
 }
 
 // Implementation for renderer process
@@ -58,7 +59,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             // else {
                 this._onIpcEventReceived = (event, ipcBusCommand, rawContent) => {
                     IpcBusRendererContent.FixRawContent(rawContent);
-                    IpcBusRendererContent.UnpackRawContent(rawContent);
+                    // IpcBusRendererContent.UnpackRawContent(rawContent);
                     this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
                 };
             // }
@@ -76,7 +77,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             // else {
                 this._onIpcEventReceived = (ipcBusCommand, rawContent) => {
                     IpcBusRendererContent.FixRawContent(rawContent);
-                    IpcBusRendererContent.UnpackRawContent(rawContent);
+                    // IpcBusRendererContent.UnpackRawContent(rawContent);
                     this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
                  };
             //  }
@@ -130,15 +131,21 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     // We serialize in renderer process to save master CPU.
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        ipcBusCommand.bridge = true;
         // if (this._noSerialization) {
         //     this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, args);
         // }
         // else {
             const packetOut = new IpcPacketBuffer();
             packetOut.serializeArray([ipcBusCommand, args]);
-            const packRawContent = IpcBusRendererContent.PackRawContent(packetOut.getRawContent());
-            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, packRawContent);
+            const rawContent = packetOut.getRawContent();
+            // const packRawContent = IpcBusRendererContent.PackRawContentrawContent);
+            const webContentsId = IpcBusUtils.GetWebContentsChannel(ipcBusCommand.channel);
+            if (isNaN(webContentsId)) {
+                this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, rawContent);
+            }
+            else {
+                this._ipcWindow.sendTo(webContentsId, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+            }
         // }
     }
 
