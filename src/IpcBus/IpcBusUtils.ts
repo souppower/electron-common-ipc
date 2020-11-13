@@ -266,7 +266,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
         }
     }
 
-    protected _addChannel(channel: string, conn: T, peer: IpcBusPeer, count?: number): Map<M, ConnectionPeers<T, M>> {
+    protected _addChannel(doEmit: boolean, channel: string, conn: T, peer: IpcBusPeer, count?: number): Map<M, ConnectionPeers<T, M>> {
         Logger.enable && this._info(`SetChannel: '${channel}', peerId =  ${peer ? peer.id : 'unknown'}`);
 
         const connsMap = new Map<M, ConnectionPeers<T, M>>();
@@ -277,14 +277,14 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
         const connData = new ConnectionPeers<T, M>(key, conn, peer, count);
         connsMap.set(key, connData);
 
-        this.emitter && this.emit('channel-added', channel, conn);
+        doEmit && this.emit('channel-added', channel, conn);
 
         return connsMap;
     }
 
-    private _removeChannel(channel: string, conn: T): boolean {
+    private _removeChannel(doEmit: boolean, channel: string, conn: T): boolean {
         if (this._channelsMap.delete(channel)) {
-            this.emitter && this.emit('channel-removed', channel, conn);
+            doEmit && this.emit('channel-removed', channel, conn);
             return true;
         }
         return false;
@@ -292,10 +292,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
 
     // Channel is supposed to be new
     pushResponseChannel(channel: string, conn: T, peer: IpcBusPeer) {
-        const previous = this.emitter;
-        this.emitter = false;
-        this._addChannel(channel, conn, peer, 1);
-        this.emitter = previous;
+        this._addChannel(false, channel, conn, peer, 1);
     }
 
     popResponseChannel(channel: string): ConnectionPeers<T, M> | null {
@@ -305,13 +302,9 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
         }
         if (connsMap.size !== 1) {
             throw 'should not happen';
-            return null;
         }
         const connData = connsMap.values().next().value;
-        const previous = this.emitter;
-        this.emitter = false;
-        this._removeChannel(channel, connData.conn);
-        this.emitter = previous;
+        this._removeChannel(false, channel, connData.conn);
         return connData;
     }
 
@@ -320,7 +313,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
 
         let connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
-            connsMap = this._addChannel(channel, conn, peer, count);
+            connsMap = this._addChannel(this.emitter, channel, conn, peer, count);
         }
         else {
             const key = this._getKey(conn);
@@ -360,7 +353,7 @@ export class ChannelConnectionMap<T, M> extends EventEmitter {
             connsMap.delete(connData.key);
             // Logger.enable && this._info(`Release: conn = ${conn} is released`);
             if (connsMap.size === 0) {
-                this._removeChannel(channel, connData.conn);
+                this._removeChannel(this.emitter, channel, connData.conn);
             }
         }
         Logger.enable && this._info(`Release '${channel}': count = ${connData.peerRefCounts.size}`);
