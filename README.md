@@ -712,7 +712,9 @@ interface IpcBusServiceProxy extends events.EventEmitter {
     getStatus(): Promise<ServiceStatus>;
     call<T>(handlerName: string, ...args: any[]): Promise<T>;
     getWrapper<T>(): T;
+
     connect<T>(timeoutDelay?: number): Promise<T>
+    close(): Promise<void>;
 ```
 
 ## IpcBusServiceEvent
