@@ -74,7 +74,6 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
 
         options = options || {};
         options.timeoutDelay = options.timeoutDelay || IpcBusUtils.IPC_BUS_TIMEOUT;
-        options.rejectRequestWhenStopped = options?.rejectRequestWhenStopped ?? true;
         this._options = options;
 
         this._isStarted = false;
@@ -278,12 +277,10 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Service '${this._serviceName}' is STOPPED`);
             this.emit(Service.IPCBUS_SERVICE_EVENT_STOP);
 
-            if (this._options.rejectRequestWhenStopped) {
-                for (let [, deferred] of this._pendingCalls) {
-                    deferred.reject(`Service '${this._serviceName}' stopped`);
-                }
-                this._pendingCalls.clear();
+            for (let [, deferred] of this._pendingCalls) {
+                deferred.reject(`Service '${this._serviceName}' stopped`);
             }
+            this._pendingCalls.clear();
         }
     }
 }

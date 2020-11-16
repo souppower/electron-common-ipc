@@ -39,7 +39,6 @@ export namespace IpcBusServiceProxy {
     }
 
     export interface CreateOptions extends IpcTimeoutOptions {
-        rejectRequestWhenStopped?: boolean; // true by default
     }
 
     export interface CreateFunction {
