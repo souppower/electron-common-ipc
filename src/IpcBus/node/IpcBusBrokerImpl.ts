@@ -304,7 +304,9 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 if (connData) {
                     connData.conn.write(packet.buffer);
                 }
-                this.bridgeBroadcastMessage(socket, ipcBusCommand, packet);
+                else {
+                    this.bridgeBroadcastMessage(socket, ipcBusCommand, packet);
+                }
                 break;
             }
 
