@@ -98,34 +98,22 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         throw 'not implemented';
     }
 
-    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer?: Buffer): void {
+    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.SendMessage: {
-                if (ipcBusCommand.request) {
-                    this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, PeerName, ipcBusCommand.peer);
-                }
-                if (buffer && this.hasChannel(ipcBusCommand.channel)) {
+            case IpcBusCommand.Kind.SendMessage:
+            case IpcBusCommand.Kind.RequestClose:
+                    if (this.hasChannel(ipcBusCommand.channel)) {
                     this._connector.postBuffer(buffer);
                 }
                 break;
-            }
 
             case IpcBusCommand.Kind.RequestResponse: {
                 const connData = this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
-                if (buffer && connData) {
+                if (connData) {
                     this._connector.postBuffer(buffer);
                 }
                 break;
             }
-
-            case IpcBusCommand.Kind.RequestClose:
-                const connData = this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
-                // To inform Broker
-                if (buffer && connData) {
-                    this._connector.postBuffer(buffer);
-                    // log IpcBusLog.Kind.GET_CLOSE_REQUEST
-                }
-                break;
         }
     }
 
@@ -147,8 +135,17 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
                 this._subscriptions.removePeer(PeerName, ipcBusCommand.peer);
                 break;
 
+            case IpcBusCommand.Kind.SendMessage:
+                if (ipcBusCommand.request) {
+                    this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, PeerName, ipcBusCommand.peer);
+                }
+                this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
+                break;
+            case IpcBusCommand.Kind.RequestClose:
+                this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
+                this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
+                break;
             default:
-                this.broadcastBuffer(ipcBusCommand);
                 this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
                 break;
         }

@@ -284,6 +284,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 this._subscriptions.removePeer(socket, ipcBusCommand.peer);
                 break;
 
+            // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.SendMessage:
                 // Register the replyChannel
                 if (ipcBusCommand.request) {
@@ -296,24 +297,30 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                         connData.conn.write(packet.buffer);
                     }
                 });
+                // if not coming from main bridge => forward
                 this.bridgeBroadcastMessage(socket, ipcBusCommand, packet);
                 break;
 
+            // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.RequestResponse: {
+                // Resolve all requests included bridge
                 const connData = this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
                     connData.conn.write(packet.buffer);
                 }
+                // Response if not for a socket client, forward to main bridge
                 else {
                     this.bridgeBroadcastMessage(socket, ipcBusCommand, packet);
                 }
                 break;
             }
 
+            // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.RequestClose: {
                 if (this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel)) {
                     // log IpcBusLog.Kind.GET_CLOSE_REQUEST
                 }
+                // if not coming from main bridge => forward
                 this.bridgeBroadcastMessage(socket, ipcBusCommand, packet);
                 break;
             }
