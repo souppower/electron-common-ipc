@@ -46,6 +46,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         this.broadcastBuffer(ipcBusCommand, ipcPacketBuffer.buffer);
     }
 
+    // Come from the main bridge: main or renderer
     broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
@@ -64,9 +65,6 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
             }
 
             case IpcBusCommand.Kind.RequestClose:
-                if (this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel)) {
-                    // log IpcBusLog.Kind.GET_CLOSE_REQUEST
-                }
                 break;
         }
     }

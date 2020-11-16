@@ -98,6 +98,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         throw 'not implemented';
     }
 
+    // Come from the main bridge: main or renderer
     broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
