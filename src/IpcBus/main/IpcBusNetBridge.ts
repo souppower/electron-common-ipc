@@ -102,7 +102,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestClose:
-                    if (this.hasChannel(ipcBusCommand.channel)) {
+                if (this.hasChannel(ipcBusCommand.channel)) {
                     this._connector.postBuffer(buffer);
                 }
                 break;
