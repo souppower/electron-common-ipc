@@ -1,0 +1,19 @@
+Request travel net client => renderer client
+
+net client   | net server                  | main net bridge             | main bridge | renderer bridge | renderer client
+send request | push reply channel, forward | push reply channel, forward | forward     | forward         | reply response
+
+renderer client   | renderer bridge | main bridge | main net bridge            | net server                 | net client
+reply response    | forward         | forward     | pop reply channel, forward | pop reply channel, forward | get response
+
+net client    | net server                 | main net bridge            | main bridge | renderer bridge
+close request | pop reply channel, forward | pop reply channel, forward | forward     | stop
+
+
+Request travel renderer client => net client
+renderer client | renderer bridge | main bridge | main net bridge | net server                  | net client
+send request    | forward         | forward     | forward         | push reply channel, forward | reply response
+
+net client     | net server                 | main net bridge | main bridge | renderer bridge | renderer client
+reply response | pop reply channel, forward | forward         | forward     | forward         | get response
+

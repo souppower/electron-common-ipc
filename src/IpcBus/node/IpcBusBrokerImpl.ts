@@ -286,7 +286,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.SendMessage:
-                // Register the replyChannel
+                // Register the replyChannel included bridge if bridge is a socket
                 if (ipcBusCommand.request) {
                     this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, socket, ipcBusCommand.peer);
                 }
@@ -303,7 +303,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.RequestResponse: {
-                // Resolve all requests included bridge
+                // Resolve request included bridge if bridge is a socket
                 const connData = this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
                     connData.conn.write(packet.buffer);
