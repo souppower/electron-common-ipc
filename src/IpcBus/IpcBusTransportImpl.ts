@@ -107,15 +107,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return this._peer;
     }
 
-    // hasRequestChannel(channel: string): boolean {
-    //     return this._requestFunctions.get(channel) != null;
-    // }
-
-    protected static generateReplyChannel(peer: Client.IpcBusPeer): string {
-        ++IpcBusTransportImpl.s_requestNumber;
-        return IpcBusUtils.CreateResponseChannel(peer, IpcBusTransportImpl.s_requestNumber);
-    }
-
     protected createPeer(process: Client.IpcBusProcess, name?: string): Client.IpcBusPeer{
         ++IpcBusTransportImpl.s_clientNumber;
         const peer: Client.IpcBusPeer = { 

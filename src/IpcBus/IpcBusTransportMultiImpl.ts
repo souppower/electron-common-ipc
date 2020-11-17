@@ -17,14 +17,6 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return this._subscriptions.hasChannel(channel);
     }
 
-    // getChannels(): string[] {
-    //     const channels = this._subscriptions.getChannels();
-    //     if (this._requestFunctions.size) {
-    //         return channels.concat(Array.from(this._requestFunctions.keys()));
-    //     }
-    //     return channels;
-    // }
-
     protected onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]) {
         // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport] Emit message received on channel '${ipcBusCommand.channel}' from peer #${ipcBusCommand.peer.name}`);
         this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
@@ -63,6 +55,9 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
                     });
                 });
             }
+            else {
+                // TODO send all existing channels
+            }
             return peer;
         });
     }
@@ -75,6 +70,12 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
                 this._subscriptions = null;
                 return super.close(client, options);
             }
+            //
+            // this.postAdmin({
+            //     peer: client.peer,
+            //     kind: IpcBusCommand.Kind.RemoveListeners,
+            //     channel
+            // });
         }
         return Promise.resolve();
     }
