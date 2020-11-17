@@ -143,20 +143,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // This is coming from the Bus broker (socket)
     // =================================================================================================
     _onNetMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        const hasRendererChannel = this._rendererConnector.hasChannel(ipcBusCommand.channel);
-        // if (this._noSerialization) {
-        //     // Prevent deserializing for nothing !
-        //     const hasMainChannel = this._mainTransport.hasChannel(ipcBusCommand.channel);
-        //     if (hasRendererChannel || hasMainChannel) {
-        //         const args = ipcPacketBuffer.parseArrayAt(1);
-        //         hasMainChannel && this._mainTransport.onConnectorArgsReceived(ipcBusCommand, args);
-        //      }
-        // }
-        // else {
-            this._mainTransport.onConnectorPacketReceived(ipcBusCommand, ipcPacketBuffer);
-            // End with renderer if have to compress
-            hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, ipcPacketBuffer);
-        // }
+        this._mainTransport.onConnectorPacketReceived(ipcBusCommand, ipcPacketBuffer);
+        this._rendererConnector.broadcastPacket(ipcBusCommand, ipcPacketBuffer);
     }
 
     _onNetClosed() {
