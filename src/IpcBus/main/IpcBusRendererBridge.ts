@@ -27,7 +27,6 @@ try {
 }
 catch (err) {
 }
-// import { webContents as ElectronWebContents } from 'electron';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
