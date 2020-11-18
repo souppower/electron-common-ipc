@@ -3,7 +3,7 @@ import { GetElectronProcessType } from 'electron-process-type/lib/v2';
 import * as IpcBusUtils from '../IpcBusUtils';
 
 import { IpcBusLogConfigMain } from './IpcBusLogConfigMain';
-import { IpcBusLogConfig } from './IpcBusLogConfig';
+import type { IpcBusLogConfig } from './IpcBusLogConfig';
 import { IpcBusLogConfigImpl } from './IpcBusLogConfigImpl';
 
 let g_log: IpcBusLogConfig;

@@ -1,6 +1,6 @@
-import { EventEmitter } from 'events';
+import type { EventEmitter } from 'events';
 
-import * as Client from './IpcBusClient';
+import type * as Client from './IpcBusClient';
 
 /** @internal */
 export namespace IpcBusTransport {

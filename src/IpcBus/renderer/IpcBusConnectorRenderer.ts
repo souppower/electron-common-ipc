@@ -1,12 +1,12 @@
 import * as assert from 'assert';
-import { EventEmitter } from 'events';
+import type { EventEmitter } from 'events';
 
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
-import * as Client from '../IpcBusClient';
-import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusConnector } from '../IpcBusConnector';
+import type * as Client from '../IpcBusClient';
+import type { IpcBusCommand } from '../IpcBusCommand';
+import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 
 import { IpcBusRendererContent } from './IpcBusRendererContent';

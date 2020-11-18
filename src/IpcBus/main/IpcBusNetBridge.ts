@@ -1,16 +1,16 @@
 /// <reference types='electron' />
 
-import { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBuffer } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
-import * as Client from '../IpcBusClient';
+import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
-import { IpcBusTransport } from '../IpcBusTransport';
+import type { IpcBusTransport } from '../IpcBusTransport';
 import { IpcBusConnectorNet } from '../node/IpcBusConnectorNet';
-import { IpcBusConnector } from '../IpcBusConnector';
+import type { IpcBusConnector } from '../IpcBusConnector';
 
-import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
+import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
 const PeerName = 'NetBridge';
 
@@ -24,8 +24,7 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<string, string>(
             `IPCBus:${PeerName}`,
-            (conn) => conn,
-            false
+            (conn) => conn
         );
 
         // this._subscriptions.emitter = true;

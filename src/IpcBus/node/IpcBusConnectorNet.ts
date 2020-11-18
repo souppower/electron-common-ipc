@@ -4,10 +4,10 @@ import * as net from 'net';
 import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
-import * as Client from '../IpcBusClient';
+import type * as Client from '../IpcBusClient';
 
-import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusConnector } from '../IpcBusConnector';
+import type { IpcBusCommand } from '../IpcBusCommand';
+import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 
 // Implementation for Node process

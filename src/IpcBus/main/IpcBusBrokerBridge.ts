@@ -1,12 +1,12 @@
-import * as net from 'net';
+import type * as net from 'net';
 
-import { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBuffer } from 'socket-serializer';
 
-import * as Client from '../IpcBusClient';
+import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusBrokerImpl } from '../node/IpcBusBrokerImpl';
 
-import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
+import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
 /** @internal */
 export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridgeClient {

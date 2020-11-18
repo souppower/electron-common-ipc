@@ -1,5 +1,4 @@
-
-import { IpcBusClient } from '../IpcBusClient';
+import type { IpcBusClient } from '../IpcBusClient';
 
 import { IpcBusService, IpcBusServiceProxy } from './IpcBusService';
 import { IpcBusServiceImpl } from './IpcBusServiceImpl';

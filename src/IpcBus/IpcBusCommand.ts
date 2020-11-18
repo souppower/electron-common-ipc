@@ -1,4 +1,4 @@
-import { IpcBusPeer } from './IpcBusClient';
+import type { IpcBusPeer } from './IpcBusClient';
 
 /** @internal */
 export namespace IpcBusCommand {

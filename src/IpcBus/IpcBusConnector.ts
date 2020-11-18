@@ -1,8 +1,8 @@
-import { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBuffer } from 'socket-serializer';
 
-import { IpcBusCommand } from './IpcBusCommand';
-import * as Client from './IpcBusClient';
-import { IpcBusLogConfig } from './log/IpcBusLogConfig';
+import type { IpcBusCommand } from './IpcBusCommand';
+import type * as Client from './IpcBusClient';
+import type { IpcBusLogConfig } from './log/IpcBusLogConfig';
 
 /** @internal */
 export namespace IpcBusConnector {

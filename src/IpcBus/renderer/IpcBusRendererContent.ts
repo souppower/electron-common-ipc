@@ -1,4 +1,4 @@
-import { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBuffer } from 'socket-serializer';
 // import * as zlib from 'zlib';
 
 // const threshold = 4000000;

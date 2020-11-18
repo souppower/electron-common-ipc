@@ -1,7 +1,7 @@
 import * as uuid from 'uuid';
 import { EventEmitter } from 'events';
 
-import { IpcWindow } from './IpcBusConnectorRenderer';
+import type { IpcWindow } from './IpcBusConnectorRenderer';
 import { IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, IPCBUS_TRANSPORT_RENDERER_EVENT } from './IpcBusConnectorRenderer';
 
 import { CrossFrameMessage } from './CrossFrameMessage';

@@ -1,9 +1,9 @@
-import { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBuffer } from 'socket-serializer';
 
-import * as Client from '../IpcBusClient';
-import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusLogMain } from '../log/IpcBusLogConfigMain';
-import { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
+import type * as Client from '../IpcBusClient';
+import type { IpcBusCommand } from '../IpcBusCommand';
+import type { IpcBusLogMain } from '../log/IpcBusLogConfigMain';
+import type { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 
 import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 

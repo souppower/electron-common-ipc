@@ -1,5 +1,5 @@
-import { IpcBusPeer } from '../IpcBusClient';
-import { IpcBusLogConfig } from './IpcBusLogConfig';
+import type { IpcBusPeer } from '../IpcBusClient';
+import type { IpcBusLogConfig } from './IpcBusLogConfig';
 
 export namespace IpcBusLog {
     export enum Kind {

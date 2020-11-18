@@ -11,7 +11,7 @@ import { IpcBusBridgeLogger } from './IpcBusBridgeLogger';
 import { IpcBusLog } from '../log/IpcBusLog';
 import { IpcBusLogConfig } from '../log/IpcBusLogConfig';
 import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
-import { IpcBusLogMain } from '../log/IpcBusLogConfigMain';
+import type { IpcBusLogMain } from '../log/IpcBusLogConfigMain';
 
 let g_bridge: IpcBusBridge;
 export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge => {
@@ -52,8 +52,8 @@ export const CreateIpcBusBridge: IpcBusBridge.CreateFunction = (): IpcBusBridge 
                 break;
             }
             // not supported process
-            case 'renderer':
-            case 'node':
+        case 'renderer':
+        case 'node':
             default:
                 break;
         }

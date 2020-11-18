@@ -4,14 +4,14 @@
 import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
-import * as Client from '../IpcBusClient';
-import * as Bridge from './IpcBusBridge';
-import { IpcBusCommand } from '../IpcBusCommand';
+import type * as Client from '../IpcBusClient';
+import type * as Bridge from './IpcBusBridge';
+import type { IpcBusCommand } from '../IpcBusCommand';
 
 import { IpcBusRendererBridge } from './IpcBusRendererBridge';
 import { IpcBusNetBridge } from './IpcBusNetBridge';
 import { IpcBusBridgeConnectorMain, IpcBusBridgeTransportMain } from './IpcBusMainBridge'; 
-import { IpcBusTransport } from '../IpcBusTransport'; 
+import type { IpcBusTransport } from '../IpcBusTransport'; 
 import { IpcBusBrokerBridge } from './IpcBusBrokerBridge';
 
 export interface IpcBusBridgeClient {

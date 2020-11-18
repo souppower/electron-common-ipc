@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as fse from 'fs-extra';
 import * as winston from 'winston';
 
-import * as Client from '../IpcBusClient';
+import type * as Client from '../IpcBusClient';
 // import { JSON_stringify } from './IpcBusLogUtils';
 import { IpcBusLog } from './IpcBusLog';
 import { IpcBusLogConfig } from './IpcBusLogConfig';

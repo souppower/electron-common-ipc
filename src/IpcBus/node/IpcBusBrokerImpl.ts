@@ -1,9 +1,9 @@
 import * as net from 'net';
 
-import { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBuffer } from 'socket-serializer';
 
-import * as Client from '../IpcBusClient';
-import * as Broker from './IpcBusBroker';
+import type * as Client from '../IpcBusClient';
+import type * as Broker from './IpcBusBroker';
 import * as IpcBusUtils from '../IpcBusUtils';
 // import { Create as CreateIpcBusClientNet } from './IpcBusClientNet-factory';
 
@@ -41,8 +41,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<net.Socket, number>(
             'IPCBus:Broker',
-            (conn) => (conn as any)[this._socketIdProperty],
-            false);
+            (conn) => (conn as any)[this._socketIdProperty]);
         // this._ipcBusBrokerClient = CreateIpcBusClientNet(contextType);
     }
 

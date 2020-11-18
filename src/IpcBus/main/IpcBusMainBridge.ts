@@ -1,12 +1,12 @@
 /// <reference types='electron' />
 
-import * as Client from '../IpcBusClient';
+import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 // import { IpcBusTransportNet } from '../node/IpcBusTransportNet';
-import { IpcBusConnector } from '../IpcBusConnector';
+import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultiImpl';
-import { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
+import type { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 
 export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     protected _bridge: IpcBusBridgeImpl;

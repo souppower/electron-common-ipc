@@ -1,4 +1,4 @@
-import { IpcBusLogConfig } from './IpcBusLogConfig';
+import type { IpcBusLogConfig } from './IpcBusLogConfig';
 import { IpcBusLogConfigImpl } from './IpcBusLogConfigImpl';
 
 let g_log: IpcBusLogConfig;

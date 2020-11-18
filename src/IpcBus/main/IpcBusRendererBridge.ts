@@ -1,13 +1,13 @@
 /// <reference types='electron' />
 
 // import * as semver from 'semver';
-import { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBuffer } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
-import * as Client from '../IpcBusClient';
+import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
-import { IpcBusConnector } from '../IpcBusConnector';
+import type { IpcBusConnector } from '../IpcBusConnector';
 
 import {
     IPCBUS_TRANSPORT_RENDERER_HANDSHAKE,
@@ -16,7 +16,7 @@ import {
 } from '../renderer/IpcBusConnectorRenderer';
 import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
 
-import { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
+import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
 // Seems to have a conflict between Electron.WebContents, WebContents, webContents.....
 import { webContents as ElectronWebContents } from 'electron';
@@ -38,8 +38,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._ipcMain = require('electron').ipcMain;
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<Electron.WebContents, number>(
             'IPCBus:RendererBridge',
-            (conn) => conn.id,
-            false
+            (conn) => conn.id
         );
 
 //        this._noSerialization = semver.gte(process.versions.electron, '8.0.0');

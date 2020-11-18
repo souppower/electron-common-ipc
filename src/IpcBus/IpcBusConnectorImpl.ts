@@ -1,7 +1,7 @@
 // import { IpcPacketBuffer } from 'socket-serializer';
-import { IpcBusConnector } from './IpcBusConnector';
+import type { IpcBusConnector } from './IpcBusConnector';
 import { IpcBusCommand } from './IpcBusCommand';
-import * as Client from './IpcBusClient';
+import type * as Client from './IpcBusClient';
 import { IpcBusLogConfig } from './log/IpcBusLogConfig';
 import { CreateIpcBusLog } from './log/IpcBusLog-factory';
 import { CreateUniqId } from './IpcBusUtils';

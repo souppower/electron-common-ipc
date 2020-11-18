@@ -1,11 +1,11 @@
 import { IpcPacketBuffer } from 'socket-serializer';
 
-import * as Client from './IpcBusClient';
+import type * as Client from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommand } from './IpcBusCommand';
 
-import { IpcBusTransport } from './IpcBusTransport';
-import { IpcBusConnector } from './IpcBusConnector';
+import type { IpcBusTransport } from './IpcBusTransport';
+import type { IpcBusConnector } from './IpcBusConnector';
 
 /** @internal */
 class DeferredRequestPromise {

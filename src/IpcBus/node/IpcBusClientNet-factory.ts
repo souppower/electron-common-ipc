@@ -1,12 +1,12 @@
 import { GetElectronProcessType } from 'electron-process-type/lib/v2';
 
-import * as Client from '../IpcBusClient';
+import type * as Client from '../IpcBusClient';
 
 import { IpcBusConnectorNet } from './IpcBusConnectorNet';
 import { IpcBusClientImpl}  from '../IpcBusClientImpl';
-import { IpcBusTransport } from '../IpcBusTransport';
+import type { IpcBusTransport } from '../IpcBusTransport';
 import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultiImpl';
-import { IpcBusConnector } from '../IpcBusConnector';
+import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusClientNet } from './IpcBusClientNet';
 
 export const CreateIpcBusNet: Client.IpcBusClient.CreateFunction = (): Client.IpcBusClient => {

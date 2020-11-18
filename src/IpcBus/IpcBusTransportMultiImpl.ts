@@ -1,9 +1,9 @@
-import * as Client from './IpcBusClient';
+import type * as Client from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusTransportImpl } from './IpcBusTransportImpl';
-import { IpcBusTransport } from './IpcBusTransport';
-import { IpcBusConnector } from './IpcBusConnector';
+import type { IpcBusTransport } from './IpcBusTransport';
+import type { IpcBusConnector } from './IpcBusConnector';
 
 /** @internal */
 export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
@@ -27,46 +27,48 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
     onConnectorShutdown() {
         super.onConnectorShutdown();
         if (this._subscriptions) {
-            this._subscriptions.emitter = false;
+            this._subscriptions.client = null;
             this._subscriptions = null;
         }
     }
 
     connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
         return super.connect(client, options)
-        .then((peer) => {
-            if (this._subscriptions == null) {
-                this._subscriptions = new IpcBusUtils.ChannelConnectionMap<IpcBusTransport.Client, string>(
-                    this._peer.name,
-                    (conn) => conn.peer.id,
-                    true);
-                this._subscriptions.on('channel-added', (channel) => {
-                    this.postAdmin({
-                        peer: this._peer,
-                        kind: IpcBusCommand.Kind.AddChannelListener,
-                        channel
-                    });
-                });
-                this._subscriptions.on('channel-removed', (channel) => {
-                    this.postAdmin({
-                        peer: this._peer,
-                        kind: IpcBusCommand.Kind.RemoveChannelListener,
-                        channel
-                    });
-                });
-            }
-            else {
-                // TODO send all existing channels
-            }
-            return peer;
-        });
+            .then((peer) => {
+                if (this._subscriptions == null) {
+                    this._subscriptions = new IpcBusUtils.ChannelConnectionMap<IpcBusTransport.Client, string>(
+                        this._peer.name,
+                        (conn) => conn.peer.id);
+
+                    this._subscriptions.client = {
+                        channelAdded: (channel) => {
+                            this.postAdmin({
+                                peer: this._peer,
+                                kind: IpcBusCommand.Kind.AddChannelListener,
+                                channel
+                            })
+                        },
+                        channelRemoved: (channel) => {
+                            this.postAdmin({
+                                peer: this._peer,
+                                kind: IpcBusCommand.Kind.RemoveChannelListener,
+                                channel
+                            });
+                        }
+                    };
+                }
+                else {
+                    // TODO send all existing channels
+                }
+                return peer;
+            });
     }
 
     close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         if (this._subscriptions) {
             this.cancelRequest(client);
             if (this._subscriptions.getChannelsCount() === 0) {
-                this._subscriptions.emitter = false;
+                this._subscriptions.client = null;
                 this._subscriptions = null;
                 return super.close(client, options);
             }

@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events';
+import type { EventEmitter } from 'events';
 
 // Special channels
 export const IPCBUS_CHANNEL = '/electron-ipc-bus';
