@@ -19,7 +19,7 @@ import { CreateIpcBusLog } from '../log/IpcBusLog-factory';
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
 // Seems to have a conflict between Electron.WebContents, WebContents, webContents.....
-import { webContents as ElectronWebContents } from 'electron';
+// import { webContents as ElectronWebContents } from 'electron';
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
 /** @internal */
@@ -172,7 +172,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             case IpcBusCommand.Kind.RequestResponse: {
                 const webContentsId = IpcBusUtils.GetWebContentsChannel(ipcBusCommand.request.replyChannel);
                 if (!isNaN(webContentsId)) {
-                    const webContents = ElectronWebContents.fromId(webContentsId);
+                    const webContents = Electron.webContents.fromId(webContentsId);
                     if (webContents) {
                         webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                     }
