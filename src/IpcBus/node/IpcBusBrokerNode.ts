@@ -60,7 +60,6 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
 
     protected bridgeClose(socket?: net.Socket) {
         if (this._socketBridge && ((socket == null) || (socket === this._socketBridge.socket))) {
-            // this._socketBridge.release();
             this._socketBridge = null;
             this._socketWriter = null;
         }
