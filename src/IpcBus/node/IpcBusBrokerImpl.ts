@@ -202,6 +202,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     }
 
     protected _socketCleanUp(socket: any): void {
+        this.bridgeClose(socket);
         this._subscriptions.removeConnection(socket);
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Connection closed !`);
     }
@@ -333,7 +334,8 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
             // BridgeClose/Connect received are coming from IpcBusBridge only !
             case IpcBusCommand.Kind.BridgeConnect: {
-                this.bridgeConnect(socket);
+                const socketClient = this._socketClients.get(socket);
+                this.bridgeConnect(socketClient);
                 break;
             }
 
@@ -358,10 +360,10 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         return queryStateResult;
     }
     
-    protected bridgeConnect(socket: net.Socket) {
+    protected bridgeConnect(socketClient: IpcBusBrokerSocket) {
     }
 
-    protected bridgeClose() {
+    protected bridgeClose(socket?: net.Socket) {
     }
 
     protected bridgeAddChannel(channel: string) {
