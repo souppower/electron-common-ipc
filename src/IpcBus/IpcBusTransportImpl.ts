@@ -144,7 +144,6 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         if (this._logActivate) {
             logGetMessage = this._connector.logMessageGet(client.peer, local, ipcBusCommand, args);
         }
-        const listeners = client.listeners(ipcBusCommand.channel);
         const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
         if (ipcBusCommand.request) {
             const settled = (resolve: boolean, argsResponse: any[]) => {
@@ -184,6 +183,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 }
             };
         }
+        const listeners = client.listeners(ipcBusCommand.channel);
         for (let i = 0, l = listeners.length; i < l; ++i) {
             listeners[i].call(client, ipcBusEvent, ...args);
         }
@@ -353,9 +353,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     abstract hasChannel(channel: string): boolean;
-    // abstract getChannels(): string[];
-    protected abstract onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): void;
 
     abstract addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
     abstract removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;
+
+    protected abstract onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): void;
 }

@@ -102,7 +102,7 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
         if (arguments.length === 1) {
             channel = IpcBusUtils.CheckChannel(channel);
         }
-        this._transport.removeChannel(this, channel);
+        this._transport.removeChannel(this, channel, true);
         return super.removeAllListeners(channel);
     }
 
