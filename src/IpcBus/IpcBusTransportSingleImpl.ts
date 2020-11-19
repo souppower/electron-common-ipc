@@ -1,8 +1,8 @@
-import * as Client from './IpcBusClient';
+import type * as Client from './IpcBusClient';
 import { IpcBusCommand } from './IpcBusCommand';
-import { IpcBusTransport } from './IpcBusTransport';
+import type { IpcBusTransport } from './IpcBusTransport';
 import { IpcBusTransportImpl } from './IpcBusTransportImpl';
-import { IpcBusConnector } from './IpcBusConnector';
+import type { IpcBusConnector } from './IpcBusConnector';
 
 /** @internal */
 export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {

@@ -3,8 +3,7 @@
     "compilerOptions": {
         "declaration": false
     },
-	"files": [
-		"../src/electron-common-ipc.ts",
-		"../src/electron-common-ipc-browser.ts"
+	"include": [
+		"../src/**/*.ts"
 	]
 }

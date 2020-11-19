@@ -7,7 +7,7 @@ import { IpcBusCommand } from '../IpcBusCommand';
 import { CreateUniqId } from '../IpcBusUtils';
 
 import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
-import { IpcBusBrokerSocket, IpcBusBrokerSocketClient } from './IpcBusBrokerSocket';
+import type { IpcBusBrokerSocket } from './IpcBusBrokerSocket';
 
 /** @internal */
 export class IpcBusBrokerNode extends IpcBusBrokerImpl {
@@ -19,6 +19,8 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
 
     constructor(contextType: Client.IpcBusProcessType) {
         super(contextType);
+
+        this._ipcPacketBuffer = new IpcPacketBuffer();
 
         this._peer = {
             id: `${contextType}.${CreateUniqId()}`,
@@ -44,24 +46,9 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         super._reset(closeServer);
     }
 
-    protected bridgeConnect(socket: net.Socket) {
-        const client: IpcBusBrokerSocketClient = {
-            onSocketPacket: (socket: net.Socket, ipcPacketBuffer: IpcPacketBuffer) => {
-            },
-            onSocketError: (socket: net.Socket, err: string) => {
-                this.bridgeClose();
-            },
-            onSocketClose: (socket: net.Socket) => {
-                this.bridgeClose();
-            },
-            onSocketEnd: (socket: net.Socket) => {
-                this.bridgeClose();
-            },
-        };
-
-        this._socketBridge = new IpcBusBrokerSocket(socket, client);
+    protected bridgeConnect(socketClient: IpcBusBrokerSocket) {
+        this._socketBridge = socketClient;
         this._socketWriter = new SocketWriter(this._socketBridge.socket);
-        this._ipcPacketBuffer = new IpcPacketBuffer();
 
         // this._socketBridge = socket;
         // this._bridgeChannels.clear();
@@ -71,12 +58,10 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         }
     }
 
-    protected bridgeClose() {
-        if (this._socketBridge) {
-            // this._socketBridge.release();
+    protected bridgeClose(socket?: net.Socket) {
+        if (this._socketBridge && ((socket == null) || (socket === this._socketBridge.socket))) {
             this._socketBridge = null;
             this._socketWriter = null;
-            this._ipcPacketBuffer = null;
         }
         // this._bridgeChannels.clear();
         // const channels = this._subscriptions.getChannels();

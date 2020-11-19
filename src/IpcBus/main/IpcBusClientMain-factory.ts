@@ -13,7 +13,7 @@ import type { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 //     return connector;
 // }
 
-export function CreateTransport(contextType: Client.IpcBusProcessType): IpcBusTransport {
+function CreateTransport(contextType: Client.IpcBusProcessType): IpcBusTransport {
     const bridge = CreateIpcBusBridge() as IpcBusBridgeImpl;
     const transport = bridge.mainTransport;
     return transport;

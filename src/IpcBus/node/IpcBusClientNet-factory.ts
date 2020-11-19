@@ -9,19 +9,19 @@ import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultiImpl';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusClientNet } from './IpcBusClientNet';
 
-export const CreateIpcBusNet: Client.IpcBusClient.CreateFunction = (): Client.IpcBusClient => {
+const CreateIpcBusNet: Client.IpcBusClient.CreateFunction = (): Client.IpcBusClient => {
     const electronProcessType = GetElectronProcessType();
     return Create(electronProcessType);
 }
 IpcBusClientNet.Create = CreateIpcBusNet;
 
-export function CreateConnector(contextType: Client.IpcBusProcessType): IpcBusConnector {
+function CreateConnector(contextType: Client.IpcBusProcessType): IpcBusConnector {
     const connector = new IpcBusConnectorNet(contextType);
     return connector;
 }
 
 let g_transport: IpcBusTransport = null;
-export function CreateTransport(contextType: Client.IpcBusProcessType): IpcBusTransport {
+function CreateTransport(contextType: Client.IpcBusProcessType): IpcBusTransport {
     if (g_transport == null) {
         const connector = CreateConnector(contextType);
         g_transport = new IpcBusTransportMultiImpl(connector);
