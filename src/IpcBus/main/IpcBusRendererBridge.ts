@@ -166,13 +166,16 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _broadcastRawContent(webContents: Electron.WebContents | null, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                // Prevent echo message
-                const sourceKey = webContents ? this._subscriptions.getKey(webContents) : undefined;
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-                    if (connData.key !== sourceKey) {
-                        connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                const connsMap = this._subscriptions.getChannelConns(ipcBusCommand.channel);
+                if (connsMap) {
+                    // Prevent echo message
+                    const sourceKey = webContents ? this._subscriptions.getKey(webContents) : undefined;
+                    for (let [, connData] of connsMap) {
+                        if (connData.key !== sourceKey) {
+                            connData.conn.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                        }
                     }
-                });
+                }
                 break;
             }
 

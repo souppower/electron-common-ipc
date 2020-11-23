@@ -421,6 +421,10 @@ export class ChannelConnectionMap<T, M> {
     //     });
     // }
 
+    getChannelConns(channel: string): Map<M, ConnectionPeers<T, M>> {
+        return this._channelsMap.get(channel);
+    }
+
     forEachChannel(channel: string, callback: ConnectionPeers.ForEachHandler<T, M>) {
         Logger.enable && this._info(`forEachChannel '${channel}'`);
         const connsMap = this._channelsMap.get(channel);
