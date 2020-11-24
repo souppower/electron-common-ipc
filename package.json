@@ -1,6 +1,6 @@
 {
   "name": "electron-common-ipc",
-  "version": "10.1.0",
+  "version": "10.1.0-beta.1",
   "description": "A safe IPC bus for applications built on Node or Electron.",
   "repository": {
     "type": "git",
@@ -39,20 +39,19 @@
   "browser": "./lib/electron-common-ipc-browser.js",
   "types": "./lib/electron-common-ipc.d.ts",
   "dependencies": {
-    "@qiwi/dts-bundle": "^0.7.4",
     "csv-stringify": "~5.5.3",
     "electron-process-type": "~4.2.0",
     "fs-extra": "~9.0.1",
-    "json-helpers": "~3.0.0",
+    "json-helpers": "~3.0.1",
     "semver": "~7.3.2",
     "shortid": "~2.2.16",
-    "socket-serializer": "~6.1.1",
+    "socket-serializer": "~6.1.2",
     "uuid": "~8.3.1",
     "winston": "~3.3.3"
   },
   "devDependencies": {
     "@types/fs-extra": "~9.0.4",
-    "@types/node": "~14.14.8",
+    "@types/node": "~14.14.9",
     "@types/semver": "~7.3.4",
     "@types/shortid": "0.0.29",
     "@types/uuid": "8.3.0",
@@ -60,6 +59,7 @@
     "chai": "~4.2.0",
     "del": "~6.0.0",
     "del-cli": "~3.0.1",
+    "dts-bundle": "^0.7.3",
     "electron": "~10.1.5",
     "electron-mocha": "~9.3.2",
     "expect": "~26.6.2",
