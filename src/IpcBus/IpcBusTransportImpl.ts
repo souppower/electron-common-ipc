@@ -255,7 +255,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     protected cancelRequest(client: IpcBusTransport.Client): void {
-        for (let [key, request] of this._requestFunctions) {
+        this._requestFunctions.forEach((request, key) => {
             if (client === request.client) {
                 request.timeout();
                 this._requestFunctions.delete(key);
@@ -270,7 +270,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 }
                 this.postMessage(ipcMessageClose);
             }
-        }
+        });
     }
 
     requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {

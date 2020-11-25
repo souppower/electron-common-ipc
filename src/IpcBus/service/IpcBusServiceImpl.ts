@@ -36,11 +36,11 @@ function getInstanceMethodNames(obj: any): Map<string, PropertyDescriptor> {
     while (proto) {
         if (proto === EventEmitter.prototype) {
             // Remove EventEmitter overriden methods
-            for (let prop of Object.keys(EventEmitter.prototype)) {
+            Object.keys(EventEmitter.prototype).forEach((prop) => {
                 if (prop[0] !== '_') {
                     methodNames.delete(prop);
                 }
-            }
+            });
             methodNames.delete('off');
             break;
         }

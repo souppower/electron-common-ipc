@@ -66,9 +66,9 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             // this._ipcBusBrokerClient.removeListener(Client.IPCBUS_CHANNEL_QUERY_STATE, this._onQueryState);
             // this._ipcBusBrokerClient.close();
 
-            for (let [, socket] of this._socketClients) {
+            this._socketClients.forEach((socket) => {
                 socket.release(closeServer);
-            }
+            });
 
             server.close();
             server.unref();
@@ -291,15 +291,12 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                     this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, socket, ipcBusCommand.peer);
                 }
                 // Prevent echo message
-                const connsMap = this._subscriptions.getChannelConns(ipcBusCommand.channel);
-                if (connsMap) {
-                    const sourceKey = this._subscriptions.getKey(socket);
-                    for (let [, connData] of connsMap) {
-                        if (connData.key !== sourceKey) {
-                            connData.conn.write(packet.buffer);
-                        }
+                const sourceKey = this._subscriptions.getKey(socket);
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
+                    if (connData.key !== sourceKey) {
+                        connData.conn.write(packet.buffer);
                     }
-                }
+                });
                 // if not coming from main bridge => forward
                 this.bridgeBroadcastMessage(socket, ipcBusCommand, packet);
                 break;
@@ -355,7 +352,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
     queryState(): Object {
         const queryStateResult: Object[] = [];
-        this._subscriptions.forEach((connData, channel) => {
+        this._subscriptions.forEach((channel, connData) => {
             connData.peerRefCounts.forEach((peerRefCount) => {
                 queryStateResult.push({ channel: channel, peer: peerRefCount.peer, count: peerRefCount.refCount });
             });

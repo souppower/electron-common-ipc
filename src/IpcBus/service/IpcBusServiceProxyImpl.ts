@@ -264,9 +264,9 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
             this._updateWrapper(serviceStatus);
             this.emit(Service.IPCBUS_SERVICE_EVENT_START, serviceStatus);
 
-            for (let [, deferred] of this._pendingCalls) {
+            this._pendingCalls.forEach((deferred) => {
                 deferred.execute();
-            }
+            });
             this._pendingCalls.clear();
         }
     }
@@ -277,9 +277,9 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
             IpcBusUtils.Logger.service && IpcBusUtils.Logger.info(`[IpcBusServiceProxy] Service '${this._serviceName}' is STOPPED`);
             this.emit(Service.IPCBUS_SERVICE_EVENT_STOP);
 
-            for (let [, deferred] of this._pendingCalls) {
+            this._pendingCalls.forEach((deferred) => {
                 deferred.reject(`Service '${this._serviceName}' stopped`);
-            }
+            });
             this._pendingCalls.clear();
         }
     }

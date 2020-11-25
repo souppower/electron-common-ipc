@@ -392,13 +392,13 @@ export class ChannelConnectionMap<T, M> {
     private _removeConnectionOrPeer(conn: T, peer: IpcBusPeer | null) {
         Logger.enable && this._info(`removeConnectionOrPeer: peerId = ${peer ? peer.id : 'unknown'}`);
         // We can not use _getKey as it may access a property which is no more accessible when the 'conn' is destroyed
-        for (let [channel, connsMap] of this._channelsMap) {
-            for (let [, connData] of connsMap) {
+        this._channelsMap.forEach((connsMap, channel) => {
+            connsMap.forEach((connData) => {
                 if (connData.conn === conn) {
                     this._releaseConnData(channel, connData, connsMap, peer, true);
                 }
-            }
-        }
+            });
+        });
     }
 
     removePeer(conn: T, peer: IpcBusPeer) {
@@ -425,28 +425,22 @@ export class ChannelConnectionMap<T, M> {
         return this._channelsMap.get(channel);
     }
 
-    forEachChannel(channel: string, callback: ConnectionPeers.ForEachHandler<T, M>) {
+    forEachChannel(channel: string, callback: ConnectionPeers.ForEachChannelHandler<T, M>) {
         Logger.enable && this._info(`forEachChannel '${channel}'`);
         const connsMap = this._channelsMap.get(channel);
         if (connsMap == null) {
             Logger.enable && this._warn(`forEachChannel: Unknown channel '${channel}' !`);
         }
         else {
-            for (let [, connData] of connsMap) {
-                Logger.enable && this._info(`forEachChannel '${channel}' - ${JSON.stringify(Array.from(connData.peerRefCounts.keys()))} (${connData.peerRefCounts.size})`);
-                callback(connData, channel);
-            }
+            connsMap.forEach(callback);
         }
     }
 
     forEach(callback: ConnectionPeers.ForEachHandler<T, M>) {
         Logger.enable && this._info('forEach');
-        for (let [channel, connsMap] of this._channelsMap) {
-            for (let [, connData] of connsMap) {
-                Logger.enable && this._info(`forEach '${channel}' - ${JSON.stringify(Array.from(connData.peerRefCounts.keys()))} (${connData.peerRefCounts.size})`);
-                callback(connData, channel);
-            }
-        }
+        this._channelsMap.forEach((connsMap, channel) => {
+            connsMap.forEach((connData, key) => callback(channel, connData, key));
+        });
     }
 }
 
@@ -518,8 +512,13 @@ export namespace ConnectionPeers {
     }
 
     /** @internal */
+    export interface ForEachChannelHandler<T, M> {
+        (value: ConnectionPeers<T, M>, key: M): void;
+    };
+
+    /** @internal */
     export interface ForEachHandler<T, M> {
-        (ConnectionData: ConnectionPeers<T, M>, channel: string): void;
+        (channel: string, value: ConnectionPeers<T, M>, key: M): void;
     };
 };
 
