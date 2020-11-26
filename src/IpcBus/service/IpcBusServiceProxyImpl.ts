@@ -172,7 +172,7 @@ export class IpcBusServiceProxyImpl extends EventEmitter implements Service.IpcB
     }
 
     requestApply<R>(name: string, args?: any[]): Promise<R> {
-        const deferred = this._requestApply<R>(this._options.timeoutDelay, name, args);
+        const deferred = this._requestApply<R>(-1, name, args);
         if (this._isStarted) {
             deferred.execute();
         }
