@@ -290,10 +290,9 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 if (ipcBusCommand.request) {
                     this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, socket, ipcBusCommand.peer);
                 }
-                // Prevent echo message
-                const sourceKey = this._subscriptions.getKey(socket);
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-                    if (connData.key !== sourceKey) {
+                    // Prevent echo message
+                    if (connData.conn !== socket) {
                         connData.conn.write(packet.buffer);
                     }
                 });
@@ -327,10 +326,9 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
 
             case IpcBusCommand.Kind.LogGetMessage:
             case IpcBusCommand.Kind.LogLocalSendRequest:
-            case IpcBusCommand.Kind.LogLocalRequestResponse: {
+            case IpcBusCommand.Kind.LogLocalRequestResponse:
                 this.bridgeBroadcastMessage(socket, ipcBusCommand, packet);
                 break;
-            }
 
             // BridgeClose/Connect received are coming from IpcBusBridge only !
             case IpcBusCommand.Kind.BridgeConnect: {
@@ -339,10 +337,9 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 break;
             }
 
-            case IpcBusCommand.Kind.BridgeClose: {
+            case IpcBusCommand.Kind.BridgeClose:
                 this.bridgeClose();
                 break;
-            }
 
             default:
                 console.log(JSON.stringify(ipcBusCommand, null, 4));
