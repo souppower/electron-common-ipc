@@ -25,7 +25,7 @@ import './IpcBus/node/IpcBusBroker-factory';
 /** @internal */
 import './IpcBus/main/IpcBusBridge-factory';
 /** @internal */
-import './IpcBus/node/IpcBusClientNet-factory';
+import './IpcBus/node/IpcBusClientSocket-factory';
 /** @internal */
 import './IpcBus/log/IpcBusCSVLogger';
 /** @internal */

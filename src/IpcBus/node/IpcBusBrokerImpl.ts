@@ -5,7 +5,6 @@ import type { IpcPacketBuffer } from 'socket-serializer';
 import type * as Client from '../IpcBusClient';
 import type * as Broker from './IpcBusBroker';
 import * as IpcBusUtils from '../IpcBusUtils';
-// import { Create as CreateIpcBusClientNet } from './IpcBusClientNet-factory';
 
 import { IpcBusCommand } from '../IpcBusCommand';
 

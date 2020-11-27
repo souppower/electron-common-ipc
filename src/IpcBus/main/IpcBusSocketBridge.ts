@@ -161,7 +161,7 @@ class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     }
 }
 
-export class IpcBusNetBridge implements IpcBusBridgeClient {
+export class IpcBusSocketBridge implements IpcBusBridgeClient {
     protected _bridge: IpcBusBridgeImpl;
     protected _transport: IpcBusTransportSocketBridge;
 

@@ -9,7 +9,7 @@ import type * as Bridge from './IpcBusBridge';
 import type { IpcBusCommand } from '../IpcBusCommand';
 
 import { IpcBusRendererBridge } from './IpcBusRendererBridge';
-import { IpcBusNetBridge } from './IpcBusSocketBridge';
+import { IpcBusSocketBridge } from './IpcBusSocketBridge';
 import { IpcBusBridgeConnectorMain, IpcBusBridgeTransportMain } from './IpcBusMainBridge'; 
 import type { IpcBusTransport } from '../IpcBusTransport'; 
 import { IpcBusBrokerBridge } from './IpcBusBrokerBridge';
@@ -59,7 +59,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
                         this._socketTransport = new IpcBusBrokerBridge('main', this);
                     }
                     else {
-                        this._socketTransport = new IpcBusNetBridge(this);
+                        this._socketTransport = new IpcBusSocketBridge(this);
                     }
                     return this._socketTransport.connect(options)
                     .catch(err => {
