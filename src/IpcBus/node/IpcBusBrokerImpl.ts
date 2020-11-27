@@ -253,8 +253,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     }
 
     // protected _onServerData(packet: IpcPacketBuffer, socket: net.Socket, server: net.Server): void {
-    onSocketPacket(socket: net.Socket, packet: IpcPacketBuffer): void {
-        const ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
+    onSocketCommand(socket: net.Socket, ipcBusCommand: IpcBusCommand, packet: IpcPacketBuffer): void {
         switch (ipcBusCommand.kind) {
             // case IpcBusCommand.Kind.Handshake:
             // case IpcBusCommand.Kind.Shutdown:

@@ -1,11 +1,12 @@
 import type * as net from 'net';
 
 import { IpcPacketBuffer, BufferListReader } from 'socket-serializer';
+import type { IpcBusCommand } from '../IpcBusCommand';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 
 export interface IpcBusBrokerSocketClient {
-    onSocketPacket(socket: net.Socket, ipcPacketBuffer: IpcPacketBuffer): void;
+    onSocketCommand(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void;
     onSocketError(socket: net.Socket, err: string): void;
     onSocketClose(socket: net.Socket): void;
     onSocketEnd(socket: net.Socket): void;
@@ -66,9 +67,26 @@ export class IpcBusBrokerSocket {
     }
 
     protected _onSocketData(buffer: Buffer) {
+        // if (this._ipcBusCommandInProgress) {
+        //     if (buffer.length > this._packetSize) {
+        //         this._bufferListReader = new BufferListReader([buffer], this._packetSize)
+        //     }
+        //     else {
+        //         this._client.onSocketBuffer(this._ipcBusCommandInProgress, buffer);
+        //     }
+        // }
         this._bufferListReader.appendBuffer(buffer);
         while (this._packetIn.decodeFromReader(this._bufferListReader)) {
-            this._client.onSocketPacket(this._socket, this._packetIn);
+            // if (this._packetIn.type === BufferType.ArrayWithSize) {
+            //     if (this._packetIn.isPartial()) {
+            //         const ipcBusCommand = this._packetIn.parseArrayAt(0);
+            //         if (ipcBusCommand) {
+
+            //         }
+            //     }
+            // }
+            const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
+            this._client.onSocketCommand(this._socket, ipcBusCommand, this._packetIn);
         }
         // Remove read buffer
         this._bufferListReader.reduce();

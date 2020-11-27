@@ -21,6 +21,6 @@ export abstract class IpcBusBrokerLogger extends IpcBusBrokerImpl {
         const args = packet.parseArrayAt(1);
         this.addLog(socket, packet, ipcBusCommand, args);
 
-        super.onSocketPacket(socket, packet);
+        super.onSocketCommand(socket, ipcBusCommand, packet);
     }
 }

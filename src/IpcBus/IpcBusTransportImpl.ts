@@ -259,16 +259,16 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             if (client === request.client) {
                 request.timeout();
                 this._requestFunctions.delete(key);
-                const ipcMessageClose: IpcBusCommand = {
+                const ipcRequestClose: IpcBusCommand = {
                     kind: IpcBusCommand.Kind.RequestClose,
                     channel: request.request.channel,
                     peer: request.client.peer,
                     request: request.request
                 };
                 if (this._logActivate) {
-                    this._connector.logMessageSend(null, ipcMessageClose);
+                    this._connector.logMessageSend(null, ipcRequestClose);
                 }
-                this.postMessage(ipcMessageClose);
+                this.postMessage(ipcRequestClose);
             }
         });
     }
@@ -305,16 +305,16 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 setTimeout(() => {
                     if (this._requestFunctions.delete(ipcBusCommandRequest.replyChannel)) {
                         deferredRequest.timeout();
-                        const ipcMessageClose: IpcBusCommand = {
+                        const ipcRequestClose: IpcBusCommand = {
                             kind: IpcBusCommand.Kind.RequestClose,
                             channel,
                             peer: client.peer,
                             request: ipcBusCommandRequest
                         };
                         if (logSendMessage) {
-                            this._connector.logMessageSend(logSendMessage, ipcMessageClose);
+                            this._connector.logMessageSend(logSendMessage, ipcRequestClose);
                         }
-                        this.postMessage(ipcMessageClose);
+                        this.postMessage(ipcRequestClose);
                     }
                 }, timeoutDelay);
             }
