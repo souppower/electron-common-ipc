@@ -7,14 +7,14 @@ import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import type { IpcBusTransport } from '../IpcBusTransport';
-import { IpcBusConnectorNet } from '../node/IpcBusConnectorNet';
+import { IpcBusConnectorSocket } from '../node/IpcBusConnectorSocket';
 import type { IpcBusConnector } from '../IpcBusConnector';
 
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
 const PeerName = 'NetBridge';
 
-class IpcBusTransportNetBridge extends IpcBusTransportImpl {
+class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     protected _bridge: IpcBusBridgeImpl;
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<string, string>;
 
@@ -163,13 +163,13 @@ class IpcBusTransportNetBridge extends IpcBusTransportImpl {
 
 export class IpcBusNetBridge implements IpcBusBridgeClient {
     protected _bridge: IpcBusBridgeImpl;
-    protected _transport: IpcBusTransportNetBridge;
+    protected _transport: IpcBusTransportSocketBridge;
 
     constructor(bridge: IpcBusBridgeImpl) {
         this._bridge = bridge;
 
-        const connector = new IpcBusConnectorNet('main');
-        this._transport = new IpcBusTransportNetBridge(connector, bridge);
+        const connector = new IpcBusConnectorSocket('main');
+        this._transport = new IpcBusTransportSocketBridge(connector, bridge);
     }
 
     connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {

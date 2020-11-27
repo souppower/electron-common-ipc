@@ -2,21 +2,22 @@ import { GetElectronProcessType } from 'electron-process-type/lib/v2';
 
 import type * as Client from '../IpcBusClient';
 
-import { IpcBusConnectorNet } from './IpcBusConnectorNet';
+import { IpcBusConnectorSocket } from './IpcBusConnectorSocket';
 import { IpcBusClientImpl}  from '../IpcBusClientImpl';
 import type { IpcBusTransport } from '../IpcBusTransport';
 import { IpcBusTransportMultiImpl } from '../IpcBusTransportMultiImpl';
 import type { IpcBusConnector } from '../IpcBusConnector';
-import { IpcBusClientNet } from './IpcBusClientNet';
+import { IpcBusClientNet, IpcBusClientSocket } from './IpcBusClientSocket';
 
 const CreateIpcBusNet: Client.IpcBusClient.CreateFunction = (): Client.IpcBusClient => {
     const electronProcessType = GetElectronProcessType();
     return Create(electronProcessType);
 }
 IpcBusClientNet.Create = CreateIpcBusNet;
+IpcBusClientSocket.Create = CreateIpcBusNet;
 
 function CreateConnector(contextType: Client.IpcBusProcessType): IpcBusConnector {
-    const connector = new IpcBusConnectorNet(contextType);
+    const connector = new IpcBusConnectorSocket(contextType);
     return connector;
 }
 

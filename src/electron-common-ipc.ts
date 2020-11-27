@@ -5,7 +5,7 @@ export * from './IpcBus/IpcBusClient-factory';
 export * from './IpcBus/node/IpcBusBroker';
 export * from './IpcBus/node/IpcBusBroker-factory';
 
-export * from './IpcBus/node/IpcBusClientNet';
+export * from './IpcBus/node/IpcBusClientSocket';
 
 export * from './IpcBus/main/IpcBusBridge';
 export * from './IpcBus/main/IpcBusBridge-factory';

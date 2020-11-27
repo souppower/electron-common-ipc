@@ -12,7 +12,7 @@ import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 
 // Implementation for Node process
 /** @internal */
-export class IpcBusConnectorNet extends IpcBusConnectorImpl {
+export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     protected _socket: net.Socket;
     protected _netBinds: { [key: string]: (...args: any[]) => void };
 

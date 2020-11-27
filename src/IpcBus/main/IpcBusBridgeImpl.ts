@@ -9,7 +9,7 @@ import type * as Bridge from './IpcBusBridge';
 import type { IpcBusCommand } from '../IpcBusCommand';
 
 import { IpcBusRendererBridge } from './IpcBusRendererBridge';
-import { IpcBusNetBridge } from './IpcBusNetBridge';
+import { IpcBusNetBridge } from './IpcBusSocketBridge';
 import { IpcBusBridgeConnectorMain, IpcBusBridgeTransportMain } from './IpcBusMainBridge'; 
 import type { IpcBusTransport } from '../IpcBusTransport'; 
 import { IpcBusBrokerBridge } from './IpcBusBrokerBridge';
@@ -29,7 +29,7 @@ export interface IpcBusBridgeClient {
 /** @internal */
 export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     protected _mainTransport: IpcBusBridgeTransportMain;
-    protected _netTransport: IpcBusBridgeClient;
+    protected _socketTransport: IpcBusBridgeClient;
     protected _rendererConnector: IpcBusBridgeClient;
 
     // private _noSerialization: boolean;
@@ -53,25 +53,25 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
         return this._rendererConnector.connect(options)
         .then(() => {
-            if (this._netTransport == null) {
+            if (this._socketTransport == null) {
                 if ((options.port != null) || (options.path != null)) {
                     if (options.server) {
-                        this._netTransport = new IpcBusBrokerBridge('main', this);
+                        this._socketTransport = new IpcBusBrokerBridge('main', this);
                     }
                     else {
-                        this._netTransport = new IpcBusNetBridge(this);
+                        this._socketTransport = new IpcBusNetBridge(this);
                     }
-                    return this._netTransport.connect(options)
+                    return this._socketTransport.connect(options)
                     .catch(err => {
-                        this._netTransport = null;
+                        this._socketTransport = null;
                     });
                 }
             }
             else {
                 if ((options.port == null) && (options.path == null)) {
-                    const netTransport = this._netTransport;
-                    this._netTransport = null;
-                    return netTransport.close();
+                    const socketTransport = this._socketTransport;
+                    this._socketTransport = null;
+                    return socketTransport.close();
                 }
             }
             return Promise.resolve();
@@ -81,10 +81,10 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     close(options?: Bridge.IpcBusBridge.CloseOptions): Promise<void> {
         return this._rendererConnector.close()
         .then(() => {
-            if (this._netTransport) {
-                const netTransport = this._netTransport;
-                this._netTransport = null;
-                return netTransport.close();
+            if (this._socketTransport) {
+                const socketTransport = this._socketTransport;
+                this._socketTransport = null;
+                return socketTransport.close();
             }
             return Promise.resolve();
         });
@@ -105,7 +105,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     // =================================================================================================
     _onRendererContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         this._mainTransport.onConnectorContentReceived(ipcBusCommand, rawContent);
-        this._netTransport && this._netTransport.broadcastContent(ipcBusCommand, rawContent);
+        this._socketTransport && this._socketTransport.broadcastContent(ipcBusCommand, rawContent);
     }
 
     // _onRendererArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]) {
@@ -128,12 +128,12 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         // }
         // else {
             const hasRendererChannel = this._rendererConnector.hasChannel(ipcBusCommand.channel);
-            const hasNetChannel = this._netTransport && this._netTransport.hasChannel(ipcBusCommand.channel);
+            const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
             // Prevent serializing for nothing !
-            if (hasRendererChannel || hasNetChannel) {
+            if (hasRendererChannel || hasSocketChannel) {
                 const packet = new IpcPacketBuffer();
                 packet.serializeArray([ipcBusCommand, args]);
-                hasNetChannel && this._netTransport.broadcastBuffer(ipcBusCommand, packet.buffer);
+                hasSocketChannel && this._socketTransport.broadcastBuffer(ipcBusCommand, packet.buffer);
                 // End with renderer if have to compress
                 hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, packet);
             }
@@ -148,7 +148,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     }
 
     _onNetClosed() {
-        this._netTransport = null;
+        this._socketTransport = null;
     }
 }
 
