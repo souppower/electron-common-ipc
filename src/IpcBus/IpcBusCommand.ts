@@ -39,6 +39,7 @@ export namespace IpcBusCommand {
         peer: IpcBusPeer;
         kind: IpcBusCommand.Kind;
         channel: string;
+        channels?: string[];
         request?: IpcBusCommand.Request;
     }
 
@@ -61,6 +62,7 @@ export interface IpcBusCommand {
 
     kind: IpcBusCommand.Kind;
     channel: string;
+    channels?: string[];
     request?: IpcBusCommand.Request;
     log?: IpcBusCommand.Log;
 }

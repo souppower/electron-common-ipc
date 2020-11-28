@@ -46,9 +46,15 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         super._reset(closeServer);
     }
 
-    protected bridgeConnect(socketClient: IpcBusBrokerSocket) {
+    protected bridgeConnect(socketClient: IpcBusBrokerSocket, ipcBusCommand: IpcBusCommand) {
         this._socketBridge = socketClient;
         this._socketWriter = new SocketWriter(this._socketBridge.socket);
+
+        if (ipcBusCommand.channels) {
+            for (let i = 0, l = ipcBusCommand.channels.length; i < l; ++i) {
+                this._subscriptions.addRef(ipcBusCommand.channels[i], socketClient.socket, ipcBusCommand.peer);
+            }
+        }
 
         // this._socketBridge = socket;
         // this._bridgeChannels.clear();

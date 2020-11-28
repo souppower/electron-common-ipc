@@ -331,7 +331,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
             // BridgeClose/Connect received are coming from IpcBusBridge only !
             case IpcBusCommand.Kind.BridgeConnect: {
                 const socketClient = this._socketClients.get(socket);
-                this.bridgeConnect(socketClient);
+                this.bridgeConnect(socketClient, ipcBusCommand);
                 break;
             }
 
@@ -355,7 +355,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
         return queryStateResult;
     }
     
-    protected bridgeConnect(socketClient: IpcBusBrokerSocket) {
+    protected bridgeConnect(socketClient: IpcBusBrokerSocket, ipcBusCommand: IpcBusCommand) {
     }
 
     protected bridgeClose(socket?: net.Socket) {

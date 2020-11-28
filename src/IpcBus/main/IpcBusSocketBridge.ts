@@ -32,11 +32,12 @@ class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
         return super.connect(null, { ...options, peerName: PeerName })
         .then((peer) => {
             this._peer = peer;
-            // const channels = this._bridge.getChannels();
+            const channels = this._bridge.getChannels();
             this.postAdmin({
                 peer: this._peer,
                 kind: IpcBusCommand.Kind.BridgeConnect,
-                channel: ''
+                channel: undefined,
+                channels
             });
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
             return peer;

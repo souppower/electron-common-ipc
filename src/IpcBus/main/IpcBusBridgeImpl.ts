@@ -101,8 +101,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     getChannels(): string[] {
         const rendererChannels = this._rendererConnector.getChannels();
-        // const mainChannels = this._mainTransport.get
-        return rendererChannels;
+        const mainChannels = this._mainTransport.getChannels();
+        return rendererChannels.concat(mainChannels);
     }
 
     // // Not exposed
