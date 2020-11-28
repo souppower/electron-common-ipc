@@ -26,30 +26,13 @@ class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
             `IPCBus:${PeerName}`,
             (conn) => conn
         );
-
-        // this._subscriptions.emitter = true;
-        // this._subscriptions.on('channel-added', (channel) => {
-        //     const ipcBusCommand = { 
-        //         kind: IpcBusCommand.Kind.AddChannelListener,
-        //         peer: this._peer,
-        //         channel
-        //     }
-        //     this._bridge._trackAdmin(ipcBusCommand);
-        // });
-        // this._subscriptions.on('channel-removed', (channel) => {
-        //     const ipcBusCommand = { 
-        //         kind: IpcBusCommand.Kind.RemoveChannelListener,
-        //         peer: this._peer,
-        //         channel
-        //     }
-        //     this._bridge._trackAdmin(ipcBusCommand);
-        // });
     }
 
     connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
         return super.connect(null, { ...options, peerName: PeerName })
         .then((peer) => {
             this._peer = peer;
+            // const channels = this._bridge.getChannels();
             this.postAdmin({
                 peer: this._peer,
                 kind: IpcBusCommand.Kind.BridgeConnect,
@@ -77,9 +60,9 @@ class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
         return this._subscriptions.hasChannel(channel);
     }
 
-    // getChannels(): string[] {
-    //     return this._subscriptions.getChannels();
-    // }
+    getChannels(): string[] {
+        return this._subscriptions.getChannels();
+    }
 
     addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void {
         throw 'not implemented';
@@ -183,6 +166,10 @@ export class IpcBusSocketBridge implements IpcBusBridgeClient {
 
     hasChannel(channel: string): boolean {
         return this._transport.hasChannel(channel);
+    }
+
+    getChannels(): string[] {
+        return this._transport.getChannels();
     }
 
     // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {

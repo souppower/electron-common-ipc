@@ -18,6 +18,7 @@ export interface IpcBusBridgeClient {
     connect(options: Client.IpcBusClient.ConnectOptions): Promise<void>;
     close(options?: Client.IpcBusClient.CloseOptions): Promise<void>;
 
+    getChannels(): string[];
     hasChannel(channel: string): boolean;
     broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void;
     // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void;
@@ -31,13 +32,21 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     protected _mainTransport: IpcBusBridgeTransportMain;
     protected _socketTransport: IpcBusBridgeClient;
     protected _rendererConnector: IpcBusBridgeClient;
+    protected _peer: Client.IpcBusPeer;
 
     // private _noSerialization: boolean;
 
     constructor(contextType: Client.IpcBusProcessType) {
         // this._noSerialization = semver.gte(process.versions.electron, '8.0.0');
-        // this._noSerialization = false;
-
+        
+        this._peer = { 
+            id: `t_${contextType}.${IpcBusUtils.CreateUniqId()}`,
+            name: 'IPCBusBrige',
+            process: {
+                type: contextType,
+                pid: process.pid
+            }
+        };
         const mainConnector = new IpcBusBridgeConnectorMain(contextType, this);
         this._mainTransport = new IpcBusBridgeTransportMain(mainConnector);
         this._rendererConnector = new IpcBusRendererBridge(this);
@@ -90,6 +99,12 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         });
     }
 
+    getChannels(): string[] {
+        const rendererChannels = this._rendererConnector.getChannels();
+        // const mainChannels = this._mainTransport.get
+        return rendererChannels;
+    }
+
     // // Not exposed
     // queryState(): Object {
     //     const queryStateResult: Object[] = [];
@@ -103,6 +118,15 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     // This is coming from the Electron Renderer Process (Electron main ipc)
     // =================================================================================================
+    _onRendererChannelChanged(ipcBusCommand: IpcBusCommand) {
+        if (this._socketTransport) {
+            ipcBusCommand.peer = this._peer;
+            const packet = new IpcPacketBuffer();
+            packet.serializeArray([ipcBusCommand]);
+            this._socketTransport.broadcastPacket(ipcBusCommand, packet);
+        }
+    }
+
     _onRendererContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
         this._mainTransport.onConnectorContentReceived(ipcBusCommand, rawContent);
         this._socketTransport && this._socketTransport.broadcastContent(ipcBusCommand, rawContent);
@@ -118,6 +142,15 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     //         this._packet.reset();
     //     }
     // }
+
+    _onMainChannelChanged(ipcBusCommand: IpcBusCommand) {
+        if (this._socketTransport) {
+            ipcBusCommand.peer = this._peer;
+            const packet = new IpcPacketBuffer();
+            packet.serializeArray([ipcBusCommand]);
+            this._socketTransport.broadcastPacket(ipcBusCommand, packet);
+        }
+    }
 
     // This is coming from the Electron Main Process (Electron main ipc)
     // =================================================================================================

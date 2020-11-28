@@ -22,6 +22,10 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         return this._subscriptions.hasChannel(channel);
     }
 
+    getChannels(): string[] {
+        return this._subscriptions.getChannels();
+    }
+
     connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         return super.connect(options)
     }

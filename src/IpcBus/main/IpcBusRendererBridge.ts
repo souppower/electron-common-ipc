@@ -35,7 +35,6 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     private _ipcMain: Electron.IpcMain;
     private _subscriptions: IpcBusUtils.ChannelConnectionMap<Electron.WebContents, number>;
-    // private _noSerialization: boolean;
 
     private _rendererCallback: (...args: any[]) => void;
 
@@ -48,21 +47,35 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             (conn) => conn.id
         );
 
-//        this._noSerialization = semver.gte(process.versions.electron, '8.0.0');
-        // this._noSerialization = false;
+        this._subscriptions.client = {
+            channelAdded: (channel) => {
+                const ipcBusCommand: IpcBusCommand = {
+                    peer: undefined,
+                    kind: IpcBusCommand.Kind.AddChannelListener,
+                    channel
+                }
+                this._bridge._onRendererChannelChanged(ipcBusCommand);
+            },
+            channelRemoved: (channel) => {
+                const ipcBusCommand: IpcBusCommand = {
+                    peer: undefined,
+                    kind: IpcBusCommand.Kind.RemoveChannelListener,
+                    channel
+                }
+                this._bridge._onRendererChannelChanged(ipcBusCommand);
+            }
+        };
 
-        // callbacks
-        // if (this._noSerialization) {
-        //     this._rendererCallback = this._onRendererArgsReceived.bind(this);
-        // }
-        // else {
-            this._rendererCallback = this._onRendererRawContentReceived.bind(this);
-        // }
+        this._rendererCallback = this._onRendererRawContentReceived.bind(this);
         this._onRendererHandshake = this._onRendererHandshake.bind(this);
     }
 
     hasChannel(channel: string): boolean {
         return this._subscriptions.hasChannel(channel) || IpcBusUtils.IsWebContentsChannel(channel);
+    }
+
+    getChannels(): string[] {
+        return this._subscriptions.getChannels();
     }
 
     connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
@@ -101,7 +114,6 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         const handshake: IpcBusConnector.Handshake = {
             process: peer.process,
             logLevel: logger.level,
-            // noSerialization: this._noSerialization
         };
         handshake.process.wcid = webContents.id;
         // Following functions are not implemented in all Electrons
