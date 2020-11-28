@@ -143,6 +143,8 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     //     }
     // }
 
+    // This is coming from the Electron Main Process (Electron main ipc)
+    // =================================================================================================
     _onMainChannelChanged(ipcBusCommand: IpcBusCommand) {
         if (this._socketTransport) {
             ipcBusCommand.peer = this._peer;
@@ -152,8 +154,6 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         }
     }
 
-    // This is coming from the Electron Main Process (Electron main ipc)
-    // =================================================================================================
     _onMainMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]) {
         // if (this._noSerialization) {
         //     this._rendererConnector.broadcastArgs(ipcBusCommand, args);
