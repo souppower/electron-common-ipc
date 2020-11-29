@@ -2,6 +2,8 @@ import type { IpcBusPeer } from './IpcBusClient';
 
 /** @internal */
 export namespace IpcBusCommand {
+    export const KindBridgePrefix = 'B';
+    
     /** @internal */
     export enum Kind {
         Handshake                   = 'HAN',
@@ -24,6 +26,8 @@ export namespace IpcBusCommand {
 
         BridgeConnect               = 'BCOO',    // COnnexion
         BridgeClose                 = 'BCOC',
+        BridgeAddChannelListener    = 'BLICA',
+        BridgeRemoveChannelListener = 'BLICR',
     };
 
     /** @internal */

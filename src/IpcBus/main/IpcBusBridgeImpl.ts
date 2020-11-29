@@ -6,7 +6,7 @@ import { IpcPacketBuffer } from 'socket-serializer';
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
 import type * as Bridge from './IpcBusBridge';
-import type { IpcBusCommand } from '../IpcBusCommand';
+import { IpcBusCommand } from '../IpcBusCommand';
 
 import { IpcBusRendererBridge } from './IpcBusRendererBridge';
 import { IpcBusSocketBridge } from './IpcBusSocketBridge';
@@ -148,6 +148,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     _onMainChannelChanged(ipcBusCommand: IpcBusCommand) {
         if (this._socketTransport) {
             ipcBusCommand.peer = this._peer;
+            ipcBusCommand.kind = (IpcBusCommand.KindBridgePrefix + ipcBusCommand.kind) as IpcBusCommand.Kind;
             const packet = new IpcPacketBuffer();
             packet.serializeArray([ipcBusCommand]);
             this._socketTransport.broadcastPacket(ipcBusCommand, packet);

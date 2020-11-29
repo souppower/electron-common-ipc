@@ -14,6 +14,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
     private _socketBridge: IpcBusBrokerSocket;
     private _socketWriter: SocketWriter;
     private _ipcPacketBuffer: IpcPacketBuffer;
+    private _bridgeChannels: Set<string>;
 
     private _peer: Client.IpcBusPeer;
 
@@ -21,6 +22,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         super(contextType);
 
         this._ipcPacketBuffer = new IpcPacketBuffer();
+        this._bridgeChannels = new Set<string>();
 
         this._peer = {
             id: `${contextType}.${CreateUniqId()}`,
@@ -33,10 +35,10 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
 
         this._subscriptions.client = {
             channelAdded: (channel) => {
-                this.bridgeAddChannel(channel);
+                this.bridgeBroadcastAddChannel(channel);
             },
             channelRemoved: (channel) => {
-                this.bridgeRemoveChannel(channel);
+                this.bridgeBroadcastRemoveChannel(channel);
             }
         };
     }
@@ -59,24 +61,26 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         // this._socketBridge = socket;
         // this._bridgeChannels.clear();
         const channels = this._subscriptions.getChannels();
-        for (let i = 0, l = channels.length; i < l; ++i) {
-            this.bridgeAddChannel(channels[i]);
-        }
+        this._bridgeChannels = new Set(channels);
     }
 
     protected bridgeClose(socket?: net.Socket) {
         if (this._socketBridge && ((socket == null) || (socket === this._socketBridge.socket))) {
             this._socketBridge = null;
             this._socketWriter = null;
+            this._bridgeChannels.clear();
         }
-        // this._bridgeChannels.clear();
-        // const channels = this._subscriptions.getChannels();
-        // for (let i = 0, l = channels.length; i < l; ++i) {
-        //     this.brokerRemoveChannel();
-        // }
     }
 
-    protected bridgeAddChannel(channel: string) {
+    protected bridgeAddChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
+        this._bridgeChannels.add(ipcBusCommand.channel);
+    }
+
+    protected bridgeRemoveChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
+        this._bridgeChannels.delete(ipcBusCommand.channel);
+    }
+
+    protected bridgeBroadcastAddChannel(channel: string) {
         if (this._socketWriter) {
             const ipcBusCommand: IpcBusCommand = {
                 kind: IpcBusCommand.Kind.AddChannelListener,
@@ -87,7 +91,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         }
     }
 
-    protected bridgeRemoveChannel(channel: string) {
+    protected bridgeBroadcastRemoveChannel(channel: string) {
         if (this._socketWriter) {
             const ipcBusCommand: IpcBusCommand = {
                 kind: IpcBusCommand.Kind.RemoveChannelListener,
@@ -99,8 +103,16 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
     }
 
     protected bridgeBroadcastMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        // if (socket !== this._socketBridge.socket) {
-        //     this._socketBridge.socket.write(ipcPacketBuffer.buffer);
-        // }
+        if (this._bridgeChannels.has(ipcBusCommand.channel)) {
+            if (socket !== this._socketBridge.socket) {
+                this._socketBridge.socket.write(ipcPacketBuffer.buffer);
+            }
+        }
+    }
+
+    protected bridgeBroadcast(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+        if (this._socketBridge.socket) {
+            this._socketBridge.socket.write(ipcPacketBuffer.buffer);
+        }
     }
 }

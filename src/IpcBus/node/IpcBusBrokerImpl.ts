@@ -11,7 +11,7 @@ import { IpcBusCommand } from '../IpcBusCommand';
 import {IpcBusBrokerSocketClient, IpcBusBrokerSocket } from './IpcBusBrokerSocket';
 
 /** @internal */
-export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocketClient {
+export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocketClient {
     // protected _ipcBusBrokerClient: Client.IpcBusClient;
     private _socketClients: Map<net.Socket, IpcBusBrokerSocket>;
     private _socketIdValue: number;
@@ -307,7 +307,7 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 }
                 // Response if not for a socket client, forward to main bridge
                 else {
-                    this.bridgeBroadcastMessage(socket, ipcBusCommand, packet);
+                    this.bridgeBroadcast(socket, ipcBusCommand, packet);
                 }
                 break;
             }
@@ -318,14 +318,14 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                     // log IpcBusLog.Kind.GET_CLOSE_REQUEST
                 }
                 // if not coming from main bridge => forward
-                this.bridgeBroadcastMessage(socket, ipcBusCommand, packet);
+                this.bridgeBroadcast(socket, ipcBusCommand, packet);
                 break;
             }
 
             case IpcBusCommand.Kind.LogGetMessage:
             case IpcBusCommand.Kind.LogLocalSendRequest:
             case IpcBusCommand.Kind.LogLocalRequestResponse:
-                this.bridgeBroadcastMessage(socket, ipcBusCommand, packet);
+                this.bridgeBroadcast(socket, ipcBusCommand, packet);
                 break;
 
             // BridgeClose/Connect received are coming from IpcBusBridge only !
@@ -334,6 +334,18 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
                 this.bridgeConnect(socketClient, ipcBusCommand);
                 break;
             }
+            case IpcBusCommand.Kind.BridgeConnect: {
+                const socketClient = this._socketClients.get(socket);
+                this.bridgeConnect(socketClient, ipcBusCommand);
+                break;
+            }
+            case IpcBusCommand.Kind.BridgeAddChannelListener:
+                this.bridgeAddChannel(socket, ipcBusCommand);
+                break;
+
+            case IpcBusCommand.Kind.BridgeRemoveChannelListener:
+                this.bridgeRemoveChannel(socket, ipcBusCommand);
+                break;
 
             case IpcBusCommand.Kind.BridgeClose:
                 this.bridgeClose();
@@ -357,16 +369,20 @@ export class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBrokerSocket
     
     protected bridgeConnect(socketClient: IpcBusBrokerSocket, ipcBusCommand: IpcBusCommand) {
     }
-
     protected bridgeClose(socket?: net.Socket) {
     }
 
-    protected bridgeAddChannel(channel: string) {
+    protected bridgeAddChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
+    }
+    protected bridgeRemoveChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
     }
 
-    protected bridgeRemoveChannel(channel: string) {
+    protected bridgeBroadcastAddChannel(channel: string) {
     }
 
-    protected bridgeBroadcastMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+    protected bridgeBroadcastRemoveChannel(channel: string) {
     }
+
+    protected abstract bridgeBroadcastMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void;
+    protected abstract bridgeBroadcast(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void;
 }
