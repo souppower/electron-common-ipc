@@ -1,4 +1,4 @@
-import { IpcPacketBuffer } from 'socket-serializer';
+import { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
 
 import type * as Client from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
@@ -189,10 +189,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
     }
 
-    protected _onResponseReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[], ipcPacketBuffer?: IpcPacketBuffer): boolean {
+    protected _onResponseReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore): boolean {
         const deferredRequest = this._requestFunctions.get(ipcBusCommand.channel);
         if (deferredRequest) {
-            args = args || ipcPacketBuffer.parseArrayAt(1);
+            args = args || ipcPacketBufferCore.parseArrayAt(1);
             if (this._logActivate) {
                 this._connector.logMessageGet(deferredRequest.client.peer, local, ipcBusCommand, args);
             }
@@ -205,25 +205,25 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // IpcConnectorClient~getArgs
-    onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[], ipcPacketBuffer?: IpcPacketBuffer): boolean {
+    onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore): boolean {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 if (this.hasChannel(ipcBusCommand.channel)) {
-                    args = args || ipcPacketBuffer.parseArrayAt(1);
+                    args = args || ipcPacketBufferCore.parseArrayAt(1);
                     this.onMessageReceived(false, ipcBusCommand, args);
                     return true;
                 }
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse:
-                return this._onResponseReceived(false, ipcBusCommand, args, ipcPacketBuffer);
+                return this._onResponseReceived(false, ipcBusCommand, args, ipcPacketBufferCore);
         }
         return false;
     }
 
     // IpcConnectorClient
-    onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean {
-        return this.onConnectorArgsReceived(ipcBusCommand, undefined, ipcPacketBuffer);
+    onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
+        return this.onConnectorArgsReceived(ipcBusCommand, undefined, ipcPacketBufferCore);
     }
 
     // IpcConnectorClient

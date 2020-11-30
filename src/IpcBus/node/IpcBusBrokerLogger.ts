@@ -1,6 +1,6 @@
 import type * as net from 'net';
 
-import type { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
 
@@ -14,13 +14,13 @@ export abstract class IpcBusBrokerLogger extends IpcBusBrokerImpl {
         super(contextType);
     }
 
-    protected abstract addLog(socket: net.Socket, ipcPacketBuffer: IpcPacketBuffer, ipcBusCommand: IpcBusCommand, args: any[]): void;
+    protected abstract addLog(socket: net.Socket, ipcPacketBufferCore: IpcPacketBufferCore, ipcBusCommand: IpcBusCommand, args: any[]): void;
 
-    onSocketPacket(socket: net.Socket, packet: IpcPacketBuffer): void {
-        const ipcBusCommand: IpcBusCommand = packet.parseArrayAt(0);
-        const args = packet.parseArrayAt(1);
-        this.addLog(socket, packet, ipcBusCommand, args);
+    onSocketPacket(socket: net.Socket, ipcPacketBufferList: IpcPacketBufferList): void {
+        const ipcBusCommand: IpcBusCommand = ipcPacketBufferList.parseArrayAt(0);
+        const args = ipcPacketBufferList.parseArrayAt(1);
+        this.addLog(socket, ipcPacketBufferList, ipcBusCommand, args);
 
-        super.onSocketCommand(socket, ipcBusCommand, packet);
+        super.onSocketCommand(socket, ipcBusCommand, ipcPacketBufferList);
     }
 }

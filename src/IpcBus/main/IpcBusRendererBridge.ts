@@ -1,7 +1,7 @@
 /// <reference types='electron' />
 
 // import * as semver from 'semver';
-import type { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBufferCore } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -168,8 +168,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     // }
 
     // From main or net transport
-    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
-        const rawContent = ipcPacketBuffer.getRawContent() as IpcBusRendererContent;
+    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
+        const rawContent = ipcPacketBufferCore.getRawContent() as IpcBusRendererContent;
         // IpcBusRendererContent.PackRawContent(rawContent);
         this._broadcastRawContent(null, ipcBusCommand, rawContent);
     }

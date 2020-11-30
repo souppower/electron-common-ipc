@@ -1,6 +1,6 @@
 /// <reference types='electron' />
 
-import type { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -91,6 +91,11 @@ class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
                 }
                 break;
 
+            case IpcBusCommand.Kind.BridgeAddChannelListener:
+            case IpcBusCommand.Kind.BridgeRemoveChannelListener:
+                this._connector.postBuffer(buffer);
+                break
+
             case IpcBusCommand.Kind.RequestResponse: {
                 const connData = this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
@@ -101,7 +106,7 @@ class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
         }
     }
 
-    onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean {
+    onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.AddChannelListener:
                 this._subscriptions.addRef(ipcBusCommand.channel, PeerName, ipcBusCommand.peer);
@@ -123,14 +128,14 @@ class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
                 if (ipcBusCommand.request) {
                     this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, PeerName, ipcBusCommand.peer);
                 }
-                this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
+                this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBufferCore);
                 break;
             case IpcBusCommand.Kind.RequestClose:
                 this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
-                this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
+                this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBufferCore);
                 break;
             default:
-                this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
+                this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBufferCore);
                 break;
         }
         return true;
@@ -184,8 +189,8 @@ export class IpcBusSocketBridge implements IpcBusBridgeClient {
         this._transport.broadcastBuffer(ipcBusCommand, rawContent.buffer);
     }
 
-    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
-        this._transport.broadcastBuffer(ipcBusCommand, ipcPacketBuffer.buffer);
+    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
+        this._transport.broadcastBuffer(ipcBusCommand, ipcPacketBufferCore.buffer);
     }
 
     broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void {

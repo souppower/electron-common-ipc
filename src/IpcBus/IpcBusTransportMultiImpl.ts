@@ -14,11 +14,11 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
     }
 
     hasChannel(channel: string): boolean {
-        return this._subscriptions.hasChannel(channel);
+        return this._subscriptions ? this._subscriptions.hasChannel(channel) : false;
     }
 
     getChannels(): string[] {
-        return this._subscriptions.getChannels();
+        return this._subscriptions ? this._subscriptions.getChannels() : [];
     }
 
     protected onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]) {

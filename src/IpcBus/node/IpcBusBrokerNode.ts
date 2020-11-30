@@ -1,12 +1,12 @@
 import type * as net from 'net';
 
-import { IpcPacketBuffer, SocketWriter } from 'socket-serializer';
+import { IpcPacketBuffer, IpcPacketBufferList, SocketWriter } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { CreateUniqId } from '../IpcBusUtils';
+import { ChannelConnectionMap, CreateUniqId } from '../IpcBusUtils';
 
-import { IpcBusBrokerImpl } from './IpcBusBrokerImpl';
+import { IpcBusBrokerImpl, SocketBufferListtWrite } from './IpcBusBrokerImpl';
 import type { IpcBusBrokerSocket } from './IpcBusBrokerSocket';
 
 /** @internal */
@@ -14,15 +14,18 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
     private _socketBridge: IpcBusBrokerSocket;
     private _socketWriter: SocketWriter;
     private _ipcPacketBuffer: IpcPacketBuffer;
-    private _bridgeChannels: Set<string>;
 
     private _peer: Client.IpcBusPeer;
+
+    protected _bridgeSubscriptions: ChannelConnectionMap<string, string>;
 
     constructor(contextType: Client.IpcBusProcessType) {
         super(contextType);
 
         this._ipcPacketBuffer = new IpcPacketBuffer();
-        this._bridgeChannels = new Set<string>();
+        this._bridgeSubscriptions = new ChannelConnectionMap<string, string>(
+            'IPCBus:Bridge',
+            (conn) => conn);
 
         this._peer = {
             id: `${contextType}.${CreateUniqId()}`,
@@ -54,30 +57,25 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
 
         if (ipcBusCommand.channels) {
             for (let i = 0, l = ipcBusCommand.channels.length; i < l; ++i) {
-                this._subscriptions.addRef(ipcBusCommand.channels[i], socketClient.socket, ipcBusCommand.peer);
+                this._bridgeSubscriptions.addRef(ipcBusCommand.channels[i], 'IPCBus:Bridge', ipcBusCommand.peer);
             }
         }
-
-        // this._socketBridge = socket;
-        // this._bridgeChannels.clear();
-        const channels = this._subscriptions.getChannels();
-        this._bridgeChannels = new Set(channels);
     }
 
     protected bridgeClose(socket?: net.Socket) {
         if (this._socketBridge && ((socket == null) || (socket === this._socketBridge.socket))) {
             this._socketBridge = null;
             this._socketWriter = null;
-            this._bridgeChannels.clear();
+            this._bridgeSubscriptions.clear();
         }
     }
 
     protected bridgeAddChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
-        this._bridgeChannels.add(ipcBusCommand.channel);
+        this._bridgeSubscriptions.addRef(ipcBusCommand.channel, 'IPCBus:Bridge', ipcBusCommand.peer);
     }
 
     protected bridgeRemoveChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
-        this._bridgeChannels.delete(ipcBusCommand.channel);
+        this._bridgeSubscriptions.release(ipcBusCommand.channel, 'IPCBus:Bridge', ipcBusCommand.peer);
     }
 
     protected bridgeBroadcastAddChannel(channel: string) {
@@ -102,17 +100,17 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         }
     }
 
-    protected bridgeBroadcastMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        if (this._bridgeChannels.has(ipcBusCommand.channel)) {
+    protected bridgeBroadcastMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
+        if (this._bridgeSubscriptions.hasChannel(ipcBusCommand.channel)) {
             if (socket !== this._socketBridge.socket) {
-                this._socketBridge.socket.write(ipcPacketBuffer.buffer);
+                SocketBufferListtWrite(this._socketBridge.socket, ipcPacketBufferList);
             }
         }
     }
 
-    protected bridgeBroadcast(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
+    protected bridgeBroadcast(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
         if (this._socketBridge.socket) {
-            this._socketBridge.socket.write(ipcPacketBuffer.buffer);
+            SocketBufferListtWrite(this._socketBridge.socket, ipcPacketBufferList);
         }
     }
 }

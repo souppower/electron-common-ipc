@@ -1,6 +1,6 @@
 import type * as net from 'net';
 
-import type { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
@@ -46,8 +46,8 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         this.broadcastBuffer(ipcBusCommand, rawContent.buffer);
     }
 
-    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
-        this.broadcastBuffer(ipcBusCommand, ipcPacketBuffer.buffer);
+    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
+        this.broadcastBuffer(ipcBusCommand, ipcPacketBufferCore.buffer);
     }
 
     // Come from the main bridge: main or renderer
@@ -78,11 +78,11 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         this._bridge._onNetClosed();
     }
 
-    protected bridgeBroadcast(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
+    protected bridgeBroadcast(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
+        this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBufferList);
     }
 
-    protected bridgeBroadcastMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
+    protected bridgeBroadcastMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
+        this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBufferList);
     }
 }

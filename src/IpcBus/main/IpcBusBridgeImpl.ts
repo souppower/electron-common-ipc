@@ -1,7 +1,7 @@
 /// <reference types='electron' />
 
 // import * as semver from 'semver';
-import { IpcPacketBuffer } from 'socket-serializer';
+import { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -22,7 +22,7 @@ export interface IpcBusBridgeClient {
     hasChannel(channel: string): boolean;
     broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void;
     // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void;
-    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void;
+    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void;
     broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void;
 }
 
@@ -121,6 +121,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     _onRendererChannelChanged(ipcBusCommand: IpcBusCommand) {
         if (this._socketTransport) {
             ipcBusCommand.peer = this._peer;
+            ipcBusCommand.kind = (IpcBusCommand.KindBridgePrefix + ipcBusCommand.kind) as IpcBusCommand.Kind;
             const packet = new IpcPacketBuffer();
             packet.serializeArray([ipcBusCommand]);
             this._socketTransport.broadcastPacket(ipcBusCommand, packet);
@@ -176,9 +177,9 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
 
     // This is coming from the Bus broker (socket)
     // =================================================================================================
-    _onNetMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        this._mainTransport.onConnectorPacketReceived(ipcBusCommand, ipcPacketBuffer);
-        this._rendererConnector.broadcastPacket(ipcBusCommand, ipcPacketBuffer);
+    _onNetMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore) {
+        this._mainTransport.onConnectorPacketReceived(ipcBusCommand, ipcPacketBufferCore);
+        this._rendererConnector.broadcastPacket(ipcBusCommand, ipcPacketBufferCore);
     }
 
     _onNetClosed() {

@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as net from 'net';
 
-import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
+import { IpcPacketContent, IpcPacketBufferList, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -21,19 +21,19 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     private _socketBuffer: number;
     private _socketWriter: Writer;
 
-    protected _packetOut: IpcPacketBufferWrap;
+    protected _packetOut: IpcPacketContent;
 
-    protected _packetIn: IpcPacketBuffer;
+    protected _packetIn: IpcPacketBufferList;
     private _bufferListReader: BufferListReader;
 
     constructor(contextType: Client.IpcBusProcessType) {
         assert((contextType === 'main') || (contextType === 'node'), `IpcBusTransportNet: contextType must not be a ${contextType}`);
         super(contextType);
 
-        this._packetOut = new IpcPacketBufferWrap();
+        this._packetOut = new IpcPacketContent();
 
         this._bufferListReader = new BufferListReader();
-        this._packetIn = new IpcPacketBuffer();
+        this._packetIn = new IpcPacketBufferList();
 
         this._connectCloseState = new IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>();
 
