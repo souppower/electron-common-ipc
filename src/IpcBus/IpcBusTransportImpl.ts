@@ -1,4 +1,4 @@
-import { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
+import { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
 
 import type * as Client from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
@@ -228,8 +228,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     // IpcConnectorClient
     onConnectorContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
-        const packetDecoder = new IpcPacketBuffer(rawContent);
-        return this.onConnectorArgsReceived(ipcBusCommand, undefined, packetDecoder);
+        const ipcPacketBufferCore = rawContent.buffer ? new IpcPacketBuffer(rawContent) : new IpcPacketBufferList(rawContent);
+        return this.onConnectorArgsReceived(ipcBusCommand, undefined, ipcPacketBufferCore);
     }
 
     // IpcConnectorClient

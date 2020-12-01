@@ -62,29 +62,12 @@ export class IpcBusBrokerSocket {
             socket.end();
             socket.unref();
             // this._socket.destroy();
-
         }
     }
 
     protected _onSocketData(buffer: Buffer) {
-        // if (this._ipcBusCommandInProgress) {
-        //     if (buffer.length > this._packetSize) {
-        //         this._bufferListReader = new BufferListReader([buffer], this._packetSize)
-        //     }
-        //     else {
-        //         this._client.onSocketBuffer(this._ipcBusCommandInProgress, buffer);
-        //     }
-        // }
         this._bufferListReader.appendBuffer(buffer);
         while (this._packetIn.decodeFromReader(this._bufferListReader)) {
-            // if (this._packetIn.type === BufferType.ArrayWithSize) {
-            //     if (this._packetIn.isPartial()) {
-            //         const ipcBusCommand = this._packetIn.parseArrayAt(0);
-            //         if (ipcBusCommand) {
-
-            //         }
-            //     }
-            // }
             const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
             this._client.onSocketCommand(this._socket, ipcBusCommand, this._packetIn);
         }

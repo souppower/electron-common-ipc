@@ -239,13 +239,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
 
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._socketWriter) {
-            // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
-            if (args) {
-                this._packetOut.writeArray(this._socketWriter, [ipcBusCommand, args]);
-            }
-            else {
-                this._packetOut.writeArray(this._socketWriter, [ipcBusCommand]);
-            }
+            this._packetOut.writeArray(this._socketWriter, [ipcBusCommand, args]);
         }
     }
 
