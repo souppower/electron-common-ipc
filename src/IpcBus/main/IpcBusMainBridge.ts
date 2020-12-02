@@ -46,7 +46,7 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
         }
     }
 
-    postBuffer(buffer: Buffer) {
+    postBuffers(buffers: Buffer[]) {
         throw 'not implemented';
     }
 }

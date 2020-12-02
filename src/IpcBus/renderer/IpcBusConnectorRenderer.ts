@@ -52,6 +52,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Sandbox off listening for #${this._messageId}`);
             const handshake = handshakeArg;
             this._onIpcEventReceived = (event, ipcBusCommand, rawContent) => {
+                // forceSingleBuffer as the transport is finished and it is more efficient to have a single buffer
                 IpcBusRendererContent.FixRawContent(rawContent);
                 // IpcBusRendererContent.UnpackRawContent(rawContent);
                 this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
@@ -133,7 +134,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         // }
     }
 
-    postBuffer(buffer: Buffer) {
+    postBuffers(buffers: Buffer[]) {
         throw 'not implemented';
     }
 }

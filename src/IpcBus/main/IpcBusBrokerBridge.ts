@@ -4,7 +4,7 @@ import type { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from '
 
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusBrokerImpl } from '../node/IpcBusBrokerImpl';
+import { IpcBusBrokerImpl, SocketBuffersWrite } from '../node/IpcBusBrokerImpl';
 
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
@@ -43,27 +43,32 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
     // }
 
     broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
-        this.broadcastBuffer(ipcBusCommand, rawContent.buffer);
+        if (rawContent.buffer) {
+            this.broadcastBuffers(ipcBusCommand, [rawContent.buffer]);
+        }
+        else {
+            this.broadcastBuffers(ipcBusCommand, rawContent.buffers);
+        }
     }
 
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
-        this.broadcastBuffer(ipcBusCommand, ipcPacketBufferCore.buffer);
+        this.broadcastBuffers(ipcBusCommand, ipcPacketBufferCore.buffers);
     }
 
     // Come from the main bridge: main or renderer
-    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
+    broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
                 // this._subscriptions.pushResponseChannel have been done in the base class when getting socket
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-                    connData.conn.write(buffer);
+                    SocketBuffersWrite(connData.conn, buffers);
                 });
                 break;
 
             case IpcBusCommand.Kind.RequestResponse: {
                 const connData = this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
-                    connData.conn.write(buffer);
+                    SocketBuffersWrite(connData.conn, buffers);
                 }
                 break;
             }

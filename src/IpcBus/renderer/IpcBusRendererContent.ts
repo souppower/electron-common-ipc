@@ -28,13 +28,17 @@ export namespace IpcBusRendererContent {
         return rawBuffer as Buffer;
     }
 
-    export function FixRawContent(rawContent: IpcBusRendererContent) {
+    export function FixRawContent(rawContent: IpcBusRendererContent, forceSingleBuffer?: boolean) {
         if (rawContent.buffer) {
             rawContent.buffer = Uint8ArrayToBuffer(rawContent.buffer);
         }
         else if (Array.isArray(rawContent.buffers)) {
             for (let i = 0, l = rawContent.buffers.length; i < l; ++i) {
                 rawContent.buffers[i] = Uint8ArrayToBuffer(rawContent.buffers[i]);
+            }
+            if (forceSingleBuffer) {
+                rawContent.buffer = Buffer.concat(rawContent.buffers);
+                rawContent.buffers = undefined;
             }
         }
     }

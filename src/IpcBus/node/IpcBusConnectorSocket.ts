@@ -9,6 +9,7 @@ import type * as Client from '../IpcBusClient';
 import type { IpcBusCommand } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
+import { SocketBuffersWrite } from './IpcBusBrokerImpl';
 
 // Implementation for Node process
 /** @internal */
@@ -240,6 +241,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._socketWriter) {
             // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
+            // Beware of C++ code expecting an array with 1 or 2 parameters but not 2 with the second one undefined
             if (args) {
                 this._packetOut.writeArray(this._socketWriter, [ipcBusCommand, args]);
             }
@@ -249,9 +251,9 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         }
     }
 
-    postBuffer(buffer: Buffer) {
-        if (this._socketWriter) {
-            this._socketWriter.writeBuffer(buffer);
+    postBuffers(buffers: Buffer[]) {
+        if (this._socket) {
+            SocketBuffersWrite(this._socket, buffers);
         }
     }
 }

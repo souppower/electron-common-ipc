@@ -36,7 +36,7 @@ export interface IpcBusConnector {
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
     shutdown(client: IpcBusConnector.Client, options: Client.IpcBusClient.CloseOptions): Promise<void>;
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
-    postBuffer(buffer: Buffer): void;
+    postBuffers(buffers: Buffer[]): void;
 
     logMessageSend(previousLog: IpcBusCommand.Log, ipcBusCommand: IpcBusCommand): IpcBusCommand.Log;
     logLocalMessage(peer: Client.IpcBusPeer, ipcBusCommand: IpcBusCommand, args: any[]): IpcBusCommand.Log;

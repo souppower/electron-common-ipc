@@ -155,7 +155,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         }
     }
 
-    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
+    broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
         throw 'not implemented';
     }
 

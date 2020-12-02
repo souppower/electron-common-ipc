@@ -1,7 +1,7 @@
 /// <reference types='electron' />
 
 // import * as semver from 'semver';
-import { IpcPacketBuffer, IpcPacketBufferCore } from 'socket-serializer';
+import { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -20,7 +20,7 @@ export interface IpcBusBridgeClient {
 
     getChannels(): string[];
     hasChannel(channel: string): boolean;
-    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void;
+    broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void;
     // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void;
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void;
     broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void;
@@ -166,9 +166,14 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
             // Prevent serializing for nothing !
             if (hasRendererChannel || hasSocketChannel) {
-                const packet = new IpcPacketBuffer();
-                packet.serializeArray([ipcBusCommand, args]);
-                hasSocketChannel && this._socketTransport.broadcastBuffer(ipcBusCommand, packet.buffer);
+                const packet = new IpcPacketBufferList();
+                if (args) {
+                    packet.serializeArray([ipcBusCommand, args]);
+                }
+                else {
+                    packet.serializeArray([ipcBusCommand]);
+                }
+                hasSocketChannel && this._socketTransport.broadcastPacket(ipcBusCommand, packet);
                 // End with renderer if have to compress
                 hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, packet);
             }

@@ -10,8 +10,7 @@ import { IpcBusCommand } from '../IpcBusCommand';
 
 import {IpcBusBrokerSocketClient, IpcBusBrokerSocket } from './IpcBusBrokerSocket';
 
-export function SocketBufferListtWrite(socket: net.Socket, ipcPacketBufferList: IpcPacketBufferList) {
-    const buffers = ipcPacketBufferList.buffers;
+export function SocketBuffersWrite(socket: net.Socket, buffers: Buffer[]) {
     const len = buffers.length;
     switch (len) {
         case 0:
@@ -152,18 +151,6 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                         this._server.addListener(key, this._netBinds[key]);
                     }
                     resolve();
-
-                    // this._ipcBusBrokerClient.connect(options)
-                    //     .then(() => {
-                    //         this._ipcBusBrokerClient.addListener(Client.IPCBUS_CHANNEL_QUERY_STATE, this._onQueryState);
-                    //         resolve();
-                    //     })
-                    //     .catch((err) => {
-                    //         this._reset(true);
-                    //         const msg = `[IPCBus:Broker] error = ${err}`;
-                    //         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
-                    //         reject(msg);
-                    //     });
                 };
 
                 fctReject = (msg: string) => {
@@ -313,7 +300,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     // Prevent echo message
                     if (connData.conn !== socket) {
-                        SocketBufferListtWrite(connData.conn, ipcPacketBufferList);
+                        SocketBuffersWrite(connData.conn, ipcPacketBufferList.buffers);
                     }
                 });
                 // if not coming from main bridge => forward
@@ -325,7 +312,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 // Resolve request included bridge if bridge is a socket
                 const connData = this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
-                    SocketBufferListtWrite(connData.conn, ipcPacketBufferList);
+                    SocketBuffersWrite(connData.conn, ipcPacketBufferList.buffers);
                 }
                 // Response if not for a socket client, forward to main bridge
                 else {

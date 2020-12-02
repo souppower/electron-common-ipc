@@ -82,24 +82,24 @@ class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     }
 
     // Come from the main bridge: main or renderer
-    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
+    broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestClose:
                 if (this.hasChannel(ipcBusCommand.channel)) {
-                    this._connector.postBuffer(buffer);
+                    this._connector.postBuffers(buffers);
                 }
                 break;
 
             case IpcBusCommand.Kind.BridgeAddChannelListener:
             case IpcBusCommand.Kind.BridgeRemoveChannelListener:
-                this._connector.postBuffer(buffer);
+                this._connector.postBuffers(buffers);
                 break
 
             case IpcBusCommand.Kind.RequestResponse: {
                 const connData = this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
-                    this._connector.postBuffer(buffer);
+                    this._connector.postBuffers(buffers);
                 }
                 break;
             }
@@ -186,15 +186,20 @@ export class IpcBusSocketBridge implements IpcBusBridgeClient {
     // }
 
     broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
-        this._transport.broadcastBuffer(ipcBusCommand, rawContent.buffer);
+        if (rawContent.buffer) {
+            this._transport.broadcastBuffers(ipcBusCommand, [rawContent.buffer]);
+        }
+        else {
+            this._transport.broadcastBuffers(ipcBusCommand, rawContent.buffers);
+        }
     }
 
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
-        this._transport.broadcastBuffer(ipcBusCommand, ipcPacketBufferCore.buffer);
+        this._transport.broadcastBuffers(ipcBusCommand, ipcPacketBufferCore.buffers);
     }
 
-    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
-        this._transport.broadcastBuffer(ipcBusCommand, buffer);
+    broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
+        this._transport.broadcastBuffers(ipcBusCommand, buffers);
     }
 }
 

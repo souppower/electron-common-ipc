@@ -43,9 +43,9 @@
     "electron-process-type": "~4.2.0",
     "fs-extra": "~9.0.1",
     "json-helpers": "~3.0.1",
-    "semver": "~7.3.2",
+    "semver": "~7.3.4",
     "shortid": "~2.2.16",
-    "socket-serializer": "~7.1.0",
+    "socket-serializer": "~7.1.2",
     "uuid": "~8.3.1",
     "winston": "~3.3.3"
   },
