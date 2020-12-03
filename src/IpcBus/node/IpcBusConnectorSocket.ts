@@ -14,15 +14,17 @@ import { SocketBuffersWrite } from './IpcBusBrokerImpl';
 // Implementation for Node process
 /** @internal */
 export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
-    protected _socket: net.Socket;
-    protected _netBinds: { [key: string]: (...args: any[]) => void };
+    private _socket: net.Socket;
+    private _netBinds: { [key: string]: (...args: any[]) => void };
 
-    protected _connectCloseState: IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>;
+    private _connectCloseState: IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>;
 
     private _socketBuffer: number;
     private _socketWriter: Writer;
 
-    protected _packetIn: IpcPacketBufferList;
+    private _packetIn: IpcPacketBufferList;
+    private _packetOut: IpcPacketContent;
+
     private _bufferListReader: BufferListReader;
 
     constructor(contextType: Client.IpcBusProcessType) {
@@ -31,6 +33,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
 
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBufferList();
+        this._packetOut = new IpcPacketContent();
 
         this._connectCloseState = new IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>();
 
@@ -238,12 +241,11 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         if (this._socketWriter) {
             // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
             // Beware of C++ code expecting an array with 1 or 2 parameters but not 2 with the second one undefined
-            const packetOut = new IpcPacketContent();
             if (args) {
-                packetOut.writeArray(this._socketWriter, [ipcBusCommand, args]);
+                this._packetOut.writeArray(this._socketWriter, [ipcBusCommand, args]);
             }
             else {
-                packetOut.writeArray(this._socketWriter, [ipcBusCommand]);
+                this._packetOut.writeArray(this._socketWriter, [ipcBusCommand]);
             }
         }
     }

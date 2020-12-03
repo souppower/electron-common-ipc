@@ -17,7 +17,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
 
     private _peer: Client.IpcBusPeer;
 
-    protected _bridgeSubscriptions: ChannelConnectionMap<string, string>;
+    private _bridgeSubscriptions: ChannelConnectionMap<string, string>;
 
     constructor(contextType: Client.IpcBusProcessType) {
         super(contextType);
