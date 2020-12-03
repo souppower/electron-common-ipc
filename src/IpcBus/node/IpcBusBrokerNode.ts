@@ -1,6 +1,6 @@
 import type * as net from 'net';
 
-import { IpcPacketBuffer, IpcPacketBufferList, SocketWriter } from 'socket-serializer';
+import { IpcPacketContent, IpcPacketBufferList, SocketWriter } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
@@ -13,7 +13,7 @@ import type { IpcBusBrokerSocket } from './IpcBusBrokerSocket';
 export class IpcBusBrokerNode extends IpcBusBrokerImpl {
     private _socketBridge: IpcBusBrokerSocket;
     private _socketWriter: SocketWriter;
-    private _ipcPacketBuffer: IpcPacketBuffer;
+    private _packetOut: IpcPacketContent;
 
     private _peer: Client.IpcBusPeer;
 
@@ -22,7 +22,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
     constructor(contextType: Client.IpcBusProcessType) {
         super(contextType);
 
-        this._ipcPacketBuffer = new IpcPacketBuffer();
+        this._packetOut = new IpcPacketContent();
         this._bridgeSubscriptions = new ChannelConnectionMap<string, string>(
             'IPCBus:Bridge',
             (conn) => conn);
@@ -85,7 +85,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
                 channel,
                 peer: this._peer
             };
-            this._ipcPacketBuffer.writeArray(this._socketWriter, [ipcBusCommand]);
+            this._packetOut.writeArray(this._socketWriter, [ipcBusCommand]);
         }
     }
 
@@ -96,7 +96,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
                 channel,
                 peer: this._peer
             };
-            this._ipcPacketBuffer.writeArray(this._socketWriter, [ipcBusCommand]);
+            this._packetOut.writeArray(this._socketWriter, [ipcBusCommand]);
         }
     }
 

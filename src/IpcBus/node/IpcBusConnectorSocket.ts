@@ -22,16 +22,12 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     private _socketBuffer: number;
     private _socketWriter: Writer;
 
-    protected _packetOut: IpcPacketContent;
-
     protected _packetIn: IpcPacketBufferList;
     private _bufferListReader: BufferListReader;
 
     constructor(contextType: Client.IpcBusProcessType) {
         assert((contextType === 'main') || (contextType === 'node'), `IpcBusTransportNet: contextType must not be a ${contextType}`);
         super(contextType);
-
-        this._packetOut = new IpcPacketContent();
 
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBufferList();
@@ -242,11 +238,12 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         if (this._socketWriter) {
             // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
             // Beware of C++ code expecting an array with 1 or 2 parameters but not 2 with the second one undefined
+            const packetOut = new IpcPacketContent();
             if (args) {
-                this._packetOut.writeArray(this._socketWriter, [ipcBusCommand, args]);
+                packetOut.writeArray(this._socketWriter, [ipcBusCommand, args]);
             }
             else {
-                this._packetOut.writeArray(this._socketWriter, [ipcBusCommand]);
+                packetOut.writeArray(this._socketWriter, [ipcBusCommand]);
             }
         }
     }
