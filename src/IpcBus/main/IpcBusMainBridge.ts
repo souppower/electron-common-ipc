@@ -52,4 +52,15 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
 }
 
 export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl { // implements IpcBusBridgeClient {
+    // broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
+    //     throw new Error('Method not implemented.');
+    // }
+
+    // broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
+    //     throw new Error('Method not implemented.');
+    // }
+
+    // broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBufferCore.RawContent): void {
+    //     this.onConnectorContentReceived(ipcBusCommand, rawContent);
+    // }
 }

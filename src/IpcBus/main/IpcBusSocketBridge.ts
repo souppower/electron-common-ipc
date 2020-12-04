@@ -7,14 +7,13 @@ import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import type { IpcBusTransport } from '../IpcBusTransport';
-import { IpcBusConnectorSocket } from '../node/IpcBusConnectorSocket';
 import type { IpcBusConnector } from '../IpcBusConnector';
 
-import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
+import type { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 
 const PeerName = 'NetBridge';
 
-class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
+export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     protected _bridge: IpcBusBridgeImpl;
     protected _subscriptions: IpcBusUtils.ChannelConnectionMap<string, string>;
 
@@ -28,7 +27,7 @@ class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
         );
     }
 
-    connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
+    broadcastConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         return super.connect(null, { ...options, peerName: PeerName })
         .then((peer) => {
             this._peer = peer;
@@ -40,11 +39,10 @@ class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
                 channels
             });
             IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Bridge] Installed`);
-            return peer;
         });
     }
 
-    close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    broadcastClose(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         this.postAdmin({
             peer: this._peer,
             kind: IpcBusCommand.Kind.BridgeClose,
@@ -53,33 +51,6 @@ class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
         return super.close(null, options);
     }
 
-    // hasRequestChannel(channel: string): boolean {
-    //     return this._subscriptions.hasChannel(channel);
-    // }
-
-    hasChannel(channel: string): boolean {
-        return this._subscriptions.hasChannel(channel);
-    }
-
-    getChannels(): string[] {
-        return this._subscriptions.getChannels();
-    }
-
-    addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void {
-        throw 'not implemented';
-    }
-
-    removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void {
-        throw 'not implemented';
-    }
-
-    protected onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): void {
-        throw 'not implemented';
-    }
-
-    protected postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        throw 'not implemented';
-    }
 
     // Come from the main bridge: main or renderer
     broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
@@ -104,6 +75,43 @@ class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
                 break;
             }
         }
+    }
+
+    broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
+        if (rawContent.buffer) {
+            this.broadcastBuffers(ipcBusCommand, [rawContent.buffer]);
+        }
+        else {
+            this.broadcastBuffers(ipcBusCommand, rawContent.buffers);
+        }
+    }
+
+    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
+        this.broadcastBuffers(ipcBusCommand, ipcPacketBufferCore.buffers);
+    }
+
+    hasChannel(channel: string): boolean {
+        return this._subscriptions.hasChannel(channel);
+    }
+
+    getChannels(): string[] {
+        return this._subscriptions.getChannels();
+    }
+
+    addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void {
+        throw 'not implemented';
+    }
+
+    removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void {
+        throw 'not implemented';
+    }
+
+    protected onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): void {
+        throw 'not implemented';
+    }
+
+    protected postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+        throw 'not implemented';
     }
 
     onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
@@ -145,61 +153,12 @@ class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
         throw 'not implemented';
     }
 
+    onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]): boolean {
+        throw 'not implemented';
+    }
+
     onConnectorShutdown(): void {
         this._bridge._onNetClosed();
-    }
-}
-
-export class IpcBusSocketBridge implements IpcBusBridgeClient {
-    protected _bridge: IpcBusBridgeImpl;
-    protected _transport: IpcBusTransportSocketBridge;
-
-    constructor(bridge: IpcBusBridgeImpl) {
-        this._bridge = bridge;
-
-        const connector = new IpcBusConnectorSocket('main');
-        this._transport = new IpcBusTransportSocketBridge(connector, bridge);
-    }
-
-    connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return this._transport.connect(null, options)
-        .then(() => {});
-    }
-
-    close(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return this._transport.close(null, options);
-    }
-
-    hasChannel(channel: string): boolean {
-        return this._transport.hasChannel(channel);
-    }
-
-    getChannels(): string[] {
-        return this._transport.getChannels();
-    }
-
-    // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
-    //     if (this.hasChannel(ipcBusCommand.channel)) {
-    //         this._packet.serializeArray([ipcBusCommand, args]);
-    //         this.broadcastBuffer(ipcBusCommand, this._packet.buffer);
-    //     }
-    // }
-
-    broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
-        if (rawContent.buffer) {
-            this._transport.broadcastBuffers(ipcBusCommand, [rawContent.buffer]);
-        }
-        else {
-            this._transport.broadcastBuffers(ipcBusCommand, rawContent.buffers);
-        }
-    }
-
-    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
-        this._transport.broadcastBuffers(ipcBusCommand, ipcPacketBufferCore.buffers);
-    }
-
-    broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
-        this._transport.broadcastBuffers(ipcBusCommand, buffers);
     }
 }
 

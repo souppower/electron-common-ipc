@@ -47,11 +47,11 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
     }
 
     protected _reset(closeServer: boolean) {
-        this.bridgeClose();
+        this.onBridgeClosed();
         super._reset(closeServer);
     }
 
-    protected bridgeConnect(socketClient: IpcBusBrokerSocket, ipcBusCommand: IpcBusCommand) {
+    protected onBridgeConnected(socketClient: IpcBusBrokerSocket, ipcBusCommand: IpcBusCommand) {
         this._socketBridge = socketClient;
         this._socketWriter = new SocketWriter(this._socketBridge.socket);
 
@@ -62,7 +62,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         }
     }
 
-    protected bridgeClose(socket?: net.Socket) {
+    protected onBridgeClosed(socket?: net.Socket) {
         if (this._socketBridge && ((socket == null) || (socket === this._socketBridge.socket))) {
             this._socketBridge = null;
             this._socketWriter = null;
@@ -70,11 +70,11 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         }
     }
 
-    protected bridgeAddChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
+    protected onBridgeAddChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
         this._bridgeSubscriptions.addRef(ipcBusCommand.channel, 'IPCBus:Bridge', ipcBusCommand.peer);
     }
 
-    protected bridgeRemoveChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
+    protected onBridgeRemoveChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
         this._bridgeSubscriptions.release(ipcBusCommand.channel, 'IPCBus:Bridge', ipcBusCommand.peer);
     }
 

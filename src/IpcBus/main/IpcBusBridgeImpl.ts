@@ -9,17 +9,19 @@ import type * as Bridge from './IpcBusBridge';
 import { IpcBusCommand } from '../IpcBusCommand';
 
 import { IpcBusRendererBridge } from './IpcBusRendererBridge';
-import { IpcBusSocketBridge } from './IpcBusSocketBridge';
+import { IpcBusTransportSocketBridge } from './IpcBusSocketBridge';
 import { IpcBusBridgeConnectorMain, IpcBusBridgeTransportMain } from './IpcBusMainBridge'; 
 import type { IpcBusTransport } from '../IpcBusTransport'; 
 import { IpcBusBrokerBridge } from './IpcBusBrokerBridge';
+import { IpcBusConnectorSocket } from '../node/IpcBusConnectorSocket';
 
 export interface IpcBusBridgeClient {
-    connect(options: Client.IpcBusClient.ConnectOptions): Promise<void>;
-    close(options?: Client.IpcBusClient.CloseOptions): Promise<void>;
-
     getChannels(): string[];
     hasChannel(channel: string): boolean;
+
+    broadcastConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void>;
+    broadcastClose(options?: Client.IpcBusClient.CloseOptions): Promise<void>;
+
     broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void;
     // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void;
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void;
@@ -60,7 +62,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     connect(arg1: Bridge.IpcBusBridge.ConnectOptions | string | number, arg2?: Bridge.IpcBusBridge.ConnectOptions | string, arg3?: Bridge.IpcBusBridge.ConnectOptions): Promise<void> {
         // To manage re-entrance
         const options = IpcBusUtils.CheckConnectOptions(arg1, arg2, arg3);
-        return this._rendererConnector.connect(options)
+        return this._rendererConnector.broadcastConnect(options)
         .then(() => {
             if (this._socketTransport == null) {
                 if ((options.port != null) || (options.path != null)) {
@@ -68,9 +70,10 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
                         this._socketTransport = new IpcBusBrokerBridge('main', this);
                     }
                     else {
-                        this._socketTransport = new IpcBusSocketBridge(this);
+                        const connector = new IpcBusConnectorSocket('main');
+                        this._socketTransport = new IpcBusTransportSocketBridge(connector, this);
                     }
-                    return this._socketTransport.connect(options)
+                    return this._socketTransport.broadcastConnect(options)
                     .catch(err => {
                         this._socketTransport = null;
                     });
@@ -80,7 +83,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
                 if ((options.port == null) && (options.path == null)) {
                     const socketTransport = this._socketTransport;
                     this._socketTransport = null;
-                    return socketTransport.close();
+                    return socketTransport.broadcastClose();
                 }
             }
             return Promise.resolve();
@@ -88,12 +91,12 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     }
 
     close(options?: Bridge.IpcBusBridge.CloseOptions): Promise<void> {
-        return this._rendererConnector.close()
+        return this._rendererConnector.broadcastClose()
         .then(() => {
             if (this._socketTransport) {
                 const socketTransport = this._socketTransport;
                 this._socketTransport = null;
-                return socketTransport.close();
+                return socketTransport.broadcastClose();
             }
             return Promise.resolve();
         });

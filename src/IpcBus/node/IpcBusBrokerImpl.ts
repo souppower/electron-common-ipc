@@ -214,7 +214,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
     }
 
     protected _socketCleanUp(socket: any): void {
-        this.bridgeClose(socket);
+        this.onBridgeClosed(socket);
         this._subscriptions.removeConnection(socket);
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:Broker] Connection closed !`);
     }
@@ -344,24 +344,24 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
             // BridgeClose/Connect received are coming from IpcBusBridge only !
             case IpcBusCommand.Kind.BridgeConnect: {
                 const socketClient = this._socketClients.get(socket);
-                this.bridgeConnect(socketClient, ipcBusCommand);
+                this.onBridgeConnected(socketClient, ipcBusCommand);
                 break;
             }
             case IpcBusCommand.Kind.BridgeConnect: {
                 const socketClient = this._socketClients.get(socket);
-                this.bridgeConnect(socketClient, ipcBusCommand);
+                this.onBridgeConnected(socketClient, ipcBusCommand);
                 break;
             }
             case IpcBusCommand.Kind.BridgeAddChannelListener:
-                this.bridgeAddChannel(socket, ipcBusCommand);
+                this.onBridgeAddChannel(socket, ipcBusCommand);
                 break;
 
             case IpcBusCommand.Kind.BridgeRemoveChannelListener:
-                this.bridgeRemoveChannel(socket, ipcBusCommand);
+                this.onBridgeRemoveChannel(socket, ipcBusCommand);
                 break;
 
             case IpcBusCommand.Kind.BridgeClose:
-                this.bridgeClose();
+                this.onBridgeClosed();
                 break;
 
             default:
@@ -380,14 +380,14 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
         return queryStateResult;
     }
     
-    protected bridgeConnect(socketClient: IpcBusBrokerSocket, ipcBusCommand: IpcBusCommand) {
+    protected onBridgeConnected(socketClient: IpcBusBrokerSocket, ipcBusCommand: IpcBusCommand) {
     }
-    protected bridgeClose(socket?: net.Socket) {
+    protected onBridgeClosed(socket?: net.Socket) {
     }
 
-    protected bridgeAddChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
+    protected onBridgeAddChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
     }
-    protected bridgeRemoveChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
+    protected onBridgeRemoveChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
     }
 
     protected bridgeBroadcastAddChannel(channel: string) {

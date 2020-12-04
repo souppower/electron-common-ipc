@@ -78,7 +78,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return this._subscriptions.getChannels();
     }
 
-    connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    broadcastConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         // To manage re-entrance
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._rendererCallback);
         this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._rendererCallback);
@@ -88,7 +88,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return Promise.resolve();
     }
 
-    close(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    broadcastClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererHandshake);
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererHandshake);
         return Promise.resolve();
