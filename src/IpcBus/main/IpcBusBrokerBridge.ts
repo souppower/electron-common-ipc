@@ -4,7 +4,7 @@ import type { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from '
 
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusBrokerImpl, SocketBuffersWrite } from '../node/IpcBusBrokerImpl';
+import { IpcBusBrokerImpl, WriteBuffersToSocket } from '../node/IpcBusBrokerImpl';
 
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
@@ -61,14 +61,14 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
             case IpcBusCommand.Kind.SendMessage:
                 // this._subscriptions.pushResponseChannel have been done in the base class when getting socket
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-                    SocketBuffersWrite(connData.conn, buffers);
+                    WriteBuffersToSocket(connData.conn, buffers);
                 });
                 break;
 
             case IpcBusCommand.Kind.RequestResponse: {
                 const connData = this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
-                    SocketBuffersWrite(connData.conn, buffers);
+                    WriteBuffersToSocket(connData.conn, buffers);
                 }
                 break;
             }

@@ -6,7 +6,7 @@ import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { ChannelConnectionMap, CreateUniqId } from '../IpcBusUtils';
 
-import { IpcBusBrokerImpl, SocketBuffersWrite } from './IpcBusBrokerImpl';
+import { IpcBusBrokerImpl, WriteBuffersToSocket } from './IpcBusBrokerImpl';
 import type { IpcBusBrokerSocket } from './IpcBusBrokerSocket';
 
 /** @internal */
@@ -103,14 +103,14 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
     protected bridgeBroadcastMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
         if (this._bridgeSubscriptions.hasChannel(ipcBusCommand.channel)) {
             if (socket !== this._socketBridge.socket) {
-                SocketBuffersWrite(this._socketBridge.socket, ipcPacketBufferList.buffers);
+                WriteBuffersToSocket(this._socketBridge.socket, ipcPacketBufferList.buffers);
             }
         }
     }
 
     protected bridgeBroadcast(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
         if (this._socketBridge.socket) {
-            SocketBuffersWrite(this._socketBridge.socket, ipcPacketBufferList.buffers);
+            WriteBuffersToSocket(this._socketBridge.socket, ipcPacketBufferList.buffers);
         }
     }
 }

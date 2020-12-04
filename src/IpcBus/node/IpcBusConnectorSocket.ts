@@ -9,7 +9,7 @@ import type * as Client from '../IpcBusClient';
 import type { IpcBusCommand } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
-import { SocketBuffersWrite } from './IpcBusBrokerImpl';
+import { WriteBuffersToSocket } from './IpcBusBrokerImpl';
 
 // Implementation for Node process
 /** @internal */
@@ -252,7 +252,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
 
     postBuffers(buffers: Buffer[]) {
         if (this._socket) {
-            SocketBuffersWrite(this._socket, buffers);
+            WriteBuffersToSocket(this._socket, buffers);
         }
     }
 }
