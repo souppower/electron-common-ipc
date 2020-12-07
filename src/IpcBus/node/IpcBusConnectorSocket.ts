@@ -70,13 +70,10 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     protected _onSocketData(buffer: Buffer) {
         this._bufferListReader.appendBuffer(buffer);
         while (this._packetIn.decodeFromReader(this._bufferListReader)) {
+        // while (this._packetIn.keepDecodingFromReader(this._bufferListReader)) {
             const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
-            // if (ipcBusCommand.kind && ipcBusCommand.peer) {
-                this._client.onConnectorPacketReceived(ipcBusCommand, this._packetIn);
-            // }
-            // else {
-            //     throw `[IPCBusTransport:Net ${this._messageId}] Not valid packet !`;
-            // }
+            this._client.onConnectorPacketReceived(ipcBusCommand, this._packetIn);
+            // this._packetIn.reset();
         }
         // Remove read buffer
         this._bufferListReader.reduce();

@@ -11,7 +11,7 @@ import { IpcBusCommand } from '../IpcBusCommand';
 import {IpcBusBrokerSocketClient, IpcBusBrokerSocket } from './IpcBusBrokerSocket';
 
 export function WriteBuffersToSocket(socket: net.Socket, buffers: Buffer[]) {
-    // Inspired from Node.js - EventEmitter.emit
+    // Taking idea from Node.js - EventEmitter.emit
     const len = buffers.length;
     switch (len) {
         case 0:
