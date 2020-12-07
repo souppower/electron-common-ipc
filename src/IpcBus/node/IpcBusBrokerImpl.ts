@@ -308,7 +308,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                     }
                 });
                 // if not coming from main bridge => forward
-                this.bridgeBroadcastMessage(socket, ipcBusCommand, ipcPacketBufferList);
+                this.broadcastToBridgeMessage(socket, ipcBusCommand, ipcPacketBufferList);
                 break;
 
             // Socket can come from C++ process, Node.js process or main bridge
@@ -320,7 +320,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 }
                 // Response if not for a socket client, forward to main bridge
                 else {
-                    this.bridgeBroadcast(socket, ipcBusCommand, ipcPacketBufferList);
+                    this.broadcastToBridge(socket, ipcBusCommand, ipcPacketBufferList);
                 }
                 break;
             }
@@ -331,14 +331,14 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                     // log IpcBusLog.Kind.GET_CLOSE_REQUEST
                 }
                 // if not coming from main bridge => forward
-                this.bridgeBroadcast(socket, ipcBusCommand, ipcPacketBufferList);
+                this.broadcastToBridge(socket, ipcBusCommand, ipcPacketBufferList);
                 break;
             }
 
             case IpcBusCommand.Kind.LogGetMessage:
             case IpcBusCommand.Kind.LogLocalSendRequest:
             case IpcBusCommand.Kind.LogLocalRequestResponse:
-                this.bridgeBroadcast(socket, ipcBusCommand, ipcPacketBufferList);
+                this.broadcastToBridge(socket, ipcBusCommand, ipcPacketBufferList);
                 break;
 
             // BridgeClose/Connect received are coming from IpcBusBridge only !
@@ -390,12 +390,12 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
     protected onBridgeRemoveChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
     }
 
-    protected bridgeBroadcastAddChannel(channel: string) {
+    protected broadcastToBridgeAddChannel(channel: string) {
     }
 
-    protected bridgeBroadcastRemoveChannel(channel: string) {
+    protected broadcastToBridgeRemoveChannel(channel: string) {
     }
 
-    protected abstract bridgeBroadcastMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList): void;
-    protected abstract bridgeBroadcast(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList): void;
+    protected abstract broadcastToBridgeMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList): void;
+    protected abstract broadcastToBridge(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList): void;
 }

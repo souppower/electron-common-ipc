@@ -38,10 +38,10 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
 
         this._subscriptions.client = {
             channelAdded: (channel) => {
-                this.bridgeBroadcastAddChannel(channel);
+                this.broadcastToBridgeAddChannel(channel);
             },
             channelRemoved: (channel) => {
-                this.bridgeBroadcastRemoveChannel(channel);
+                this.broadcastToBridgeRemoveChannel(channel);
             }
         };
     }
@@ -78,7 +78,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         this._bridgeSubscriptions.release(ipcBusCommand.channel, 'IPCBus:Bridge', ipcBusCommand.peer);
     }
 
-    protected bridgeBroadcastAddChannel(channel: string) {
+    protected broadcastToBridgeAddChannel(channel: string) {
         if (this._socketWriter) {
             const ipcBusCommand: IpcBusCommand = {
                 kind: IpcBusCommand.Kind.AddChannelListener,
@@ -89,7 +89,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         }
     }
 
-    protected bridgeBroadcastRemoveChannel(channel: string) {
+    protected broadcastToBridgeRemoveChannel(channel: string) {
         if (this._socketWriter) {
             const ipcBusCommand: IpcBusCommand = {
                 kind: IpcBusCommand.Kind.RemoveChannelListener,
@@ -100,7 +100,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         }
     }
 
-    protected bridgeBroadcastMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
+    protected broadcastToBridgeMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
         if (this._bridgeSubscriptions.hasChannel(ipcBusCommand.channel)) {
             if (socket !== this._socketBridge.socket) {
                 WriteBuffersToSocket(this._socketBridge.socket, ipcPacketBufferList.buffers);
@@ -108,7 +108,7 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         }
     }
 
-    protected bridgeBroadcast(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
+    protected broadcastToBridge(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
         if (this._socketBridge.socket) {
             WriteBuffersToSocket(this._socketBridge.socket, ipcPacketBufferList.buffers);
         }
