@@ -60,6 +60,11 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
                 this._bridgeSubscriptions.addRef(ipcBusCommand.channels[i], 'IPCBus:Bridge', ipcBusCommand.peer);
             }
         }
+
+        const channels = this._subscriptions.getChannels();
+        for (let i = 0, l = channels.length; i < l; ++i) {
+            this.broadcastToBridgeAddChannel(channels[i]);
+        }
     }
 
     protected onBridgeClosed(socket?: net.Socket) {
