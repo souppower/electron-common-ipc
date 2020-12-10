@@ -347,11 +347,6 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 this.onBridgeConnected(socketClient, ipcBusCommand);
                 break;
             }
-            case IpcBusCommand.Kind.BridgeConnect: {
-                const socketClient = this._socketClients.get(socket);
-                this.onBridgeConnected(socketClient, ipcBusCommand);
-                break;
-            }
             case IpcBusCommand.Kind.BridgeAddChannelListener:
                 this.onBridgeAddChannel(socket, ipcBusCommand);
                 break;
@@ -387,6 +382,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
 
     protected onBridgeAddChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
     }
+
     protected onBridgeRemoveChannel(socket: net.Socket, ipcBusCommand: IpcBusCommand) {
     }
 

@@ -55,10 +55,8 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
         this._socketBridge = socketClient;
         this._socketWriter = new SocketWriter(this._socketBridge.socket);
 
-        if (ipcBusCommand.channels) {
-            for (let i = 0, l = ipcBusCommand.channels.length; i < l; ++i) {
-                this._bridgeSubscriptions.addRef(ipcBusCommand.channels[i], 'IPCBus:Bridge', ipcBusCommand.peer);
-            }
+        if (Array.isArray(ipcBusCommand.channels)) {
+            this._bridgeSubscriptions.addRefs(ipcBusCommand.channels, 'IPCBus:Bridge', ipcBusCommand.peer);
         }
 
         const channels = this._subscriptions.getChannels();
