@@ -158,6 +158,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     }
 
     onConnectorShutdown(): void {
+        this._subscriptions.clear();
         this._bridge._onNetClosed();
     }
 }
