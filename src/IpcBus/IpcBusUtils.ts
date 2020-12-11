@@ -269,7 +269,7 @@ export class ChannelConnectionMap<T, M> {
         }
     }
 
-    protected _addChannel(client: ChannelConnectionMapClient<T>, channel: string, conn: T, peer: IpcBusPeer, count?: number): Map<M, ConnectionPeers<T, M>> {
+    protected _addChannel(client: ChannelConnectionMapClient<T>, channel: string, conn: T, peer: IpcBusPeer, count: number): Map<M, ConnectionPeers<T, M>> {
         Logger.enable && this._info(`SetChannel: '${channel}', peerId =  ${peer ? peer.id : 'unknown'}`);
 
         const connsMap = new Map<M, ConnectionPeers<T, M>>();
@@ -456,16 +456,14 @@ export class ConnectionPeers<T, M> {
     readonly conn: T;
     peerRefCounts: Map<string, ConnectionPeers.PeerRefCount> = new Map<string, ConnectionPeers.PeerRefCount>();
 
-    constructor(key: M, conn: T, peer: IpcBusPeer, count?: number) {
+    constructor(key: M, conn: T, peer: IpcBusPeer, refCount: number) {
         this.key = key;
         this.conn = conn;
-        const refCount = (count == null) ? 1 : count;
         const peerRefCount = { peer, refCount };
         this.peerRefCounts.set(peer.id, peerRefCount);
     }
 
-    addPeer(peer: IpcBusPeer, count?: number): number {
-        const refCount = (count == null) ? 1 : count;
+    addPeer(peer: IpcBusPeer, refCount: number): number {
         let peerRefCount = this.peerRefCounts.get(peer.id);
         if (peerRefCount == null) {
             peerRefCount = { peer, refCount };
