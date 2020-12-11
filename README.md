@@ -7,7 +7,7 @@ This bus offers a EventEmitter-like API for exchanging data between any processe
 * Electron to Node, 
 * Electron to Electron.
 
-For Node processes support, you need to instanciate a "BusBroker" (Net server) in charge to commute messages to right listeners  
+For Node processes support, you need to instanciate a "BusBroker" (Net socket server) in charge to commute messages to right listeners  
 For Electron Main/Renderer processes, you need an additional broker : "BusBridge" in charge to commute messages between renderers (WebPages), Master and Node.
 
 You can have a pure Node bus, just using BusBroker (even working out of Electron)

@@ -55,18 +55,17 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     // Come from the main bridge: main or renderer
     broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
         switch (ipcBusCommand.kind) {
+            case IpcBusCommand.Kind.BridgeAddChannelListener:
+            case IpcBusCommand.Kind.BridgeRemoveChannelListener:
+                this._connector.postBuffers(buffers);
+                break
+
             case IpcBusCommand.Kind.SendMessage:
             case IpcBusCommand.Kind.RequestClose:
                 if (this.hasChannel(ipcBusCommand.channel)) {
                     this._connector.postBuffers(buffers);
                 }
                 break;
-
-            case IpcBusCommand.Kind.BridgeAddChannelListener:
-            case IpcBusCommand.Kind.BridgeRemoveChannelListener:
-                this._connector.postBuffers(buffers);
-                break
-
             case IpcBusCommand.Kind.RequestResponse: {
                 const connData = this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
@@ -119,15 +118,12 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
             case IpcBusCommand.Kind.AddChannelListener:
                 this._subscriptions.addRef(ipcBusCommand.channel, PeerName, ipcBusCommand.peer);
                 break;
-
             case IpcBusCommand.Kind.RemoveChannelListener:
                 this._subscriptions.release(ipcBusCommand.channel, PeerName, ipcBusCommand.peer);
                 break;
-
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
                 this._subscriptions.releaseAll(ipcBusCommand.channel, PeerName, ipcBusCommand.peer);
                 break;
-
             case IpcBusCommand.Kind.RemoveListeners:
                 this._subscriptions.removePeer(PeerName, ipcBusCommand.peer);
                 break;
