@@ -1,11 +1,12 @@
 import type * as net from 'net';
 
-import { IpcPacketBuffer, BufferListReader } from 'socket-serializer';
+import { IpcPacketBufferList, BufferListReader } from 'socket-serializer';
+import type { IpcBusCommand } from '../IpcBusCommand';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 
 export interface IpcBusBrokerSocketClient {
-    onSocketPacket(socket: net.Socket, ipcPacketBuffer: IpcPacketBuffer): void;
+    onSocketCommand(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList): void;
     onSocketError(socket: net.Socket, err: string): void;
     onSocketClose(socket: net.Socket): void;
     onSocketEnd(socket: net.Socket): void;
@@ -15,7 +16,7 @@ export class IpcBusBrokerSocket {
     private _socket: net.Socket;
     protected _socketBinds: { [key: string]: (...args: any[]) => void };
 
-    private _packetIn: IpcPacketBuffer;
+    private _packetIn: IpcPacketBufferList;
     private _bufferListReader: BufferListReader;
     private _client: IpcBusBrokerSocketClient;
 
@@ -26,7 +27,7 @@ export class IpcBusBrokerSocket {
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBus:BrokerSocket] Connect: ${this._socket.remotePort}`);
 
         this._bufferListReader = new BufferListReader();
-        this._packetIn = new IpcPacketBuffer();
+        this._packetIn = new IpcPacketBufferList();
 
         this._socketBinds = {};
         this._socketBinds['error'] = this._onSocketError.bind(this);
@@ -61,14 +62,16 @@ export class IpcBusBrokerSocket {
             socket.end();
             socket.unref();
             // this._socket.destroy();
-
         }
     }
 
     protected _onSocketData(buffer: Buffer) {
         this._bufferListReader.appendBuffer(buffer);
         while (this._packetIn.decodeFromReader(this._bufferListReader)) {
-            this._client.onSocketPacket(this._socket, this._packetIn);
+        // while (this._packetIn.keepDecodingFromReader(this._bufferListReader)) {
+            const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
+            this._client.onSocketCommand(this._socket, ipcBusCommand, this._packetIn);
+            // this._packetIn.reset();
         }
         // Remove read buffer
         this._bufferListReader.reduce();

@@ -31,21 +31,36 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
 
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.AddChannelListener:
-            case IpcBusCommand.Kind.RemoveChannelListener:
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
             case IpcBusCommand.Kind.RemoveListeners:
+                throw 'IpcBusTransportMultiImpl - should not happen';
+    
+            case IpcBusCommand.Kind.AddChannelListener:
+            case IpcBusCommand.Kind.RemoveChannelListener:
+                this._bridge._onMainChannelChanged(ipcBusCommand);
                 break;
+
             default :
                 this._bridge._onMainMessageReceived(ipcBusCommand, args);
                 break;
         }
     }
 
-    postBuffer(buffer: Buffer) {
+    postBuffers(buffers: Buffer[]) {
         throw 'not implemented';
     }
 }
 
 export class IpcBusBridgeTransportMain extends IpcBusTransportMultiImpl { // implements IpcBusBridgeClient {
+    // broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
+    //     throw new Error('Method not implemented.');
+    // }
+
+    // broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
+    //     throw new Error('Method not implemented.');
+    // }
+
+    // broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBufferCore.RawContent): void {
+    //     this.onConnectorContentReceived(ipcBusCommand, rawContent);
+    // }
 }

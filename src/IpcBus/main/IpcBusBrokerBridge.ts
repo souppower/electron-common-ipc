@@ -1,10 +1,10 @@
 import type * as net from 'net';
 
-import type { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { IpcBusBrokerImpl } from '../node/IpcBusBrokerImpl';
+import { IpcBusBrokerImpl, WriteBuffersToSocket } from '../node/IpcBusBrokerImpl';
 
 import type { IpcBusBridgeImpl, IpcBusBridgeClient } from './IpcBusBridgeImpl';
 
@@ -22,12 +22,16 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         return this._subscriptions.hasChannel(channel);
     }
 
-    connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return super.connect(options)
+    getChannels(): string[] {
+        return this._subscriptions.getChannels();
     }
 
-    close(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return super.close(options);
+    broadcastConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
+        return super.connect(options).then(() => {});
+    }
+
+    broadcastClose(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+        return super.close(options).then(() => {});
     }
 
     // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
@@ -39,27 +43,32 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
     // }
 
     broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
-        this.broadcastBuffer(ipcBusCommand, rawContent.buffer);
+        if (rawContent.buffer) {
+            this.broadcastBuffers(ipcBusCommand, [rawContent.buffer]);
+        }
+        else {
+            this.broadcastBuffers(ipcBusCommand, rawContent.buffers);
+        }
     }
 
-    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
-        this.broadcastBuffer(ipcBusCommand, ipcPacketBuffer.buffer);
+    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
+        this.broadcastBuffers(ipcBusCommand, ipcPacketBufferCore.buffers);
     }
 
     // Come from the main bridge: main or renderer
-    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
+    broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage:
                 // this._subscriptions.pushResponseChannel have been done in the base class when getting socket
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-                    connData.conn.write(buffer);
+                    WriteBuffersToSocket(connData.conn, buffers);
                 });
                 break;
 
             case IpcBusCommand.Kind.RequestResponse: {
                 const connData = this._subscriptions.popResponseChannel(ipcBusCommand.request.replyChannel);
                 if (connData) {
-                    connData.conn.write(buffer);
+                    WriteBuffersToSocket(connData.conn, buffers);
                 }
                 break;
             }
@@ -74,7 +83,11 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
         this._bridge._onNetClosed();
     }
 
-    protected bridgeBroadcastMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer) {
-        this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBuffer);
+    protected broadcastToBridge(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
+        this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBufferList);
+    }
+
+    protected broadcastToBridgeMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
+        this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBufferList);
     }
 }

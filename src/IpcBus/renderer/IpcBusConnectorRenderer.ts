@@ -51,36 +51,22 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         if (handshakeArg) {
             // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Sandbox off listening for #${this._messageId}`);
             const handshake = handshakeArg;
-            // if (handshake.noSerialization) {
-            //     this._onIpcEventReceived = (event, ipcBusCommand, args) => {
-            //         this._client.onConnectorArgsReceived(ipcBusCommand, args);
-            //     };
-            // }
-            // else {
-                this._onIpcEventReceived = (event, ipcBusCommand, rawContent) => {
-                    IpcBusRendererContent.FixRawContent(rawContent);
-                    // IpcBusRendererContent.UnpackRawContent(rawContent);
-                    this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
-                };
-            // }
+            this._onIpcEventReceived = (event, ipcBusCommand, rawContent) => {
+                // forceSingleBuffer as the transport is finished and it is more efficient to have a single buffer
+                IpcBusRendererContent.FixRawContent(rawContent);
+                // IpcBusRendererContent.UnpackRawContent(rawContent);
+                this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
+            };
             this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             return handshake;
         }
         else {
             const handshake = peerOrArgs as IpcBusConnector.Handshake;
-            // IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(`[IPCBusTransport:Window] Sandbox on listening for #${this._messageId}`);
-            // if (handshake.noSerialization) {
-            //     this._onIpcEventReceived = (ipcBusCommand, args) => {
-            //         this._client.onConnectorArgsReceived(ipcBusCommand, args);
-            //     };
-            // }
-            // else {
-                this._onIpcEventReceived = (ipcBusCommand, rawContent) => {
-                    IpcBusRendererContent.FixRawContent(rawContent);
-                    // IpcBusRendererContent.UnpackRawContent(rawContent);
-                    this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
-                 };
-            //  }
+            this._onIpcEventReceived = (ipcBusCommand, rawContent) => {
+                IpcBusRendererContent.FixRawContent(rawContent);
+                // IpcBusRendererContent.UnpackRawContent(rawContent);
+                this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
+            };
             this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             return handshake;
         }
@@ -138,7 +124,6 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             const packetOut = new IpcPacketBuffer();
             packetOut.serializeArray([ipcBusCommand, args]);
             const rawContent = packetOut.getRawContent();
-            // const packRawContent = IpcBusRendererContent.PackRawContentrawContent);
             const webContentsId = IpcBusUtils.GetWebContentsChannel(ipcBusCommand.channel);
             if (isNaN(webContentsId)) {
                 this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, rawContent);
@@ -149,7 +134,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         // }
     }
 
-    postBuffer(buffer: Buffer) {
+    postBuffers(buffers: Buffer[]) {
         throw 'not implemented';
     }
 }

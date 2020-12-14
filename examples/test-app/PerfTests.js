@@ -17,9 +17,12 @@ var PerfTests = function _PerfTests(type, busPath) {
     }
 
     this.onIPCBus_TestPerformanceRun = function _onIPCBus_TestPerformanceRun(ipcBusEvent, testParams) {
-        this.testPerformance('test-performance-renderer', testParams);
-        this.testPerformance('test-performance-node', testParams);
-        this.testPerformance('test-performance-browser', testParams);
+        const tests = ['test-performance-renderer', 'test-performance-node', 'test-performance-browser'];
+        for (let i = 0; i < tests.length; ++i) {
+        //     setTimeout(() => {
+                this.testPerformance(tests[i], testParams);
+        //     }, 30000 * i);
+        }
     }
 
     this.testPerformance = function _testPerformance(type, testParams) {

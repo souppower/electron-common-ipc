@@ -1,10 +1,10 @@
-import type { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBufferCore } from 'socket-serializer';
 // import * as zlib from 'zlib';
 
 // const threshold = 4000000;
 
 /** @internal */
-export interface IpcBusRendererContent extends IpcPacketBuffer.RawContent {
+export interface IpcBusRendererContent extends IpcPacketBufferCore.RawContent {
     // compressed: boolean;
 }
 
@@ -14,17 +14,31 @@ export interface IpcBusRendererContent extends IpcPacketBuffer.RawContent {
 
 /** @internal */
 export namespace IpcBusRendererContent {
-    export function FixRawContent(rawContent: IpcBusRendererContent) {
-        // Have an issue with Electron 8.x.x, Buffer sends through IPC is no more a Buffer at the destination but an Uint8Array !!
-        // https://github.com/electron/electron/pull/20214
-        if (rawContent.buffer instanceof Uint8Array) {
+    export function Uint8ArrayToBuffer(rawBuffer: Buffer | Uint8Array): Buffer {
+        if (rawBuffer instanceof Uint8Array) {
             // See https://github.com/feross/typedarray-to-buffer/blob/master/index.js
             // To avoid a copy, use the typed array's underlying ArrayBuffer to back new Buffer
-            const arr = rawContent.buffer;
-            rawContent.buffer = Buffer.from(arr.buffer);
+            const arr = rawBuffer;
+            rawBuffer = Buffer.from(arr.buffer);
             if (arr.byteLength !== arr.buffer.byteLength) {
                 // Respect the "view", i.e. byteOffset and byteLength, without doing a copy
-                rawContent.buffer = rawContent.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength);
+                rawBuffer = rawBuffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength);
+            }
+        }
+        return rawBuffer as Buffer;
+    }
+
+    export function FixRawContent(rawContent: IpcBusRendererContent, forceSingleBuffer?: boolean) {
+        if (rawContent.buffer) {
+            rawContent.buffer = Uint8ArrayToBuffer(rawContent.buffer);
+        }
+        else if (Array.isArray(rawContent.buffers)) {
+            for (let i = 0, l = rawContent.buffers.length; i < l; ++i) {
+                rawContent.buffers[i] = Uint8ArrayToBuffer(rawContent.buffers[i]);
+            }
+            if (forceSingleBuffer) {
+                rawContent.buffer = Buffer.concat(rawContent.buffers);
+                rawContent.buffers = undefined;
             }
         }
     }

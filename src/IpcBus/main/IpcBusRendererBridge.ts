@@ -1,7 +1,7 @@
 /// <reference types='electron' />
 
 // import * as semver from 'semver';
-import type { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBufferCore } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -35,7 +35,6 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     private _ipcMain: Electron.IpcMain;
     private _subscriptions: IpcBusUtils.ChannelConnectionMap<Electron.WebContents, number>;
-    // private _noSerialization: boolean;
 
     private _rendererCallback: (...args: any[]) => void;
 
@@ -48,16 +47,26 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             (conn) => conn.id
         );
 
-//        this._noSerialization = semver.gte(process.versions.electron, '8.0.0');
-        // this._noSerialization = false;
+        this._subscriptions.client = {
+            channelAdded: (channel) => {
+                const ipcBusCommand: IpcBusCommand = {
+                    peer: undefined,
+                    kind: IpcBusCommand.Kind.AddChannelListener,
+                    channel
+                }
+                this._bridge._onRendererChannelChanged(ipcBusCommand);
+            },
+            channelRemoved: (channel) => {
+                const ipcBusCommand: IpcBusCommand = {
+                    peer: undefined,
+                    kind: IpcBusCommand.Kind.RemoveChannelListener,
+                    channel
+                }
+                this._bridge._onRendererChannelChanged(ipcBusCommand);
+            }
+        };
 
-        // callbacks
-        // if (this._noSerialization) {
-        //     this._rendererCallback = this._onRendererArgsReceived.bind(this);
-        // }
-        // else {
-            this._rendererCallback = this._onRendererRawContentReceived.bind(this);
-        // }
+        this._rendererCallback = this._onRendererRawContentReceived.bind(this);
         this._onRendererHandshake = this._onRendererHandshake.bind(this);
     }
 
@@ -65,7 +74,11 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return this._subscriptions.hasChannel(channel) || IpcBusUtils.IsWebContentsChannel(channel);
     }
 
-    connect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    getChannels(): string[] {
+        return this._subscriptions.getChannels();
+    }
+
+    broadcastConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
         // To manage re-entrance
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._rendererCallback);
         this._ipcMain.addListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._rendererCallback);
@@ -75,7 +88,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return Promise.resolve();
     }
 
-    close(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    broadcastClose(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_COMMAND, this._onRendererHandshake);
         this._ipcMain.removeListener(IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, this._onRendererHandshake);
         return Promise.resolve();
@@ -101,7 +114,6 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         const handshake: IpcBusConnector.Handshake = {
             process: peer.process,
             logLevel: logger.level,
-            // noSerialization: this._noSerialization
         };
         handshake.process.wcid = webContents.id;
         // Following functions are not implemented in all Electrons
@@ -143,7 +155,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         }
     }
 
-    broadcastBuffer(ipcBusCommand: IpcBusCommand, buffer: Buffer): void {
+    broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void {
         throw 'not implemented';
     }
 
@@ -156,8 +168,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     // }
 
     // From main or net transport
-    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): void {
-        const rawContent = ipcPacketBuffer.getRawContent() as IpcBusRendererContent;
+    broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
+        const rawContent = ipcPacketBufferCore.getRawContent() as IpcBusRendererContent;
         // IpcBusRendererContent.PackRawContent(rawContent);
         this._broadcastRawContent(null, ipcBusCommand, rawContent);
     }

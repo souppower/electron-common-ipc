@@ -1,4 +1,4 @@
-import { IpcPacketBuffer } from 'socket-serializer';
+import { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
 
 import type * as Client from './IpcBusClient';
 import * as IpcBusUtils from './IpcBusUtils';
@@ -147,6 +147,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         const ipcBusEvent: Client.IpcBusEvent = { channel: ipcBusCommand.channel, sender: ipcBusCommand.peer };
         if (ipcBusCommand.request) {
             const settled = (resolve: boolean, argsResponse: any[]) => {
+                // Reset functions as only one response per request is accepted
+                ipcBusEvent.request.resolve = () => {};
+                ipcBusEvent.request.reject = () => {};
                 const ipcBusCommandResponse: IpcBusCommand = {
                     kind: IpcBusCommand.Kind.RequestResponse,
                     channel: ipcBusCommand.request.replyChannel,
@@ -189,10 +192,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         }
     }
 
-    protected _onResponseReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[], ipcPacketBuffer?: IpcPacketBuffer): boolean {
+    protected _onResponseReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore): boolean {
         const deferredRequest = this._requestFunctions.get(ipcBusCommand.channel);
         if (deferredRequest) {
-            args = args || ipcPacketBuffer.parseArrayAt(1);
+            args = args || ipcPacketBufferCore.parseArrayAt(1);
             if (this._logActivate) {
                 this._connector.logMessageGet(deferredRequest.client.peer, local, ipcBusCommand, args);
             }
@@ -205,31 +208,32 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // IpcConnectorClient~getArgs
-    onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[], ipcPacketBuffer?: IpcPacketBuffer): boolean {
+    onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[], ipcPacketBufferCore?: IpcPacketBufferCore): boolean {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
                 if (this.hasChannel(ipcBusCommand.channel)) {
-                    args = args || ipcPacketBuffer.parseArrayAt(1);
+                    args = args || ipcPacketBufferCore.parseArrayAt(1);
                     this.onMessageReceived(false, ipcBusCommand, args);
                     return true;
                 }
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse:
-                return this._onResponseReceived(false, ipcBusCommand, args, ipcPacketBuffer);
+                return this._onResponseReceived(false, ipcBusCommand, args, ipcPacketBufferCore);
         }
         return false;
     }
 
     // IpcConnectorClient
-    onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean {
-        return this.onConnectorArgsReceived(ipcBusCommand, undefined, ipcPacketBuffer);
+    onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
+        return this.onConnectorArgsReceived(ipcBusCommand, undefined, ipcPacketBufferCore);
     }
 
     // IpcConnectorClient
     onConnectorContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
-        const packetDecoder = new IpcPacketBuffer(rawContent);
-        return this.onConnectorArgsReceived(ipcBusCommand, undefined, packetDecoder);
+        // Prevent to create a huge buffer if not needed, keep working on a set of buffers
+        const ipcPacketBufferCore = rawContent.buffer ? new IpcPacketBuffer(rawContent) : new IpcPacketBufferList(rawContent);
+        return this.onConnectorArgsReceived(ipcBusCommand, undefined, ipcPacketBufferCore);
     }
 
     // IpcConnectorClient
@@ -259,16 +263,16 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             if (client === request.client) {
                 request.timeout();
                 this._requestFunctions.delete(key);
-                const ipcMessageClose: IpcBusCommand = {
+                const ipcRequestClose: IpcBusCommand = {
                     kind: IpcBusCommand.Kind.RequestClose,
                     channel: request.request.channel,
                     peer: request.client.peer,
                     request: request.request
                 };
                 if (this._logActivate) {
-                    this._connector.logMessageSend(null, ipcMessageClose);
+                    this._connector.logMessageSend(null, ipcRequestClose);
                 }
-                this.postMessage(ipcMessageClose);
+                this.postMessage(ipcRequestClose);
             }
         });
     }
@@ -305,16 +309,16 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 setTimeout(() => {
                     if (this._requestFunctions.delete(ipcBusCommandRequest.replyChannel)) {
                         deferredRequest.timeout();
-                        const ipcMessageClose: IpcBusCommand = {
+                        const ipcRequestClose: IpcBusCommand = {
                             kind: IpcBusCommand.Kind.RequestClose,
                             channel,
                             peer: client.peer,
                             request: ipcBusCommandRequest
                         };
                         if (logSendMessage) {
-                            this._connector.logMessageSend(logSendMessage, ipcMessageClose);
+                            this._connector.logMessageSend(logSendMessage, ipcRequestClose);
                         }
-                        this.postMessage(ipcMessageClose);
+                        this.postMessage(ipcRequestClose);
                     }
                 }, timeoutDelay);
             }
@@ -353,6 +357,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     abstract hasChannel(channel: string): boolean;
+    abstract getChannels(): string[];
 
     abstract addChannel(client: IpcBusTransport.Client, channel: string, count?: number): void;
     abstract removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void;

@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as net from 'net';
 
-import { IpcPacketBufferWrap, IpcPacketBuffer, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
+import { IpcPacketContent, IpcPacketBufferList, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -9,31 +9,31 @@ import type * as Client from '../IpcBusClient';
 import type { IpcBusCommand } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
+import { WriteBuffersToSocket } from './IpcBusBrokerImpl';
 
 // Implementation for Node process
 /** @internal */
 export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
-    protected _socket: net.Socket;
-    protected _netBinds: { [key: string]: (...args: any[]) => void };
+    private _socket: net.Socket;
+    private _netBinds: { [key: string]: (...args: any[]) => void };
 
-    protected _connectCloseState: IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>;
+    private _connectCloseState: IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>;
 
     private _socketBuffer: number;
     private _socketWriter: Writer;
 
-    protected _packetOut: IpcPacketBufferWrap;
+    private _packetIn: IpcPacketBufferList;
+    private _packetOut: IpcPacketContent;
 
-    protected _packetIn: IpcPacketBuffer;
     private _bufferListReader: BufferListReader;
 
     constructor(contextType: Client.IpcBusProcessType) {
         assert((contextType === 'main') || (contextType === 'node'), `IpcBusTransportNet: contextType must not be a ${contextType}`);
         super(contextType);
 
-        this._packetOut = new IpcPacketBufferWrap();
-
         this._bufferListReader = new BufferListReader();
-        this._packetIn = new IpcPacketBuffer();
+        this._packetIn = new IpcPacketBufferList();
+        this._packetOut = new IpcPacketContent();
 
         this._connectCloseState = new IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>();
 
@@ -70,13 +70,10 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     protected _onSocketData(buffer: Buffer) {
         this._bufferListReader.appendBuffer(buffer);
         while (this._packetIn.decodeFromReader(this._bufferListReader)) {
+        // while (this._packetIn.keepDecodingFromReader(this._bufferListReader)) {
             const ipcBusCommand: IpcBusCommand = this._packetIn.parseArrayAt(0);
-            // if (ipcBusCommand.kind && ipcBusCommand.peer) {
-                this._client.onConnectorPacketReceived(ipcBusCommand, this._packetIn);
-            // }
-            // else {
-            //     throw `[IPCBusTransport:Net ${this._messageId}] Not valid packet !`;
-            // }
+            this._client.onConnectorPacketReceived(ipcBusCommand, this._packetIn);
+            // this._packetIn.reset();
         }
         // Remove read buffer
         this._bufferListReader.reduce();
@@ -240,6 +237,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         if (this._socketWriter) {
             // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
+            // Beware of C++ code expecting an array with 1 or 2 parameters but not 2 with the second one undefined
             if (args) {
                 this._packetOut.writeArray(this._socketWriter, [ipcBusCommand, args]);
             }
@@ -249,9 +247,9 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         }
     }
 
-    postBuffer(buffer: Buffer) {
-        if (this._socketWriter) {
-            this._socketWriter.writeBuffer(buffer);
+    postBuffers(buffers: Buffer[]) {
+        if (this._socket) {
+            WriteBuffersToSocket(this._socket, buffers);
         }
     }
 }

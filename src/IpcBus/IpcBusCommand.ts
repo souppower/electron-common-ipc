@@ -2,6 +2,8 @@ import type { IpcBusPeer } from './IpcBusClient';
 
 /** @internal */
 export namespace IpcBusCommand {
+    export const KindBridgePrefix = 'B';
+    
     /** @internal */
     export enum Kind {
         Handshake                   = 'HAN',
@@ -24,6 +26,8 @@ export namespace IpcBusCommand {
 
         BridgeConnect               = 'BCOO',    // COnnexion
         BridgeClose                 = 'BCOC',
+        BridgeAddChannelListener    = 'BLICA',
+        BridgeRemoveChannelListener = 'BLICR',
     };
 
     /** @internal */
@@ -39,6 +43,7 @@ export namespace IpcBusCommand {
         peer: IpcBusPeer;
         kind: IpcBusCommand.Kind;
         channel: string;
+        channels?: string[];
         request?: IpcBusCommand.Request;
     }
 
@@ -61,6 +66,7 @@ export interface IpcBusCommand {
 
     kind: IpcBusCommand.Kind;
     channel: string;
+    channels?: string[];
     request?: IpcBusCommand.Request;
     log?: IpcBusCommand.Log;
 }

@@ -1,4 +1,4 @@
-import type { IpcPacketBuffer } from 'socket-serializer';
+import type { IpcPacketBufferCore, IpcPacketBuffer } from 'socket-serializer';
 
 import type { IpcBusCommand } from './IpcBusCommand';
 import type * as Client from './IpcBusClient';
@@ -13,16 +13,10 @@ export namespace IpcBusConnector {
         // noSerialization?: boolean;
     }
 
-    export enum ReceivedFeedback {
-        Managed,
-        UnManaged,
-        Eaten
-    }
-
     /** @internal */
     export interface Client {
         peer: Client.IpcBusPeer;
-        onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBuffer: IpcPacketBuffer): boolean;
+        onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
         onConnectorContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean;
         onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]): boolean;
         onConnectorShutdown(): void;
@@ -36,7 +30,7 @@ export interface IpcBusConnector {
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
     shutdown(client: IpcBusConnector.Client, options: Client.IpcBusClient.CloseOptions): Promise<void>;
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
-    postBuffer(buffer: Buffer): void;
+    postBuffers(buffers: Buffer[]): void;
 
     logMessageSend(previousLog: IpcBusCommand.Log, ipcBusCommand: IpcBusCommand): IpcBusCommand.Log;
     logLocalMessage(peer: Client.IpcBusPeer, ipcBusCommand: IpcBusCommand, args: any[]): IpcBusCommand.Log;

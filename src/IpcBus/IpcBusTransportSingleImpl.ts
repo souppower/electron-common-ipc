@@ -16,6 +16,13 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         return (this._client && (this._client.listenerCount(channel) > 0));
     }
 
+    getChannels(): string[] {
+        if (this._client) {
+            return this._client.eventNames() as string[];
+        }
+        return [];
+    }
+
     protected onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args?: any[]): void {
         this._onClientMessageReceived(this._client, local, ipcBusCommand, args);
     }
