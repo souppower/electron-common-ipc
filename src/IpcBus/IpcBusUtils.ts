@@ -8,6 +8,14 @@ export const IPC_BUS_TIMEOUT = 2000;// 20000;
 const win32prefix1 = '\\\\.\\pipe';
 const win32prefix2 = '\\\\?\\pipe';
 
+
+type Arr = readonly unknown[];
+
+function partialCall<T extends Arr, U extends Arr, R>(f: (...args: [...T, ...U]) => R, ...headArgs: T) {
+    return (...tailArgs: U) => f(...headArgs, ...tailArgs)
+}
+
+
 // https://nodejs.org/api/net.html#net_ipc_support
 function CleanPipeName(str: string) {
     if (process.platform === 'win32') {
@@ -439,7 +447,8 @@ export class ChannelConnectionMap<T, M> {
     forEach(callback: ConnectionPeers.ForEachHandler<T, M>) {
         Logger.enable && this._info('forEach');
         this._channelsMap.forEach((connsMap, channel) => {
-            connsMap.forEach((connData, key) => callback(channel, connData, key));
+            const cb = partialCall(callback, channel);
+            connsMap.forEach((connData, key) => cb(connData, key));
         });
     }
 }

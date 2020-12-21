@@ -1,13 +1,13 @@
-import { IpcPacketBuffer } from "socket-serializer";
+import { IpcPacketBuffer } from 'socket-serializer';
 
-import { IpcBusCommand } from "../IpcBusCommand";
-import { IpcBusRendererContent } from "../renderer/IpcBusRendererContent";
+import { IpcBusCommand } from '../IpcBusCommand';
+import { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 
 import { IpcBusLog } from './IpcBusLog';
 import { IpcBusLogConfigImpl } from './IpcBusLogConfigImpl';
 import { IpcBusLogConfig } from './IpcBusLogConfig';
-import { CreateIpcBusLog } from "./IpcBusLog-factory";
-import { CutData } from "./IpcBusLogUtils";
+import { CreateIpcBusLog } from './IpcBusLog-factory';
+import { CutData } from './IpcBusLogUtils';
 
 /** @internal */
 export interface IpcBusLogMain extends IpcBusLogConfig {
