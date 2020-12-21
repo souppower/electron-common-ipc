@@ -60,7 +60,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
         // this._onQueryState = this._onQueryState.bind(this);
         this._socketClients = new Map<net.Socket, IpcBusBrokerSocket>();
         this._socketIdValue = 0;
-        this._socketIdProperty = Symbol("__ecipc__");
+        this._socketIdProperty = Symbol('__ecipc__');
 
         this._connectCloseState = new IpcBusUtils.ConnectCloseState<void>();
 

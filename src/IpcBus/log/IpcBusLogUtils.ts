@@ -41,7 +41,7 @@ export function JSON_stringify_object(data: any, maxLen: number, output: string)
 }
 
 export function JSON_stringify_string(data: string, maxLen: number): string {
-    // output = data.substr(0, maxLen).replace(/(\r\n|\n|\r|\t)/gm, " ");
+    // output = data.substr(0, maxLen).replace(/(\r\n|\n|\r|\t)/gm, ' ');
     if (data.length > maxLen) {
         return data.substr(0, maxLen) + CutMarker;
     }
