@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import * as net from 'net';
 
-import { IpcPacketContent, IpcPacketBufferList, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
+import { IpcPacketWriter, IpcPacketBufferList, Writer, SocketWriter, BufferedSocketWriter, DelayedSocketWriter, BufferListReader } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
@@ -23,7 +23,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     private _socketWriter: Writer;
 
     private _packetIn: IpcPacketBufferList;
-    private _packetOut: IpcPacketContent;
+    private _packetOut: IpcPacketWriter;
 
     private _bufferListReader: BufferListReader;
 
@@ -33,7 +33,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
 
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBufferList();
-        this._packetOut = new IpcPacketContent();
+        this._packetOut = new IpcPacketWriter();
 
         this._connectCloseState = new IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>();
 
@@ -239,10 +239,10 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
             // this._logLevel && this.trackCommandPost(ipcBusCommand, args);
             // Beware of C++ code expecting an array with 1 or 2 parameters but not 2 with the second one undefined
             if (args) {
-                this._packetOut.writeArray(this._socketWriter, [ipcBusCommand, args]);
+                this._packetOut.write(this._socketWriter, [ipcBusCommand, args]);
             }
             else {
-                this._packetOut.writeArray(this._socketWriter, [ipcBusCommand]);
+                this._packetOut.write(this._socketWriter, [ipcBusCommand]);
             }
         }
     }

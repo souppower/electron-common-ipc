@@ -17,7 +17,7 @@ export namespace IpcBusConnector {
     export interface Client {
         peer: Client.IpcBusPeer;
         onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
-        onConnectorContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean;
+        onConnectorContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData): boolean;
         onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]): boolean;
         onConnectorShutdown(): void;
     }

@@ -76,7 +76,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
         }
     }
 
-    broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void {
+    broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData): void {
         if (rawContent.buffer) {
             this.broadcastBuffers(ipcBusCommand, [rawContent.buffer]);
         }
@@ -145,7 +145,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
         return true;
     }
 
-    onConnectorContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): boolean {
+    onConnectorContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData): boolean {
         throw 'not implemented';
     }
 

@@ -169,7 +169,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     // From main or net transport
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void {
-        const rawContent = ipcPacketBufferCore.getRawContent() as IpcBusRendererContent;
+        const rawContent = ipcPacketBufferCore.getRawData() as IpcBusRendererContent;
         // IpcBusRendererContent.PackRawContent(rawContent);
         this._broadcastRawContent(null, ipcBusCommand, rawContent);
     }
