@@ -45,7 +45,7 @@
     "json-helpers": "~4.0.1",
     "semver": "~7.3.4",
     "shortid": "~2.2.16",
-    "socket-serializer": "~9.0.0",
+    "socket-serializer": "~9.0.1",
     "uuid": "~8.3.2",
     "winston": "~3.3.3"
   },
