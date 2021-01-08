@@ -25,7 +25,7 @@ export interface IpcBusBridgeClient {
     broadcastBuffers(ipcBusCommand: IpcBusCommand, buffers: Buffer[]): void;
     // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void;
     broadcastPacket(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): void;
-    broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent): void;
+    broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData): void;
 }
 
 // This class ensures the transfer of data between Broker and Renderer/s using ipcMain
@@ -126,12 +126,12 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             ipcBusCommand.peer = this._peer;
             ipcBusCommand.kind = (IpcBusCommand.KindBridgePrefix + ipcBusCommand.kind) as IpcBusCommand.Kind;
             const packet = new IpcPacketBuffer();
-            packet.serializeArray([ipcBusCommand]);
+            packet.serialize([ipcBusCommand]);
             this._socketTransport.broadcastPacket(ipcBusCommand, packet);
         }
     }
 
-    _onRendererContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawContent) {
+    _onRendererContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData) {
         this._mainTransport.onConnectorContentReceived(ipcBusCommand, rawContent);
         this._socketTransport && this._socketTransport.broadcastContent(ipcBusCommand, rawContent);
     }
@@ -141,7 +141,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     //     const hasNetChannel = this._netTransport && this._netTransport.hasChannel(ipcBusCommand.channel);
     //     // Prevent serializing for nothing !
     //     if (hasNetChannel) {
-    //         this._packet.serializeArray([ipcBusCommand, args]);
+    //         this._packet.serialize([ipcBusCommand, args]);
     //         this._netTransport.broadcastBuffer(ipcBusCommand, this._packet.buffer);
     //         this._packet.reset();
     //     }
@@ -154,7 +154,7 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             ipcBusCommand.peer = this._peer;
             ipcBusCommand.kind = (IpcBusCommand.KindBridgePrefix + ipcBusCommand.kind) as IpcBusCommand.Kind;
             const packet = new IpcPacketBuffer();
-            packet.serializeArray([ipcBusCommand]);
+            packet.serialize([ipcBusCommand]);
             this._socketTransport.broadcastPacket(ipcBusCommand, packet);
         }
     }
@@ -171,10 +171,10 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
             if (hasRendererChannel || hasSocketChannel) {
                 const packet = new IpcPacketBufferList();
                 if (args) {
-                    packet.serializeArray([ipcBusCommand, args]);
+                    packet.serialize([ipcBusCommand, args]);
                 }
                 else {
-                    packet.serializeArray([ipcBusCommand]);
+                    packet.serialize([ipcBusCommand]);
                 }
                 hasSocketChannel && this._socketTransport.broadcastPacket(ipcBusCommand, packet);
                 // End with renderer if have to compress

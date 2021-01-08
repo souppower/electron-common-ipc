@@ -4,7 +4,7 @@ import type { IpcPacketBufferCore } from 'socket-serializer';
 // const threshold = 4000000;
 
 /** @internal */
-export interface IpcBusRendererContent extends IpcPacketBufferCore.RawContent {
+export interface IpcBusRendererContent extends IpcPacketBufferCore.RawData {
     // compressed: boolean;
 }
 
@@ -43,7 +43,7 @@ export namespace IpcBusRendererContent {
         }
     }
 
-    // export function PackRawContent(buffRawContent: IpcPacketBuffer.RawContent): IpcBusRendererContent {
+    // export function PackRawContent(buffRawContent: IpcPacketBuffer.RawData): IpcBusRendererContent {
     //     const rawContent = buffRawContent as IpcBusRendererContent;
     //     // if ((rawContent.buffer.length > threshold) && !rawContent.compressed) {
     //     //     rawContent.compressed = true;
