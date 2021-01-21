@@ -6,6 +6,7 @@
 // Node
 const util = require('util');
 const path = require('path');
+const URL = require('url');
 const child_process = require('child_process');
 const EventEmitter = require('events').EventEmitter;
 
@@ -126,14 +127,14 @@ var MainProcess = (function () {
             }
         });
 
-        mainWindow.loadURL(commonViewUrl);
-
-        console.log('<MAIN> Main window ready');
-
+        const url = new URL.URL(commonViewUrl);
+        url.searchParams.append('title', 'Main');
+        url.searchParams.append('id', 1);
+        url.searchParams.append('type', 'browser');
+        url.searchParams.append('peerName', peerName);
+        url.searchParams.append('webContentsId', mainWindow.webContents.id);
+        mainWindow.loadURL(url.href);
         var processMainToView = new ProcessConnector('browser', mainWindow.webContents);
-        mainWindow.webContents.on('dom-ready', function () {
-            mainWindow.webContents.send('initializeWindow', { title: 'Main', type: 'browser', id: 0, peerName: peerName, webContentsId: mainWindow.webContents.id });
-        });
 
         function doNewProcess(processType) {
             var newProcess = null;
@@ -257,9 +258,9 @@ var MainProcess = (function () {
 })();
 
 var RendererProcess = (function () {
+    var rendererCount = 0;
 
     function RendererProcess(processId) {
-        var rendererCount = 0;
         var rendererWindows = new Map();
         var callbackClose;
         this.createWindow = function _createWindow() {
@@ -273,10 +274,14 @@ var RendererProcess = (function () {
                     preload: preloadFile
                 }
             });
-            rendererWindow.loadURL(commonViewUrl);
-            rendererWindow.webContents.on('dom-ready', function () {
-                rendererWindow.webContents.send('initializeWindow', { title: 'Renderer', type: 'renderer', id: processId, peerName: 'Renderer_' + rendererCount, webContentsId: rendererWindow.webContents.id });
-            });
+
+            const url = new URL.URL(commonViewUrl);
+            url.searchParams.append('title', 'Renderer');
+            url.searchParams.append('type', 'renderer');
+            url.searchParams.append('id', processId);
+            url.searchParams.append('peerName', 'Renderer_' + rendererCount);
+            url.searchParams.append('webContentsId', rendererWindow.webContents.id);
+            rendererWindow.loadURL(url.href);
 
             rendererWindows.set(rendererWindow.webContents.id, rendererWindow);
             var key = rendererWindow.webContents.id;
@@ -365,12 +370,17 @@ var NodeProcess = (function () {
                 preload: preloadFile
             }
         });
-        processMainToView = new ProcessConnector('node', nodeWindow.webContents, processId);
-        nodeWindow.loadURL(commonViewUrl);
-        nodeWindow.webContents.on('dom-ready', function () {
-            nodeWindow.webContents.send('initializeWindow', { title: 'Node', type: 'node', id: processId, peerName: 'Node_' + nodeCount, webContentsId: nodeWindow.webContents.id });
-        });
 
+        const url = new URL.URL(commonViewUrl);
+        url.searchParams.append('title', 'Node');
+        url.searchParams.append('type', 'node');
+        url.searchParams.append('id', processId);
+        url.searchParams.append('peerName', 'Node_' + nodeCount);
+        url.searchParams.append('webContentsId', nodeWindow.webContents.id);
+
+        nodeWindow.loadURL(url.href);
+        processMainToView = new ProcessConnector('node', nodeWindow.webContents, processId);
+    
         nodeWindow.on('close', function () {
             nodeWindow = null;
             self.term();

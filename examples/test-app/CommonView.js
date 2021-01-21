@@ -4,7 +4,7 @@ var processId;
 var peerName;
 var processToMaster = null;
 var ipcBus = CreateIpcBusClient();
-var bigpayload = null;
+// var bigpayload = null;
 
 function doNewNodeProcess(event) {
     processToMaster.send('new-process', 'node');
@@ -270,94 +270,100 @@ function onIPC_BrokerStatusTopic(ipcContent) {
     }
 }
 
+// function loadJSON(callback) {
+//     const xobj = new XMLHttpRequest();
+//     xobj.overrideMimeType("application/json");
+//     xobj.open('GET', 'huge-payload.json', true);
+//     xobj.onreadystatechange = () => {
+//         if (xobj.readyState == 4 && xobj.status == "200") {
+//             // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
+//             callback(xobj.responseText);
+//         }
+//     };
+//     xobj.send(null);
+// }
 
-function loadJSON(callback) {
-    const xobj = new XMLHttpRequest();
-    xobj.overrideMimeType("application/json");
-    xobj.open('GET', 'huge-payload.json', true); // Replace 'appDataServices' with the path to your file
-    xobj.onreadystatechange = () => {
-        if (xobj.readyState == 4 && xobj.status == "200") {
-            // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
-            callback(xobj.responseText);
-        }
-    };
-    xobj.send(null);  
-}
+window.addEventListener('load', () => {
 
 var processToMonitor = null;
 
-ipcRenderer.on('initializeWindow', function (event, data) {
-    // In sandbox mode, 1st parameter is no more the event, but the 2nd argument !!!
-    const args = (data !== undefined) ? data : event;
-    console.log('initializeWindow' + args);
+function getParameterByName(name, url = window.location.href) {
+    name = name.replace(/[\[\]]/g, '\\$&');
+    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
 
-    processId = args['id'];
-    peerName = args['peerName']; 
+// In sandbox mode, 1st parameter is no more the event, but the 2nd argument !!!
+processId = getParameterByName('id');
+peerName = getParameterByName('peerName'); 
 
-    var processMonitorElt = document.getElementById('ProcessMonitor');
-    processMonitorElt.setAttribute('topic-process', args['type']);
+var processMonitorElt = document.getElementById('ProcessMonitor');
+processMonitorElt.setAttribute('topic-process', getParameterByName('type'));
 
-    var processTitleElt = document.getElementById('ProcessTitle');
-    processTitleElt.textContent = args['peerName'] + ' (' + processId + ')';
-    document.title = processTitleElt.textContent;
+var processTitleElt = document.getElementById('ProcessTitle');
+processTitleElt.textContent = getParameterByName('peerName') + ' (' + processId + ')';
+document.title = processTitleElt.textContent;
 
-    var processMonitorDefaultSubscribe = processMonitorElt.querySelector('.topicSubscribeName');
-    processMonitorDefaultSubscribe.value = 'TopicOf' + args['peerName'];
+var processMonitorDefaultSubscribe = processMonitorElt.querySelector('.topicSubscribeName');
+processMonitorDefaultSubscribe.value = 'TopicOf' + getParameterByName('peerName');
 
-    var processMonitorDefaultSend = processMonitorElt.querySelector('.topicSendMsg');
-    processMonitorDefaultSend.value = 'SendFrom:' + args['peerName'];
+var processMonitorDefaultSend = processMonitorElt.querySelector('.topicSendMsg');
+processMonitorDefaultSend.value = 'SendFrom:' + getParameterByName('peerName');
 
-    var processMonitorDefaultRequest = processMonitorElt.querySelector('.topicRequestMsg');
-    processMonitorDefaultRequest.value = 'PromiseFrom:' + args['peerName'];
+var processMonitorDefaultRequest = processMonitorElt.querySelector('.topicRequestMsg');
+processMonitorDefaultRequest.value = 'PromiseFrom:' + getParameterByName('peerName');
 
-    processToMaster = new ProcessConnector('browser', ipcRenderer);
+processToMaster = new ProcessConnector('browser', ipcRenderer);
 
-    processToMonitor = new ProcessConnector(args['type'], ipcRenderer, args['id']);
+processToMonitor = new ProcessConnector(getParameterByName('type'), ipcRenderer, getParameterByName('id'));
 
-    if (args['type'] === 'browser') {
-        processToMonitor.onRequestThen(onIPCBus_OnRequestThen);
-        processToMonitor.onRequestCatch(onIPCBus_OnRequestCatch);
-        processToMonitor.OnReceivedMessage(onIPCBus_ReceivedSendNotify);
-        processToMonitor.onSubscribeDone(onIPCElectron_SubscribeNotify);
-        processToMonitor.onUnsubscribeDone(onIPCElectron_UnsubscribeNotify);
+if (getParameterByName('type') === 'browser') {
+    processToMonitor.onRequestThen(onIPCBus_OnRequestThen);
+    processToMonitor.onRequestCatch(onIPCBus_OnRequestCatch);
+    processToMonitor.OnReceivedMessage(onIPCBus_ReceivedSendNotify);
+    processToMonitor.onSubscribeDone(onIPCElectron_SubscribeNotify);
+    processToMonitor.onUnsubscribeDone(onIPCElectron_UnsubscribeNotify);
 
-        var processToolbar = document.getElementById('ProcessBrowserToolbar');
-        processToolbar.style.display = 'block';
+    var processToolbar = document.getElementById('ProcessBrowserToolbar');
+    processToolbar.style.display = 'block';
 
-        processToolbar = document.getElementById('ProcessBrokerState');
-        processToolbar.style.display = 'block';
+    processToolbar = document.getElementById('ProcessBrokerState');
+    processToolbar.style.display = 'block';
 
-        ipcRenderer.on('get-queryState', onIPC_BrokerStatusTopic);
+    ipcRenderer.on('get-queryState', onIPC_BrokerStatusTopic);
 
-        ipcBus.connect()
-            .then(() => {
-                console.log('renderer : connected to ipcBus');
-            });
-    }
-    if (args['type'] === 'renderer') {
-
-        var processToolbar = document.getElementById('ProcessRendererToolbar');
-        processToolbar.style.display = 'block';
-
-        loadJSON((txt) => {
-            bigpayload = JSON.stringify(txt);
+    ipcBus.connect()
+        .then(() => {
+            console.log('renderer : connected to ipcBus');
         });
+}
+if (getParameterByName('type') === 'renderer') {
 
-        ipcBus.connect()
-            .then(() => {
-                console.log('renderer : connected to ipcBus');
-                perfTests.connect(peerName);
-            });
-    }
-    if (args['type'] === 'node') {
-        processToMonitor.onRequestThen(onIPCBus_OnRequestThen);
-        processToMonitor.onRequestCatch(onIPCBus_OnRequestCatch);
-        processToMonitor.OnReceivedMessage(onIPCBus_ReceivedSendNotify);
-        processToMonitor.onSubscribeDone(onIPCElectron_SubscribeNotify);
-        processToMonitor.onUnsubscribeDone(onIPCElectron_UnsubscribeNotify);
-        ipcBus.connect()
-            .then(() => {
-                console.log('renderer : connected to ipcBus');
-            });
-    }
+    var processToolbar = document.getElementById('ProcessRendererToolbar');
+    processToolbar.style.display = 'block';
+
+    // loadJSON((txt) => {
+    //     bigpayload = JSON.stringify(txt);
+    // });
+
+    ipcBus.connect()
+        .then(() => {
+            console.log('renderer : connected to ipcBus');
+            perfTests.connect(peerName);
+        });
+}
+if (getParameterByName('type') === 'node') {
+    processToMonitor.onRequestThen(onIPCBus_OnRequestThen);
+    processToMonitor.onRequestCatch(onIPCBus_OnRequestCatch);
+    processToMonitor.OnReceivedMessage(onIPCBus_ReceivedSendNotify);
+    processToMonitor.onSubscribeDone(onIPCElectron_SubscribeNotify);
+    processToMonitor.onUnsubscribeDone(onIPCElectron_UnsubscribeNotify);
+    ipcBus.connect()
+        .then(() => {
+            console.log('renderer : connected to ipcBus');
+        });
+}
 });
