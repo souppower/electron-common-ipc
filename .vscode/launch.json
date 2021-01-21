@@ -19,7 +19,9 @@
                 // "--enable-sandbox",
                 // "--inspect-brk=50000",
                 "Main.js",
-                "--remote-debugging-port=8315"
+                "--remote-debugging-port=8315",
+                // "--disable-sandbox"
+
             ],
             "env": {
                 // "ELECTRON_IPC_BROKER_LOG_CSV": "c:\\temp\\ipc-log",

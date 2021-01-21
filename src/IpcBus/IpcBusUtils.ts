@@ -1,5 +1,5 @@
 // import * as uuid from 'uuid';
-// import * as shortid from 'shortid';
+import * as shortid from 'shortid';
 
 import type { IpcConnectOptions, IpcBusPeer } from './IpcBusClient';
 
@@ -131,14 +131,18 @@ export function CheckConnectOptions<T extends IpcConnectOptions>(arg1: T | strin
     return options;
 }
 
-let uniqNumber = 0;
-const padding = '0000000000'
-const paddingLength = padding.length;
+// let uniqNumber = 0;
+// const padding = '0000000000'
+// const paddingLength = padding.length;
+// export function CreateUniqId(): string {
+//     // ++uniqNumber;
+//     // return (padding + uniqNumber.toString()).substr(-paddingLength);
+//     // return uuid.v1();
+//     return shortid.generate();
+// }
+shortid.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#&')
 export function CreateUniqId(): string {
-    ++uniqNumber;
-    return (padding + uniqNumber.toString()).substr(-paddingLength);
-    // return uuid.v1();
-    // return shortid.generate();
+    return shortid.generate();
 }
 
 export function BinarySearch<T>(array: T[], target: T, compareFn: (l: T, r: T) => number) {

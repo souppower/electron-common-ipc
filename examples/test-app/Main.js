@@ -73,6 +73,7 @@ function spawnNodeInstance(scriptPath, nodeCount, newArgs) {
 // Window const
 const preloadFile = path.join(__dirname, 'BundledBrowserWindowPreload.js');
 const commonViewUrl = 'file://' + path.join(__dirname, 'CommonView.html');
+const commonViewFrameUrl = 'file://' + path.join(__dirname, 'ComponentViewParent.html');
 const perfViewUrl = 'file://' + path.join(__dirname, 'PerfView.html');
 const width = 1000;
 
@@ -109,11 +110,21 @@ var MainProcess = (function () {
         perfTests.connect('main');
         console.log('<MAIN> PerfTest ready');
 
+        const frameWindow = new BrowserWindow({
+            width: width, height: 800,
+            autoHideMenuBar: true,
+            webPreferences: {
+                nodeIntegrationInSubFrames: true,
+                preload: preloadFile
+            }
+        });
+        frameWindow.loadURL(commonViewFrameUrl);
+
+
         const mainWindow = new BrowserWindow({
             width: width, height: 800,
             autoHideMenuBar: true,
-            webPreferences:
-            {
+            webPreferences: {
                 preload: preloadFile
             }
         });
@@ -189,8 +200,7 @@ var MainProcess = (function () {
                 perfView = new BrowserWindow({
                     width: width + 200, height: 800,
                     autoHideMenuBar: true,
-                    webPreferences:
-                    {
+                    webPreferences: {
                         preload: preloadFile
                     }
                 });
@@ -268,8 +278,7 @@ var RendererProcess = (function () {
             const rendererWindow = new BrowserWindow({
                 width: width, height: 600,
                 autoHideMenuBar: true,
-                webPreferences:
-                {
+                webPreferences: {
                     session: getSession(),
                     preload: preloadFile
                 }
@@ -365,8 +374,7 @@ var NodeProcess = (function () {
         nodeWindow = new BrowserWindow({
             width: width, height: 600,
             autoHideMenuBar: true,
-            webPreferences:
-            {
+            webPreferences: {
                 preload: preloadFile
             }
         });

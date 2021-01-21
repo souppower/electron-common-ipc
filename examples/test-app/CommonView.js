@@ -283,9 +283,9 @@ function onIPC_BrokerStatusTopic(ipcContent) {
 //     xobj.send(null);
 // }
 
-window.addEventListener('load', () => {
-
 var processToMonitor = null;
+
+window.addEventListener('load', () => {
 
 function getParameterByName(name, url = window.location.href) {
     name = name.replace(/[\[\]]/g, '\\$&');
