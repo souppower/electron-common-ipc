@@ -9,13 +9,14 @@ export const ELECTRON_IPC_BROKER_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BROKER_LOGPATH'
 export const ELECTRON_IPC_BRIDGE_LOGPATH_ENV_VAR = 'ELECTRON_IPC_BRIDGE_LOGPATH';
 
 // see { ElectronProcessType } from 'electron-process-type/lib/v2'
-export type IpcBusProcessType = 'renderer-frame' | 'native' | 'node' | 'renderer' | 'main' | 'worker' | 'undefined';
+export type IpcBusProcessType = 'native' | 'node' | 'renderer' | 'main' | 'worker' | 'undefined';
 
 export interface IpcBusProcess {
     type: IpcBusProcessType;
     pid: number;    // Process Id
     rid?: number;   // Renderer Id
     wcid?: number;  // WebContent Id
+    frameid?: number; // Frame Id
 }
 
 export interface IpcBusPeer {

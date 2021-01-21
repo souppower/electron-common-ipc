@@ -77,7 +77,6 @@ class DeferredRequestPromise {
 
 /** @internal */
 export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConnector.Client {
-    private static s_requestNumber: number = 0;
     private static s_clientNumber: number = 0;
 
     protected _connector: IpcBusConnector;
@@ -125,6 +124,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             name = `${peer.process.type}`;
             if (peer.process.wcid) {
                 name += `-${peer.process.wcid}`;
+            }
+            if (peer.process.frameid) {
+                name += `-f${peer.process.frameid}`;
             }
             if (peer.process.rid && (peer.process.rid !== peer.process.wcid)) {
                 name += `-r${peer.process.rid}`;
@@ -280,8 +282,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
         timeoutDelay = IpcBusUtils.checkTimeout(timeoutDelay);
-        ++IpcBusTransportImpl.s_requestNumber;
-        const replyChannel = IpcBusUtils.CreateResponseChannel(client.peer, IpcBusTransportImpl.s_requestNumber);
+        const replyChannel = IpcBusUtils.CreateResponseChannel(client.peer);
         const ipcBusCommandRequest: IpcBusCommand.Request = { channel, replyChannel };
         const deferredRequest = new DeferredRequestPromise(client, ipcBusCommandRequest);
         // Register locally

@@ -31,7 +31,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     protected _connectCloseState: IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>;
 
     constructor(contextType: Client.IpcBusProcessType, ipcWindow: IpcWindow) {
-        assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
+        assert(contextType === 'renderer', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
         super(contextType);
         this._ipcWindow = ipcWindow;
         this._connectCloseState = new IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>();
@@ -137,7 +137,13 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             const packetOut = new IpcPacketBuffer();
             packetOut.serialize([ipcBusCommand, args]);
             const rawContent = packetOut.getRawData();
-            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, rawContent);
+            const webContentsProcess = IpcBusUtils.GetWebContentsProcess(ipcBusCommand.channel);            const webContentsProcess = IpcBusUtils.GetWebContentsProcess(ipcBusCommand.channel);
+            if (webContentsProcess && webContentsProcess.frameid === 1) {
+                this._ipcWindow.sendTo(webContentsProcess.wcid, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+            }
+            else {
+                this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, rawContent);
+            }            const webContentsProcess = IpcBusUtils.GetWebContentsProcess(ipcBusCommand.channel);
         // }
     }
 

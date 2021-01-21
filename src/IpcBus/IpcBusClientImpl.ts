@@ -50,7 +50,7 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
     }
 
     createResponseChannel(): string {
-        return IpcBusUtils.CreateResponseChannel(this._peer, IpcBusUtils.CreateUniqId());
+        return IpcBusUtils.CreateResponseChannel(this._peer);
     }
 
     send(channel: string, ...args: any[]): boolean {

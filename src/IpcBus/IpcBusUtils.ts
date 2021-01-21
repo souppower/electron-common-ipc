@@ -1,7 +1,7 @@
 // import * as uuid from 'uuid';
-import * as shortid from 'shortid';
+// import * as shortid from 'shortid';
 
-import type { IpcConnectOptions, IpcBusPeer } from './IpcBusClient';
+import type { IpcConnectOptions, IpcBusPeer, IpcBusProcess } from './IpcBusClient';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
 
@@ -28,27 +28,28 @@ function CleanPipeName(str: string) {
     return str;
 }
 
-const ResponseChannelPrefix = `response-wcid:`;
+const ResponseChannelPrefix = `response-wc:`;
 const ResponseChannelPrefixLength = ResponseChannelPrefix.length;
 
-export function CreateResponseChannel(peer: IpcBusPeer, uniqId: string | number): string {
+export function CreateResponseChannel(peer: IpcBusPeer): string {
+    const uniqId = CreateUniqId();
     if (peer.process.wcid) {
-        return `${ResponseChannelPrefix}${peer.process.wcid}_${uniqId}`;
+        return `${ResponseChannelPrefix}${JSON.stringify(peer.process)}_${uniqId}`;
     }
     else {
         return `response:${peer.id}_${uniqId}`;
     }
 }
 
-export function IsWebContentsChannel(channel: string): boolean {
+export function IsWebContentsTarget(channel: string): boolean {
     return (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0);
 }
 
-export function GetWebContentsChannel(channel: string): number {
+export function GetWebContentsProcess(channel: string): IpcBusProcess | null {
     if (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0) {
-        return parseInt(channel.substr(ResponseChannelPrefixLength), 10);
+        return JSON.parse(channel.slice(ResponseChannelPrefixLength, -paddingLength-1));
     }
-    return NaN;
+    return null;
 }
 
 export function CheckChannel(channel: any): string {
@@ -110,10 +111,14 @@ export function CheckConnectOptions<T extends IpcConnectOptions>(arg1: T | strin
     return options;
 }
 
-shortid.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#&')
+let uniqNumber = 0;
+const padding = '0000000000'
+const paddingLength = padding.length;
 export function CreateUniqId(): string {
+    ++uniqNumber;
+    return (padding + uniqNumber.toString()).substr(-paddingLength);
     // return uuid.v1();
-    return shortid.generate();
+    // return shortid.generate();
 }
 
 export function BinarySearch<T>(array: T[], target: T, compareFn: (l: T, r: T) => number) {
