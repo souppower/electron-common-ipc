@@ -194,6 +194,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     // Prevent echo message
                     if (connData.key !== key) {
+                        // connData.conn.sender.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                         connData.conn.sender.sendToFrame(connData.conn.frameId, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                     }
                 });
@@ -206,6 +207,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 if (webContentsProcess) {
                     const webContents = electronModule.webContents.fromId(webContentsProcess.wcid);
                     if (webContents) {
+                        // webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                         webContents.sendToFrame(webContentsProcess.frameid, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                     }
                 }

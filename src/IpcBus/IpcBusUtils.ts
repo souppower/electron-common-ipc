@@ -1,7 +1,7 @@
 // import * as uuid from 'uuid';
 // import * as shortid from 'shortid';
 
-import type { IpcConnectOptions, IpcBusPeer, IpcBusProcess } from './IpcBusClient';
+import type { IpcConnectOptions, IpcBusPeer } from './IpcBusClient';
 
 export const IPC_BUS_TIMEOUT = 2000;// 20000;
 
@@ -31,10 +31,30 @@ function CleanPipeName(str: string) {
 const ResponseChannelPrefix = `response-wc:`;
 const ResponseChannelPrefixLength = ResponseChannelPrefix.length;
 
+export interface WebContentsTargetIdentifier {
+    wcid: number;
+    frameid: number;
+}
+
+function Serialize(wcIds: WebContentsTargetIdentifier): number {
+    return (wcIds.wcid << 8) + wcIds.frameid;
+}
+
+function Unserialize(channel: string): WebContentsTargetIdentifier | null {
+    const wcIds = parseInt(channel, 10);
+    if (!isNaN(wcIds)) {
+        return {
+            wcid: wcIds >> 8,
+            frameid: wcIds && 0b11111111,
+        }
+    }
+    return null;
+}
+
 export function CreateResponseChannel(peer: IpcBusPeer): string {
     const uniqId = CreateUniqId();
     if (peer.process.wcid) {
-        return `${ResponseChannelPrefix}${JSON.stringify(peer.process)}_${uniqId}`;
+        return `${ResponseChannelPrefix}${Serialize(peer.process as WebContentsTargetIdentifier)}_${uniqId}`;
     }
     else {
         return `response:${peer.id}_${uniqId}`;
@@ -45,9 +65,9 @@ export function IsWebContentsTarget(channel: string): boolean {
     return (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0);
 }
 
-export function GetWebContentsProcess(channel: string): IpcBusProcess | null {
+export function GetWebContentsProcess(channel: string): WebContentsTargetIdentifier | null {
     if (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0) {
-        return JSON.parse(channel.slice(ResponseChannelPrefixLength, -paddingLength-1));
+        return Unserialize(channel.substr(ResponseChannelPrefixLength));
     }
     return null;
 }
