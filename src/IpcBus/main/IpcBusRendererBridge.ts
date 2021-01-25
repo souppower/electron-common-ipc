@@ -189,18 +189,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     // From renderer transport
     private _broadcastRawContent(webContentsTarget: WebContentsTarget, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.SendMessage: {
-                const key = webContentsTarget ? getKeyForTarget(webContentsTarget) : 0;
-                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
-                    // Prevent echo message
-                    if (connData.key !== key) {
-                        // connData.conn.sender.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
-                        connData.conn.sender.sendToFrame(connData.conn.frameId, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
-                    }
-                });
-                break;
-
-            }
+            case IpcBusCommand.Kind.SendMessage:
 
             case IpcBusCommand.Kind.RequestResponse: {
                 const webContentsProcess = IpcBusUtils.GetWebContentsTargetIdentifier(ipcBusCommand.request.replyChannel);
@@ -210,7 +199,16 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                         // webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                         webContents.sendToFrame(webContentsProcess.frameid, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                     }
+                    break;
                 }
+                const key = webContentsTarget ? getKeyForTarget(webContentsTarget) : 0;
+                this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
+                    // Prevent echo message
+                    if (connData.key !== key) {
+                        // connData.conn.sender.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                        connData.conn.sender.sendToFrame(connData.conn.frameId, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                    }
+                });
                 break;
             }
 
