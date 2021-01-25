@@ -31,6 +31,8 @@ function CleanPipeName(str: string) {
 const ResponseChannelPrefix = `response-wc:`;
 const ResponseChannelPrefixLength = ResponseChannelPrefix.length;
 
+export const TopFrameId = 1;
+
 export interface WebContentsTargetIdentifier {
     wcid: number;
     frameid: number;
@@ -51,6 +53,17 @@ function Unserialize(channel: string): WebContentsTargetIdentifier | null {
     return null;
 }
 
+export function IsWebContentsTarget(channel: string): boolean {
+    return (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0);
+}
+
+export function GetWebContentsTargetIdentifier(channel: string): WebContentsTargetIdentifier | null {
+    if (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0) {
+        return Unserialize(channel.substr(ResponseChannelPrefixLength));
+    }
+    return null;
+}
+
 export function CreateResponseChannel(peer: IpcBusPeer): string {
     const uniqId = CreateUniqId();
     if (peer.process.wcid) {
@@ -61,16 +74,6 @@ export function CreateResponseChannel(peer: IpcBusPeer): string {
     }
 }
 
-export function IsWebContentsTarget(channel: string): boolean {
-    return (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0);
-}
-
-export function GetWebContentsProcess(channel: string): WebContentsTargetIdentifier | null {
-    if (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0) {
-        return Unserialize(channel.substr(ResponseChannelPrefixLength));
-    }
-    return null;
-}
 
 export function CheckChannel(channel: any): string {
     switch (typeof channel) {

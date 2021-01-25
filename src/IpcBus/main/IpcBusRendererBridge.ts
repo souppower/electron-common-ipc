@@ -23,7 +23,7 @@ interface WebContentsTarget {
     frameId: number;
 }
 
-function getKey(webContentsTarget: WebContentsTarget) {
+function getKeyForTarget(webContentsTarget: WebContentsTarget) {
     return (webContentsTarget.sender.id << 8) + webContentsTarget.frameId;
 }
 
@@ -53,7 +53,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._ipcMain = require('electron').ipcMain;
         this._subscriptions = new IpcBusUtils.ChannelConnectionMap<WebContentsTarget, number>(
             'IPCBus:RendererBridge',
-            getKey
+            getKeyForTarget
         );
 
         this._subscriptions.client = {
@@ -157,7 +157,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         // - to confirm the connection
         // - to provide id/s
         // BEWARE, if the message is sent before webContents is ready, it will be lost !!!!
-        if ((webContentsTarget.frameId !== -1) || (webContents.getURL() && !webContents.isLoadingMainFrame())) {
+        if ((webContentsTarget.frameId !== IpcBusUtils.TopFrameId) || (webContents.getURL() && !webContents.isLoadingMainFrame())) {
             webContents.sendToFrame(webContentsTarget.frameId, IPCBUS_TRANSPORT_RENDERER_HANDSHAKE, ipcBusPeer, handshake);
         }
         else {
@@ -190,7 +190,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _broadcastRawContent(webContentsTarget: WebContentsTarget, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.SendMessage: {
-                const key = webContentsTarget ? getKey(webContentsTarget) : 0;
+                const key = webContentsTarget ? getKeyForTarget(webContentsTarget) : 0;
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     // Prevent echo message
                     if (connData.key !== key) {
@@ -203,7 +203,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             }
 
             case IpcBusCommand.Kind.RequestResponse: {
-                const webContentsProcess = IpcBusUtils.GetWebContentsProcess(ipcBusCommand.request.replyChannel);
+                const webContentsProcess = IpcBusUtils.GetWebContentsTargetIdentifier(ipcBusCommand.request.replyChannel);
                 if (webContentsProcess) {
                     const webContents = electronModule.webContents.fromId(webContentsProcess.wcid);
                     if (webContents) {
