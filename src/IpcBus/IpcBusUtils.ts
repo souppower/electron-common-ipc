@@ -41,7 +41,7 @@ export function CreateResponseChannel(peer: IpcBusPeer, uniqId: string | number)
 }
 
 export function IsWebContentsChannel(channel: string): boolean {
-    return isNaN(GetWebContentsChannel(channel)) === false;
+    return (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0);
 }
 
 export function GetWebContentsChannel(channel: string): number {

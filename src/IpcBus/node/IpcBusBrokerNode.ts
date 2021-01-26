@@ -4,7 +4,7 @@ import { IpcPacketWriter, IpcPacketBufferList, SocketWriter } from 'socket-seria
 
 import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
-import { ChannelConnectionMap, CreateUniqId, IsWebContentsChannel } from '../IpcBusUtils';
+import { ChannelConnectionMap, CreateUniqId } from '../IpcBusUtils';
 
 import { IpcBusBrokerImpl, WriteBuffersToSocket } from './IpcBusBrokerImpl';
 import type { IpcBusBrokerSocket } from './IpcBusBrokerSocket';
@@ -104,8 +104,9 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
     }
 
     protected broadcastToBridgeMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
-        if (socket !== this._socketBridge.socket) {
-            if (this._bridgeSubscriptions.hasChannel(ipcBusCommand.channel) || IsWebContentsChannel(ipcBusCommand.channel)) {
+        // if we have channels, it would mean we have a socketBridge, so do not test it
+        if (this._bridgeSubscriptions.hasChannel(ipcBusCommand.channel)) {
+            if (socket !== this._socketBridge.socket) {
                 WriteBuffersToSocket(this._socketBridge.socket, ipcPacketBufferList.buffers);
             }
         }

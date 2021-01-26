@@ -3,7 +3,6 @@ import type * as net from 'net';
 import type { IpcPacketBuffer, IpcPacketBufferCore, IpcPacketBufferList } from 'socket-serializer';
 
 import type * as Client from '../IpcBusClient';
-import { IsWebContentsChannel } from '../IpcBusUtils';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusBrokerImpl, WriteBuffersToSocket } from '../node/IpcBusBrokerImpl';
 
@@ -20,7 +19,7 @@ export class IpcBusBrokerBridge extends IpcBusBrokerImpl implements IpcBusBridge
     }
 
     hasChannel(channel: string) {
-        return this._subscriptions.hasChannel(channel)|| IsWebContentsChannel(channel); 
+        return this._subscriptions.hasChannel(channel);
     }
 
     getChannels(): string[] {
