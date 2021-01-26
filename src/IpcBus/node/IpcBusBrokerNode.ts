@@ -104,8 +104,8 @@ export class IpcBusBrokerNode extends IpcBusBrokerImpl {
     }
 
     protected broadcastToBridgeMessage(socket: net.Socket, ipcBusCommand: IpcBusCommand, ipcPacketBufferList: IpcPacketBufferList) {
-        if (this._bridgeSubscriptions.hasChannel(ipcBusCommand.channel) || IsWebContentsChannel(ipcBusCommand.channel)) {
-            if (socket !== this._socketBridge.socket) {
+        if (socket !== this._socketBridge.socket) {
+            if (this._bridgeSubscriptions.hasChannel(ipcBusCommand.channel) || IsWebContentsChannel(ipcBusCommand.channel)) {
                 WriteBuffersToSocket(this._socketBridge.socket, ipcPacketBufferList.buffers);
             }
         }
