@@ -189,18 +189,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     // From renderer transport
     private _broadcastRawContent(webContentsTarget: WebContentsTarget, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.SendMessage:
-
-            case IpcBusCommand.Kind.RequestResponse: {
-                const webContentsProcess = IpcBusUtils.GetWebContentsTargetIdentifier(ipcBusCommand.request.replyChannel);
-                if (webContentsProcess) {
-                    const webContents = electronModule.webContents.fromId(webContentsProcess.wcid);
-                    if (webContents) {
-                        // webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
-                        webContents.sendToFrame(webContentsProcess.frameid, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
-                    }
-                    break;
-                }
+            case IpcBusCommand.Kind.SendMessage: {
                 const key = webContentsTarget ? getKeyForTarget(webContentsTarget) : 0;
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     // Prevent echo message
@@ -209,6 +198,17 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                         connData.conn.sender.sendToFrame(connData.conn.frameId, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                     }
                 });
+                break;
+            }
+            case IpcBusCommand.Kind.RequestResponse: {
+                const webContentsTargetIds = IpcBusUtils.GetWebContentsTargetIdentifier(ipcBusCommand.request.replyChannel);
+                if (webContentsTargetIds) {
+                    const webContents = electronModule.webContents.fromId(webContentsTargetIds.wcid);
+                    if (webContents) {
+                        // webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                        webContents.sendToFrame(webContentsTargetIds.frameid, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                    }
+                }
                 break;
             }
 
