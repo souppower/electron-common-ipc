@@ -15,6 +15,8 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
         super(contextType);
 
         this._bridge = bridge;
+
+        this.postDirectMessage = this.postCommand;
     }
 
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake> {
@@ -27,6 +29,10 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
 
     shutdown(client: IpcBusConnector.Client, options: Client.IpcBusClient.CloseOptions): Promise<void> {
         return Promise.resolve();
+    }
+
+    postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+        // fake body
     }
 
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {

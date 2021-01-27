@@ -32,7 +32,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
         .then((peer) => {
             this._peer = peer;
             const channels = this._bridge.getChannels();
-            this.postAdmin({
+            this._postCommand({
                 peer: this._peer,
                 kind: IpcBusCommand.Kind.BridgeConnect,
                 channel: undefined,
@@ -43,7 +43,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     }
 
     broadcastClose(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        this.postAdmin({
+        this._postCommand({
             peer: this._peer,
             kind: IpcBusCommand.Kind.BridgeClose,
             channel: ''
@@ -109,7 +109,11 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
         throw 'not implemented';
     }
 
-    protected postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    // protected sendMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+    //     throw 'not implemented';
+    // }
+
+    protected _postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
         throw 'not implemented';
     }
 

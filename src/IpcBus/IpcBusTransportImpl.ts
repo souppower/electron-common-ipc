@@ -88,7 +88,8 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     protected _connectCloseState: IpcBusUtils.ConnectCloseState<Client.IpcBusPeer>;
 
     protected _requestFunctions: Map<string, DeferredRequestPromise>;
-    protected _postCommandBind: Function;
+    protected _postCommand: Function;
+    protected _postDirectMessage: Function;
 
     constructor(connector: IpcBusConnector) {
         this._connector = connector;
@@ -99,7 +100,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             process: connector.process
         };
         this._requestFunctions = new Map<string, DeferredRequestPromise>();
-        this._postCommandBind = () => { };
+        this._postDirectMessage = this._postCommand = () => { };
         this._connectCloseState = new IpcBusUtils.ConnectCloseState<Client.IpcBusPeer>();
     }
 
@@ -172,7 +173,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                     }
                 }
                 else {
-                    this.postMessage(ipcBusCommandResponse, argsResponse);
+                    this._postDirectMessage(ipcBusCommandResponse, argsResponse);
                 }
             }
             ipcBusEvent.request = {
@@ -255,7 +256,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         if (this.hasChannel(channel)) {
             this.onMessageReceived(true, ipcMessage, args);
         }
-        this.postMessage(ipcMessage, args);
+        this._postDirectMessage(ipcMessage, args);
     }
 
     protected cancelRequest(client: IpcBusTransport.Client): void {
@@ -272,7 +273,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 if (this._logActivate) {
                     this._connector.logMessageSend(null, ipcRequestClose);
                 }
-                this.postMessage(ipcRequestClose);
+                this._postCommand(ipcRequestClose);
             }
         });
     }
@@ -318,11 +319,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                         if (logSendMessage) {
                             this._connector.logMessageSend(logSendMessage, ipcRequestClose);
                         }
-                        this.postMessage(ipcRequestClose);
+                        this._postCommand(ipcRequestClose);
                     }
                 }, timeoutDelay);
             }
-            this.postMessage(ipcMessage, args);
+            this._postDirectMessage(ipcMessage, args);
         }
         return deferredRequest.promise;
     }
@@ -333,7 +334,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
                 .then((handshake) => {
                     const peer = this.createPeer(handshake.process, options.peerName);
                     this._logActivate = handshake.logLevel > 0;
-                    this._postCommandBind = this._connector.postCommand.bind(this._connector);
+                    // Connect to ... connector
+                    this._postCommand = this._connector.postCommand.bind(this._connector);
+                    this._postDirectMessage = this._connector.postDirectMessage.bind(this._connector);
                     return peer;
                 });
         });
@@ -343,17 +346,10 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return this._connectCloseState.close(() => {
             return this._connector.shutdown(this, options)
                 .then(() => {
-                    this._postCommandBind = () => { };
+                    // Cut connection
+                    this._postDirectMessage = this._postCommand = () => { };
                 });
         });
-    }
-
-    protected postAdmin(ipcBusCommand: IpcBusCommand): void {
-        this._postCommandBind(ipcBusCommand);
-    }
-
-    protected postMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
-        this._postCommandBind(ipcBusCommand, args);
     }
 
     abstract hasChannel(channel: string): boolean;

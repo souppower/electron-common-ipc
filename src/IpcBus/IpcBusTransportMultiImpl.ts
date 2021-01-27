@@ -46,14 +46,14 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
 
                     this._subscriptions.client = {
                         channelAdded: (channel) => {
-                            this.postAdmin({
+                            this._postCommand({
                                 peer: this._peer,
                                 kind: IpcBusCommand.Kind.AddChannelListener,
                                 channel
                             })
                         },
                         channelRemoved: (channel) => {
-                            this.postAdmin({
+                            this._postCommand({
                                 peer: this._peer,
                                 kind: IpcBusCommand.Kind.RemoveChannelListener,
                                 channel
@@ -77,7 +77,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
                 return super.close(client, options);
             }
             //
-            // this.postAdmin({
+            // this._postCommand({
             //     peer: client.peer,
             //     kind: IpcBusCommand.Kind.RemoveListeners,
             //     channel

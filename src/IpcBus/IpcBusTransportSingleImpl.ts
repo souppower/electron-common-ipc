@@ -57,7 +57,7 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
     addChannel(client: IpcBusTransport.Client, channel: string, count?: number) {
         let refCount = (count == null) ? 1 : count;
         while (refCount-- > 0) {
-            this.postAdmin({
+            this._postCommand({
                 peer: client.peer,
                 kind: IpcBusCommand.Kind.AddChannelListener,
                 channel
@@ -68,14 +68,14 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
     removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean) {
         if (channel) {
             if (all) {
-                this.postAdmin({
+                this._postCommand({
                     peer: client.peer,
                     kind: IpcBusCommand.Kind.RemoveChannelAllListeners,
                     channel
                 });
             }
             else {
-                this.postAdmin({
+                this._postCommand({
                     peer: client.peer,
                     kind: IpcBusCommand.Kind.RemoveChannelListener,
                     channel
@@ -83,7 +83,7 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
             }
         }
         else {
-            this.postAdmin({
+            this._postCommand({
                 peer: client.peer,
                 kind: IpcBusCommand.Kind.RemoveListeners,
                 channel: ''

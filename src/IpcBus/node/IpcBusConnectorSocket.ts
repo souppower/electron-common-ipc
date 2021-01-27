@@ -42,6 +42,8 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         this._netBinds['close'] = this._onSocketClose.bind(this);
         this._netBinds['data'] = this._onSocketData.bind(this);
         this._netBinds['end'] = this._onSocketEnd.bind(this);
+
+        this.postDirectMessage = this.postCommand;
     }
     
     // https://nodejs.org/api/net.html#net_event_error_1
@@ -232,6 +234,10 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                 }
             });
         });
+    }
+
+    postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+        // fake body
     }
 
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {

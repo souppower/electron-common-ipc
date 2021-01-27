@@ -5,7 +5,7 @@ import { IpcPacketBuffer } from 'socket-serializer';
 
 import * as IpcBusUtils from '../IpcBusUtils';
 import type * as Client from '../IpcBusClient';
-import { IpcBusCommand } from '../IpcBusCommand';
+import type { IpcBusCommand } from '../IpcBusCommand';
 import type { IpcBusConnector } from '../IpcBusConnector';
 import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 
@@ -114,6 +114,19 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         });
     }
 
+    postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void {
+        const packetOut = new IpcPacketBuffer();
+        packetOut.serialize([ipcBusCommand, args]);
+        const rawContent = packetOut.getRawData();
+        const webContentsId = IpcBusUtils.GetWebContentsChannel(ipcBusCommand.channel);
+        if (isNaN(webContentsId)) {
+            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, rawContent);
+        }
+        else {
+            this._ipcWindow.sendTo(webContentsId, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+        }
+    }
+
     // We serialize in renderer process to save master CPU.
     // We keep ipcBusCommand in plain text, once again to have master handling it easily
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void {
@@ -124,18 +137,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             const packetOut = new IpcPacketBuffer();
             packetOut.serialize([ipcBusCommand, args]);
             const rawContent = packetOut.getRawData();
-            if ((ipcBusCommand.kind === IpcBusCommand.Kind.SendMessage) || (ipcBusCommand.kind === IpcBusCommand.Kind.RequestResponse)) {
-                const webContentsId = IpcBusUtils.GetWebContentsChannel(ipcBusCommand.channel);
-                if (isNaN(webContentsId)) {
-                    this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, rawContent);
-                }
-                else {
-                    this._ipcWindow.sendTo(webContentsId, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
-                }
-            }
-            else {
-                this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, rawContent);
-            }
+            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, rawContent);
         // }
     }
 
