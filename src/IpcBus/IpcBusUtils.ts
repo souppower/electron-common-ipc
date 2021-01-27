@@ -465,14 +465,16 @@ export class ConnectionPeers<T, M> {
     readonly conn: T;
     peerRefCounts: Map<string, ConnectionPeers.PeerRefCount> = new Map<string, ConnectionPeers.PeerRefCount>();
 
-    constructor(key: M, conn: T, peer: IpcBusPeer, refCount: number) {
+    constructor(key: M, conn: T, peer: IpcBusPeer, count: number) {
         this.key = key;
         this.conn = conn;
+        const refCount = (count == null) ? 1 : count;
         const peerRefCount = { peer, refCount };
         this.peerRefCounts.set(peer.id, peerRefCount);
     }
 
-    addPeer(peer: IpcBusPeer, refCount: number): number {
+    addPeer(peer: IpcBusPeer, count: number): number {
+        const refCount = (count == null) ? 1 : count;
         let peerRefCount = this.peerRefCounts.get(peer.id);
         if (peerRefCount == null) {
             peerRefCount = { peer, refCount };
