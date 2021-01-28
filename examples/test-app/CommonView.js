@@ -63,6 +63,23 @@ function doSubscribeToTopic(event) {
     }
 }
 
+function doGenerateResponseChannel(event) {
+    console.log('doGenerateResponseChannel:' + event);
+
+    var target = event.target;
+    var topicActionsElt = target.parentElement;
+    var topicNameElt = topicActionsElt.querySelector('.topicSubscribeName');
+
+    if (processToMonitor.Type() === 'renderer') {
+        var responseChannel = ipcBus.createResponseChannel();
+        topicNameElt.value = responseChannel;
+    }
+    // else {
+    //     processToMonitor.postSubscribe(topicName);
+    // }
+}
+
+
 function onIPCElectron_SubscribeNotify(topicName) {
     console.log('onIPCElectron_SubscribeNotify:' + topicName);
 
@@ -71,7 +88,6 @@ function onIPCElectron_SubscribeNotify(topicName) {
 
     topicItemElt.id = '';
     topicItemElt.setAttribute('topic-name', topicName);
-    topicItemElt.classList.add('subscription-' + topicName);
 
     var topicNameElt = topicItemElt.querySelector('.topicSubscribeName');
     topicNameElt.textContent = topicName;
@@ -108,11 +124,8 @@ function doUnsubscribeFromTopic(event) {
 
 function onIPCElectron_UnsubscribeNotify(topicName) {
     console.log('doUnsubscribeFromTopic:' + topicName);
-
-    var SubscriptionsListElt = document.getElementById('ProcessSubscriptions');
-    var topicItemElt = SubscriptionsListElt.querySelector('.subscription-' + topicName);
-
-    SubscriptionsListElt.removeChild(topicItemElt);
+    var topicItemElt = findTopicItemElt(topicName);
+    topicItemElt.parentElement.removeChild(topicItemElt);
     console.log('topicName : ' + topicName + ' - unsubscribe');
 }
 
@@ -191,11 +204,16 @@ function doClearTopic(event) {
     topicReceivedElt.value = '';
 }
 
+function findTopicItemElt(channel) {
+    var SubscriptionsListElt = document.getElementById('ProcessSubscriptions');
+    var topicItemElt = SubscriptionsListElt.querySelector('[topic-name=\"' + channel + '\"]');
+    return topicItemElt;
+}
+
 function onIPC_Received(ipcBusEvent, ipcContent) {
     console.log('onIPCBus_received : msgTopic:' + ipcBusEvent.channel + ' from #' + ipcBusEvent.sender.name)
 
-    var SubscriptionsListElt = document.getElementById('ProcessSubscriptions');
-    var topicItemElt = SubscriptionsListElt.querySelector('.subscription-' + ipcBusEvent.channel);
+    var topicItemElt = findTopicItemElt(ipcBusEvent.channel);
     if (topicItemElt != null) {
         var topicAutoReplyElt = topicItemElt.querySelector('.topicAutoReply');
         if (ipcBusEvent.request) {
@@ -210,8 +228,8 @@ function onIPC_Received(ipcBusEvent, ipcContent) {
 function onIPC_EmitReceived(ipcBusEvent, ipcContent1, ipcContent2, ipcContent3) {
     console.log('onIPC_EmitReceived : msgTopic:' + ipcBusEvent.channel + ' from #' + ipcBusEvent.sender.name)
 
-    var SubscriptionsListElt = document.getElementById('ProcessSubscriptions');
-    var topicItemElt = SubscriptionsListElt.querySelector('.subscription-' + ipcBusEvent.channel);
+
+    var topicItemElt = findTopicItemElt(ipcBusEvent.channel);
     if (topicItemElt != null) {
         var topicAutoReplyElt = topicItemElt.querySelector('.topicAutoReply');
         if (ipcBusEvent.requestResolve) {
