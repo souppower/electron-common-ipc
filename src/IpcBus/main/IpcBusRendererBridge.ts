@@ -80,7 +80,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     }
 
     hasChannel(channel: string): boolean {
-        return this._subscriptions.hasChannel(channel) || IpcBusUtils.IsWebContentsTarget(channel);
+        return this._subscriptions.hasChannel(channel) || IpcBusUtils.IsWebContentsChannel(channel);
     }
 
     getChannels(): string[] {
@@ -201,7 +201,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 break;
             }
             case IpcBusCommand.Kind.RequestResponse: {
-                const webContentsTargetIds = IpcBusUtils.GetWebContentsTargetIdentifier(ipcBusCommand.request.replyChannel);
+                const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifier(ipcBusCommand.request.replyChannel);
                 if (webContentsTargetIds) {
                     const webContents = electronModule.webContents.fromId(webContentsTargetIds.wcid);
                     if (webContents) {

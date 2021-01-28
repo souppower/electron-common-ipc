@@ -33,16 +33,16 @@ const ResponseChannelPrefixLength = ResponseChannelPrefix.length;
 
 export const TopFrameId = 1;
 
-export interface WebContentsTargetIdentifier {
+export interface WebContentsIdentifier {
     wcid: number;
     frameid: number;
 }
 
-function Serialize(wcIds: WebContentsTargetIdentifier): number {
+function Serialize(wcIds: WebContentsIdentifier): number {
     return (wcIds.wcid << 8) + wcIds.frameid;
 }
 
-function Unserialize(channel: string): WebContentsTargetIdentifier | null {
+function Unserialize(channel: string): WebContentsIdentifier | null {
     const wcIds = parseInt(channel, 10);
     if (!isNaN(wcIds)) {
         return {
@@ -53,11 +53,11 @@ function Unserialize(channel: string): WebContentsTargetIdentifier | null {
     return null;
 }
 
-export function IsWebContentsTarget(channel: string): boolean {
+export function IsWebContentsChannel(channel: string): boolean {
     return (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0);
 }
 
-export function GetWebContentsTargetIdentifier(channel: string): WebContentsTargetIdentifier | null {
+export function GetWebContentsIdentifier(channel: string): WebContentsIdentifier | null {
     if (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0) {
         return Unserialize(channel.substr(ResponseChannelPrefixLength));
     }
@@ -67,13 +67,12 @@ export function GetWebContentsTargetIdentifier(channel: string): WebContentsTarg
 export function CreateResponseChannel(peer: IpcBusPeer): string {
     const uniqId = CreateUniqId();
     if (peer.process.wcid) {
-        return `${ResponseChannelPrefix}${Serialize(peer.process as WebContentsTargetIdentifier)}_${uniqId}`;
+        return `${ResponseChannelPrefix}${Serialize(peer.process as WebContentsIdentifier)}_${uniqId}`;
     }
     else {
         return `response:${peer.id}_${uniqId}`;
     }
 }
-
 
 export function CheckChannel(channel: any): string {
     switch (typeof channel) {

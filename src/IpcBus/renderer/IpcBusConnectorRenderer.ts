@@ -118,7 +118,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         const packetOut = new IpcPacketBuffer();
         packetOut.serialize([ipcBusCommand, args]);
         const rawContent = packetOut.getRawData();
-        const webContentsTargetIds = IpcBusUtils.GetWebContentsTargetIdentifier(ipcBusCommand.channel);
+        const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifier(ipcBusCommand.channel);
         if (webContentsTargetIds && (webContentsTargetIds.frameid === IpcBusUtils.TopFrameId)) {
             this._ipcWindow.sendTo(webContentsTargetIds.wcid, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
         }
