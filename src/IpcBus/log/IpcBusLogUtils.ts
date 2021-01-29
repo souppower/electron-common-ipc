@@ -1,3 +1,5 @@
+import * as util from 'util';
+
 const CutMarker = '\'__cut__\'';
 
 export function JSON_stringify_array(data: any[], maxLen: number, output: string): string {
@@ -65,7 +67,7 @@ export function JSON_stringify(data: any, maxLen: number): string {
             else if (Array.isArray(data)) {
                 output = JSON_stringify_array(data, maxLen, output);
             }
-            else if (data instanceof Date) {
+            else if (util.types.isDate(data)) {
                 output = data.toISOString();
             }
             else {
@@ -102,7 +104,7 @@ export function CutData(data: any, maxLen: number): any {
             else if (Array.isArray(data)) {
                 data = JSON_stringify_array(data, maxLen, '');
             }
-            else if (data instanceof Date) {
+            else if (util.types.isDate(data)) {
                 return data;
             }
             else {

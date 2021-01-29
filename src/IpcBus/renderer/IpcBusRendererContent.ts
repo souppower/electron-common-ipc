@@ -1,3 +1,5 @@
+import * as util from 'util';
+
 import type { IpcPacketBufferCore } from 'socket-serializer';
 // import * as zlib from 'zlib';
 
@@ -15,7 +17,7 @@ export interface IpcBusRendererContent extends IpcPacketBufferCore.RawData {
 /** @internal */
 export namespace IpcBusRendererContent {
     export function Uint8ArrayToBuffer(rawBuffer: Buffer | Uint8Array): Buffer {
-        if (rawBuffer instanceof Uint8Array) {
+        if (util.types.isUint8Array(rawBuffer)) {
             // See https://github.com/feross/typedarray-to-buffer/blob/master/index.js
             // To avoid a copy, use the typed array's underlying ArrayBuffer to back new Buffer
             const arr = rawBuffer;
