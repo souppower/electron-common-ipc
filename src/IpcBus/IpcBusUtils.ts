@@ -464,6 +464,18 @@ export class ChannelConnectionMap<T, M> {
         return this._channelsMap.get(channel);
     }
 
+    getPeers(): IpcBusPeer[] {
+        const peers: any = {};
+        this._channelsMap.forEach((connsMap) => {
+            connsMap.forEach((connData) => {
+                connData.peerRefCounts.forEach((peerRefCount) => {
+                    peers[peerRefCount.peer.id] = peerRefCount.peer;
+                });
+            });
+        });
+        return Object.values(peers);
+    }
+
     forEachChannel(channel: string, callback: ConnectionPeers.ForEachChannelHandler<T, M>) {
         Logger.enable && this._info(`forEachChannel '${channel}'`);
         const connsMap = this._channelsMap.get(channel);
@@ -494,7 +506,7 @@ export class ChannelConnectionMap<T, M> {
 export class ConnectionPeers<T, M> {
     readonly key: M;
     readonly conn: T;
-    peerRefCounts: Map<string, ConnectionPeers.PeerRefCount> = new Map<string, ConnectionPeers.PeerRefCount>();
+    readonly peerRefCounts: Map<string, ConnectionPeers.PeerRefCount> = new Map<string, ConnectionPeers.PeerRefCount>();
 
     constructor(key: M, conn: T, peer: IpcBusPeer, count: number) {
         this.key = key;

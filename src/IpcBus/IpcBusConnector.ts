@@ -19,7 +19,7 @@ export namespace IpcBusConnector {
         onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
         onConnectorContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData): boolean;
         onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]): boolean;
-        onConnectorShutdown(): void;
+        onConnectorWillShutdown(): void;
     }
 }
 

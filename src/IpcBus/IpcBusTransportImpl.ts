@@ -240,9 +240,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // IpcConnectorClient
-    onConnectorShutdown() {
+    onConnectorWillShutdown() {
         this._connectCloseState.shutdown();
-        this._requestFunctions.clear();
+        this.cancelRequest();
     }
 
     sendMessage(client: IpcBusTransport.Client, channel: string, args: any[]): void {
@@ -261,9 +261,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._postDirectMessage(ipcMessage, args);
     }
 
-    protected cancelRequest(client: IpcBusTransport.Client): void {
+    protected cancelRequest(client?: IpcBusTransport.Client): void {
         this._requestFunctions.forEach((request, key) => {
-            if (client === request.client) {
+            if (client && (client === request.client)) {
                 request.timeout();
                 this._requestFunctions.delete(key);
                 const ipcRequestClose: IpcBusCommand = {
@@ -345,11 +345,17 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         return this._connectCloseState.close(() => {
-            return this._connector.shutdown(this, options)
-                .then(() => {
-                    // Cut connection
-                    this._postDirectMessage = this._postCommand = () => { };
-                });
+            this.cancelRequest(client);
+            this.removeChannel(client);
+            return this.closeConnector(options);
+        });
+    }
+
+    protected closeConnector(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+        return this._connector.shutdown(this, options)
+        .then(() => {
+            // Cut connection
+            this._postDirectMessage = this._postCommand = () => { };
         });
     }
 

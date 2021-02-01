@@ -35,11 +35,27 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         super(contextType);
         this._ipcWindow = ipcWindow;
         this._connectCloseState = new IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>();
+
+        window.addEventListener('beforeunload', (event: BeforeUnloadEvent) => {
+            this.onConnectorShutdown();
+        });
+
+        window.addEventListener("pagehide", (event: PageTransitionEvent) => {
+            if (event.persisted) {
+            }
+            else {
+                this.onConnectorShutdown();
+            }
+        });
+
+        window.addEventListener('unload', (event: BeforeUnloadEvent) => {
+            this.onConnectorShutdown();
+        });
     }
 
     protected onConnectorShutdown() {
         if (this._onIpcEventReceived) {
-            this._client.onConnectorShutdown();
+            this._client.onConnectorWillShutdown();
             this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             this._onIpcEventReceived = null;
         }

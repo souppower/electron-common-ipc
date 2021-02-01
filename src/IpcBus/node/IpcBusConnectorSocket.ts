@@ -84,7 +84,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     protected _reset(endSocket: boolean) {
         this._connectCloseState.shutdown();
         if (this._client) {
-            this._client.onConnectorShutdown();
+            this._client.onConnectorWillShutdown();
             this.removeClient(this._client);
         }
         this._socketWriter = null;
