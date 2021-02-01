@@ -169,7 +169,7 @@
                 // "${workspaceFolder}/lib-test/unit-test.js"
                 // "${workspaceFolder}/lib-test/unit-test.misc.js"
                 // "${workspaceFolder}/lib-test/unit-test.engine.js"
-                "${workspaceRoot}/test/perf.test.js",
+                // "${workspaceRoot}/test/perf.test.js",
                 // "${workspaceRoot}/test/service.test.js",
             ],
             "outFiles": [
@@ -196,13 +196,13 @@
                 // "--grep=Service",
                 // "${workspaceRoot}/test/*.test.js",
                 // "${workspaceRoot}/test/brokersLifeCycle.test.js",
-                // "${workspaceRoot}/test/masterClientMessage.test.js",
+                "${workspaceRoot}/test/masterClientMessage.test.js",
                 // "${workspaceRoot}/test/clientLifeCycle.test.js",
                 // "${workspaceRoot}/test/clientWildListening.test.js",
-                // "${workspaceRoot}/test/nodeClientMessage.test.js",
+                "${workspaceRoot}/test/nodeClientMessage.test.js",
                 // "${workspaceRoot}/test/performance.test.js",
                 // "${workspaceRoot}/test/service.test.js",
-                "${workspaceRoot}/test/serviceLifeCycle.test.js",
+                // "${workspaceRoot}/test/serviceLifeCycle.test.js",
                 // "--recursive",
                 "--reporter", "spec",
                 "--no-timeouts",

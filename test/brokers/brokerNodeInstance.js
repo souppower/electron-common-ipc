@@ -24,11 +24,11 @@ console.log('Remote IpcBusBroker starting...');
 ipcBusBroker.connect(ipcBusPath, { timeoutDelay })
  .then((msg) => {
     console.log('Remote IpcBusBroker started');
-    process.send({ event: 'resolve'});
+    process.send({ event: 'resolve' });
 })
  .catch((err) => {
     console.log(`Remote IpcBusBroker started failed ${err}`);
-    process.send(`reject`);
+    process.send({ event: `reject`, err });
     process.exit(0);
  });
 

@@ -27,7 +27,7 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
         return Promise.resolve(handshake);
     }
 
-    shutdown(client: IpcBusConnector.Client, options: Client.IpcBusClient.CloseOptions): Promise<void> {
+    shutdown(options: Client.IpcBusClient.CloseOptions): Promise<void> {
         return Promise.resolve();
     }
 

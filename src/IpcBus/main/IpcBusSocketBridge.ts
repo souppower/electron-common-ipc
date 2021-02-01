@@ -102,7 +102,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     }
 
     removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean): void {
-        throw 'not implemented';
+        // call when closing the transport
     }
 
     protected onMessageReceived(local: boolean, ipcBusCommand: IpcBusCommand, args: any[]): void {
@@ -157,7 +157,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
         throw 'not implemented';
     }
 
-    onConnectorWillShutdown(): void {
+    onConnectorShutdown(): void {
         this._subscriptions.clear();
         this._bridge._onNetClosed();
     }

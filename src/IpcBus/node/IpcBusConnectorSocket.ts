@@ -51,6 +51,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         const msg = `[IPCBusTransport:Net ${this._messageId}] socket error ${err}`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
         // this._socket.destroy();
+        this.onConnectorShutdown();
         this._reset(false);
     }
 
@@ -58,6 +59,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     protected _onSocketClose() {
         const msg = `[IPCBusTransport:Net ${this._messageId}] socket close`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(msg);
+        this.onConnectorShutdown();
         this._reset(false);
     }
 
@@ -81,12 +83,13 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         this._bufferListReader.reduce();
     }
 
-    protected _reset(endSocket: boolean) {
+    protected onConnectorShutdown() {
         this._connectCloseState.shutdown();
-        if (this._client) {
-            this._client.onConnectorWillShutdown();
-            this.removeClient(this._client);
-        }
+        this._client.onConnectorShutdown();
+        this.removeClient();
+    }
+
+    protected _reset(endSocket: boolean) {
         this._socketWriter = null;
         if (this._socket) {
             const socket = this._socket;
@@ -193,7 +196,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         });
     }
 
-    shutdown(client: IpcBusConnector.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    shutdown(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         return this._connectCloseState.close(() => {
             options = options || {};
             if (options.timeoutDelay == null) {
@@ -209,7 +212,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                         for (let key in socketLocalBinds) {
                             socket.removeListener(key, socketLocalBinds[key]);
                         }
-                        this.removeClient(client);
+                        this.removeClient();
                         resolve();
                     };
                     // Below zero = infinite

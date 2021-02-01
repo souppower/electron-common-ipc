@@ -240,7 +240,12 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     }
 
     // IpcConnectorClient
-    onConnectorWillShutdown() {
+    onConnectorShutdown() {
+        // nothing to do, it is too late
+    }
+
+    // IpcConnectorClient
+    onConnectorBeforeShutdown() {
         this._connectCloseState.shutdown();
         this.cancelRequest();
     }
@@ -347,15 +352,11 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         return this._connectCloseState.close(() => {
             this.cancelRequest(client);
             this.removeChannel(client);
-            return this.closeConnector(options);
-        });
-    }
-
-    protected closeConnector(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
-        return this._connector.shutdown(this, options)
-        .then(() => {
-            // Cut connection
-            this._postDirectMessage = this._postCommand = () => { };
+            return this._connector.shutdown(options)
+            .then(() => {
+                // Cut connection
+                this._postDirectMessage = this._postCommand = () => { };
+            });
         });
     }
 

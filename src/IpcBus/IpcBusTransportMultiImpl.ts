@@ -28,19 +28,16 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         });
     }
 
-    onConnectorWillShutdown() {
-        super.onConnectorWillShutdown();
+    onConnectorBeforeShutdown() {
+        super.onConnectorBeforeShutdown();
         if (this._subscriptions) {
             this._subscriptions.client = null;
-            const peers = this._subscriptions.getPeers();
-            for (let i = 0, l = peers.length; i < l; ++i) {
-                this._postCommand({
-                    peer: peers[i],
-                    kind: IpcBusCommand.Kind.RemoveListeners,
-                    channel: ''
-                });
-            }
             this._subscriptions = null;
+            this._postCommand({
+                peer: this._peer,
+                kind: IpcBusCommand.Kind.RemoveListeners,
+                channel: ''
+            });
         }
     }
 
@@ -76,12 +73,13 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
             });
     }
 
-    protected closeConnector(options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         if (this._subscriptions) {
+            this.removeChannel(client);
             if (this._subscriptions.getChannelsCount() === 0) {
                 this._subscriptions.client = null;
                 this._subscriptions = null;
-                return super.closeConnector(options);
+                return super.close(client, options);
             }
         }
         return Promise.resolve();

@@ -34,10 +34,8 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
         this._client = client;
     }
 
-    protected removeClient(client: IpcBusConnector.Client) {
-        if (this._client === client) {
-            this._client = null;
-        }
+    protected removeClient() {
+        this._client = null;
     }
 
     protected cloneCommand(command: IpcBusCommand): IpcBusCommand.LogCommand {
@@ -107,7 +105,7 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     }
 
     abstract handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
-    abstract shutdown(client: IpcBusConnector.Client, options: Client.IpcBusClient.CloseOptions): Promise<void>;
+    abstract shutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
 
     abstract postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void;
     abstract postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
