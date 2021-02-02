@@ -38,29 +38,34 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
 
         window.addEventListener('beforeunload', (event: BeforeUnloadEvent) => {
             this.onConnectorBeforeShutdown();
+            this.onConnectorShutdown();
         });
+        // window.addEventListener("pagehide", (event: PageTransitionEvent) => {
+        //     if (event.persisted) {
+        //     }
+        //     else {
+        //         this.onConnectorBeforeShutdown();
+        //         this.onConnectorShutdown();
+        //     }
+        // });
 
-        window.addEventListener("pagehide", (event: PageTransitionEvent) => {
-            if (event.persisted) {
-            }
-            else {
-                this.onConnectorBeforeShutdown();
-            }
-        });
+        // window.addEventListener('unload', (event: BeforeUnloadEvent) => {
+        //     this.onConnectorBeforeShutdown();
+        //     this.onConnectorShutdown();
+        // });
+    }
 
-        window.addEventListener('unload', (event: BeforeUnloadEvent) => {
-            this.onConnectorBeforeShutdown();
-        });
+    protected onConnectorShutdown() {
+        this._connectCloseState.shutdown();
+        this._client.onConnectorShutdown();
+        this.removeClient();
     }
 
     protected onConnectorBeforeShutdown() {
-        this._connectCloseState.shutdown();
         if (this._onIpcEventReceived) {
             this._client.onConnectorBeforeShutdown();
             this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             this._onIpcEventReceived = null;
-            this._client.onConnectorShutdown();
-            this.removeClient();
         }
     }
 

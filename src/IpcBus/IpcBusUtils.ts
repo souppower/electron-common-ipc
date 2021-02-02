@@ -47,7 +47,7 @@ function Unserialize(channel: string): WebContentsIdentifier | null {
     if (!isNaN(wcIds)) {
         return {
             wcid: wcIds >> 8,
-            frameid: wcIds && 0b11111111,
+            frameid: wcIds & 0b11111111,
         }
     }
     return null;
