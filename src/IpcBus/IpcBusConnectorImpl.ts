@@ -4,7 +4,7 @@ import { IpcBusCommand } from './IpcBusCommand';
 import type * as Client from './IpcBusClient';
 import { IpcBusLogConfig } from './log/IpcBusLogConfig';
 import { CreateIpcBusLog } from './log/IpcBusLog-factory';
-import { CreateUniqId } from './IpcBusUtils';
+import { CreateUniqId, ConnectCloseState } from './IpcBusUtils';
 
 // Implementation for renderer process
 /** @internal */
@@ -15,11 +15,15 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
     protected _messageCount: number;
     protected _log: IpcBusLogConfig;
 
+    protected _connectCloseState: ConnectCloseState<IpcBusConnector.Handshake>;
+
     constructor(contextType: Client.IpcBusProcessType) {
         this._process = {
             type: contextType,
             pid: process ? process.pid: -1
         };
+
+        this._connectCloseState = new ConnectCloseState<IpcBusConnector.Handshake>();
 
         this._log = CreateIpcBusLog();
         this._messageId = `m_${this._process.type}.${CreateUniqId()}`
@@ -28,6 +32,12 @@ export abstract class IpcBusConnectorImpl implements IpcBusConnector {
 
     get process(): Client.IpcBusProcess {
         return this._process;
+    }
+
+    protected onConnectorShutdown() {
+        this._connectCloseState.shutdown();
+        this._client.onConnectorShutdown();
+        this.removeClient();
     }
 
     protected addClient(client: IpcBusConnector.Client) {

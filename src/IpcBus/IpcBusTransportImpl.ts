@@ -242,8 +242,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     // IpcConnectorClient
     onConnectorShutdown() {
         this._connectCloseState.shutdown();
+        // Cut connection
         this._postDirectMessage = this._postCommand = () => {};
-        // nothing to do, it is too late
+        // no messages to send, it is too late
     }
 
     // IpcConnectorClient
@@ -355,8 +356,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             this.removeChannel(client);
             return this._connector.shutdown(options)
             .then(() => {
-                // Cut connection
-                this._postDirectMessage = this._postCommand = () => {};
+                this.onConnectorShutdown();
             });
         });
     }

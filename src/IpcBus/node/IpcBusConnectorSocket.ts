@@ -17,8 +17,6 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     private _socket: net.Socket;
     private _netBinds: { [key: string]: (...args: any[]) => void };
 
-    private _connectCloseState: IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>;
-
     private _socketBuffer: number;
     private _socketWriter: Writer;
 
@@ -34,8 +32,6 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         this._bufferListReader = new BufferListReader();
         this._packetIn = new IpcPacketBufferList();
         this._packetOut = new IpcPacketWriter();
-
-        this._connectCloseState = new IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>();
 
         this._netBinds = {};
         this._netBinds['error'] = this._onSocketError.bind(this);
@@ -67,6 +63,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     protected _onSocketEnd() {
         const msg = `[IPCBusTransport:Net ${this._messageId}] socket end`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(msg);
+        this.onConnectorShutdown();
         this._reset(false);
     }
 
@@ -81,12 +78,6 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         }
         // Remove read buffer
         this._bufferListReader.reduce();
-    }
-
-    protected onConnectorShutdown() {
-        this._connectCloseState.shutdown();
-        this._client.onConnectorShutdown();
-        this.removeClient();
     }
 
     protected _reset(endSocket: boolean) {

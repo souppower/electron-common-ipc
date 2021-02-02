@@ -28,13 +28,10 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     private _onIpcEventReceived: (...args: any[]) => void;
     // private _noSerialization: boolean;
 
-    protected _connectCloseState: IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>;
-
     constructor(contextType: Client.IpcBusProcessType, ipcWindow: IpcWindow) {
         assert(contextType === 'renderer', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
         super(contextType);
         this._ipcWindow = ipcWindow;
-        this._connectCloseState = new IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>();
 
         window.addEventListener('beforeunload', (event: BeforeUnloadEvent) => {
             this.onConnectorBeforeShutdown();
@@ -53,12 +50,6 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         //     this.onConnectorBeforeShutdown();
         //     this.onConnectorShutdown();
         // });
-    }
-
-    protected onConnectorShutdown() {
-        this._connectCloseState.shutdown();
-        this._client.onConnectorShutdown();
-        this.removeClient();
     }
 
     protected onConnectorBeforeShutdown() {
