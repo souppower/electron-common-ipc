@@ -144,11 +144,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return handshake;
     }
 
-    private _onRendererHandshake(event: Electron.IpcMainEvent, ipcBusPeer: Client.IpcBusPeer): void {
-        const webContentsTarget = event as WebContentsTarget;
-        const webContents = webContentsTarget.sender;
-        const handshake = this._getHandshake(webContentsTarget, ipcBusPeer);
-
+    private _trackRendererDestruction(webContents: Electron.WebContents): void {
         // When webContents is destroyed some properties like id are no more accessible !
         const webContentsId = webContents.id;
         webContents.addListener('destroyed', () => {
@@ -158,6 +154,15 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 this._subscriptions.removeKey(webContentsTargets[i].key);
             }
         });
+    }
+
+    private _onRendererHandshake(event: Electron.IpcMainEvent, ipcBusPeer: Client.IpcBusPeer): void {
+        const webContentsTarget = event as WebContentsTarget;
+        const webContents = webContentsTarget.sender;
+
+        this._trackRendererDestruction(webContents);
+
+        const handshake = this._getHandshake(webContentsTarget, ipcBusPeer);
         // We get back to the webContents
         // - to confirm the connection
         // - to provide id/s
