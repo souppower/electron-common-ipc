@@ -1,6 +1,6 @@
 {
   "name": "electron-common-ipc",
-  "version": "11.0.0-beta.3",
+  "version": "11.0.0-beta.4",
   "description": "A safe IPC bus for applications built on Node or Electron.",
   "repository": {
     "type": "git",
