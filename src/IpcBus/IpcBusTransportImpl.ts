@@ -270,7 +270,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     protected cancelRequest(client?: IpcBusTransport.Client): void {
         this._requestFunctions.forEach((request, key) => {
-            if (client && (client === request.client)) {
+            if ((client == null) || (client === request.client)) {
                 request.timeout();
                 this._requestFunctions.delete(key);
                 const ipcRequestClose: IpcBusCommand = {

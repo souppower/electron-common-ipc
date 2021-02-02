@@ -38,7 +38,7 @@ window.addEventListener('load', () => {
         console.log(`IsElectronCommonIpcAvailable=${result}`);
     }
 
-    const electronCommonIpcModuleCFEE = require('../../lib/IpcBus/renderer/CrossFrameEventEmitter2');
+    // const electronCommonIpcModuleCFEE = require('../../lib/IpcBus/renderer/CrossFrameEventEmitter2');
     if (window.self === window.top) {
         // console.log('Create Parent CrossFrameEventEmitter');
         // let crossFrameEE = new electronCommonIpcModuleCFEE.CrossFrameEventEmitter(window);

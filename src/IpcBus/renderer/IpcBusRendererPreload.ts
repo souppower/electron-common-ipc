@@ -1,9 +1,5 @@
 import { Create as CreateIpcBusClientWindow } from './IpcBusClientRenderer-factory';
 
-// import { CrossFrameEventEmitter, IpcBusFrameBridge } from './CrossFrameEventEmitter2';
-
-// import { CrossFrameEventDispatcher } from './CrossFrameEventEmitter';
-
 // let useContextBridge = process.argv.includes('--context-isolation');
 	// if (useContextBridge) {
 	// 	try {
