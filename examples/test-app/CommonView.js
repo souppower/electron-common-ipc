@@ -14,6 +14,10 @@ function doNewRendererProcess(event) {
     processToMaster.send('new-process', 'renderer');
 }
 
+function doNewFrameProcess(event) {
+    processToMaster.send('new-process', 'frame');
+}
+
 function doNewRendererInstance(event) {
     processToMaster.send('new-renderer', processId);
 }

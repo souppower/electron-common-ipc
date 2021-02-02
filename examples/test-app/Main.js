@@ -110,17 +110,6 @@ var MainProcess = (function () {
         perfTests.connect('main');
         console.log('<MAIN> PerfTest ready');
 
-        const frameWindow = new BrowserWindow({
-            width: width, height: 800,
-            autoHideMenuBar: true,
-            webPreferences: {
-                nodeIntegrationInSubFrames: true,
-                preload: preloadFile
-            }
-        });
-        frameWindow.loadURL(commonViewFrameUrl);
-
-
         const mainWindow = new BrowserWindow({
             width: width, height: 800,
             autoHideMenuBar: true,
@@ -153,6 +142,19 @@ var MainProcess = (function () {
                 case 'renderer':
                     newProcess = new RendererProcess(processId);
                     break;
+                case 'frame': {
+                    const frameWindow = new BrowserWindow({
+                        width: width, height: 800,
+                        autoHideMenuBar: true,
+                        webPreferences: {
+                            sandbox: true,
+                            nodeIntegrationInSubFrames: true,
+                            preload: preloadFile
+                        }
+                    });
+                    frameWindow.loadURL(commonViewFrameUrl);
+                    return;
+                }
                 case 'node':
                     newProcess = new NodeProcess(processId);
                     break;

@@ -253,7 +253,7 @@ export interface ChannelConnectionMapClient<T> {
 }
 
 /** @internal */
-export class ChannelConnectionMap<T, M> {
+export class ChannelConnectionMap<T, M extends string | number> {
     private _name: string;
     private _channelsMap: Map<string, Map<M, ConnectionPeers<T, M>>>;
     private _getKey: (t: T) => M;
@@ -448,6 +448,17 @@ export class ChannelConnectionMap<T, M> {
         return this._removeConnectionOrPeer(conn, null);
     }
 
+    removeKey(key: M) {
+        Logger.enable && this._info(`removeKey: key = ${key}`);
+        this._channelsMap.forEach((connsMap, channel) => {
+            connsMap.forEach((connData) => {
+                if (connData.key === key) {
+                    this._releaseConnData(channel, connData, connsMap, undefined, true);
+                }
+            });
+        });
+    }
+
     // forEachConnection(callback: ChannelConnectionMap.ForEachHandler<T1>) {
     //     const connections = new Map<T1, ChannelConnectionMap.ConnectionData<T1>>();
     //     this._channelsMap.forEach((connsMap, channel) => {
@@ -460,9 +471,9 @@ export class ChannelConnectionMap<T, M> {
     //     });
     // }
 
-    getChannelConns(channel: string): Map<M, ConnectionPeers<T, M>> {
-        return this._channelsMap.get(channel);
-    }
+    // getChannelConns(channel: string): Map<M, ConnectionPeers<T, M>> {
+    //     return this._channelsMap.get(channel);
+    // }
 
     getPeers(): IpcBusPeer[] {
         const peers: any = {};
@@ -474,6 +485,18 @@ export class ChannelConnectionMap<T, M> {
             });
         });
         return Object.values(peers);
+    }
+
+    getConns(): Connection<T, M>[] {
+        // @ts-ignore really an edge case for the compiler that has not been implemented
+        const conns: { [key: M]: T } = {};
+        this._channelsMap.forEach((connsMap) => {
+            connsMap.forEach((connData) => {
+                // @ts-ignore really an edge case for the compiler that has not been implemented
+                conns[connData.key] = { key: connData.key, conn: connData.conn };
+            });
+        });
+        return Object.values(conns);
     }
 
     forEachChannel(channel: string, callback: ConnectionPeers.ForEachChannelHandler<T, M>) {
@@ -496,14 +519,13 @@ export class ChannelConnectionMap<T, M> {
     }
 }
 
-// /** @internal */
-// export interface ConnectionPeer<T> {
-//     conn: T;
-//     peer: IpcBusPeer;
-// }
+export interface Connection<T, M> {
+    readonly key: M;
+    readonly conn: T;
+}
 
 /** @internal */
-export class ConnectionPeers<T, M> {
+export class ConnectionPeers<T, M> implements Connection<T, M> {
     readonly key: M;
     readonly conn: T;
     readonly peerRefCounts: Map<string, ConnectionPeers.PeerRefCount> = new Map<string, ConnectionPeers.PeerRefCount>();

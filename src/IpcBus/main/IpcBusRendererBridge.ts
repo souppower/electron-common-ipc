@@ -149,9 +149,14 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         const webContents = webContentsTarget.sender;
         const handshake = this._getHandshake(webContentsTarget, ipcBusPeer);
 
-        // if we have several clients within the same webcontents, the callback may be called several times !
+        // When webContents is destroyed some properties like id are no more accessible !
+        const webContentsId = webContents.id;
         webContents.addListener('destroyed', () => {
-            this._subscriptions.removeConnection(webContentsTarget);
+            // Have to remove this webContents, included its frames
+            const webContentsTargets = this._subscriptions.getConns().filter(item => (item.key >> 8) === webContentsId);
+            for (let i = 0, l = webContentsTargets.length; i < l; ++i) {
+                this._subscriptions.removeKey(webContentsTargets[i].key);
+            }
         });
         // We get back to the webContents
         // - to confirm the connection
@@ -174,7 +179,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     broadcastContent(ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent): void {
         throw 'not implemented';
     }
-    
+
     // broadcastArgs(ipcBusCommand: IpcBusCommand, args: any[]): void {
     //     this._broadcastMessage(null, ipcBusCommand, args);
     // }
