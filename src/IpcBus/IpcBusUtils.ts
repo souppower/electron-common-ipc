@@ -302,17 +302,17 @@ export class ChannelConnectionMap<T, M extends string | number> {
         this._channelsMap.clear();
     }
 
-    addRefs(channels: string[], conn: T, peer: IpcBusPeer): void {
-        for (let i = 0, l = channels.length; i < l; ++i) {
-            this.addRef(channels[i], conn, peer);
-        }
-    }
+    // addRefs(channels: string[], conn: T, peer: IpcBusPeer): void {
+    //     for (let i = 0, l = channels.length; i < l; ++i) {
+    //         this.addRef(channels[i], conn, peer);
+    //     }
+    // }
 
-    releases(channels: string[], conn: T, peer: IpcBusPeer): void {
-        for (let i = 0, l = channels.length; i < l; ++i) {
-            this.release(channels[i], conn, peer);
-        }
-    }
+    // releases(channels: string[], conn: T, peer: IpcBusPeer): void {
+    //     for (let i = 0, l = channels.length; i < l; ++i) {
+    //         this.release(channels[i], conn, peer);
+    //     }
+    // }
 
     protected _addChannel(client: ChannelConnectionMapClient<T>, channel: string, conn: T, peer: IpcBusPeer, count: number): Map<M, ConnectionPeers<T, M>> {
         Logger.enable && this._info(`SetChannel: '${channel}', peerId =  ${peer ? peer.id : 'unknown'}`);
