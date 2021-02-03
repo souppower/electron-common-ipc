@@ -1,13 +1,13 @@
 import type * as Client from './IpcBusClient';
-import * as IpcBusUtils from './IpcBusUtils';
 import { IpcBusCommand } from './IpcBusCommand';
 import { IpcBusTransportImpl } from './IpcBusTransportImpl';
 import type { IpcBusTransport } from './IpcBusTransport';
 import type { IpcBusConnector } from './IpcBusConnector';
+import { ChannelConnectionMap } from './IpcBusChannelMap';
 
 /** @internal */
 export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
-    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<IpcBusTransport.Client, string>;
+    protected _subscriptions: ChannelConnectionMap<IpcBusTransport.Client, string>;
 
     constructor(connector: IpcBusConnector) {
         super(connector);
@@ -45,9 +45,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         return super.connect(client, options)
             .then((peer) => {
                 if (this._subscriptions == null) {
-                    this._subscriptions = new IpcBusUtils.ChannelConnectionMap<IpcBusTransport.Client, string>(
-                        this._peer.name,
-                        (conn) => conn.peer.id);
+                    this._subscriptions = new ChannelConnectionMap<IpcBusTransport.Client, string>(this._peer.name);
 
                     this._subscriptions.client = {
                         channelAdded: (channel) => {
@@ -89,7 +87,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         if (this._subscriptions == null) {
             return;
         }
-        this._subscriptions.addRefCount(channel, client, client.peer, count);
+        this._subscriptions.addRefCount(channel, { key: client.peer.id, conn: client }, client.peer, count);
     }
 
     removeChannel(client: IpcBusTransport.Client, channel?: string, all?: boolean) {
@@ -98,10 +96,10 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
         }
         if (channel) {
             if (all) {
-                this._subscriptions.releaseAll(channel, client, client.peer);
+                this._subscriptions.releaseAll(channel, client.peer.id, client.peer);
             }
             else {
-                this._subscriptions.release(channel, client, client.peer);
+                this._subscriptions.release(channel, client.peer.id, client.peer);
             }
         }
         else {

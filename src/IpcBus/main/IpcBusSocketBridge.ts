@@ -8,6 +8,7 @@ import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusTransportImpl } from '../IpcBusTransportImpl';
 import type { IpcBusTransport } from '../IpcBusTransport';
 import type { IpcBusConnector } from '../IpcBusConnector';
+import { ChannelConnectionRef, ChannelConnectionMap } from '../IpcBusChannelMap';
 
 import type { IpcBusBridgeImpl } from './IpcBusBridgeImpl';
 
@@ -15,16 +16,18 @@ const PeerName = 'NetBridge';
 
 export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     protected _bridge: IpcBusBridgeImpl;
-    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<string, string>;
+    protected _subscriptions: ChannelConnectionMap<string, string>;
+    private _connectionRef: ChannelConnectionRef<string, string>;
 
     constructor(connector: IpcBusConnector, bridge: IpcBusBridgeImpl) {
         super(connector);
         this._bridge = bridge;
-
-        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<string, string>(
-            `IPCBus:${PeerName}`,
-            (conn) => conn
-        );
+        
+        this._connectionRef = {
+            key: 'IPCBus:NetBridge',
+            conn: 'IPCBus:NetBridge'
+        }
+        this._subscriptions = new ChannelConnectionMap<string, string>(this._connectionRef.key);
     }
 
     broadcastConnect(options: Client.IpcBusClient.ConnectOptions): Promise<void> {
@@ -120,13 +123,13 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
     onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean {
         switch (ipcBusCommand.kind) {
             case IpcBusCommand.Kind.AddChannelListener:
-                this._subscriptions.addRef(ipcBusCommand.channel, PeerName, ipcBusCommand.peer);
+                this._subscriptions.addRef(ipcBusCommand.channel, this._connectionRef, ipcBusCommand.peer);
                 break;
             case IpcBusCommand.Kind.RemoveChannelListener:
-                this._subscriptions.release(ipcBusCommand.channel, PeerName, ipcBusCommand.peer);
+                this._subscriptions.release(ipcBusCommand.channel, this._connectionRef.key, ipcBusCommand.peer);
                 break;
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
-                this._subscriptions.releaseAll(ipcBusCommand.channel, PeerName, ipcBusCommand.peer);
+                this._subscriptions.releaseAll(ipcBusCommand.channel, this._connectionRef.key, ipcBusCommand.peer);
                 break;
             case IpcBusCommand.Kind.RemoveListeners:
                 this._subscriptions.removePeer(ipcBusCommand.peer);
@@ -134,7 +137,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
 
             case IpcBusCommand.Kind.SendMessage:
                 if (ipcBusCommand.request) {
-                    this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, PeerName, ipcBusCommand.peer);
+                    this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, this._connectionRef, ipcBusCommand.peer);
                 }
                 this._bridge._onNetMessageReceived(ipcBusCommand, ipcPacketBufferCore);
                 break;

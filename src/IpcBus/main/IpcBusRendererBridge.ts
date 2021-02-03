@@ -8,6 +8,7 @@ import type * as Client from '../IpcBusClient';
 import { IpcBusCommand } from '../IpcBusCommand';
 import { IpcBusRendererContent } from '../renderer/IpcBusRendererContent';
 import type { IpcBusConnector } from '../IpcBusConnector';
+import { ChannelConnectionMap } from '../IpcBusChannelMap';
 
 import {
     IPCBUS_TRANSPORT_RENDERER_HANDSHAKE,
@@ -43,7 +44,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
     private _bridge: IpcBusBridgeImpl;
 
     private _ipcMain: Electron.IpcMain;
-    private _subscriptions: IpcBusUtils.ChannelConnectionMap<WebContentsTarget, number>;
+    private _subscriptions: ChannelConnectionMap<Electron.WebContents, number>;
 
     private _rendererCallback: (...args: any[]) => void;
 
@@ -51,10 +52,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         this._bridge = bridge;
 
         this._ipcMain = require('electron').ipcMain;
-        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<WebContentsTarget, number>(
-            'IPCBus:RendererBridge',
-            getKeyForTarget
-        );
+        this._subscriptions = new ChannelConnectionMap<Electron.WebContents, number>('IPCBus:RendererBridge');
 
         this._subscriptions.client = {
             channelAdded: (channel) => {
@@ -196,8 +194,8 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     // Prevent echo message
                     if (connData.key !== key) {
-                        // connData.conn.sender.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
-                        connData.conn.sender.sendToFrame(connData.conn.frameId, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+                        // const webContentIdentifiers = IpcBusUtils.UnserializeWebContentsIdentifier(connData.key);
+                        connData.conn.sendToFrame((connData as any).frameid, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                     }
                 });
                 break;
@@ -207,7 +205,6 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 if (webContentsTargetIds) {
                     const webContents = electronModule.webContents.fromId(webContentsTargetIds.wcid);
                     if (webContents) {
-                        // webContents.send(IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                         webContents.sendToFrame(webContentsTargetIds.frameid, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
                     }
                 }
@@ -221,17 +218,24 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
 
     private _onRendererRawContentReceived(event: Electron.IpcMainEvent, ipcBusCommand: IpcBusCommand, rawContent: IpcBusRendererContent) {
         const webContentsTarget = event as WebContentsTarget;
+        const webContents = webContentsTarget.sender;
         switch (ipcBusCommand.kind) {
-            case IpcBusCommand.Kind.AddChannelListener:
-                this._subscriptions.addRef(ipcBusCommand.channel, webContentsTarget, ipcBusCommand.peer);
+            case IpcBusCommand.Kind.AddChannelListener: {
+                const channnelConnectionRef = {
+                    key: getKeyForTarget(webContentsTarget),
+                    frameid: webContentsTarget.frameId,
+                    conn: webContents
+                };
+                this._subscriptions.addRef(ipcBusCommand.channel, channnelConnectionRef, ipcBusCommand.peer);
                 break;
+            }
 
             case IpcBusCommand.Kind.RemoveChannelListener:
-                this._subscriptions.release(ipcBusCommand.channel, webContentsTarget, ipcBusCommand.peer);
+                this._subscriptions.release(ipcBusCommand.channel, getKeyForTarget(webContentsTarget), ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
-                this._subscriptions.releaseAll(ipcBusCommand.channel, webContentsTarget, ipcBusCommand.peer);
+                this._subscriptions.releaseAll(ipcBusCommand.channel, getKeyForTarget(webContentsTarget), ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.RemoveListeners:
