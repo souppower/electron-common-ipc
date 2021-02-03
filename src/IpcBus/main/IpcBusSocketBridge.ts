@@ -129,7 +129,7 @@ export class IpcBusTransportSocketBridge extends IpcBusTransportImpl {
                 this._subscriptions.releaseAll(ipcBusCommand.channel, PeerName, ipcBusCommand.peer);
                 break;
             case IpcBusCommand.Kind.RemoveListeners:
-                this._subscriptions.removePeer(PeerName, ipcBusCommand.peer);
+                this._subscriptions.removePeer(ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.SendMessage:

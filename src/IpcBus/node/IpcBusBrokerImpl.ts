@@ -292,7 +292,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 break;
 
             case IpcBusCommand.Kind.RemoveListeners:
-                this._subscriptions.removePeer(socket, ipcBusCommand.peer);
+                this._subscriptions.removePeer(ipcBusCommand.peer);
                 break;
 
             // Socket can come from C++ process, Node.js process or main bridge

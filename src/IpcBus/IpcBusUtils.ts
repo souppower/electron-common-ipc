@@ -38,19 +38,25 @@ export interface WebContentsIdentifier {
     frameid: number;
 }
 
-function Serialize(wcIds: WebContentsIdentifier): number {
+function SerializeWebContentsIdentifier(wcIds: WebContentsIdentifier): number {
     return (wcIds.wcid << 8) + wcIds.frameid;
 }
 
-function Unserialize(channel: string): WebContentsIdentifier | null {
-    const wcIds = parseInt(channel, 10);
-    if (!isNaN(wcIds)) {
-        return {
-            wcid: wcIds >> 8,
-            frameid: wcIds & 0b11111111,
+export function UnserializeWebContentsIdentifier(strOrNum: string | number): WebContentsIdentifier | null {
+    let wcIds: number;
+    if (typeof strOrNum === 'string') {
+        wcIds = parseInt(strOrNum, 10);
+        if (isNaN(wcIds)) {
+            return null;
         }
     }
-    return null;
+    else {
+        wcIds = strOrNum;
+    }
+    return {
+        wcid: wcIds >> 8,
+        frameid: wcIds & 0b11111111,
+    }
 }
 
 export function IsWebContentsChannel(channel: string): boolean {
@@ -59,7 +65,7 @@ export function IsWebContentsChannel(channel: string): boolean {
 
 export function GetWebContentsIdentifier(channel: string): WebContentsIdentifier | null {
     if (channel.lastIndexOf(ResponseChannelPrefix, 0) === 0) {
-        return Unserialize(channel.substr(ResponseChannelPrefixLength));
+        return UnserializeWebContentsIdentifier(channel.substr(ResponseChannelPrefixLength));
     }
     return null;
 }
@@ -67,7 +73,7 @@ export function GetWebContentsIdentifier(channel: string): WebContentsIdentifier
 export function CreateResponseChannel(peer: IpcBusPeer): string {
     const uniqId = CreateUniqId();
     if (peer.process.wcid) {
-        return `${ResponseChannelPrefix}${Serialize(peer.process as WebContentsIdentifier)}_${uniqId}`;
+        return `${ResponseChannelPrefix}${SerializeWebContentsIdentifier(peer.process as WebContentsIdentifier)}_${uniqId}`;
     }
     else {
         return `response:${peer.id}_${uniqId}`;
@@ -428,24 +434,25 @@ export class ChannelConnectionMap<T, M extends string | number> {
         return this._releaseChannel(channel, conn, peer, true);
     }
 
-    private _removeConnectionOrPeer(conn: T, peer: IpcBusPeer | null) {
-        Logger.enable && this._info(`removeConnectionOrPeer: peerId = ${peer ? peer.id : 'unknown'}`);
+    removePeer(peer: IpcBusPeer) {
+        Logger.enable && this._info(`removePeer: peer = ${peer}`);
         // We can not use _getKey as it may access a property which is no more accessible when the 'conn' is destroyed
         this._channelsMap.forEach((connsMap, channel) => {
             connsMap.forEach((connData) => {
-                if (connData.conn === conn) {
-                    this._releaseConnData(channel, connData, connsMap, peer, true);
-                }
+                this._releaseConnData(channel, connData, connsMap, peer, true);
             });
         });
     }
 
-    removePeer(conn: T, peer: IpcBusPeer) {
-        return this._removeConnectionOrPeer(conn, peer);
-    }
-
     removeConnection(conn: T) {
-        return this._removeConnectionOrPeer(conn, null);
+        // We can not use _getKey as it may access a property which is no more accessible when the 'conn' is destroyed
+        this._channelsMap.forEach((connsMap, channel) => {
+            connsMap.forEach((connData) => {
+                if (connData.conn === conn) {
+                    this._releaseConnData(channel, connData, connsMap, null, true);
+                }
+            });
+        });
     }
 
     removeKey(key: M) {
@@ -453,7 +460,7 @@ export class ChannelConnectionMap<T, M extends string | number> {
         this._channelsMap.forEach((connsMap, channel) => {
             connsMap.forEach((connData) => {
                 if (connData.key === key) {
-                    this._releaseConnData(channel, connData, connsMap, undefined, true);
+                    this._releaseConnData(channel, connData, connsMap, null, true);
                 }
             });
         });

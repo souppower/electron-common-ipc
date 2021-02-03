@@ -105,7 +105,7 @@ export class IpcBusTransportMultiImpl extends IpcBusTransportImpl {
             }
         }
         else {
-            this._subscriptions.removePeer(client, client.peer);
+            this._subscriptions.removePeer(client.peer);
         }
     }
 }

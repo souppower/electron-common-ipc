@@ -103,17 +103,6 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         return Promise.resolve();
     }
 
-    // // Not exposed
-    // queryState(): Object {
-    //     const queryStateResult: Object[] = [];
-    //     this._subscriptions.forEach((connData, channel) => {
-    //         connData.peerRefCounts.forEach((peerRefCount) => {
-    //             queryStateResult.push({ channel: channel, peer: peerRefCount.peer, count: peerRefCount.refCount });
-    //         });
-    //     });
-    //     return queryStateResult;
-    // }
-
     // This is coming from the Electron Renderer Proces/s (Electron ipc)
     // =================================================================================================
     private _getHandshake(webContentsTarget: WebContentsTarget, peer: Client.IpcBusPeer): IpcBusConnector.Handshake {
@@ -149,7 +138,10 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
         const webContentsId = webContents.id;
         webContents.addListener('destroyed', () => {
             // Have to remove this webContents, included its frames
-            const webContentsTargets = this._subscriptions.getConns().filter(item => (item.key >> 8) === webContentsId);
+            const webContentsTargets = this._subscriptions.getConns().filter((item) => {
+                const webContentIdentifiers = IpcBusUtils.UnserializeWebContentsIdentifier(item.key);
+                return (webContentIdentifiers.wcid === webContentsId);
+            });
             for (let i = 0, l = webContentsTargets.length; i < l; ++i) {
                 this._subscriptions.removeKey(webContentsTargets[i].key);
             }
@@ -243,7 +235,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
                 break;
 
             case IpcBusCommand.Kind.RemoveListeners:
-                this._subscriptions.removePeer(webContentsTarget, ipcBusCommand.peer);
+                this._subscriptions.removePeer(ipcBusCommand.peer);
                 break;
 
             default:
