@@ -43,7 +43,7 @@ export class IpcBusBridgeConnectorMain extends IpcBusConnectorImpl {
     
             case IpcBusCommand.Kind.AddChannelListener:
             case IpcBusCommand.Kind.RemoveChannelListener:
-                this._bridge._onMainChannelChanged(ipcBusCommand);
+                this._bridge._onBridgeChannelChanged(ipcBusCommand);
                 break;
 
             default :

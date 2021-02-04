@@ -12,8 +12,10 @@ import { IpcBusConnectorImpl } from '../IpcBusConnectorImpl';
 import { IpcBusRendererContent } from './IpcBusRendererContent';
 
 export const IPCBUS_TRANSPORT_RENDERER_HANDSHAKE = 'ECIPC:IpcBusRenderer:Handshake';
-export const IPCBUS_TRANSPORT_RENDERER_COMMAND = 'ECIPC:IpcBusRenderer:Command';
-export const IPCBUS_TRANSPORT_RENDERER_EVENT = 'ECIPC:IpcBusRenderer:Event';
+export const IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA = 'ECIPC:IpcBusRenderer:CommandRawData';
+export const IPCBUS_TRANSPORT_RENDERER_COMMAND_ARGS = 'ECIPC:IpcBusRenderer:CommandArgs';
+export const IPCBUS_TRANSPORT_RENDERER_EVENT_RAWDATA = 'ECIPC:IpcBusRenderer:EventRawData';
+export const IPCBUS_TRANSPORT_RENDERER_EVENT_ARGS = 'ECIPC:IpcBusRenderer:EventArgs';
 
 export interface IpcWindow extends EventEmitter {
     send(channel: string, ...args: any[]): void;
@@ -55,7 +57,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     protected onConnectorBeforeShutdown() {
         if (this._onIpcEventReceived) {
             this._client.onConnectorBeforeShutdown();
-            this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+            this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT_RAWDATA, this._onIpcEventReceived);
             this._onIpcEventReceived = null;
         }
     }
@@ -72,7 +74,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                 // IpcBusRendererContent.UnpackRawContent(rawContent);
                 this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
             };
-            this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+            this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT_RAWDATA, this._onIpcEventReceived);
             return handshake;
         }
         else {
@@ -82,7 +84,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
                 // IpcBusRendererContent.UnpackRawContent(rawContent);
                 this._client.onConnectorContentReceived(ipcBusCommand, rawContent);
             };
-            this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
+            this._ipcWindow.addListener(IPCBUS_TRANSPORT_RENDERER_EVENT_RAWDATA, this._onIpcEventReceived);
             return handshake;
         }
     };
@@ -135,10 +137,10 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         const rawContent = packetOut.getRawData();
         const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifier(ipcBusCommand.channel);
         if (webContentsTargetIds && (webContentsTargetIds.frameid === IpcBusUtils.TopFrameId)) {
-            this._ipcWindow.sendTo(webContentsTargetIds.wcid, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+            this._ipcWindow.sendTo(webContentsTargetIds.wcid, IPCBUS_TRANSPORT_RENDERER_EVENT_RAWDATA, ipcBusCommand, rawContent);
         }
         else {
-            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, rawContent);
+            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent);
         }
     }
 
@@ -152,7 +154,7 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
             const packetOut = new IpcPacketBuffer();
             packetOut.serialize([ipcBusCommand, args]);
             const rawContent = packetOut.getRawData();
-            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, rawContent);
+            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND_RAWDATA, ipcBusCommand, rawContent);
         // }
     }
 
