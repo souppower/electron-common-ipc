@@ -10,7 +10,7 @@ export namespace IpcBusConnector {
     export interface Handshake {
         process: Client.IpcBusProcess;
         logLevel: IpcBusLogConfig.Level;
-        // noSerialization?: boolean;
+        noSerialization?: boolean;
     }
 
     /** @internal */

@@ -54,6 +54,10 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
         this._rendererConnector = new IpcBusRendererBridge(this);
     }
 
+    get noSerialization(): boolean {
+        return this._noSerialization;
+    }
+
     get mainTransport(): IpcBusTransport {
         return this._mainTransport;
     }
@@ -146,11 +150,22 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
     }
 
     _onMainMessageReceived(ipcBusCommand: IpcBusCommand, args?: any[]) {
-        // if (this._noSerialization) {
-        //     this._rendererConnector.broadcastArgs(ipcBusCommand, args);
-        //     this._netTransport.broadcastArgs(ipcBusCommand, args);
-        // }
-        // else {
+        if (this._noSerialization) {
+            this._rendererConnector.broadcastArgs(ipcBusCommand, args);
+            const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
+            // Prevent serializing for nothing !
+            if (hasSocketChannel) {
+                const packet = new IpcPacketBufferList();
+                if (args) {
+                    packet.serialize([ipcBusCommand, args]);
+                }
+                else {
+                    packet.serialize([ipcBusCommand]);
+                }
+                this._socketTransport.broadcastPacket(ipcBusCommand, packet);
+            }
+        }
+        else {
             const hasRendererChannel = this._rendererConnector.hasChannel(ipcBusCommand.channel);
             const hasSocketChannel = this._socketTransport && this._socketTransport.hasChannel(ipcBusCommand.channel);
             // Prevent serializing for nothing !
@@ -166,13 +181,17 @@ export class IpcBusBridgeImpl implements Bridge.IpcBusBridge {
                 // End with renderer if have to compress
                 hasRendererChannel && this._rendererConnector.broadcastPacket(ipcBusCommand, packet);
             }
-        // }
+        }
     }
 
     // This is coming from the Bus broker (socket)
     // =================================================================================================
     _onNetMessageReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore) {
         if (this._noSerialization) {
+            // Unserialize only once
+            const args = ipcPacketBufferCore.parseArrayAt(1);
+            this._mainTransport.onConnectorArgsReceived(ipcBusCommand, args);
+            this._rendererConnector.broadcastArgs(ipcBusCommand, args);
         }
         else {
             this._mainTransport.onConnectorPacketReceived(ipcBusCommand, ipcPacketBufferCore);

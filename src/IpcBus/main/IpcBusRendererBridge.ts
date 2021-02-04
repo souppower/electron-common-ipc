@@ -136,6 +136,7 @@ export class IpcBusRendererBridge implements IpcBusBridgeClient {
             // For backward we fill pid with webContents id
             handshake.process.pid = webContents.id;
         }
+        handshake.noSerialization = this._bridge.noSerialization;
         return handshake;
     }
 
