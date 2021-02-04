@@ -38,7 +38,7 @@ window.addEventListener('load', () => {
         console.log(`IsElectronCommonIpcAvailable=${result}`);
     }
 
-    const electronCommonIpcModuleCFEE = require('../../lib/IpcBus/renderer/CrossFrameEventEmitter2');
+    // const electronCommonIpcModuleCFEE = require('../../lib/IpcBus/renderer/CrossFrameEventEmitter2');
     if (window.self === window.top) {
         // console.log('Create Parent CrossFrameEventEmitter');
         // let crossFrameEE = new electronCommonIpcModuleCFEE.CrossFrameEventEmitter(window);
@@ -64,13 +64,33 @@ window.addEventListener('load', () => {
             });
             const buffer = Buffer.from('ceci est un test');
             ipcBus.send(`test-main-buffer`, buffer);
+            ipcRenderer.send(`test-main-buffer`, buffer);
             const date = new Date();
             ipcBus.send(`test-main-date`, date);
-            setTimeout(() => {
-                console.log('ipcBus - Parent send message');
-                ipcBus.send(`test-frame-${window_id}`, 'hello frame');
-                ipcBus.send(`test-myself-${window_id}`, 'hello myself');
-            }, 100);
+            ipcRenderer.send(`test-main-date`, date);
+            const json = {
+                num: 10.2,
+                str: "test",
+                bool: true,
+                Null: null,
+                Undef: undefined,
+                date,
+                buffer,
+                properties: {
+                  num1: 12.2,
+                  str1: "test2",
+                  bool1: false
+                },
+                array: [null, undefined, buffer, date, 'str', 10]
+              };
+              ipcBus.send(`test-main-json`, json);
+              ipcRenderer.send(`test-main-json`, json);
+          
+            // setTimeout(() => {
+            //     console.log('ipcBus - Parent send message');
+            //     ipcBus.send(`test-frame-${window_id}`, 'hello frame');
+            //     ipcBus.send(`test-myself-${window_id}`, 'hello myself');
+            // }, 100);
         })
         .catch((err) => {
             console.log(`ipcBus - Parent error ${err}`);

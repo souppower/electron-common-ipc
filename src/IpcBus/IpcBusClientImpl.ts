@@ -41,7 +41,6 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
 
     close(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         return this._connectCloseState.close(() => {
-            this._transport.removeChannel(this);
             return this._transport.close(this, options)
             .then(() => {
                 this._peer = null;
@@ -50,7 +49,7 @@ export class IpcBusClientImpl extends EventEmitter implements Client.IpcBusClien
     }
 
     createResponseChannel(): string {
-        return IpcBusUtils.CreateResponseChannel(this._peer, IpcBusUtils.CreateUniqId());
+        return IpcBusUtils.CreateResponseChannel(this._peer);
     }
 
     send(channel: string, ...args: any[]): boolean {

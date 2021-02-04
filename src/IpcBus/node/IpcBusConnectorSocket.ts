@@ -17,8 +17,6 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     private _socket: net.Socket;
     private _netBinds: { [key: string]: (...args: any[]) => void };
 
-    private _connectCloseState: IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>;
-
     private _socketBuffer: number;
     private _socketWriter: Writer;
 
@@ -35,8 +33,6 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         this._packetIn = new IpcPacketBufferList();
         this._packetOut = new IpcPacketWriter();
 
-        this._connectCloseState = new IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>();
-
         this._netBinds = {};
         this._netBinds['error'] = this._onSocketError.bind(this);
         this._netBinds['close'] = this._onSocketClose.bind(this);
@@ -51,6 +47,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         const msg = `[IPCBusTransport:Net ${this._messageId}] socket error ${err}`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.error(msg);
         // this._socket.destroy();
+        this.onConnectorShutdown();
         this._reset(false);
     }
 
@@ -58,6 +55,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     protected _onSocketClose() {
         const msg = `[IPCBusTransport:Net ${this._messageId}] socket close`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(msg);
+        this.onConnectorShutdown();
         this._reset(false);
     }
 
@@ -65,6 +63,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     protected _onSocketEnd() {
         const msg = `[IPCBusTransport:Net ${this._messageId}] socket end`;
         IpcBusUtils.Logger.enable && IpcBusUtils.Logger.info(msg);
+        this.onConnectorShutdown();
         this._reset(false);
     }
 
@@ -82,11 +81,6 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
     }
 
     protected _reset(endSocket: boolean) {
-        this._connectCloseState.shutdown();
-        if (this._client) {
-            this._client.onConnectorShutdown();
-            this.removeClient(this._client);
-        }
         this._socketWriter = null;
         if (this._socket) {
             const socket = this._socket;
@@ -193,7 +187,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
         });
     }
 
-    shutdown(client: IpcBusConnector.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    shutdown(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         return this._connectCloseState.close(() => {
             options = options || {};
             if (options.timeoutDelay == null) {
@@ -209,7 +203,7 @@ export class IpcBusConnectorSocket extends IpcBusConnectorImpl {
                         for (let key in socketLocalBinds) {
                             socket.removeListener(key, socketLocalBinds[key]);
                         }
-                        this.removeClient(client);
+                        this.removeClient();
                         resolve();
                     };
                     // Below zero = infinite

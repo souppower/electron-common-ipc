@@ -28,18 +28,33 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
     private _onIpcEventReceived: (...args: any[]) => void;
     // private _noSerialization: boolean;
 
-    protected _connectCloseState: IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>;
-
     constructor(contextType: Client.IpcBusProcessType, ipcWindow: IpcWindow) {
-        assert(contextType === 'renderer' || contextType === 'renderer-frame', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
+        assert(contextType === 'renderer', `IpcBusTransportWindow: contextType must not be a ${contextType}`);
         super(contextType);
         this._ipcWindow = ipcWindow;
-        this._connectCloseState = new IpcBusUtils.ConnectCloseState<IpcBusConnector.Handshake>();
+
+        window.addEventListener('beforeunload', (event: BeforeUnloadEvent) => {
+            this.onConnectorBeforeShutdown();
+            this.onConnectorShutdown();
+        });
+        // window.addEventListener("pagehide", (event: PageTransitionEvent) => {
+        //     if (event.persisted) {
+        //     }
+        //     else {
+        //         this.onConnectorBeforeShutdown();
+        //         this.onConnectorShutdown();
+        //     }
+        // });
+
+        // window.addEventListener('unload', (event: BeforeUnloadEvent) => {
+        //     this.onConnectorBeforeShutdown();
+        //     this.onConnectorShutdown();
+        // });
     }
 
-    protected onConnectorShutdown() {
+    protected onConnectorBeforeShutdown() {
         if (this._onIpcEventReceived) {
-            this._client.onConnectorShutdown();
+            this._client.onConnectorBeforeShutdown();
             this._ipcWindow.removeListener(IPCBUS_TRANSPORT_RENDERER_EVENT, this._onIpcEventReceived);
             this._onIpcEventReceived = null;
         }
@@ -106,10 +121,10 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         });
     }
 
-    shutdown(client: IpcBusConnector.Client, options?: Client.IpcBusClient.CloseOptions): Promise<void> {
+    shutdown(options?: Client.IpcBusClient.CloseOptions): Promise<void> {
         return this._connectCloseState.close(() => {
-            this.onConnectorShutdown();
-            this.removeClient(client);
+            this.onConnectorBeforeShutdown();
+            this.removeClient();
             return Promise.resolve();
         });
     }
@@ -118,12 +133,12 @@ export class IpcBusConnectorRenderer extends IpcBusConnectorImpl {
         const packetOut = new IpcPacketBuffer();
         packetOut.serialize([ipcBusCommand, args]);
         const rawContent = packetOut.getRawData();
-        const webContentsId = IpcBusUtils.GetWebContentsChannel(ipcBusCommand.channel);
-        if (isNaN(webContentsId)) {
-            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, rawContent);
+        const webContentsTargetIds = IpcBusUtils.GetWebContentsIdentifier(ipcBusCommand.channel);
+        if (webContentsTargetIds && (webContentsTargetIds.frameid === IpcBusUtils.TopFrameId)) {
+            this._ipcWindow.sendTo(webContentsTargetIds.wcid, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
         }
         else {
-            this._ipcWindow.sendTo(webContentsId, IPCBUS_TRANSPORT_RENDERER_EVENT, ipcBusCommand, rawContent);
+            this._ipcWindow.send(IPCBUS_TRANSPORT_RENDERER_COMMAND, ipcBusCommand, rawContent);
         }
     }
 

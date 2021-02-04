@@ -10,7 +10,6 @@ export const CreateIpcBusClient: IpcBusClient.CreateFunction = (): IpcBusClient 
     switch (electronProcessType) {
         // This case 'renderer' is not reachable as 'factory-browser' is used in a browser (see browserify 'browser' field in package.json)
         case 'renderer':
-            // ipcBusClient = new IpcBusClientRenderer(electronProcessType, localOptions || {});
             break;
         case 'main': {
             const newModule = require('./IpcBusClient-new-main');

@@ -3,12 +3,12 @@ An IPC (Inter-Process Communication) bus for applications built on [Node](https:
 
 This bus offers a EventEmitter-like API for exchanging data between any processes (Node process/s, Electron Master, Electron Renderer process/s).
 * Node to Node, 
-* Node to Electron (Master and Renderer processes), 
+* Node to Electron (Master and Renderer processes + Frames), 
 * Electron to Node, 
 * Electron to Electron.
 
-For Node processes support, you need to instanciate a "BusBroker" (Net socket server) in charge to commute messages to right listeners  
-For Electron Main/Renderer processes, you need an additional broker : "BusBridge" in charge to commute messages between renderers (WebPages), Master and Node.
+For Node processes support, you need to instanciate a "BusBroker" (Net socket server) in charge to commute messages to right listeners.  
+For Electron Main/Renderer processes, you need an additional broker : "BusBridge" in charge to commute messages between renderers WebPage and WebFrame, Master and Node.
 
 You can have a pure Node bus, just using BusBroker (even working out of Electron)
 You can have a Electron Main/Renderer processes bus, just using BusBridge 
@@ -45,19 +45,25 @@ Dependencies
 ### Electron App
 Pseuso code in...  
 **Main Process**
-- ipcBusBridge = IpcBusBridge.Create
-- ipcBusBridge.connect
-- ipcBusClientElectronMain = IpcBusClient.Create
-- ipcBusClientElectronMain.connect
+```ts
+const ipcBusBridge = IpcBusBridge.Create()
+ipcBusBridge.connect()
+const ipcBusClientElectronMain = IpcBusClient.Create()
+ipcBusClientElectronMain.connect()
+```
 
-**Renderer Process (nodeIntegration = true)**
-- ipcBusClientRenderer1 = IpcBusClient.Create
-- ipcBusClientRenderer1.connect
+**Renderer Process (nodeIntegration = true)** (WebFrame supported)
+```ts
+const ipcBusClientRenderer1 = IpcBusClient.Create()
+ipcBusClientRenderer1.connect()
+```
 
-**Sandboxed Renderer Process (sandbox = true)**
+**Sandboxed Renderer Process (sandbox = true)** (WebFrame supported)
 - load ipcbus library in the preload file
-- ipcBusClientRenderer2 = IpcBusClient.Create
-- ipcBusClientRenderer2.connect
+```ts
+const ipcBusClientRenderer2 = IpcBusClient.Create
+ipcBusClientRenderer2.connect()
+```
 
 done  
 ipcBusClientElectronMain, ipcBusClientRenderer1 and ipcBusClientRenderer2 can exchange data.
@@ -66,15 +72,19 @@ ipcBusClientElectronMain, ipcBusClientRenderer1 and ipcBusClientRenderer2 can ex
 Pseuso code in...  
 **Main Process**
 - find a free port (using [Socket port helpers](https://github.com/emmkimme/socket-port-helpers) for instance)
-- ipcBusBroker = IpcBusBroker.Create
-- ipcBusBroker.connect [free port]
-- ipcBusClientNodeMain = IpcBusClient.Create
-- ipcBusClientNodeMain.connect [free port]
+```ts
+const ipcBusBroker = IpcBusBroker.Create()
+ipcBusBroker.connect([free port])
+const ipcBusClientNodeMain = IpcBusClient.Create
+ipcBusClientNodeMain.connect([free port])
+```
 
 **Child node process**
 - retrieve free port through commandline or environment variable
-- ipcBusClientNodeChild = IpcBusClient.Create
-- ipcBusClientNodeChild.connect [free port]
+```ts
+const ipcBusClientNodeChild = IpcBusClient.Create()
+ipcBusClientNodeChild.connect([free port])
+```
 
 done  
 ipcBusClientNodeMain and ipcBusClientNodeChild can exchange data.
@@ -82,12 +92,57 @@ ipcBusClientNodeMain and ipcBusClientNodeChild can exchange data.
 ### Hybrid App (NodeJS and Electron)
 Pseuso code in...  
 **Main Process**
-- ipBusBridge.connect [same port as the ipcBusBroker]
+```ts
+ipBusBridge.connect([same port as the ipcBusBroker])
+```
 
 done  
 ipcBusClientElectronMain, ipcBusClientRenderer1 and ipcBusClientRenderer2, ipcBusClientNodeMain and ipcBusClientNodeChild can exchange data.
 
 
+# Initialization
+If you are using the bus in a renderer process (page), you must take care of the context :
+- sandbox
+- nodeIntegration
+- cross-frames
+
+In order to have bus working in all contexts you can register the bus in the preload file of your BrowserWindow
+
+```ts
+const win = new BrowserWindow({
+    webPreferences: {
+        sandbox: true/false (both supported)
+        preload: 'preload-ipc.bundle.js'
+    }
+});
+```
+
+To be supported in Frames
+```ts
+const win = new BrowserWindow({
+    webPreferences: {
+        sandbox: true/false (both supported)
+        nodeIntegrationInSubFrames: true,
+        preload: 'preload-ipc.bundle.js'
+    }
+});
+```
+
+preload-ipc.js
+```js
+const electronCommonIpc = require('electron-common-ipc');
+electronCommonIpc.PreloadElectronCommonIpc();
+```
+
+You have to bundle your file :
+```BatchFile
+browserify -o ./preload-ipc.bundle.js -x electron ./preload-ipc.js
+```
+
+Use Browserify >= 16.5.0 for having full support of EventEmitter.
+
+
+# Sample
 
 ```js
 // Load modules
@@ -183,34 +238,6 @@ IpcBusBroker.stop(close-options) | IpcBusBroker.close(close-options)
 IpcBusClient.Create(net-options) | IpcBusClient.Create()
 IpcBusClient.connect(connect-options) | IpcBusClient.connect(connect-options + net-options)
 IpcBusClient.stop(close-options) | IpcBusClient.close(close-options)
-
-
-# Initialization
-If you are using the bus in a renderer process (page), you must take care of the context :
-- sandbox
-- nodeIntegration
-- cross-frames [experimental]
-
-In order to have bus working in all contexts you can register the bus in the preload file of your BrowserWindow
-
-```ts
-let win = new BrowserWindow({ webPreferences { preload: 'preload-ipc.bundle.js' } })
-```
-
-preload-ipc.js
-```js
-const electronCommonIpc = require('electron-common-ipc');
-electronCommonIpc.PreloadElectronCommonIpc();
-```
-
-You have to bundle your file :
-```BatchFile
-browserify -o ./preload-ipc.bundle.js -x electron ./preload-ipc.js
-```
-
-Use Browserify >= 16.5.0 for having full support of EventEmitter.
-
-***Bus in frame is still experimental.***
 
 # Common options
 Some interfaces are sharing the same kind of options.  

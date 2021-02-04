@@ -1,9 +1,5 @@
 import { Create as CreateIpcBusClientWindow } from './IpcBusClientRenderer-factory';
 
-import { CrossFrameEventEmitter, IpcBusFrameBridge } from './CrossFrameEventEmitter2';
-
-// import { CrossFrameEventDispatcher } from './CrossFrameEventEmitter';
-
 // let useContextBridge = process.argv.includes('--context-isolation');
 	// if (useContextBridge) {
 	// 	try {
@@ -53,63 +49,25 @@ export function PreloadElectronCommonIpc(iframeSupport: boolean = false): boolea
 
 function _PreloadElectronCommonIpc(context: string, iframeSupport: boolean = false): boolean {
     const windowLocal = window as any;
-    // console.log(`window.href - ${window.location.href}`);
-    if (windowLocal.self === windowLocal.top) {
-        try {
-            // Will work in a preload or with nodeIntegration=true
-            const electron = require('electron');
-            if (electron && electron.ipcRenderer) {
-                windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
-                if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
-                    trace && console.log(`inject - ${context} - ElectronCommonIpc.CreateIpcBusClient`);
-                    windowLocal.ElectronCommonIpc.CreateIpcBusClient = () => {
-                        trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
-                        // 'ipcRenderer as any', ipcRenderer does not cover all EventListener interface !
-                        const ipcBusClient = CreateIpcBusClientWindow('renderer', electron.ipcRenderer as any);
-                        return ipcBusClient;
-                    };
-                }
-                if (windowLocal.ElectronCommonIpc.FrameBridge == null) {
-                    trace && console.log(`inject - ${context} - ElectronCommonIpc.FrameBridge`);
-                    // 'ipcRenderer as any', ipcRenderer does not cover all EventListener interface !
-                    windowLocal.ElectronCommonIpc.FrameBridge = new IpcBusFrameBridge(electron.ipcRenderer as any, window);
-                }
-            }
-        }
-        catch (_) {
-        }
-
-        try {
-            const frameBridge = windowLocal.ElectronCommonIpc && windowLocal.ElectronCommonIpc.FrameBridge as IpcBusFrameBridge;
-            if (frameBridge) {
-                if (iframeSupport) {
-                    trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - start`);
-                    frameBridge.start();
-                }
-                else {
-                    frameBridge.stop();
-                    trace && console.log(`${context} - ElectronCommonIpc.FrameBridge - stop`);
-                }
-            }
-        }
-        catch (_) {
-        }
-    }
-    else { // if (windowLocal.self !== windowLocal.top) {
-        try {
+    try {
+        // Will work in a preload or with nodeIntegration=true
+        const electron = require('electron');
+        if (electron && electron.ipcRenderer) {
+            // console.log(electron.webFrame);
+            // console.log(electron.webFrame.routingId);
             windowLocal.ElectronCommonIpc = windowLocal.ElectronCommonIpc || {};
             if (windowLocal.ElectronCommonIpc.CreateIpcBusClient == null) {
-                trace && console.log(`${context} - Frame ElectronCommonIpc`);
-                const crossFrameEE = new CrossFrameEventEmitter(window.parent);
+                trace && console.log(`inject - ${context} - ElectronCommonIpc.CreateIpcBusClient`);
                 windowLocal.ElectronCommonIpc.CreateIpcBusClient = () => {
-                    trace && console.log(`${context} - Frame ElectronCommonIpc.CreateIpcBusClient`);
-                    const ipcBusClient = CreateIpcBusClientWindow('renderer-frame', crossFrameEE);
+                    trace && console.log(`${context} - ElectronCommonIpc.CreateIpcBusClient`);
+                    // 'ipcRenderer as any', ipcRenderer does not cover all EventListener interface !
+                    const ipcBusClient = CreateIpcBusClientWindow('renderer', electron.ipcRenderer as any);
                     return ipcBusClient;
                 };
             }
         }
-        catch (_) {
-        }
+    }
+    catch (_) {
     }
     return IsElectronCommonIpcAvailable();
 }

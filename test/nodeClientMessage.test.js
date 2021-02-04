@@ -78,6 +78,7 @@ function test(remoteBroker, busPath) {
                 options['stdio'] = ['pipe', 'pipe', 'pipe', 'ipc'];
                 // nodeChildProcess = child_process.fork(path.join(__dirname, 'nodeClient.js'), ['--inspect-brk=9229', `--busPath=${ipcBusPath}`], options);
                 nodeChildProcess = child_process.spawn(process.argv[0], args, options);
+                nodeChildProcess.setMaxListeners(0);
                 nodeChildProcess.addListener('close', onClose);
                 nodeChildProcess.addListener('disconnect', onDisconnect);
                 nodeChildProcess.addListener('error', onError);
@@ -135,11 +136,11 @@ function test(remoteBroker, busPath) {
 
     function testSerialization(param, comparator) {
       {
-        let msg = `Node message with a type ${typeof param} = ${JSON.stringify(param).substr(0, 128)}`;
+        let msg = `Node message with a type ${typeof param} = ${JSON.stringify(param).substr(0, 128)}, ${remoteBroker}, ${busPath}`;
         it(msg, (done) => {
           const fctMessage = (rawmessage, sendHandle) => {
             nodeChildProcess.removeListener('message', fctMessage);
-            console.timeEnd(msg);
+            // console.timeEnd(msg);
             const message = JSON.parse(rawmessage, (key, value) => {
               return value && value.type === 'Buffer' ? Buffer.from(value.data) : value;
             });
@@ -147,7 +148,7 @@ function test(remoteBroker, busPath) {
             done();
           };
           nodeChildProcess.on('message', fctMessage);
-          console.time(msg);
+          // console.time(msg);
           ipcClient1.send('test-message', param);
         });
       }
@@ -261,11 +262,13 @@ function test(remoteBroker, busPath) {
         bool: true,
         Null: null,
         Undef: undefined,
+        date: new Date(),
         properties: {
           num1: 12.2,
           str1: "test2",
           bool1: false
-        }
+        },
+        array: [null, undefined, new Date(), 'str', 10]
       };
 
       describe('serialize', () => {
@@ -280,6 +283,6 @@ function test(remoteBroker, busPath) {
   })
 }
 
-test(true, brokersLifeCycle.getLocalBusPath());
 test(false);
 test(true);
+test(true, brokersLifeCycle.getLocalBusPath());

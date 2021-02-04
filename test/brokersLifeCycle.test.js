@@ -24,8 +24,8 @@ function test(remoteBroker, busPath) {
         it("", async function(){})  // this is important!
     });
 }
-test(false, false);
+// test(false, false);
 test(true, false);
-test(false, true);
+// test(false, true);
 test(true, true);
 

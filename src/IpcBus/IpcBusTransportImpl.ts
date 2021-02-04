@@ -77,7 +77,6 @@ class DeferredRequestPromise {
 
 /** @internal */
 export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConnector.Client {
-    private static s_requestNumber: number = 0;
     private static s_clientNumber: number = 0;
 
     protected _connector: IpcBusConnector;
@@ -125,6 +124,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
             name = `${peer.process.type}`;
             if (peer.process.wcid) {
                 name += `-${peer.process.wcid}`;
+            }
+            if (peer.process.frameid) {
+                name += `-f${peer.process.frameid}`;
             }
             if (peer.process.rid && (peer.process.rid !== peer.process.wcid)) {
                 name += `-r${peer.process.rid}`;
@@ -240,7 +242,14 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
     // IpcConnectorClient
     onConnectorShutdown() {
         this._connectCloseState.shutdown();
-        this._requestFunctions.clear();
+        // Cut connection
+        this._postDirectMessage = this._postCommand = () => {};
+        // no messages to send, it is too late
+    }
+
+    // IpcConnectorClient
+    onConnectorBeforeShutdown() {
+        this.cancelRequest();
     }
 
     sendMessage(client: IpcBusTransport.Client, channel: string, args: any[]): void {
@@ -259,9 +268,9 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
         this._postDirectMessage(ipcMessage, args);
     }
 
-    protected cancelRequest(client: IpcBusTransport.Client): void {
+    protected cancelRequest(client?: IpcBusTransport.Client): void {
         this._requestFunctions.forEach((request, key) => {
-            if (client === request.client) {
+            if ((client == null) || (client === request.client)) {
                 request.timeout();
                 this._requestFunctions.delete(key);
                 const ipcRequestClose: IpcBusCommand = {
@@ -280,8 +289,7 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     requestMessage(client: IpcBusTransport.Client, channel: string, timeoutDelay: number, args: any[]): Promise<Client.IpcBusRequestResponse> {
         timeoutDelay = IpcBusUtils.checkTimeout(timeoutDelay);
-        ++IpcBusTransportImpl.s_requestNumber;
-        const replyChannel = IpcBusUtils.CreateResponseChannel(client.peer, IpcBusTransportImpl.s_requestNumber);
+        const replyChannel = IpcBusUtils.CreateResponseChannel(client.peer);
         const ipcBusCommandRequest: IpcBusCommand.Request = { channel, replyChannel };
         const deferredRequest = new DeferredRequestPromise(client, ipcBusCommandRequest);
         // Register locally
@@ -344,11 +352,12 @@ export abstract class IpcBusTransportImpl implements IpcBusTransport, IpcBusConn
 
     close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         return this._connectCloseState.close(() => {
-            return this._connector.shutdown(this, options)
-                .then(() => {
-                    // Cut connection
-                    this._postDirectMessage = this._postCommand = () => { };
-                });
+            this.cancelRequest(client);
+            this.removeChannel(client);
+            return this._connector.shutdown(options)
+            .then(() => {
+                this.onConnectorShutdown();
+            });
         });
     }
 

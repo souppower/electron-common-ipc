@@ -5,6 +5,7 @@ import type { IpcPacketBufferList } from 'socket-serializer';
 import type * as Client from '../IpcBusClient';
 import type * as Broker from './IpcBusBroker';
 import * as IpcBusUtils from '../IpcBusUtils';
+import { ChannelConnectionMap } from '../IpcBusChannelMap';
 
 import { IpcBusCommand } from '../IpcBusCommand';
 
@@ -48,7 +49,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
 
     protected _connectCloseState: IpcBusUtils.ConnectCloseState<void>;
 
-    protected _subscriptions: IpcBusUtils.ChannelConnectionMap<net.Socket, number>;
+    protected _subscriptions: ChannelConnectionMap<net.Socket, number>;
 
     constructor(contextType: Client.IpcBusProcessType) {
         // Callbacks
@@ -64,9 +65,7 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
 
         this._connectCloseState = new IpcBusUtils.ConnectCloseState<void>();
 
-        this._subscriptions = new IpcBusUtils.ChannelConnectionMap<net.Socket, number>(
-            'IPCBus:Broker',
-            (conn) => (conn as any)[this._socketIdProperty]);
+        this._subscriptions = new ChannelConnectionMap<net.Socket, number>('IPCBus:Broker');
         // this._ipcBusBrokerClient = CreateIpcBusClientNet(contextType);
     }
 
@@ -280,26 +279,26 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
                 break;
 
             case IpcBusCommand.Kind.AddChannelListener:
-                this._subscriptions.addRef(ipcBusCommand.channel, socket, ipcBusCommand.peer);
+                this._subscriptions.addRef(ipcBusCommand.channel, { key: (socket as any)[this._socketIdProperty], conn: socket }, ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.RemoveChannelListener:
-                this._subscriptions.release(ipcBusCommand.channel, socket, ipcBusCommand.peer);
+                this._subscriptions.release(ipcBusCommand.channel, (socket as any)[this._socketIdProperty], ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.RemoveChannelAllListeners:
-                this._subscriptions.releaseAll(ipcBusCommand.channel, socket, ipcBusCommand.peer);
+                this._subscriptions.releaseAll(ipcBusCommand.channel, (socket as any)[this._socketIdProperty], ipcBusCommand.peer);
                 break;
 
             case IpcBusCommand.Kind.RemoveListeners:
-                this._subscriptions.removePeer(socket, ipcBusCommand.peer);
+                this._subscriptions.removePeer(ipcBusCommand.peer);
                 break;
 
             // Socket can come from C++ process, Node.js process or main bridge
             case IpcBusCommand.Kind.SendMessage:
                 // Register the replyChannel included bridge if bridge is a socket
                 if (ipcBusCommand.request) {
-                    this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, socket, ipcBusCommand.peer);
+                    this._subscriptions.pushResponseChannel(ipcBusCommand.request.replyChannel, { key: (socket as any)[this._socketIdProperty], conn: socket }, ipcBusCommand.peer);
                 }
                 this._subscriptions.forEachChannel(ipcBusCommand.channel, (connData) => {
                     // Prevent echo message
@@ -366,17 +365,12 @@ export abstract class IpcBusBrokerImpl implements Broker.IpcBusBroker, IpcBusBro
     }
 
     queryState(): Object {
-        const queryStateResult: Object[] = [];
-        this._subscriptions.forEach((channel, connData) => {
-            connData.peerRefCounts.forEach((peerRefCount) => {
-                queryStateResult.push({ channel: channel, peer: peerRefCount.peer, count: peerRefCount.refCount });
-            });
-        });
-        return queryStateResult;
+        return null;
     }
     
     protected onBridgeConnected(socketClient: IpcBusBrokerSocket, ipcBusCommand: IpcBusCommand) {
     }
+
     protected onBridgeClosed(socket?: net.Socket) {
     }
 

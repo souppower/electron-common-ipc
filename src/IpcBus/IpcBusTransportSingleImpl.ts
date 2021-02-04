@@ -27,28 +27,25 @@ export  class IpcBusTransportSingleImpl extends IpcBusTransportImpl {
         this._onClientMessageReceived(this._client, local, ipcBusCommand, args);
     }
 
-    onConnectorShutdown() {
-        super.onConnectorShutdown();
-        this._client = null;
-    }
-
-    connect(client: IpcBusTransport.Client | null, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
-        if (this._client == null) {
-            return super.connect(client, options)
-            .then((peer) => {
-                if (client) {
-                    this._client = client;
-                }
-                return peer;
-            });
+    onConnectorBeforeShutdown() {
+        super.onConnectorBeforeShutdown();
+        if (this._client) {
+            this.removeChannel(this._client);
+            this._client = null;
         }
-        return Promise.resolve(this._client.peer);
     }
 
-    close(client: IpcBusTransport.Client | null, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
+    connect(client: IpcBusTransport.Client, options: Client.IpcBusClient.ConnectOptions): Promise<Client.IpcBusPeer> {
+        return super.connect(client, options)
+        .then((peer) => {
+            this._client = client;
+            return peer;
+        });
+    }
+
+    close(client: IpcBusTransport.Client, options?: Client.IpcBusClient.ConnectOptions): Promise<void> {
         if (this._client && (this._client === client)) {
             this._client = null;
-            this.cancelRequest(client);
             return super.close(client, options);
         }
         return Promise.resolve();

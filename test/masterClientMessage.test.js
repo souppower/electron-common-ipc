@@ -62,17 +62,17 @@ function test(remoteBroker, busPath) {
     function testSerialization(param, comparator) {
       {
         // let msg = `message with a type ${typeof param} = ${JSON.stringify(param).substr(0, 128)}`;
-        let msg = `message with a type ${typeof param}`;
+        let msg = `message with a type ${typeof param} ${remoteBroker} ${busPath}`;
         it(msg, (done) => {
           ipcClient2.removeAllListeners('test-message');
           ipcClient2.on('test-message', (event, ...args) => {
-            console.timeEnd(msg);
+            // console.timeEnd(msg);
             assert(comparator(args[0], param));
             done();
           });
           // We have to wait a bit for having broker aware of the new listener
           setTimeout(() => {
-            console.time(msg);
+            // console.time(msg);
             ipcClient1.send('test-message', param);
           }, 100);
         });
@@ -89,10 +89,10 @@ function test(remoteBroker, busPath) {
           });
           // We have to wait a bit for having broker aware of the new listener
           setTimeout(() => {
-            console.time(msg);
+            // console.time(msg);
             ipcClient1.request('test-request', 2000, param)
               .then((result) => {
-                console.timeEnd(msg);
+                // console.timeEnd(msg);
                 assert(comparator(result.payload, param));
                 done();
               })
@@ -215,6 +215,6 @@ function test(remoteBroker, busPath) {
 }
 
 // test(false);
-test(true);
+// test(true);
 // test(false, brokersLifeCycle.getLocalBusPath());
 test(true, brokersLifeCycle.getLocalBusPath());

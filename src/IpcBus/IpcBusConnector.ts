@@ -19,6 +19,7 @@ export namespace IpcBusConnector {
         onConnectorPacketReceived(ipcBusCommand: IpcBusCommand, ipcPacketBufferCore: IpcPacketBufferCore): boolean;
         onConnectorContentReceived(ipcBusCommand: IpcBusCommand, rawContent: IpcPacketBuffer.RawData): boolean;
         onConnectorArgsReceived(ipcBusCommand: IpcBusCommand, args: any[]): boolean;
+        onConnectorBeforeShutdown(): void;
         onConnectorShutdown(): void;
     }
 }
@@ -28,7 +29,8 @@ export interface IpcBusConnector {
     readonly process: Client.IpcBusProcess | null;
 
     handshake(client: IpcBusConnector.Client, options: Client.IpcBusClient.ConnectOptions): Promise<IpcBusConnector.Handshake>;
-    shutdown(client: IpcBusConnector.Client, options: Client.IpcBusClient.CloseOptions): Promise<void>;
+    shutdown(options: Client.IpcBusClient.CloseOptions): Promise<void>;
+
     postDirectMessage(ipcBusCommand: IpcBusCommand, args?: any[]): void;
     postCommand(ipcBusCommand: IpcBusCommand, args?: any[]): void;
     postBuffers(buffers: Buffer[]): void;
