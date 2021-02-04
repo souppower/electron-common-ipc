@@ -1,5 +1,7 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
+const util = require('util')
+
 
 const brokersLifeCycle = require('../brokers/brokersLifeCycle');
 const ipcBusModule = require("../..");
@@ -35,7 +37,7 @@ function createWindow(page, title, webPreferences) {
     win.loadURL(`file://${path.join(__dirname, page)}?id=${idWindow}`);
 
     if (idWindow === 0) {
-        testIPC(idWindow);
+        // testIPC(idWindow);
     }
 
     ++idWindow;
@@ -60,17 +62,39 @@ function createWindow(page, title, webPreferences) {
     return win;
 }
 
+function consoleData(msg, data) {
+    console.log(`${msg}: typeof=${typeof data}, ctor=${data?.constructor?.name}, content=${util.inspect(data)}`);
+}
+
 function createWindows() {
     const ipcBus = ipcBusModule.CreateIpcBusClient();
     ipcBus.connect().then(() => {
         done = true
 
         ipcBus.on(`test-main-buffer`, (event, data) => {
-            console.log(`Buffer typeof=${typeof data}, content=${data.toString()}`);
+            consoleData(`ipcBus`, data);
         });
         ipcBus.on(`test-main-date`, (event, data) => {
-            console.log(`Date typeof=${typeof data}, content=${data.toString()}`);
+            consoleData(`ipcBus`, data);
         });
+        ipcBus.on(`test-main-json`, (event, data) => {
+            consoleData(`ipcBus`, data);
+            consoleData(`ipcBus`, data.date);
+            consoleData(`ipcBus`, data.buffer);
+        });
+
+        ipcMain.on(`test-main-buffer`, (event, data) => {
+            consoleData(`ipcMain`, data);
+        });
+        ipcMain.on(`test-main-date`, (event, data) => {
+            consoleData(`ipcMain`, data);
+        });
+        ipcMain.on(`test-main-json`, (event, data) => {
+            consoleData(`ipcMain`, data);
+            consoleData(`ipcMain`, data.date);
+            consoleData(`ipcMain`, data.buffer);
+        });
+
 
         // createWindow('page.html', '{}', {})
         // createWindow('page.html', 'nodeIntegration: false', { nodeIntegration: false })

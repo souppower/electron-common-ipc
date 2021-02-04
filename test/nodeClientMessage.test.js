@@ -262,11 +262,13 @@ function test(remoteBroker, busPath) {
         bool: true,
         Null: null,
         Undef: undefined,
+        date: new Date(),
         properties: {
           num1: 12.2,
           str1: "test2",
           bool1: false
-        }
+        },
+        array: [null, undefined, new Date(), 'str', 10]
       };
 
       describe('serialize', () => {
